@@ -117,19 +117,21 @@ def low_risk_editorial(old, new, path):
         raise ValueError("changed structured data or factual-risk claims")
     add = rem = 0
     changes = []
+    added = []
     for line in difflib.unified_diff(before.splitlines(), after.splitlines(), n=0):
         if line.startswith("+") and not line.startswith("+++"):
             add += 1
             changes.append(line[1:])
+            added.append(line[1:])
         elif line.startswith("-") and not line.startswith("---"):
             rem += 1
             changes.append(line[1:])
     # Even one changed HTML line may be huge; bound total changed bytes too.
     if add > 40 or rem > 40 or add + rem > 75 or sum(map(len, changes)) > 2500:
         raise ValueError("editorial patch exceeds conservative size budget")
-    if any(FACT_RISK.search(x) for x in changes if x in changes[:]):
-        # Conservative policy: both changed and removed factual text are held
-        # for a stronger review lane rather than auto-merged.
+    if any(FACT_RISK.search(x) for x in added):
+        # Conservative policy: any NEW obvious numeric/price/timeline/spec
+        # assertion goes to a stronger review lane, including safe deletions.
         raise ValueError("potential factual/commercial/timing claim requires stronger review")
     return report
 
@@ -268,8 +270,7 @@ def finalize(pr):
     # same execution must finish release without waiting on generated events.
     now = api("pulls/" + str(number))
     if now.get("draft") is True:
-        api("pulls/" + str(number), "PATCH", {"draft": "false"}) if False else None
-        # gh pr ready uses GraphQL, not the REST PR PATCH above.
+         # gh pr ready uses GraphQL, not the REST PR PATCH above.
         p = subprocess.run(["gh", "pr", "ready", str(number), "-R", REPO],
                            capture_output=True, text=True, timeout=35)
         if p.returncode:
