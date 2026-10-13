@@ -201,16 +201,21 @@ def signed_review(comments, pr, sha, base, path, now):
     return False
 
 
-def ruleset_ready():
+def policy_mode():
+    """Preflight under legacy protection; release ONLY under new exact rules.
+
+    Preflight writes trusted source/review statuses on actual K11 signed
+    candidates but CANNOT merge or mark ready. This breaks the migration
+    chicken-and-egg problem without weakening old DatBotty protections.
+    """
     r = api("rulesets/22973860")
     if (r.get("enforcement") != "active" or r.get("target") != "branch"
-            or r.get("source") != REPO
-            or (r.get("bypass_actors") or [])
-            or r.get("current_user_can_bypass") != "never"):
-        raise ValueError("active non-bypass ruleset required")
+            or r.get("source") != REPO):
+        raise ValueError("active protected-main ruleset not present")
     refs = (r.get("conditions") or {}).get("ref_name") or {}
-    if "refs/heads/main" not in refs.get("include", []):
-        raise ValueError("protected main branch not scoped")
+    if ("refs/heads/main" not in refs.get("include", [])
+            or "refs/heads/main" in refs.get("exclude", [])):
+        raise ValueError("protected main branch scope changed")
     checks, pull = None, None
     for rule in r.get("rules") or []:
         if rule.get("type") == "required_status_checks":
@@ -220,10 +225,17 @@ def ruleset_ready():
     required = {x.get("context"): x.get("integration_id") for x in
                 (checks or {}).get("required_status_checks", [])}
     if (not checks or checks.get("strict_required_status_checks_policy") is not True
-            or required != {SOURCE_STATUS: 15368, REVIEW_STATUS: 15368}
             or not pull or pull.get("required_review_thread_resolution") is not True
             or pull.get("dismiss_stale_reviews_on_push") is not True):
-        raise ValueError("native GitHub protection is not the independently signed TDQ policy")
+        raise ValueError("native GitHub branch protection weakened")
+    if required == {"DatBotty Deterministic Gate": 15368,
+                    "DatBotty T1 Review": 15368}:
+        return "PREFLIGHT_ONLY"
+    if (required == {SOURCE_STATUS: 15368, REVIEW_STATUS: 15368}
+            and not (r.get("bypass_actors") or [])
+            and r.get("current_user_can_bypass") == "never"):
+        return "PROTECTED_RELEASE"
+    raise ValueError("unknown or unsafe protected-main policy; do not release")
 
 
 def check(pr):
@@ -262,13 +274,18 @@ def check(pr):
     return number, sha, old, path
 
 
-def finalize(pr):
+def finalize(pr, mode):
     number, sha, old, path = check(pr)
-    ruleset_ready()
+    if policy_mode() != mode:
+        raise ValueError("main ruleset changed during candidate check")
     # Status contexts are issued *only* by this protected GitHub Actions
     # workflow after verifying candidate bytes and an independent signature.
     status(sha, SOURCE_STATUS, "success", "Bounded source verified on protected main")
     status(sha, REVIEW_STATUS, "success", "Distinct-key K11 reviewer signature verified")
+    if mode != "PROTECTED_RELEASE":
+        print("TDQ_PREFLIGHT_SIGNED_STATUSES_PROVEN_NO_MERGE pr=%d head=%s" %
+              (number, sha), flush=True)
+        return
     # GitHub GITHUB_TOKEN does NOT retrigger workflows after 'ready'. This
     # same execution must finish release without waiting on generated events.
     now = api("pulls/" + str(number))
@@ -282,7 +299,8 @@ def finalize(pr):
     # immediately before the atomic native provider merge.
     if check(pr)[:3] != (number, sha, old):
         raise ValueError("candidate or review changed before provider merge")
-    ruleset_ready()
+    if policy_mode() != "PROTECTED_RELEASE":
+        raise ValueError("protected release authority removed before merge")
     result = api("pulls/" + str(number) + "/merge", "PUT", {
         "sha": sha, "merge_method": "merge",
         "commit_title": "Protected signed local TDQ editorial release (#%d)" % number})
@@ -406,7 +424,7 @@ def main():
                                            "GITHUB_SERVER_URL")):
         raise ValueError("missing trusted workflow identity")
     selftest()
-    ruleset_ready()  # Fail closed until protected rule migration is proven.
+    mode = policy_mode()  # Legacy remains protected, preflight only.
     prs = api("pulls?state=open&per_page=100")
     if len(prs) >= 100:
         raise ValueError("unbounded PR inventory")
@@ -416,7 +434,7 @@ def main():
                 or HOLD in {x.get("name") for x in pr.get("labels", [])}):
             continue
         try:
-            finalize(pr)
+            finalize(pr, mode)
             return
         except (ValueError, KeyError, TypeError, OSError,
                 subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
