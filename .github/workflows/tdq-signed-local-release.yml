@@ -1,12 +1,12 @@
 name: TDQ signed local independent release
 
 # No Copilot/GitHub Models dependency. Scheduled trusted protected main checks
-# for independently signed K11 editorial PRs. No event emitted by GITHUB_TOKEN
-# is needed: classification, validation and native merge happen in ONE job.
+# for independently signed K11 editorial PRs. Schedule-only prevents a
+# workflow_dispatch on an unprotected caller-selected ref from acquiring merge
+# credentials. No event emitted by GITHUB_TOKEN is required.
 on:
   schedule:
     - cron: "*/15 * * * *"
-  workflow_dispatch:
 
 permissions:
   contents: write
