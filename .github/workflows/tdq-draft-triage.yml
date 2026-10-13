@@ -3,8 +3,12 @@ name: TDQ draft source integrity and fact-risk triage
 # Runs on GitHub-hosted CPU while the K11's single GPU worker can immediately
 # start another independent objective. This DOES NOT approve semantic accuracy
 # and NEVER merges or deploys a draft.
+# pull_request_target loads THIS reviewed workflow definition from protected
+# default main. pull_request instead loads an old PR's merge tree, which kept
+# running an obsolete checker that did not exist at its ancient base.
+# Token is read-only, no secrets passed, no PR source checked out or executed.
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
     # Metadata-only edits allow rechecking existing draft heads without new commits.
     types: [opened, reopened, synchronize, edited, labeled, ready_for_review]
