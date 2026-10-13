@@ -342,6 +342,57 @@ def selftest():
     assert not signed_review([{"body":"<!-- TDQ-SIGNED-REVIEW-V1\n"+
                               json.dumps({"payload":payload,"signature":"junk"})+
                               "\n-->"}], 1, "a"*40, "b"*40, "guide.html", 150)
+    # Exercise REAL Ed25519 signature verification using an ephemeral test
+    # key, never the protected production reviewer private key.
+    original_key = PUBLIC_KEY
+    try:
+        with tempfile.TemporaryDirectory(prefix="tdq-review-fixture-") as tmp:
+            priv = Path(tmp, "reviewer.key")
+            pub = Path(tmp, "reviewer.pub")
+            source = Path(tmp, "payload")
+            sig = Path(tmp, "signature")
+            subprocess.run(["openssl", "genpkey", "-algorithm", "Ed25519",
+                            "-out", str(priv)], check=True,
+                           capture_output=True, timeout=15)
+            subprocess.run(["openssl", "pkey", "-in", str(priv), "-pubout",
+                            "-out", str(pub)], check=True,
+                           capture_output=True, timeout=15)
+            now = 100_000
+            signed = dict(payload, issued_at=now, expires_at=now + 2000)
+            source.write_bytes(canonical(signed))
+            signature = subprocess.run(["openssl", "pkeyutl", "-sign",
+                                        "-inkey", str(priv), "-rawin",
+                                        "-in", str(source)], check=True,
+                                       capture_output=True, timeout=15).stdout
+            globals()["PUBLIC_KEY"] = pub
+            encoded = base64.b64encode(signature).decode("ascii")
+            assert verify_signature(signed, encoded)
+            comment = lambda obj: [{"body":
+                "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
+                json.dumps({"payload": obj, "signature": encoded}) +
+                "\\n-->"}]
+            # Real signed exact-head verification succeeds.
+            assert signed_review(comment(signed), 1, "a"*40, "b"*40,
+                                 "guide.html", now)
+            assert not signed_review(comment(signed), 1, "c"*40, "b"*40,
+                                     "guide.html", now)
+            assert not signed_review(comment(signed), 1, "a"*40, "b"*40,
+                                     "guide.html", now + 3000)
+            # Later valid signed REJECT dominates earlier APPROVE.
+            rejected = dict(signed, verdict="REJECT")
+            source.write_bytes(canonical(rejected))
+            reject_sig = subprocess.run(["openssl", "pkeyutl", "-sign",
+                                         "-inkey", str(priv), "-rawin",
+                                         "-in", str(source)], check=True,
+                                        capture_output=True, timeout=15).stdout
+            reject_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
+                json.dumps({"payload": rejected,
+                            "signature": base64.b64encode(reject_sig).decode()}) +
+                "\\n-->"}
+            assert not signed_review(comment(signed)+[reject_entry], 1,
+                                     "a"*40, "b"*40, "guide.html", now)
+    finally:
+        globals()["PUBLIC_KEY"] = original_key
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
