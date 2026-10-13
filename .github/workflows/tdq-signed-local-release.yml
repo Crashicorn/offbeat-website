@@ -1,0 +1,49 @@
+name: TDQ signed local independent release
+
+# No Copilot/GitHub Models dependency. Scheduled trusted protected main checks
+# for independently signed K11 editorial PRs. No event emitted by GITHUB_TOKEN
+# is needed: classification, validation and native merge happen in ONE job.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: write
+  statuses: write
+  pages: write
+
+concurrency:
+  group: tdq-signed-local-release-main
+  cancel-in-progress: false
+
+jobs:
+  independently-signed-editorial:
+    if: github.repository == 'CrashyCrash/offbeat-website'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout current trusted protected main only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Gate regression before native action
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/tdq_draft_triage.py .github/scripts/tdq_signed_release.py
+          python3 .github/scripts/tdq_draft_triage.py --self-test
+          python3 .github/scripts/tdq_signed_release.py --self-test
+
+      - name: Validate signed independent K11 review and request native protected release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/tdq_signed_release.py
