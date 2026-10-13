@@ -368,9 +368,9 @@ def selftest():
             encoded = base64.b64encode(signature).decode("ascii")
             assert verify_signature(signed, encoded)
             comment = lambda obj: [{"body":
-                "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
+                "<!-- TDQ-SIGNED-REVIEW-V1\n" +
                 json.dumps({"payload": obj, "signature": encoded}) +
-                "\\n-->"}]
+                "\n-->"}]
             # Real signed exact-head verification succeeds.
             assert signed_review(comment(signed), 1, "a"*40, "b"*40,
                                  "guide.html", now)
@@ -385,10 +385,10 @@ def selftest():
                                          "-inkey", str(priv), "-rawin",
                                          "-in", str(source)], check=True,
                                         capture_output=True, timeout=15).stdout
-            reject_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
+            reject_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\n" +
                 json.dumps({"payload": rejected,
                             "signature": base64.b64encode(reject_sig).decode()}) +
-                "\\n-->"}
+                "\n-->"}
             assert not signed_review(comment(signed)+[reject_entry], 1,
                                      "a"*40, "b"*40, "guide.html", now)
     finally:
