@@ -405,6 +405,9 @@ def selftest():
                                      "guide.html", now + 3000)
             # Later valid signed REJECT dominates earlier APPROVE.
             rejected = dict(signed, verdict="REJECT")
+            # Rejection must carry a strictly newer signing time.
+            rejected["issued_at"] = now + 1
+            rejected["expires_at"] = now + 2001
             source.write_bytes(canonical(rejected))
             reject_sig = subprocess.run(["openssl", "pkeyutl", "-sign",
                                          "-inkey", str(priv), "-rawin",
@@ -414,18 +417,6 @@ def selftest():
                 json.dumps({"payload": rejected,
                             "signature": base64.b64encode(reject_sig).decode()}) +
                 "\n-->"}
-            # Rejection must carry a strictly newer signing time.
-            rejected["issued_at"] = now + 1
-            rejected["expires_at"] = now + 2001
-            source.write_bytes(canonical(rejected))
-            reject_sig = subprocess.run(["openssl", "pkeyutl", "-sign",
-                                         "-inkey", str(priv), "-rawin",
-                                         "-in", str(source)], check=True,
-                                        capture_output=True, timeout=15).stdout
-            reject_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
-                json.dumps({"payload": rejected,
-                            "signature": base64.b64encode(reject_sig).decode()}) +
-                "\\n-->"}
             assert not signed_review(comment(signed)+[reject_entry], 1,
                                      "a"*40, "b"*40, "guide.html", now)
             # A later posted replay of the old APPROVE cannot defeat REJECT.
