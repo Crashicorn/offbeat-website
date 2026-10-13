@@ -220,9 +220,11 @@ def policy_mode():
             or r.get("source") != REPO):
         raise ValueError("active protected-main ruleset not present")
     refs = (r.get("conditions") or {}).get("ref_name") or {}
+    # GitHub exclusion rules may use wildcards; no exclusion is acceptable
+    # for this dedicated main-only release protection rule.
     if ("refs/heads/main" not in refs.get("include", [])
-            or "refs/heads/main" in refs.get("exclude", [])):
-        raise ValueError("protected main branch scope changed")
+            or refs.get("exclude")):
+        raise ValueError("protected main branch scope changed or excluded")
     checks, pull = None, None
     for rule in r.get("rules") or []:
         if rule.get("type") == "required_status_checks":
@@ -281,8 +283,17 @@ def check(pr):
     return number, sha, old, path
 
 
+def verify_pages_source():
+    pages = api("pages")
+    if (pages.get("build_type") != "legacy"
+            or pages.get("source") != {"branch": "main", "path": "/"}
+            or pages.get("cname") != "offbeatinc.com"):
+        raise ValueError("public Pages source no longer main:/ offbeatinc.com")
+
+
 def finalize(pr, mode):
     number, sha, old, path = check(pr)
+    verify_pages_source()
     if policy_mode() != mode:
         raise ValueError("main ruleset changed during candidate check")
     # Status contexts are issued *only* by this protected GitHub Actions
