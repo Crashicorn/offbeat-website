@@ -182,7 +182,7 @@ def signed_review(comments, pr, sha, base, path, now):
             if (signed["schema"] != "tdq-review-v1" or signed["repo"] != REPO
                     or signed["pr"] != pr or signed["head"] != sha
                     or signed["base"] != base or signed["paths"] != [path]
-                    or signed["verdict"] != "APPROVE"
+                    or signed["verdict"] not in ("APPROVE", "REJECT")
                     or signed["reviewer"] != "k11-isolated-ollama-review"
                     or not isinstance(signed["reason"], str)
                     or not 30 <= len(signed["reason"]) <= 1500
@@ -192,7 +192,9 @@ def signed_review(comments, pr, sha, base, path, now):
                     or not now < signed["expires_at"] <= signed["issued_at"] + 21600):
                 continue
             if verify_signature(signed, envelope["signature"]):
-                return True
+                # The most recent valid separate-key verdict supersedes an
+                # earlier approval on this exact head. Never ignore a reject.
+                return signed["verdict"] == "APPROVE"
         except (ValueError, TypeError, KeyError, OSError):
             continue
     return False
