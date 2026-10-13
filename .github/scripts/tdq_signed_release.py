@@ -166,7 +166,8 @@ def verify_signature(payload, signature):
 def signed_review(comments, pr, sha, base, path, now):
     if len(comments) >= 100:
         raise ValueError("review comments exceeded bounded API page")
-    for item in reversed(comments):
+    valid = []
+    for item in comments:
         body = item.get("body") or ""
         matches = COMMENT.findall(body)
         if len(matches) != 1:
@@ -193,12 +194,18 @@ def signed_review(comments, pr, sha, base, path, now):
                     or not now < signed["expires_at"] <= signed["issued_at"] + 21600):
                 continue
             if verify_signature(signed, envelope["signature"]):
-                # The most recent valid separate-key verdict supersedes an
-                # earlier approval on this exact head. Never ignore a reject.
-                return signed["verdict"] == "APPROVE"
+                # Highest actual SIGNED timestamp wins, not GitHub comment
+                # chronology. Reposting an old approved envelope cannot
+                # override a newer separately signed REJECT.
+                valid.append((signed["issued_at"],
+                              signed["verdict"] == "REJECT",
+                              signed["verdict"]))
         except (ValueError, TypeError, KeyError, OSError):
             continue
-    return False
+    if not valid:
+        return False
+    latest = max(valid)
+    return latest[2] == "APPROVE"
 
 
 def policy_mode():
@@ -407,8 +414,23 @@ def selftest():
                 json.dumps({"payload": rejected,
                             "signature": base64.b64encode(reject_sig).decode()}) +
                 "\n-->"}
+            # Rejection must carry a strictly newer signing time.
+            rejected["issued_at"] = now + 1
+            rejected["expires_at"] = now + 2001
+            source.write_bytes(canonical(rejected))
+            reject_sig = subprocess.run(["openssl", "pkeyutl", "-sign",
+                                         "-inkey", str(priv), "-rawin",
+                                         "-in", str(source)], check=True,
+                                        capture_output=True, timeout=15).stdout
+            reject_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n" +
+                json.dumps({"payload": rejected,
+                            "signature": base64.b64encode(reject_sig).decode()}) +
+                "\\n-->"}
             assert not signed_review(comment(signed)+[reject_entry], 1,
                                      "a"*40, "b"*40, "guide.html", now)
+            # A later posted replay of the old APPROVE cannot defeat REJECT.
+            assert not signed_review(comment(signed)+[reject_entry]+comment(signed),
+                                     1, "a"*40, "b"*40, "guide.html", now)
     finally:
         globals()["PUBLIC_KEY"] = original_key
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
