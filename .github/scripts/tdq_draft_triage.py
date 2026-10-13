@@ -102,6 +102,24 @@ def analyze(base, head, path):
     }
 
 
+def bounded_paths(entries):
+    """Independent protected-base scope validation; 1–4 existing root HTML pages."""
+    if not 1 <= len(entries) <= 4:
+        raise ValueError("expected one to four source files")
+    paths = []
+    for entry in entries:
+        fields = entry.split("\t", 1)
+        if len(fields) != 2:
+            raise ValueError("malformed source status")
+        status, path = fields
+        if status != "M" or not PAGE.fullmatch(path):
+            raise ValueError("draft may modify only existing root-level HTML pages")
+        paths.append(path)
+    if len(set(paths)) != len(paths):
+        raise ValueError("duplicate changed page")
+    return paths
+
+
 def selftest():
     old = b'<html><a href="contact.html">Home</a><p>Guaranteed.</p></html>'
     new = b'<html><a href="contact.html">Home</a><p>Usually.</p></html>'
@@ -137,6 +155,22 @@ def selftest():
     b = (b'<script type="application/ld+json">{"name":"New"}</script>'
          b'<a href="x.html">same</a>')
     assert analyze(a, b, "index.html")["structured_data_changed"] is True
+    assert bounded_paths(["M\tindex.html"]) == ["index.html"]
+    assert bounded_paths(["M\tguide-a.html", "M\tguide-b.html"]) == [
+        "guide-a.html", "guide-b.html"]
+    for rejected in ([], ["M\ta.html"] * 5,
+                     ["M\tindex.html", "M\tindex.html"],
+                     ["M\ta.html", "M\t../x.html"],
+                     ["M\ta.html", "A\tnew.html"],
+                     ["M\ta.html", "M\tassets/x.html"],
+                     ["M\ta.html", "M\tfile.js"]):
+        try:
+            bounded_paths(rejected)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("unsafe or excessive changed source paths")
+
 
 
 def main():
@@ -156,36 +190,39 @@ def main():
         raise ValueError("invalid immutable SHA")
     names = git("diff", "--no-renames", "--name-status", args.base, args.head, "--")
     entries = names.decode("utf-8", "strict").strip().splitlines()
-    if len(entries) != 1:
-        raise ValueError("expected exactly one source file")
-    status, path = entries[0].split("\t", 1)
-    if status != "M" or not PAGE.fullmatch(path):
-        raise ValueError("draft changes must modify one existing root-level HTML file")
-    before = git("show", args.base + ":" + path)
-    after = git("show", args.head + ":" + path)
-    metrics = analyze(before, after, path)
+    paths = bounded_paths(entries)
+    metrics_by_path = []
+    for path in paths:
+        before = git("show", args.base + ":" + path)
+        after = git("show", args.head + ":" + path)
+        metrics_by_path.append((path, analyze(before, after, path)))
+    risk_count = sum(metrics["risk_lines"] for _, metrics in metrics_by_path)
     notes = [
         "### TDQ draft source integrity / claim-risk triage",
         "",
         "**NOT an approval.** No model or human fact-check took place. The "
         "protected-base checker did not execute candidate code.",
         "",
-        "- Exactly one authorized HTML file changed: " + html.escape(path),
-        "- Links, embedded executable scripts, event handlers, media targets, "
-        "form actions and stylesheet paths were preserved",
-        "- New diff lines containing potential product/price/credibility claims: "
-        + str(metrics["risk_lines"]),
-        "- Structured data changed: " + str(metrics["structured_data_changed"]),
-        "- Head HTML SHA-256: " + metrics["head_hash"],
-        "",
-        "**Next gate:** Independent semantic review of any new or changed factual "
-        "claims against trustworthy sources, followed by separately authorized "
-        "merge/deployment policy checks. Zero risk-pattern lines is NOT proof "
-        "of factual accuracy.",
+        "- Bounded existing root-level editorial HTML pages changed: " + str(len(paths)),
+        "- Links, executable scripts, handlers, media, forms and stylesheets "
+        "preserved independently for every changed page",
+        "- Potential product/price/credibility risk lines: " + str(risk_count),
     ]
+    for path, metrics in metrics_by_path:
+        notes.extend([
+            "- " + html.escape(path) + ": head HTML SHA-256 " + metrics["head_hash"]
+            + "; structured data changed=" + str(metrics["structured_data_changed"])
+            + "; risk lines=" + str(metrics["risk_lines"])
+        ])
+    notes.extend([
+        "",
+        "**Next gate:** Independent semantic and cross-page consistency review "
+        "of all changed claims, followed by separately authorized release checks. "
+        "Zero risk-pattern lines is NOT evidence of factual accuracy."
+    ])
     Path(args.summary).write_text("\n".join(notes) + "\n", encoding="utf-8")
-    print("TDQ_STATIC_SCOPE_PASS; SEMANTIC_REVIEW_REQUIRED; fact-risk lines=",
-          metrics["risk_lines"])
+    print("TDQ_STATIC_SCOPE_PASS; SEMANTIC_REVIEW_REQUIRED; pages=",
+          len(paths), "fact-risk lines=", risk_count)
     return 0
 
 
