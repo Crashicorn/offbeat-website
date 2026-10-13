@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.request
 
 import tdq_draft_triage as tdq
 
@@ -287,8 +288,35 @@ def finalize(pr):
         "commit_title": "Protected signed local TDQ editorial release (#%d)" % number})
     if not result.get("merged"):
         raise ValueError("native protected GitHub merge refused")
+    merge_sha = result["sha"]
     print("TDQ_NATIVE_MERGED pr=%d head=%s merge=%s path=%s" %
-          (number, sha, result["sha"], path))
+          (number, sha, merge_sha, path), flush=True)
+    merged = api("commits/" + merge_sha)
+    if [p["sha"] for p in merged.get("parents", [])] != [old, sha]:
+        raise ValueError("merge occurred but exact protected parentage is UNPROVEN")
+    if api("git/ref/heads/main")["object"]["sha"] != merge_sha:
+        raise ValueError("merge occurred but protected main moved unexpectedly")
+    # GITHUB_TOKEN-driven merges may suppress normal Pages push builds.
+    build = api("pages/builds", "POST")
+    print("TDQ_PAGES_BUILD_REQUESTED " + str(build.get("status", "accepted")),
+          flush=True)
+    expected = tdq.git("show", merge_sha + ":" + path)
+    url = "https://offbeatinc.com/" + path + "?tdq_verify=" + merge_sha[:12]
+    for attempt in range(12):
+        try:
+            request = urllib.request.Request(
+                url, headers={"User-Agent": "TaskDatty-public-byte-verify/1",
+                              "Cache-Control": "no-cache"})
+            with urllib.request.urlopen(request, timeout=12) as web:
+                actual = web.read(350_001)
+            if actual == expected:
+                print("TDQ_PUBLIC_BYTES_VERIFIED path=" + path +
+                      " merge=" + merge_sha, flush=True)
+                return
+        except (OSError, ValueError) as ex:
+            print("TDQ_PUBLIC_READBACK_RETRY " + type(ex).__name__, flush=True)
+        time.sleep(15)
+    raise ValueError("MERGED_BUT_LIVE_PAGE_BYTES_UNPROVEN: " + path)
 
 
 def selftest():
