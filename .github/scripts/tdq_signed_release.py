@@ -544,6 +544,33 @@ def selftest():
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
+def revoke_stale_open_statuses(prs):
+    """Remove durable greens from crashed/interrupted earlier merge attempts.
+
+    GitHub commit statuses have no built-in TTL; an unmerged PR must NEVER
+    retain green source/review checks between scheduled runs.
+    """
+    for pr in prs:
+        head = pr.get("head") or {}
+        sha = head.get("sha") or ""
+        if (pr.get("state") != "open" or not SHA.fullmatch(sha)
+                or not BRANCH.fullmatch(head.get("ref") or "")
+                or (head.get("repo") or {}).get("full_name") != REPO):
+            continue
+        combined = api("commits/" + sha + "/status")
+        current = {}
+        # GitHub returns statuses newest-first. Reverse to select the last
+        # current state for each protected context.
+        for item in reversed(combined.get("statuses") or []):
+            if item.get("context") in (SOURCE_STATUS, REVIEW_STATUS):
+                current[item["context"]] = item.get("state")
+        for context in (SOURCE_STATUS, REVIEW_STATUS):
+            if current.get(context) == "success":
+                status(sha, context, "pending", "Expired open-PR release receipt revalidation")
+                print("TDQ_STALE_STATUS_INVALIDATED head=" + sha[:12] +
+                      " context=" + context, flush=True)
+
+
 def main():
     if "--self-test" in sys.argv:
         selftest()
@@ -558,6 +585,7 @@ def main():
     prs = api("pulls?state=open&per_page=100")
     if len(prs) >= 100:
         raise ValueError("unbounded PR inventory")
+    revoke_stale_open_statuses(prs)
     for pr in sorted(prs, key=lambda x: x["number"]):
         if (not (pr.get("head") or {}).get("ref", "").startswith("tdq/proof-auto-")
                 or RELEASE not in {x.get("name") for x in pr.get("labels", [])}
