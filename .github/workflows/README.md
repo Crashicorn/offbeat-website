@@ -2,9 +2,30 @@
 
 No autonomous DatBotty v2/v3 workflows are active here.
 
-Do not add scheduled autonomous workflows during DatBotty v4 recovery. v4 work
-must be driven by the evidence-and-approval loop in
-`/home/igpu/Desktop/AI Projects/DatBotty-v4`.
+Do not restart the old scheduled DatBotty v2/v3/v4 engineering loops;
+their worker/reviewer provenance is incompatible with current TaskDatty.
+
+**Narrow owner-authorized exception (October 13, 2026):** the GitHub-hosted
+`tdq-signed-local-release.yml` is a SCHEDULED VERIFIER/RELEASE GATE, not an
+autonomous engineering worker or a replacement orchestrator. It processes only
+an existing K11-issued single-page draft already independently reviewed by
+the isolated local reviewer OS account with a verifiable Ed25519 signature.
+GitHub independently rechecks the exact current head/base, restricted HTML
+content, signed review, active native branch policy enforced on a **non-bypass
+GitHub Actions merge identity**, and actual Pages
+publishing source before any native merge. It never invents or implements
+tasks, does not execute candidate code, and never bypasses legacy protection.
+The old DatBotty statuses remain required until independently proven TDQ
+contexts support an explicitly authorized ruleset migration. The existing
+owner's emergency GitHub bypass permission is preserved: it is not a license
+for the autonomous Actions bot to bypass the ruleset, which must report
+`current_user_can_bypass=never`. Do not require GitHub Actions to access the
+administration-only list of all owner recovery actors. Multi-page,
+functionality, product claims, credentials, WordPress and unverified content
+are not authorized for unattended release.
+
+Any signed-review expiry, missing key, publisher failure or mismatch blocks
+publication; green syntax tests or source integrity alone never approve copy.
 
 GitHub-managed entries such as Pages deployment, Dependabot, or Copilot may
 appear in `gh workflow list`; those are not repo-authored workflow files. The

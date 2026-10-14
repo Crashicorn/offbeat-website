@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - ".github/scripts/tdq_release_gate.py"
+      - ".github/scripts/tdq_signed_release.py"
+      - ".github/workflows/tdq-signed-local-release.yml"
       - ".github/scripts/tdq_draft_triage.py"
       - ".github/workflows/tdq-editorial-release.yml"
       - ".github/workflows/tdq-release-selftest.yml"
@@ -33,6 +35,10 @@ jobs:
             python3 -m py_compile .github/scripts/tdq_draft_triage.py .github/scripts/tdq_release_gate.py
             python3 .github/scripts/tdq_draft_triage.py --self-test
             python3 .github/scripts/tdq_release_gate.py --self-test
+          fi
+          if [[ -f .github/scripts/tdq_signed_release.py ]]; then
+            python3 -m py_compile .github/scripts/tdq_signed_release.py
+            python3 .github/scripts/tdq_signed_release.py --self-test
           else
             echo "Trusted read-only gate selftest scaffold installed."
           fi
