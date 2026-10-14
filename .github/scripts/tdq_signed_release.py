@@ -541,6 +541,41 @@ def selftest():
                 raise AssertionError("unsafe native ruleset accepted: " + unsafe)
     finally:
         globals()["api"] = orig_api
+    # A green GitHub status is durable; verify crashed-run cleanup and the
+    # preflight success->pending transition so legacy gate proof cannot leave
+    # a reusable old approval on an open PR.
+    old_api, old_status = globals()["api"], globals()["status"]
+    old_check = globals()["check"]
+    old_pages = globals()["verify_pages_source"]
+    old_policy = globals()["policy_mode"]
+    try:
+        captured = []
+        globals()["api"] = lambda endpoint: {"statuses": [
+            {"context": SOURCE_STATUS, "state": "success"},
+            {"context": REVIEW_STATUS, "state": "pending"}]}
+        globals()["status"] = lambda sha, name, state, msg: captured.append(
+            (sha, name, state))
+        sample = {"state": "open", "head": {
+            "sha": "a"*40, "ref": "tdq/proof-auto-1234567890abcd",
+            "repo": {"full_name": REPO}}}
+        revoke_stale_open_statuses([sample])
+        assert captured == [("a"*40, SOURCE_STATUS, "pending")]
+        captured.clear()
+        globals()["check"] = lambda pr: (1, "a"*40, "b"*40, "guide.html")
+        globals()["verify_pages_source"] = lambda: None
+        globals()["policy_mode"] = lambda: "PREFLIGHT_ONLY"
+        finalize(sample, "PREFLIGHT_ONLY")
+        assert captured == [
+            ("a"*40, SOURCE_STATUS, "success"),
+            ("a"*40, REVIEW_STATUS, "success"),
+            ("a"*40, SOURCE_STATUS, "pending"),
+            ("a"*40, REVIEW_STATUS, "pending")]
+    finally:
+        globals()["api"] = old_api
+        globals()["status"] = old_status
+        globals()["check"] = old_check
+        globals()["verify_pages_source"] = old_pages
+        globals()["policy_mode"] = old_policy
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
