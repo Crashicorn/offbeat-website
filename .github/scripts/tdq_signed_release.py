@@ -607,9 +607,9 @@ def selftest():
                 ["openssl", "pkeyutl", "-sign", "-inkey", str(priv),
                  "-rawin", "-in", str(source)],
                 check=True, capture_output=True, timeout=15).stdout
-            short_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n"
+            short_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\n"
                 + json.dumps({"payload": short_reject,
-                 "signature": base64.b64encode(short_sig).decode()}) + "\\n-->"}
+                 "signature": base64.b64encode(short_sig).decode()}) + "\n-->"}
             assert not signed_review(comment(signed)+[short_entry], 1,
                                      "a"*40, "b"*40, "guide.html", now+3)
     finally:
