@@ -228,8 +228,9 @@ def signed_review(comments, pr, sha, base, path, now):
                     or not 30 <= len(signed["reason"]) <= 1500
                     or not isinstance(signed["issued_at"], int)
                     or not isinstance(signed["expires_at"], int)
-                    or not now - 21600 <= signed["issued_at"] <= now + 60
-                    or not now < signed["expires_at"] <= signed["issued_at"] + 21600):
+                    or not signed["issued_at"] <= now + 60
+                    or not signed["issued_at"] < signed["expires_at"]
+                    or not signed["expires_at"] <= signed["issued_at"] + 21600):
                 continue
             if verify_signature(signed, envelope["signature"]):
                 # Highest actual SIGNED timestamp wins, not GitHub comment
@@ -237,13 +238,20 @@ def signed_review(comments, pr, sha, base, path, now):
                 # override a newer separately signed REJECT.
                 valid.append((signed["issued_at"],
                               signed["verdict"] == "REJECT",
-                              signed["verdict"]))
+                              signed["verdict"],
+                              signed["expires_at"]))
         except (ValueError, TypeError, KeyError, OSError):
             continue
     if not valid:
         return False
     latest = max(valid)
-    return latest[2] == "APPROVE"
+    # An expired later signed REJECT must NEVER be ignored in favor of an
+    # older, still-valid APPROVE. Verify ALL signatures first, pick the latest
+    # distinct-key verdict (REJECT breaks timestamp ties), and only then
+    # check the resulting approval's short-lived authorization window.
+    return (latest[2] == "APPROVE"
+            and now - 21600 <= latest[0] <= now
+            and now < latest[3])
 
 
 def policy_mode():
@@ -591,6 +599,19 @@ def selftest():
             # A later posted replay of the old APPROVE cannot defeat REJECT.
             assert not signed_review(comment(signed)+[reject_entry]+comment(signed),
                                      1, "a"*40, "b"*40, "guide.html", now)
+            # Even after the later REJECT expires, the older approval cannot
+            # revive just because it has an unexpired envelope.
+            short_reject = dict(rejected, expires_at=now+2)
+            source.write_bytes(canonical(short_reject))
+            short_sig = subprocess.run(
+                ["openssl", "pkeyutl", "-sign", "-inkey", str(priv),
+                 "-rawin", "-in", str(source)],
+                check=True, capture_output=True, timeout=15).stdout
+            short_entry = {"body": "<!-- TDQ-SIGNED-REVIEW-V1\\n"
+                + json.dumps({"payload": short_reject,
+                 "signature": base64.b64encode(short_sig).decode()}) + "\\n-->"}
+            assert not signed_review(comment(signed)+[short_entry], 1,
+                                     "a"*40, "b"*40, "guide.html", now+3)
     finally:
         globals()["PUBLIC_KEY"] = original_key
     # The append-only GitHub Actions ledger is written BEFORE any green
