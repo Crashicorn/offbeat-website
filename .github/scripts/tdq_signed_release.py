@@ -117,6 +117,10 @@ def low_risk_editorial(old, new, path):
         raise ValueError("one reader-visible main content element required")
     if main.findall(before) == main.findall(after):
         raise ValueError("metadata-only edit cannot enter release lane")
+    before_main, after_main = main.search(before), main.search(after)
+    if (before[:before_main.start()] != after[:after_main.start()]
+            or before[before_main.end():] != after[after_main.end():]):
+        raise ValueError("autonomous copy release may change ONLY main content")
     report = tdq.analyze(old, new, path)
     if report["structured_data_changed"] or report["risk_lines"]:
         raise ValueError("changed structured data or factual-risk claims")
@@ -449,6 +453,15 @@ def selftest():
     old = b'<!doctype html><main><p>Vague guidance.</p></main>'
     new = b'<!doctype html><main><p>Clearer guidance.</p></main>'
     low_risk_editorial(old, new, "guide.html")
+    try:
+        low_risk_editorial(
+            b'<!doctype html><title>Original</title><main><p>Old.</p></main>',
+            b'<!doctype html><title>Deceptive</title><main><p>Better.</p></main>',
+            "guide.html")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("out-of-main copy edit must not auto-release")
     try:
         low_risk_editorial(old, new, "contact.html")
     except ValueError:
