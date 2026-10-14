@@ -559,6 +559,28 @@ def selftest():
                                      1, "a"*40, "b"*40, "guide.html", now)
     finally:
         globals()["PUBLIC_KEY"] = original_key
+    # The append-only GitHub Actions ledger is written BEFORE any green
+    # status; a closed/renamed PR still retains its immutable logged SHA.
+    ledgertime = []
+    prev_api = globals()["api"]
+    try:
+        def ledger_fixture(endpoint, method="GET", fields=None):
+            ledgertime.append((endpoint, method))
+            if endpoint.startswith("issues/838/comments?"):
+                return [{"user": {"login": "attacker"},
+                         "body": "TDQ_GREEN_V1 pr=2 head=" + "z"*40},
+                        {"user": {"login": "github-actions[bot]"},
+                         "body": "TDQ_GREEN_V1 pr=3 head=" + "c"*40}]
+            if endpoint == "issues/838/comments" and method == "POST":
+                assert fields == {"body": "TDQ_GREEN_V1 pr=1 head=" + "a"*40}
+                return {"id": 100}
+            raise AssertionError("unexpected ledger endpoint: " + endpoint)
+        globals()["api"] = ledger_fixture
+        assert ledger_issued_heads() == {"c"*40}
+        register_status_head(1, "a"*40)
+        assert ledgertime[-1] == ("issues/838/comments", "POST")
+    finally:
+        globals()["api"] = prev_api
     # The existing incompatible DatBotty rules may permit status-only
     # preflight, but no native merge. A mocked GitHub config exercises
     # exact integration IDs, active main scope and no bypass authority.
