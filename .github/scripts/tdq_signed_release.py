@@ -262,8 +262,12 @@ def policy_mode():
     if required == {"DatBotty Deterministic Gate": 15368,
                     "DatBotty T1 Review": 15368}:
         return "PREFLIGHT_ONLY"
+    # GitHub may REDACT this administration-only field from an Actions
+    # token. Absence is UNKNOWN, not the same as an explicitly empty list.
+    # A separate owner's bypass could otherwise survive policy migration.
     if (required == {SOURCE_STATUS: 15368, REVIEW_STATUS: 15368}
-            and not (r.get("bypass_actors") or [])
+            and isinstance(r.get("bypass_actors"), list)
+            and r["bypass_actors"] == []
             and r.get("current_user_can_bypass") == "never"):
         return "PROTECTED_RELEASE"
     raise ValueError("unknown or unsafe protected-main policy; do not release")
@@ -613,6 +617,15 @@ def selftest():
             {"context": REVIEW_STATUS, "integration_id": 15368}]
         globals()["api"] = lambda path: new_rules
         assert policy_mode() == "PROTECTED_RELEASE"
+        no_actor_info = json.loads(json.dumps(new_rules))
+        del no_actor_info["bypass_actors"]
+        globals()["api"] = lambda path: no_actor_info
+        try:
+            policy_mode()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("redacted bypass actors must block release")
         for unsafe in ("excluded", "bypass", "status"):
             bad = json.loads(json.dumps(new_rules))
             if unsafe == "excluded":
