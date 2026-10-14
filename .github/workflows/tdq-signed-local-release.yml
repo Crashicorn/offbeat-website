@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  issues: read
+  issues: write  # append every success-issued SHA to protected issue #838 first
   pull-requests: write
   statuses: write
   pages: write
