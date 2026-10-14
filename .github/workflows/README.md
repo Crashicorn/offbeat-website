@@ -11,11 +11,16 @@ autonomous engineering worker or a replacement orchestrator. It processes only
 an existing K11-issued single-page draft already independently reviewed by
 the isolated local reviewer OS account with a verifiable Ed25519 signature.
 GitHub independently rechecks the exact current head/base, restricted HTML
-content, signed review, active non-bypass native branch policy and actual Pages
+content, signed review, active native branch policy enforced on a **non-bypass
+GitHub Actions merge identity**, and actual Pages
 publishing source before any native merge. It never invents or implements
 tasks, does not execute candidate code, and never bypasses legacy protection.
 The old DatBotty statuses remain required until independently proven TDQ
-contexts support an explicitly authorized ruleset migration. Multi-page,
+contexts support an explicitly authorized ruleset migration. The existing
+owner's emergency GitHub bypass permission is preserved: it is not a license
+for the autonomous Actions bot to bypass the ruleset, which must report
+`current_user_can_bypass=never`. Do not require GitHub Actions to access the
+administration-only list of all owner recovery actors. Multi-page,
 functionality, product claims, credentials, WordPress and unverified content
 are not authorized for unattended release.
 
