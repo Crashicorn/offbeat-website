@@ -96,6 +96,10 @@ class Structure(HTMLParser):
 
 
 def low_risk_editorial(old, new, path):
+    # Do not autonomously rewrite legal notices or owner correspondence
+    # promises even when the page otherwise looks like normal HTML.
+    if path in ("privacy.html", "disclosure.html", "contact.html", "terms.html"):
+        raise ValueError("policy, contact and disclosure pages need stronger approval")
     if len(old) > 350_000 or len(new) > 350_000:
         raise ValueError("oversized HTML source")
     before, after = old.decode("utf-8", "strict"), new.decode("utf-8", "strict")
@@ -119,6 +123,7 @@ def low_risk_editorial(old, new, path):
     add = rem = 0
     changes = []
     added = []
+    removed = []
     for line in difflib.unified_diff(before.splitlines(), after.splitlines(), n=0):
         if line.startswith("+") and not line.startswith("+++"):
             add += 1
@@ -127,13 +132,20 @@ def low_risk_editorial(old, new, path):
         elif line.startswith("-") and not line.startswith("---"):
             rem += 1
             changes.append(line[1:])
+            removed.append(line[1:])
     # Even one changed HTML line may be huge; bound total changed bytes too.
     if add > 40 or rem > 40 or add + rem > 75 or sum(map(len, changes)) > 2500:
         raise ValueError("editorial patch exceeds conservative size budget")
+    # Permit removing an unsupported promotional claim only after the
+    # separate actual signed semantic reviewer proves this is net beneficial.
+    # NEVER allow deletion of required disclosure/legal/accessibility/safety
+    # language just because it appears on a normal tutorial page.
+    if any(re.search(r"(?i)\\b(?:affiliate|disclos|copyright|privacy|"
+                     r"consent|refund|terms|accessib|safety|warning)\\b", x)
+           for x in removed):
+        raise ValueError("protected legal/disclosure/safety claim was removed")
     if any(FACT_RISK.search(x) for x in added):
-        # Conservative policy: any NEW obvious numeric/price/timeline/spec
-        # assertion goes to a stronger review lane, including safe deletions.
-        raise ValueError("potential factual/commercial/timing claim requires stronger review")
+        raise ValueError("new factual/commercial/timing claim needs stronger review")
     return report
 
 
