@@ -371,6 +371,21 @@ def selftest():
     old = b'<!doctype html><main><p>Vague guidance.</p></main>'
     new = b'<!doctype html><main><p>Clearer guidance.</p></main>'
     low_risk_editorial(old, new, "guide.html")
+    try:
+        low_risk_editorial(old, new, "contact.html")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("automated release must not change contact policy")
+    try:
+        low_risk_editorial(
+            b'<!doctype html><main><p>Affiliate disclosure is required.</p></main>',
+            b'<!doctype html><main><p>Useful introduction.</p></main>',
+            "guide.html")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("removing required disclosure must be held")
     for bad in (b'<main><p>Clearer guidance.</p></main>',
                 b'<!doctype html><main><div>Clearer guidance.</div></main>',
                 b'<!doctype html><main><p>Guaranteed $100.</p></main>',
