@@ -27,7 +27,7 @@ REPO = "CrashyCrash/offbeat-website"
 RELEASE = "tdq-editorial-release"
 HOLD = "tdq-release-hold"
 STATUS_LEDGER_ISSUE = 838
-STATUS_LEDGER_ENTRY = re.compile(r"TDQ_GREEN_V1 pr=([1-9][0-9]*) head=([0-9a-f]{40})\\Z")
+STATUS_LEDGER_ENTRY = re.compile(r"TDQ_GREEN_V1 pr=([1-9][0-9]*) head=([0-9a-f]{40})\Z")
 SOURCE_STATUS = "TDQ Verified Editorial Source"
 REVIEW_STATUS = "TDQ Signed Independent Review"
 PUBLIC_KEY = Path(__file__).with_name("reviewer-public.pem")
@@ -439,7 +439,8 @@ def selftest_native_merge_and_publication():
     with patch.dict(globals(), {"check": lambda pr: (1, head, base, "guide.html"),
                                 "policy_mode": lambda: "PROTECTED_RELEASE",
                                 "verify_pages_source": lambda: None,
-                                "api": fake_api, "status": fake_status}), \
+                                "api": fake_api, "status": fake_status,
+                                "register_status_head": lambda pr, sha: None}), \
          patch.object(tdq, "git", return_value=b"TEST_PAGE_CONTENT"), \
          patch.object(urllib.request, "urlopen", return_value=PublicBytes()):
         finalize({"number": 1}, "PROTECTED_RELEASE")
@@ -613,6 +614,8 @@ def selftest():
     # preflight success->pending transition so legacy gate proof cannot leave
     # a reusable old approval on an open PR.
     old_api, old_status = globals()["api"], globals()["status"]
+    old_ledger = globals()["ledger_issued_heads"]
+    old_register = globals()["register_status_head"]
     old_check = globals()["check"]
     old_pages = globals()["verify_pages_source"]
     old_policy = globals()["policy_mode"]
@@ -623,10 +626,12 @@ def selftest():
             {"context": REVIEW_STATUS, "state": "pending"}]}
         globals()["status"] = lambda sha, name, state, msg: captured.append(
             (sha, name, state))
+        globals()["register_status_head"] = lambda pr, sha: None
         sample = {"state": "open", "head": {
             "sha": "a"*40, "ref": "tdq/proof-auto-1234567890abcd",
             "repo": {"full_name": REPO}}}
-        revoke_stale_open_statuses([sample])
+        globals()["ledger_issued_heads"] = lambda: {"a"*40}
+        revoke_ledger_statuses()
         assert captured == [("a"*40, SOURCE_STATUS, "pending")]
         captured.clear()
         globals()["check"] = lambda pr: (1, "a"*40, "b"*40, "guide.html")
@@ -644,6 +649,8 @@ def selftest():
         globals()["check"] = old_check
         globals()["verify_pages_source"] = old_pages
         globals()["policy_mode"] = old_policy
+        globals()["ledger_issued_heads"] = old_ledger
+        globals()["register_status_head"] = old_register
     selftest_native_merge_and_publication()
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
