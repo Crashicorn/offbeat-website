@@ -395,6 +395,56 @@ def finalize(pr, mode):
         ) from err
 
 
+
+def selftest_native_merge_and_publication():
+    """No network/GitHub mutations: verify exact source/merge/readback control."""
+    from unittest.mock import patch
+    head, base, merged = "a"*40, "b"*40, "c"*40
+    changes = []
+    state = {"pages_fail": False}
+    def fake_api(endpoint, method="GET", fields=None):
+        changes.append((endpoint, method))
+        if endpoint == "pulls/1":
+            return {"draft": False}
+        if endpoint == "pulls/1/merge":
+            assert method == "PUT" and fields["sha"] == head
+            return {"merged": True, "sha": merged}
+        if endpoint == "commits/" + merged:
+            return {"parents": [{"sha": base}, {"sha": head}]}
+        if endpoint == "git/ref/heads/main":
+            return {"object": {"sha": merged}}
+        if endpoint == "pages/builds":
+            if state["pages_fail"]:
+                raise ValueError("mocked Pages build unavailable")
+            return {"status": "queued"}
+        raise AssertionError("unexpected protected API request: " + endpoint)
+    class PublicBytes:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self, limit):
+            return b"TEST_PAGE_CONTENT"
+    def fake_status(sha, name, status_name, reason):
+        changes.append(("status", name, status_name))
+    with patch.dict(globals(), {"check": lambda pr: (1, head, base, "guide.html"),
+                                "policy_mode": lambda: "PROTECTED_RELEASE",
+                                "verify_pages_source": lambda: None,
+                                "api": fake_api, "status": fake_status}), \
+         patch.object(tdq, "git", return_value=b"TEST_PAGE_CONTENT"), \
+         patch.object(urllib.request, "urlopen", return_value=PublicBytes()):
+        finalize({"number": 1}, "PROTECTED_RELEASE")
+        assert ("pulls/1/merge", "PUT") in changes
+        assert ("pages/builds", "POST") in changes
+        state["pages_fail"] = True
+        try:
+            finalize({"number": 1}, "PROTECTED_RELEASE")
+        except MergedButUnverified:
+            pass
+        else:
+            raise AssertionError("merged-but-unverified must FAIL CI rather than disappear")
+
+
 def selftest():
     old = b'<!doctype html><main><p>Vague guidance.</p></main>'
     new = b'<!doctype html><main><p>Clearer guidance.</p></main>'
@@ -576,6 +626,7 @@ def selftest():
         globals()["check"] = old_check
         globals()["verify_pages_source"] = old_pages
         globals()["policy_mode"] = old_policy
+    selftest_native_merge_and_publication()
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
