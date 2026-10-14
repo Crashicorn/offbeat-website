@@ -435,6 +435,57 @@ def selftest():
                                      1, "a"*40, "b"*40, "guide.html", now)
     finally:
         globals()["PUBLIC_KEY"] = original_key
+    # The existing incompatible DatBotty rules may permit status-only
+    # preflight, but no native merge. A mocked GitHub config exercises
+    # exact integration IDs, active main scope and no bypass authority.
+    legacy = {
+        "enforcement": "active", "target": "branch", "source": REPO,
+        "conditions": {"ref_name": {"include": ["refs/heads/main"],
+                                     "exclude": []}},
+        "bypass_actors": [{"actor_type": "User", "actor_id": 191937709}],
+        "current_user_can_bypass": "pull_requests_only",
+        "rules": [
+            {"type": "pull_request", "parameters": {
+                "required_review_thread_resolution": True,
+                "dismiss_stale_reviews_on_push": True}},
+            {"type": "required_status_checks", "parameters": {
+                "strict_required_status_checks_policy": True,
+                "required_status_checks": [
+                    {"context": "DatBotty Deterministic Gate",
+                     "integration_id": 15368},
+                    {"context": "DatBotty T1 Review",
+                     "integration_id": 15368}]}}]}
+    orig_api = globals()["api"]
+    try:
+        globals()["api"] = lambda path: legacy
+        assert policy_mode() == "PREFLIGHT_ONLY"
+        new_rules = json.loads(json.dumps(legacy))
+        new_rules["bypass_actors"] = []
+        new_rules["current_user_can_bypass"] = "never"
+        new_rules["rules"][1]["parameters"]["required_status_checks"] = [
+            {"context": SOURCE_STATUS, "integration_id": 15368},
+            {"context": REVIEW_STATUS, "integration_id": 15368}]
+        globals()["api"] = lambda path: new_rules
+        assert policy_mode() == "PROTECTED_RELEASE"
+        for unsafe in ("excluded", "bypass", "status"):
+            bad = json.loads(json.dumps(new_rules))
+            if unsafe == "excluded":
+                bad["conditions"]["ref_name"]["exclude"] = ["refs/heads/*"]
+            elif unsafe == "bypass":
+                bad["bypass_actors"] = [{"actor_type": "User",
+                                        "actor_id": 191937709}]
+            else:
+                bad["rules"][1]["parameters"]["required_status_checks"][1][
+                    "integration_id"] = 0
+            globals()["api"] = lambda path, data=bad: data
+            try:
+                policy_mode()
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("unsafe native ruleset accepted: " + unsafe)
+    finally:
+        globals()["api"] = orig_api
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
