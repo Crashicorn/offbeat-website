@@ -157,14 +157,15 @@ def low_risk_editorial(old, new, path):
     # Reject introduced numbers and risky terms. Previously present
     # vocabulary may be retained in a corrective rewrite, but it is never
     # by itself evidence of factual accuracy.
-    removed_text = "\\n".join(removed)
-    added_text = "\\n".join(added)
-    risk_vocab = re.compile(FACT_RISK.pattern.replace(r"\\d|", ""),
-                            FACT_RISK.flags)
+    removed_text = "\n".join(removed)
+    added_text = "\n".join(added)
     def risky_tokens(source):
-        words = {m.group(0).casefold() for m in risk_vocab.finditer(source)}
-        numbers = set(re.findall(r"(?<![a-zA-Z])\\d+(?:[.,]\\d+)?", source))
-        return words | {"#" + v for v in numbers}
+        numeric = {m.group(0) for m in re.finditer(
+            r"\d+(?:[.,]\d+)?", source)}
+        without_numbers = re.sub(r"\d+(?:[.,]\d+)?", "", source)
+        terms = {m.group(0).casefold() for m in
+                 FACT_RISK.finditer(without_numbers)}
+        return terms | {"#" + v for v in numeric}
     if risky_tokens(added_text) - risky_tokens(removed_text):
         raise ValueError("new numeric/product/timing/commercial claim needs stronger review")
     return report
@@ -479,6 +480,19 @@ def selftest():
     old = b'<!doctype html><main><p>Vague guidance.</p></main>'
     new = b'<!doctype html><main><p>Clearer guidance.</p></main>'
     low_risk_editorial(old, new, "guide.html")
+    # True corrective rewrites may retain the already-present word "free"
+    # while removing a false timeframe. A NEW claim/numeric price must fail.
+    original = b'<!doctype html><main><p>Start with free software. You will mix within a week.</p></main>'
+    corrected = b'<!doctype html><main><p>Start with free bundled software, practice regularly; no fixed timeline.</p></main>'
+    low_risk_editorial(original, corrected, "beginner-dj-hub.html")
+    try:
+        low_risk_editorial(original,
+            b'<!doctype html><main><p>Get free lifetime access for $500 today.</p></main>',
+            "beginner-dj-hub.html")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("introduced price/promise must not pass gate")
     try:
         low_risk_editorial(
             b'<!doctype html><title>Original</title><main><p>Old.</p></main>',
