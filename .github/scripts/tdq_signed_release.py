@@ -149,6 +149,10 @@ def low_risk_editorial(old, new, path):
     return report
 
 
+class MergedButUnverified(RuntimeError):
+    """A real GitHub merge happened but public deployment was NOT proven."""
+
+
 def canonical(obj):
     return json.dumps(obj, sort_keys=True, separators=(",", ":"),
                       ensure_ascii=False).encode("utf-8")
@@ -341,14 +345,17 @@ def finalize(pr, mode):
           (number, sha, merge_sha, path), flush=True)
     merged = api("commits/" + merge_sha)
     if [p["sha"] for p in merged.get("parents", [])] != [old, sha]:
-        raise ValueError("merge occurred but exact protected parentage is UNPROVEN")
+        raise MergedButUnverified("merge occurred but exact protected parentage is UNPROVEN")
     if api("git/ref/heads/main")["object"]["sha"] != merge_sha:
-        raise ValueError("merge occurred but protected main moved unexpectedly")
+        raise MergedButUnverified("merge occurred but protected main moved unexpectedly")
     # GITHUB_TOKEN-driven merges may suppress normal Pages push builds.
     build = api("pages/builds", "POST")
     print("TDQ_PAGES_BUILD_REQUESTED " + str(build.get("status", "accepted")),
           flush=True)
-    expected = tdq.git("show", merge_sha + ":" + path)
+    # The remote merge commit is NOT fetched into this Actions checkout.
+    # We already verified protected parentage [old, candidate SHA]; the
+    # candidate's immutable path blob is the published main result.
+    expected = tdq.git("show", sha + ":" + path)
     url = "https://offbeatinc.com/" + path + "?tdq_verify=" + merge_sha[:12]
     for attempt in range(12):
         try:
@@ -364,7 +371,7 @@ def finalize(pr, mode):
         except (OSError, ValueError) as ex:
             print("TDQ_PUBLIC_READBACK_RETRY " + type(ex).__name__, flush=True)
         time.sleep(15)
-    raise ValueError("MERGED_BUT_LIVE_PAGE_BYTES_UNPROVEN: " + path)
+    raise MergedButUnverified("MERGED_BUT_LIVE_PAGE_BYTES_UNPROVEN: " + path)
 
 
 def selftest():
@@ -548,7 +555,7 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (ValueError, KeyError, TypeError, OSError,
+    except (ValueError, KeyError, TypeError, OSError, MergedButUnverified,
             subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         print("TDQ_PROTECTED_ABORTED " + str(error)[:140], file=sys.stderr)
         sys.exit(2)
