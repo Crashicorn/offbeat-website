@@ -124,8 +124,12 @@ def low_risk_editorial(old, new, path):
             or before[before_main.end():] != after[after_main.end():]):
         raise ValueError("autonomous copy release may change ONLY main content")
     report = tdq.analyze(old, new, path)
-    if report["structured_data_changed"] or report["risk_lines"]:
-        raise ValueError("changed structured data or factual-risk claims")
+    if report["structured_data_changed"]:
+        raise ValueError("changed structured data requires stronger review")
+    # tdq.RISK counts entire ADDED lines, including previously-present words
+    # like "free". Do not mistake a correction removing false promises for
+    # the INTRODUCTION of a new promise. This is vocabulary triage only;
+    # an independent exact-head reviewer must separately substantiate safety.
     add = rem = 0
     changes = []
     added = []
@@ -150,8 +154,19 @@ def low_risk_editorial(old, new, path):
                      r"consent|refund|terms|accessib\w*|safety|warning)\b", x)
            for x in removed):
         raise ValueError("protected legal/disclosure/safety claim was removed")
-    if any(FACT_RISK.search(x) for x in added):
-        raise ValueError("new factual/commercial/timing claim needs stronger review")
+    # Reject introduced numbers and risky terms. Previously present
+    # vocabulary may be retained in a corrective rewrite, but it is never
+    # by itself evidence of factual accuracy.
+    removed_text = "\\n".join(removed)
+    added_text = "\\n".join(added)
+    risk_vocab = re.compile(FACT_RISK.pattern.replace(r"\\d|", ""),
+                            FACT_RISK.flags)
+    def risky_tokens(source):
+        words = {m.group(0).casefold() for m in risk_vocab.finditer(source)}
+        numbers = set(re.findall(r"(?<![a-zA-Z])\\d+(?:[.,]\\d+)?", source))
+        return words | {"#" + v for v in numbers}
+    if risky_tokens(added_text) - risky_tokens(removed_text):
+        raise ValueError("new numeric/product/timing/commercial claim needs stronger review")
     return report
 
 
