@@ -140,8 +140,8 @@ def low_risk_editorial(old, new, path):
     # separate actual signed semantic reviewer proves this is net beneficial.
     # NEVER allow deletion of required disclosure/legal/accessibility/safety
     # language just because it appears on a normal tutorial page.
-    if any(re.search(r"(?i)\\b(?:affiliate|disclos|copyright|privacy|"
-                     r"consent|refund|terms|accessib|safety|warning)\\b", x)
+    if any(re.search(r"(?i)\b(?:affiliate|disclos\w*|copyright|privacy|"
+                     r"consent|refund|terms|accessib\w*|safety|warning)\b", x)
            for x in removed):
         raise ValueError("protected legal/disclosure/safety claim was removed")
     if any(FACT_RISK.search(x) for x in added):
