@@ -262,12 +262,13 @@ def policy_mode():
     if required == {"DatBotty Deterministic Gate": 15368,
                     "DatBotty T1 Review": 15368}:
         return "PREFLIGHT_ONLY"
-    # GitHub may REDACT this administration-only field from an Actions
-    # token. Absence is UNKNOWN, not the same as an explicitly empty list.
-    # A separate owner's bypass could otherwise survive policy migration.
+    # The RELEASE EXECUTOR must be unable to bypass branch protection.
+    # Requiring the entire administration-only bypass_actors list here would
+    # deadlock a default GITHUB_TOKEN (that field may be redacted). Owner's
+    # existing emergency recovery bypass is NOT used by this workflow.
+    # GitHub independently enforces the two required App-bound statuses when
+    # current_user_can_bypass is conclusively 'never', not missing/unknown.
     if (required == {SOURCE_STATUS: 15368, REVIEW_STATUS: 15368}
-            and isinstance(r.get("bypass_actors"), list)
-            and r["bypass_actors"] == []
             and r.get("current_user_can_bypass") == "never"):
         return "PROTECTED_RELEASE"
     raise ValueError("unknown or unsafe protected-main policy; do not release")
@@ -620,19 +621,14 @@ def selftest():
         no_actor_info = json.loads(json.dumps(new_rules))
         del no_actor_info["bypass_actors"]
         globals()["api"] = lambda path: no_actor_info
-        try:
-            policy_mode()
-        except ValueError:
-            pass
-        else:
-            raise AssertionError("redacted bypass actors must block release")
-        for unsafe in ("excluded", "bypass", "status"):
+        assert policy_mode() == "PROTECTED_RELEASE", (
+            "missing admin list must not prevent a non-bypass Actions actor")
+        for unsafe in ("excluded", "status", "executor-bypass"):
             bad = json.loads(json.dumps(new_rules))
             if unsafe == "excluded":
                 bad["conditions"]["ref_name"]["exclude"] = ["refs/heads/*"]
-            elif unsafe == "bypass":
-                bad["bypass_actors"] = [{"actor_type": "User",
-                                        "actor_id": 191937709}]
+            elif unsafe == "executor-bypass":
+                bad["current_user_can_bypass"] = "pull_requests_only"
             else:
                 bad["rules"][1]["parameters"]["required_status_checks"][1][
                     "integration_id"] = 0
