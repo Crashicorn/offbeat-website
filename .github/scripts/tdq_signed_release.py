@@ -343,35 +343,41 @@ def finalize(pr, mode):
     merge_sha = result["sha"]
     print("TDQ_NATIVE_MERGED pr=%d head=%s merge=%s path=%s" %
           (number, sha, merge_sha, path), flush=True)
-    merged = api("commits/" + merge_sha)
-    if [p["sha"] for p in merged.get("parents", [])] != [old, sha]:
-        raise MergedButUnverified("merge occurred but exact protected parentage is UNPROVEN")
-    if api("git/ref/heads/main")["object"]["sha"] != merge_sha:
-        raise MergedButUnverified("merge occurred but protected main moved unexpectedly")
-    # GITHUB_TOKEN-driven merges may suppress normal Pages push builds.
-    build = api("pages/builds", "POST")
-    print("TDQ_PAGES_BUILD_REQUESTED " + str(build.get("status", "accepted")),
-          flush=True)
-    # The remote merge commit is NOT fetched into this Actions checkout.
-    # We already verified protected parentage [old, candidate SHA]; the
-    # candidate's immutable path blob is the published main result.
-    expected = tdq.git("show", sha + ":" + path)
-    url = "https://offbeatinc.com/" + path + "?tdq_verify=" + merge_sha[:12]
-    for attempt in range(12):
-        try:
-            request = urllib.request.Request(
-                url, headers={"User-Agent": "TaskDatty-public-byte-verify/1",
-                              "Cache-Control": "no-cache"})
-            with urllib.request.urlopen(request, timeout=12) as web:
-                actual = web.read(350_001)
-            if actual == expected:
-                print("TDQ_PUBLIC_BYTES_VERIFIED path=" + path +
-                      " merge=" + merge_sha, flush=True)
-                return
-        except (OSError, ValueError) as ex:
-            print("TDQ_PUBLIC_READBACK_RETRY " + type(ex).__name__, flush=True)
-        time.sleep(15)
-    raise MergedButUnverified("MERGED_BUT_LIVE_PAGE_BYTES_UNPROVEN: " + path)
+    try:
+        merged = api("commits/" + merge_sha)
+        if [p["sha"] for p in merged.get("parents", [])] != [old, sha]:
+            raise MergedButUnverified("merge occurred but exact protected parentage is UNPROVEN")
+        if api("git/ref/heads/main")["object"]["sha"] != merge_sha:
+            raise MergedButUnverified("merge occurred but protected main moved unexpectedly")
+        # GITHUB_TOKEN-driven merges may suppress normal Pages push builds.
+        build = api("pages/builds", "POST")
+        print("TDQ_PAGES_BUILD_REQUESTED " + str(build.get("status", "accepted")),
+              flush=True)
+        # The remote merge commit is NOT fetched into this Actions checkout.
+        # We already verified protected parentage [old, candidate SHA]; the
+        # candidate's immutable path blob is the published main result.
+        expected = tdq.git("show", sha + ":" + path)
+        url = "https://offbeatinc.com/" + path + "?tdq_verify=" + merge_sha[:12]
+        for attempt in range(12):
+            try:
+                request = urllib.request.Request(
+                    url, headers={"User-Agent": "TaskDatty-public-byte-verify/1",
+                                  "Cache-Control": "no-cache"})
+                with urllib.request.urlopen(request, timeout=12) as web:
+                    actual = web.read(350_001)
+                if actual == expected:
+                    print("TDQ_PUBLIC_BYTES_VERIFIED path=" + path +
+                          " merge=" + merge_sha, flush=True)
+                    return
+            except (OSError, ValueError) as ex:
+                print("TDQ_PUBLIC_READBACK_RETRY " + type(ex).__name__, flush=True)
+            time.sleep(15)
+        raise MergedButUnverified("MERGED_BUT_LIVE_PAGE_BYTES_UNPROVEN: " + path)
+    except (ValueError, OSError, KeyError,
+            subprocess.CalledProcessError, subprocess.TimeoutExpired) as err:
+        raise MergedButUnverified(
+            "MERGED_BUT_POSTMERGE_EVIDENCE_UNPROVEN: " + type(err).__name__
+        ) from err
 
 
 def selftest():
