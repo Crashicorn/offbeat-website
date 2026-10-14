@@ -312,35 +312,50 @@ def finalize(pr, mode):
     verify_pages_source()
     if policy_mode() != mode:
         raise ValueError("main ruleset changed during candidate check")
-    # Status contexts are issued *only* by this protected GitHub Actions
-    # workflow after verifying candidate bytes and an independent signature.
-    status(sha, SOURCE_STATUS, "success", "Bounded source verified on protected main")
-    status(sha, REVIEW_STATUS, "success", "Distinct-key K11 reviewer signature verified")
-    if mode != "PROTECTED_RELEASE":
-        print("TDQ_PREFLIGHT_SIGNED_STATUSES_PROVEN_NO_MERGE pr=%d head=%s" %
-              (number, sha), flush=True)
-        return
-    # GitHub GITHUB_TOKEN does NOT retrigger workflows after 'ready'. This
-    # same execution must finish release without waiting on generated events.
-    now = api("pulls/" + str(number))
-    if now.get("draft") is True:
-         # gh pr ready uses GraphQL, not the REST PR PATCH above.
-        p = subprocess.run(["gh", "pr", "ready", str(number), "-R", REPO],
-                           capture_output=True, text=True, timeout=35)
-        if p.returncode:
-            raise ValueError("provider refused moving approved draft to ready")
-    # Re-evaluate immutable branch/head/base/label/signature and active rules
-    # immediately before the atomic native provider merge.
-    if check(pr)[:3] != (number, sha, old):
-        raise ValueError("candidate or review changed before provider merge")
-    if policy_mode() != "PROTECTED_RELEASE":
-        raise ValueError("protected release authority removed before merge")
-    result = api("pulls/" + str(number) + "/merge", "PUT", {
-        "sha": sha, "merge_method": "merge",
-        "commit_title": "Protected signed local TDQ editorial release (#%d)" % number})
-    if not result.get("merged"):
-        raise ValueError("native protected GitHub merge refused")
-    merge_sha = result["sha"]
+    # Only a protected GitHub Actions identity may mint these statuses.
+    # Never leave a green release token on an OPEN draft after preflight or
+    # a failed native merge; native check state otherwise outlives review TTL.
+    native_merged = False
+    try:
+        status(sha, SOURCE_STATUS, "success", "Bounded source verified on protected main")
+        status(sha, REVIEW_STATUS, "success", "Distinct-key K11 reviewer signature verified")
+        if mode != "PROTECTED_RELEASE":
+            status(sha, SOURCE_STATUS, "pending", "Preflight proven; native release not authorized")
+            status(sha, REVIEW_STATUS, "pending", "Independent review preflight only")
+            print("TDQ_PREFLIGHT_SIGNED_STATUSES_PROVEN_NO_MERGE pr=%d head=%s" %
+                  (number, sha), flush=True)
+            return
+        # GITHUB_TOKEN changes do not retrigger workflows. This SAME trusted
+        # run marks ready and performs its guarded normal provider merge.
+        now = api("pulls/" + str(number))
+        if now.get("draft") is True:
+            ready = subprocess.run(["gh", "pr", "ready", str(number),
+                                    "-R", REPO], capture_output=True,
+                                   text=True, timeout=35)
+            if ready.returncode:
+                raise ValueError("provider refused approved draft transition")
+        if check(pr)[:3] != (number, sha, old):
+            raise ValueError("candidate or signed review changed before merge")
+        if policy_mode() != "PROTECTED_RELEASE":
+            raise ValueError("protected release authority removed before merge")
+        result = api("pulls/" + str(number) + "/merge", "PUT", {
+            "sha": sha, "merge_method": "merge",
+            "commit_title": "Protected signed local TDQ editorial release (#%d)" % number})
+        if not result.get("merged") or not SHA.fullmatch(result.get("sha") or ""):
+            raise ValueError("native protected GitHub merge was not confirmed")
+        native_merged = True
+        merge_sha = result["sha"]
+    except (ValueError, KeyError, TypeError, OSError,
+            subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        if not native_merged:
+            # Best effort revocation; a subsequent scheduled scan will also
+            # clear any dangling green statuses after a runner interruption.
+            for context in (SOURCE_STATUS, REVIEW_STATUS):
+                try:
+                    status(sha, context, "failure", "No completed authorized merge")
+                except (OSError, ValueError):
+                    pass
+        raise
     print("TDQ_NATIVE_MERGED pr=%d head=%s merge=%s path=%s" %
           (number, sha, merge_sha, path), flush=True)
     try:
