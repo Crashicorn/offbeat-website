@@ -26,6 +26,8 @@ import tdq_draft_triage as tdq
 REPO = "CrashyCrash/offbeat-website"
 RELEASE = "tdq-editorial-release"
 HOLD = "tdq-release-hold"
+STATUS_LEDGER_ISSUE = 838
+STATUS_LEDGER_ENTRY = re.compile(r"TDQ_GREEN_V1 pr=([1-9][0-9]*) head=([0-9a-f]{40})\\Z")
 SOURCE_STATUS = "TDQ Verified Editorial Source"
 REVIEW_STATUS = "TDQ Signed Independent Review"
 PUBLIC_KEY = Path(__file__).with_name("reviewer-public.pem")
@@ -321,6 +323,9 @@ def finalize(pr, mode):
     # a failed native merge; native check state otherwise outlives review TTL.
     native_merged = False
     try:
+        # Persist every success-authorized SHA BEFORE minting the first
+        # green commit status; closed/renamed PRs remain discoverable.
+        register_status_head(number, sha)
         status(sha, SOURCE_STATUS, "success", "Bounded source verified on protected main")
         status(sha, REVIEW_STATUS, "success", "Distinct-key K11 reviewer signature verified")
         if mode != "PROTECTED_RELEASE":
@@ -643,30 +648,61 @@ def selftest():
     print("TDQ_SIGNED_GATE_SELFTEST_OK")
 
 
-def revoke_stale_open_statuses(prs):
-    """Remove durable greens from crashed/interrupted earlier merge attempts.
+def ledger_issued_heads():
+    """Durable trusted GitHub Actions ledger of EVERY success-issued SHA.
 
-    GitHub commit statuses have no built-in TTL; an unmerged PR must NEVER
-    retain green source/review checks between scheduled runs.
+    A PR may have been closed, renamed, rewritten or rebased since the status
+    was issued. Therefore neither current open PRs nor current head refs can
+    reliably enumerate candidates needing a status revocation.
     """
-    for pr in prs:
-        head = pr.get("head") or {}
-        sha = head.get("sha") or ""
-        if (pr.get("state") != "open" or not SHA.fullmatch(sha)
-                or not BRANCH.fullmatch(head.get("ref") or "")
-                or (head.get("repo") or {}).get("full_name") != REPO):
-            continue
-        combined = api("commits/" + sha + "/status")
-        current = {}
-        # GitHub returns statuses newest-first. Reverse to select the last
-        # current state for each protected context.
-        for item in reversed(combined.get("statuses") or []):
+    issued = set()
+    for page in range(1, 41):
+        comments = api("issues/%d/comments?per_page=100&page=%d" %
+                       (STATUS_LEDGER_ISSUE, page))
+        if not isinstance(comments, list):
+            raise ValueError("protected status ledger unreadable")
+        for comment in comments:
+            author = (comment.get("user") or {}).get("login")
+            if author != "github-actions[bot]":
+                continue
+            record = STATUS_LEDGER_ENTRY.fullmatch(
+                (comment.get("body") or "").strip())
+            if record:
+                issued.add(record.group(2))
+        if len(comments) < 100:
+            return issued
+    # Never pretend all green SHAs were swept after truncated pagination.
+    raise ValueError("protected status ledger exceeded bounded pagination")
+
+
+def register_status_head(pr, sha):
+    if not SHA.fullmatch(sha) or not isinstance(pr, int) or pr < 1:
+        raise ValueError("invalid SHA or PR for protected status ledger")
+    if sha not in ledger_issued_heads():
+        api("issues/%d/comments" % STATUS_LEDGER_ISSUE, "POST", {
+            "body": "TDQ_GREEN_V1 pr=%d head=%s" % (pr, sha)})
+    # A failed write means statuses MUST NOT be issued. A later scheduled scan
+    # always has this durable SHA even if run is killed between green+merge.
+
+
+def revoke_ledger_statuses():
+    """Invalidate every old success SHA, regardless of PR state or ref name."""
+    for sha in sorted(ledger_issued_heads()):
+        combined = api("commits/" + sha + "/status?per_page=100")
+        statuses = combined.get("statuses") or []
+        if not isinstance(statuses, list) or len(statuses) >= 100:
+            raise ValueError("protected status history unbounded")
+        states = {}
+        # API orders statuses newest-first; reverse to choose last context
+        # state. Ignore other repositories' standard GitHub status contexts.
+        for item in reversed(statuses):
             if item.get("context") in (SOURCE_STATUS, REVIEW_STATUS):
-                current[item["context"]] = item.get("state")
+                states[item["context"]] = item.get("state")
         for context in (SOURCE_STATUS, REVIEW_STATUS):
-            if current.get(context) == "success":
-                status(sha, context, "pending", "Expired open-PR release receipt revalidation")
-                print("TDQ_STALE_STATUS_INVALIDATED head=" + sha[:12] +
+            if states.get(context) == "success":
+                status(sha, context, "pending",
+                       "Expired/withdrawn signed review status requires new gate")
+                print("TDQ_LEDGER_STATUS_INVALIDATED sha=" + sha[:12] +
                       " context=" + context, flush=True)
 
 
@@ -684,7 +720,7 @@ def main():
     prs = api("pulls?state=open&per_page=100")
     if len(prs) >= 100:
         raise ValueError("unbounded PR inventory")
-    revoke_stale_open_statuses(prs)
+    revoke_ledger_statuses()
     for pr in sorted(prs, key=lambda x: x["number"]):
         if (not (pr.get("head") or {}).get("ref", "").startswith("tdq/proof-auto-")
                 or RELEASE not in {x.get("name") for x in pr.get("labels", [])}
