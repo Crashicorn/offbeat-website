@@ -22,9 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: main
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Reset to exact base commit
+        run: |
+          git reset --hard ${{ github.event.pull_request.base.sha }}
 
       - name: Self-test protected Gate v2 source
         run: |
@@ -40,16 +44,20 @@ jobs:
         run: |
           set -euo pipefail
           status() {
-            gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA"               -f state="$1" -f context="$2"               -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >/dev/null
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+              -f state="$1" -f context="$2" \
+              -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >/dev/null
           }
           status pending 'DatBotty Deterministic Gate'
           status pending 'DatBotty T1 Review'
           trap "status failure 'DatBotty Deterministic Gate'; status failure 'DatBotty T1 Review'" ERR
           git fetch --no-tags origin "pull/${PR_NUMBER}/head:refs/datbotty-gate/head"
-          python3 .github/scripts/datbotty_gate_v2.py             --repo . --event "$GITHUB_EVENT_PATH" --head "$HEAD_SHA" --mode deterministic
+          python3 .github/scripts/datbotty_gate_v2.py \
+            --repo . --event "$GITHUB_EVENT_PATH" --head "$HEAD_SHA" --mode deterministic
           status success 'DatBotty Deterministic Gate'
           trap "status failure 'DatBotty T1 Review'" ERR
-          python3 .github/scripts/datbotty_gate_v2.py             --repo . --event "$GITHUB_EVENT_PATH" --head "$HEAD_SHA" --mode t1
+          python3 .github/scripts/datbotty_gate_v2.py \
+            --repo . --event "$GITHUB_EVENT_PATH" --head "$HEAD_SHA" --mode t1
           status success 'DatBotty T1 Review'
 
   merge:
@@ -67,9 +75,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: main
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Reset to exact base commit
+        run: |
+          git reset --hard ${{ github.event.pull_request.base.sha }}
+
       - name: Merge only the unchanged approved candidate
         env:
           GH_TOKEN: ${{ github.token }}
