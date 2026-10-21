@@ -21,6 +21,19 @@ function hasGaCookie(c) { return /(^|; )(_ga|_ga_9MG87ETLPT)=/.test(c || ''); }
 function configs(o) { return (o && o.gtagLog ? o.gtagLog : []).filter(e => e[0] === 'config').map(e => e[2] || {}); }
 function evLog(o) { return JSON.stringify((o && o.gtagLog) || []); }
 function events(o) { return ((o && o.gtagLog) || []).filter(e => e[0] === 'event'); }
+// Consent Mode v2: explicit default (all four denied) -> explicit update
+// (analytics granted, ad types denied) -> exactly this order, before config.
+function seqAsserts(label, o) {
+  const log = (o && o.gtagLog) || [];
+  const iDefault = log.findIndex(e => e[0] === 'consent' && e[1] === 'default');
+  const iUpdate = log.findIndex(e => e[0] === 'consent' && e[1] === 'update' && e[2] && e[2].analytics_storage === 'granted');
+  const iCfg = log.findIndex(e => e[0] === 'config');
+  const d = iDefault >= 0 ? log[iDefault][2] : null;
+  const u = iUpdate >= 0 ? log[iUpdate][2] : null;
+  assert(label + ': consent default declared with all four types denied', iDefault !== -1 && d && d.ad_storage === 'denied' && d.ad_user_data === 'denied' && d.ad_personalization === 'denied' && d.analytics_storage === 'denied', d);
+  assert(label + ': explicit update grants analytics_storage, keeps ad types denied', iUpdate !== -1 && u && u.analytics_storage === 'granted' && u.ad_storage === 'denied' && u.ad_user_data === 'denied' && u.ad_personalization === 'denied', u);
+  assert(label + ': command order default -> update -> config', iDefault !== -1 && iUpdate !== -1 && iCfg !== -1 && iDefault < iUpdate && iUpdate < iCfg, { iDefault, iUpdate, iCfg });
+}
 
 console.log('--- fresh (no consent) ---');
 let o = load('fresh');
@@ -48,6 +61,7 @@ assert('page_location has NO query token/email', cA[0] && /secret-token|email=|e
 assert('page_location is path-only (no ? or #)', cA[0] && !/[?#]/.test(cA[0].page_location || ''), cA[0] && cA[0].page_location);
 assert('page_referrer omitted (empty)', cA[0] && cA[0].page_referrer === '', cA[0] && cA[0].page_referrer);
 assert('page_title bounded <=80', cA[0] && (cA[0].page_title || '').length <= 80, cA[0] && cA[0].page_title);
+seqAsserts('accept', o);
 assert('GA cookie set ONLY after consent', o && hasGaCookie(o.cookies), o && o.cookies);
 assert('no real Google fetch (stubbed locally)', o && (o.googleResources || []).length === 0, o && o.googleResources);
 
@@ -57,6 +71,7 @@ const cP = configs(o);
 assert('prior consent honored on reload', o && o.consentState === 'granted', o && o.consentState);
 assert('exactly ONE config on reload', cP.length === 1, o && o.gtagLog);
 assert('minimized pageview on reload (path-only)', cP[0] && !/[?#]/.test(cP[0].page_location || ''), cP[0] && cP[0].page_location);
+seqAsserts('preset-granted', o);
 assert('GA cookie present (from prior consent)', o && hasGaCookie(o.cookies), o && o.cookies);
 
 console.log('\n--- preset-denied (reload after prior deny / after withdrawal) ---');
@@ -70,8 +85,8 @@ assert('can still turn on (revisit) shown', o && o.ui.buttons.includes('Turn on 
 console.log('\n--- withdraw ---');
 o = load('withdraw');
 assert('consent denied after withdraw', o && o.consentState === 'denied', o && o.consentState);
-const up = (o && o.gtagLog ? o.gtagLog : []).filter(e => e[0] === 'consent' && e[1] === 'update');
-assert('consent UPDATE issued (analytics_storage denied)', up.length === 1 && up[0][2] && up[0][2].analytics_storage === 'denied', o && o.gtagLog);
+const ups = (o && o.gtagLog ? o.gtagLog : []).filter(e => e[0] === 'consent' && e[1] === 'update');
+assert('final consent UPDATE is a full denial (analytics + ad types)', ups.length >= 1 && ups[ups.length - 1][2] && ups[ups.length - 1][2].analytics_storage === 'denied' && ups[ups.length - 1][2].ad_storage === 'denied' && ups[ups.length - 1][2].ad_user_data === 'denied' && ups[ups.length - 1][2].ad_personalization === 'denied', o && o.gtagLog);
 assert('first-party _ga cookie cleared on withdraw', o && !hasGaCookie(o.cookies), o && o.cookies);
 
 console.log('\n--- secret-query (?q=...&email=...) ---');

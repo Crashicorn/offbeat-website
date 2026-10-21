@@ -666,19 +666,29 @@ footer{background:#08080d!important;border-top:1px solid rgba(124,58,237,.25)!im
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
-/* Offbeat GA4 consent choice (assets/offbeat-analytics.js renders this). */
-.ob-consent{position:fixed;left:1rem;right:1rem;bottom:1rem;max-width:520px;
-  margin:0 auto;z-index:1001;display:flex;flex-direction:column;gap:.7rem;
-  background:#0f1117;color:#f4f4f6;border:1px solid rgba(255,255,255,.14);
-  border-radius:12px;padding:1rem 1.1rem;box-shadow:0 12px 40px rgba(0,0,0,.45);}
-.ob-consent:focus{outline:2px solid var(--accent-2);outline-offset:2px;}
-.ob-consent-text{margin:0;font-size:.92rem;line-height:1.45;color:#e7e7ee;}
-.ob-consent-actions{display:flex;flex-wrap:wrap;gap:.55rem;}
-.ob-consent-btn{appearance:none;border:1px solid rgba(255,255,255,.22);
-  background:rgba(255,255,255,.06);color:#f4f4f6;font:inherit;font-weight:600;
-  padding:.55rem .9rem;border-radius:9px;cursor:pointer;line-height:1;}
-.ob-consent-btn:hover{background:rgba(255,255,255,.12);}
+/* Offbeat GA4 consent control (rendered by assets/offbeat-analytics.js).
+   Unobtrusive by construction: before a choice it is a small bottom-right card;
+   after a choice it collapses to a compact one-line pill so it never permanently
+   obscures content. Accessible: native buttons, visible focus, no motion. */
+.ob-consent{position:fixed;left:auto;right:1rem;bottom:1rem;z-index:1001;
+  max-width:380px;display:flex;flex-direction:column;gap:.6rem;
+  background:rgba(15,17,23,.97);color:#f4f4f6;border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;padding:.75rem .9rem;box-shadow:0 12px 40px rgba(0,0,0,.45);}
+.ob-consent--pill{max-width:none;flex-direction:row;flex-wrap:wrap;align-items:center;gap:.35rem .6rem;
+  padding:.4rem .65rem;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.38);}
+.ob-consent:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;}
+.ob-consent-text{margin:0;font-size:.88rem;line-height:1.45;color:#e7e7ee;}
+.ob-consent--pill .ob-consent-text{font-size:.8rem;color:#d8d8e2;}
+.ob-consent-actions{display:flex;flex-wrap:wrap;gap:.5rem;}
+.ob-consent-btn{appearance:none;border:1px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.07);color:#f4f4f6;font:inherit;font-weight:600;
+  padding:.5rem .85rem;border-radius:9px;cursor:pointer;line-height:1;}
+.ob-consent--pill .ob-consent-btn{padding:.3rem .55rem;font-size:.78rem;border-radius:7px;}
+.ob-consent-btn:hover{background:rgba(255,255,255,.14);}
 .ob-consent-btn:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px;}
-@media (max-width:640px){.ob-consent{left:.4rem;right:.4rem;}
+@media (max-width:640px){.ob-consent{left:.5rem;right:.5rem;max-width:none;}
   .ob-consent-actions{flex-direction:column;}
-  .ob-consent-btn{width:100%;}}
+  .ob-consent-btn{width:100%;}
+  .ob-consent--pill .ob-consent-actions{flex-direction:row;}
+  .ob-consent--pill .ob-consent-btn{width:auto;}}
+@media (prefers-reduced-motion: reduce){.ob-consent,.ob-consent-btn{transition:none;}}

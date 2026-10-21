@@ -12,33 +12,50 @@
  * history) from running at all — is to NOT LOAD THE GOOGLE TAG until the visitor
  * affirmatively allows analytics. Basic-consent semantics are enforced by omission:
  *
- *   NO CONSENT / REJECT / WITHDRAW  ->  no gtag.js is injected, no request to
+ *   NO CONSENT / REJECT             ->  no gtag.js is injected, no request to
  *                                       Google, no _ga cookie is created. (Zero.)
  *   CONSENT                         ->  one minimized pageview (path-only URL,
  *                                       NO referrer, a short static title) plus an
  *                                       allowlisted "affiliate_click" event that
  *                                       records only merchant/category.
+ *   WITHDRAW                        ->  explicit consent denial, GA cookies
+ *                                       expired, then ONE teardown reload so the
+ *                                       loaded tag is destroyed and never loads
+ *                                       again (see withdraw below).
  *
  * What this file explicitly does AND does NOT do:
  *   - We minimize the one pageview we do send (page_location = origin+path only;
  *     page_referrer omitted; page_title bounded and sanitized).
  *   - We use a CLOSED allowlist for custom events (event names + field names +
  *     allowed enum values). URLs, query strings, free text and unknown values are
- *     dropped by construction — not a denylist of known-Pii names.
+ *     dropped by construction — not a denylist of known-PII names.
+ *   - We declare Consent Mode v2 EXPLICITLY, in the documented order, whenever the
+ *     tag loads (which only happens after consent):
+ *         gtag('consent','default', { ad_storage, ad_user_data,
+ *             ad_personalization: 'denied', analytics_storage: 'denied' })
+ *         -> the real gtag.js loads and processes the queued commands in order
+ *         -> gtag('consent','update', { analytics_storage: 'granted',
+ *             ad_storage / ad_user_data / ad_personalization: 'denied' })
+ *         -> gtag('js') + ONE minimized gtag('config') pageview.
+ *     We NEVER grant the advertising consent types, and analytics_storage is
+ *     'granted' only in that explicit, consent-driven update — never an
+ *     unconditional default.
  *   - We remember the visitor's choice in first-party localStorage and honor it on
- *     every page/reload; withdrawal stops further sends and clears first-party GA
- *     cookies we may have set this session.
- *   - We do NOT set an unconditional `analytics_storage: granted` (see the "no
- *     unconditional grant" requirement). Consented means "we loaded the tag after
- *     the visitor opted in".
+ *     every page/reload. Withdrawal issues an explicit consent denial, expires the
+ *     first-party GA cookies, and — because a LOADED consent-denied tag can still
+ *     emit cookieless pings (documented Google behavior for a loaded tag) — does a
+ *     single clean teardown reload so the loaded tag is destroyed and, with the
+ *     denial persisted, is never loaded on that or any later page.
  *   - We do NOT and CANNOT disable Google Enhanced Measurement from source. That is
- *     a GA4 property/dashboard setting (Owner action: Admin -> Data collection and
- *     modification -> Data streams -> Offbeat web stream G-9MG87ETLPT -> Enhanced
- *     measurement: disable Site search, Outbound clicks, and history-based Page
- *     views for this static site). This file works with either setting; it never
- *     claims to change it.
+ *     a GA4 property/dashboard setting managed by the owner (Admin -> Data
+ *     collection and modification -> Data streams -> G-9MG87ETLPT -> Enhanced
+ *     measurement). As of October 2026 the owner has it configured for this static
+ *     site as: page-load-based Page views ON; site-search, outbound clicks,
+ *     browser-history page changes, scroll, videos, file downloads and forms OFF.
+ *     This file works with the setting as configured and never claims to change it.
  *   - We do NOT promise absolute absence of PII. Google collects some standard
- *     telemetry once a visitor has consented (that is why consent gates it).
+ *     (at best pseudonymous — browser/device details, IP handled per Google policy)
+ *     telemetry once a visitor has consented, which is exactly why consent gates it.
  *
  * No new Google account, property or credential. No other site. DRAFT change.
  */
@@ -122,10 +139,15 @@
     } catch (e) { /* never break the page */ }
   };
 
-  /* ---- consent UI (small, accessible, non-blocking, no dark patterns) -----
-   * All buttons are real <button>s with clear, equal-prominence labels; the
-   * site stays fully usable with analytics off. */
+  /* ---- consent UI (small, accessible, non-blocking, no dark patterns) ------
+   * Before a choice: one compact bottom-right card with equal-prominence
+   * "Allow analytics" / "Do not allow". After a choice: the control collapses
+   * to a compact single-line pill (status + actions) so it never permanently
+   * obscures content. The region keeps role="region" + aria-live so state
+   * changes are announced; every action is a native, keyboard-focusable
+   * <button>; the site stays fully usable with analytics off. */
   var UI = null;
+  var UI_IN_BODY = false;
   function el(tag, attrs, text) {
     var n = document.createElement(tag);
     if (attrs) { for (var a in attrs) { if (a.charAt(0) === 'o' && a.charAt(1) === 'n' && typeof attrs[a] === 'function') { n[a] = attrs[a]; } else { n.setAttribute(a, attrs[a]); } } }
@@ -137,38 +159,64 @@
     b.addEventListener('click', function () { handle(action); });
     return b;
   }
+  function ensureUI() {
+    if (!document.body) return null;
+    if (UI && UI_IN_BODY) return UI;
+    if (UI && UI.parentNode) { try { UI.parentNode.removeChild(UI); } catch (e) { } }
+    UI = el('div', { 'class': 'ob-consent', role: 'region', 'aria-label': 'Offbeat analytics consent', 'aria-live': 'polite' });
+    document.body.appendChild(UI);
+    UI_IN_BODY = true;
+    return UI;
+  }
   function refresh(consent) {
-    if (!document.body) return;
-    if (UI && UI.parentNode) UI.parentNode.removeChild(UI); UI = null;
-    UI = el('div', { 'class': 'ob-consent', role: 'region', 'aria-label': 'Analytics choice (Offbeat)', 'aria-live': 'polite' });
-    var p = el('p', { 'class': 'ob-consent-text' });
+    var box = ensureUI();
+    if (!box) return;
+    var pill = (consent === 'granted' || consent === 'denied');
+    box.setAttribute('class', 'ob-consent' + (pill ? ' ob-consent--pill' : ''));
+    var p = el('span', { 'class': 'ob-consent-text' });
     var row = el('div', { 'class': 'ob-consent-actions' });
     if (consent === 'unknown') {
-      p.textContent = 'Allow Offbeat to collect anonymous usage analytics to help us improve the guides? We limit what is sent to minimal page-level information (which guide you viewed). You can change or withdraw this choice at any time.';
+      p.textContent = 'Allow Offbeat to use Google Analytics to see which guides are helpful? With your consent we send only minimal page-level data — the path of the page you viewed, plus the standard pseudonymous browser and device details Google attaches to analytics hits. You can change or withdraw this choice at any time.';
       row.appendChild(button('Allow analytics', 'grant'));
       row.appendChild(button('Do not allow', 'deny'));
+    } else if (consent === 'reask') {
+      p.textContent = 'Change your analytics choice. If you switch off, we stop analytics, clear Google’s analytics cookies, and reload the page once so the analytics tag is fully removed.';
+      row.appendChild(button('Allow analytics', 'grant'));
+      row.appendChild(button('Do not allow (withdraw)', 'withdraw'));
     } else if (consent === 'denied') {
-      p.textContent = 'Analytics is off for you.';
+      p.textContent = 'Analytics is off.';
       row.appendChild(button('Turn on analytics', 'grant'));
     } else { // granted
       p.textContent = 'Analytics is on (minimal page-level data only).';
       row.appendChild(button('Change choice', 'reask'));
       row.appendChild(button('Withdraw consent', 'withdraw'));
     }
-    UI.appendChild(p); UI.appendChild(row);
-    document.body.appendChild(UI);
-    if (consent === 'unknown') { UI.setAttribute('tabindex', '-1'); try { UI.focus({ preventScroll: true }); } catch (e) { } }
+    while (box.firstChild) box.removeChild(box.firstChild);
+    box.appendChild(p); box.appendChild(row);
   }
 
-  // Stop active sends if we had booted gtag this session, and clear 1st-party GA cookies.
-  function revokeActive() {
-    try { if (typeof window.gtag === 'function') {
-      window.gtag('consent', 'update', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
-    } } catch (e) { }
-    // GA sets first-party cookies named `_ga` plus `_ga_<id>` / `_ga4_<id>` where
-    // <id> is the measurement id WITHOUT the `G-` prefix (confirmed by the
-    // reviewer's real-Chromium capture: `_ga` and `_ga_9MG87ETLPT`). Expire all
-    // plausible variants to avoid stale-consent / cookie leakage.
+  /* ---- withdrawal: explicit denial + cookie expiry + clean teardown --------
+   * A loaded, consent-denied Google tag can still emit cookieless pings
+   * (documented behavior for a LOADED tag — that is the "advanced-like" path we
+   * must not rely on after a denial). So after the explicit denial and cookie
+   * expiry we do ONE teardown reload: the loaded tag is destroyed with the
+   * document, and because the denial is persisted in localStorage, the Google
+   * tag is never loaded on that page or any later page. Basic-mode zero-egress
+   * semantics are thereby enforced by construction, not by hope.
+   * (The reload only runs when the REAL tag is active; local test seams stand in
+   * for the tag and do not need it.) */
+  function denyAndTeardown() {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          ad_storage: 'denied', ad_user_data: 'denied',
+          ad_personalization: 'denied', analytics_storage: 'denied'
+        });
+      }
+    } catch (e) { }
+    // GA sets first-party cookies named `_ga` plus `_ga_<id>` where <id> is the
+    // measurement id WITHOUT the `G-` prefix (confirmed by real-Chromium
+    // capture: `_ga` and `_ga_9MG87ETLPT`). Expire all plausible variants.
     var mid = String(PROPERTY).replace(/^G-/, '');
     ['_ga', '_ga_' + mid, '_ga4_' + mid, '_ga_' + PROPERTY, '_ga4_' + PROPERTY].forEach(function (c) {
       try { document.cookie = c + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; } catch (e) { }
@@ -177,17 +225,34 @@
 
   function handle(action) {
     if (action === 'grant') { writeConsent('granted'); applyConsent('granted'); }
-    else if (action === 'deny') { writeConsent('denied'); applyConsent('denied'); }
-    else if (action === 'withdraw') { writeConsent('denied'); revokeActive(); applyConsent('denied'); }
-    else if (action === 'reask') { refresh('unknown'); } // let them pick again without changing the store yet
+    else if (action === 'deny') { writeConsent('denied'); refresh('denied'); }
+    else if (action === 'withdraw') {
+      writeConsent('denied');
+      denyAndTeardown();
+      if (window.__obGtagBooted && !window.__OFFBEAT_ANALYTICS_TEST) {
+        refresh('denied'); // announce the state before the document goes away
+        try { window.setTimeout(function () { try { window.location.reload(); } catch (e) { } }, 400); } catch (e) { }
+      }
+    }
+    else if (action === 'reask') { refresh('reask'); } // re-choose without changing the store yet
   }
 
-  // Load + measure ONLY after affirmative consent. Idempotent (one tag, one config).
+  // Load + measure ONLY after affirmative consent. Idempotent (one tag, one
+  // config). Explicit Consent Mode v2 declarations, in the documented order
+  // (defaults first, updated state second, then collection):
   function bootGtag() {
     if (window.__obGtagBooted) return;
     window.__obGtagBooted = true;
-    // TEST SEAM ONLY (used by local Chromium capture tests in tests/). In production
-    // this is undefined, so the real Google tag is injected below. Not a gate bypass.
+    // 1) Explicit Consent Mode v2 default — all four consent types denied.
+    //     Queued via the stub BEFORE the tag loads; the real tag processes it
+    //     first (basic-mode order: default, then the updated state).
+    window.gtag('consent', 'default', {
+      ad_storage: 'denied', ad_user_data: 'denied',
+      ad_personalization: 'denied', analytics_storage: 'denied'
+    });
+    // 2) Load the Google tag (a local test seam may substitute for the fetch;
+    //     in production the real gtag.js is injected and sends these queued
+    //     consent commands in order).
     var hook = window.__OFFBEAT_ANALYTICS_TEST;
     if (hook && typeof hook.inject === 'function') { hook.inject(); }
     else if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
@@ -196,8 +261,14 @@
       s.onerror = function () { /* blocked: page still works */ };
       (document.head || document.documentElement).appendChild(s);
     }
+    // 3) Explicit update — the visitor affirmed consent, so grant analytics;
+    //    the three advertising consent types remain denied.
+    window.gtag('consent', 'update', {
+      ad_storage: 'denied', ad_user_data: 'denied',
+      ad_personalization: 'denied', analytics_storage: 'granted'
+    });
     window.gtag('js', new Date());
-    // One minimized pageview. No referrer. Bounded static title.
+    // 4) One minimized pageview. No referrer. Bounded static title.
     window.gtag('config', PROPERTY, {
       send_page_view: true,
       page_location: safePath(),
