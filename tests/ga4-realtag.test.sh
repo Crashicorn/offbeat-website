@@ -16,7 +16,7 @@
 #   T6 outbound link leak-free        T7 history no double view
 #   T8 UI/a11y (compact, accessible, honest)
 #
-# Requires: google-chrome, Node >= 20, outbound HTTPS to
+# Requires: google-chrome, Node >= 22, outbound HTTPS to
 # www.googletagmanager.com (to fetch the real tag).
 #
 # Exits 0 on all-pass, 1 on any failure.

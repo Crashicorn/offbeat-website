@@ -106,7 +106,7 @@ async function startScenario(idx, pageUrl) {
     '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
     '--window-size=1280,900', '--disable-dev-shm-usage',
     '--user-data-dir=' + prof, '--remote-debugging-port=' + port,
-    pageUrl
+    'about:blank' // install interception BEFORE any site navigation
   ], { stdio: 'ignore' });
 
   const cleanup = async () => {
@@ -338,13 +338,14 @@ async function main() {
     await sleep(SETTLE);
     const win = s.ctx.captures.slice(preCount);
     console.log('  info  T4 captures between click and reload: ' + win.length + (win.length ? ' -> ' + win.map(c => (c.url || '').slice(0, 120)).join(' | ') : ' (none)'));
+    assert('T4 window click->reload: ZERO collection requests', win.length === 0, win);
     assert('T4 window click->reload: nothing carries the secret token', win.map(capText).join('\n').indexOf(SECRET) === -1, win.slice(0, 3).map(c => c.url));
     const mid = await s.state();
     const midCount = s.ctx.captures.length;
     assert('T4 reloaded document: tag NOT loaded', mid.tagLoaded === false || mid.tagLoaded === undefined, mid.tagLoaded);
     assert('T4 reloaded document: _ga cookie GONE', !hasGaCookie(mid.cookie), mid.cookie);
     assert('T4 reloaded document: consent persisted as denied', mid.consentState === 'denied', mid.consentState);
-    assert('T4 reloaded document: dataLayer has no consent/config (tag never ran)', parseDL(mid.dataLayer).filter(e => Array.isArray(e) && (e[0] === 'config' || (e[0] === 'consent' && e[1] === 'default'))).length === 0, mid.dataLayer);
+    assert('T4 reloaded document: dataLayer has no consent/config (tag never ran)', parseDL(mid.dataLayer).map(ent).filter(e => e && (e[0] === 'config' || (e[0] === 'consent' && e[1] === 'default'))).length === 0, mid.dataLayer);
     // Try to make the (supposedly dead) analytics send anything:
     await s.evalJs('(function () { if (typeof window.offbeatTrack === "function") window.offbeatTrack("affiliate_click", { merchant: "zzounds", category: "headphone" }); return "ok"; })()');
     await s.evalJs('(function () { try { history.pushState({}, "", "/after-withdraw.html"); } catch (e) { } window.dispatchEvent(new PopStateEvent("popstate")); return "ok"; })()');
@@ -384,7 +385,7 @@ async function main() {
     assert('T5 tag loaded on the second page too', st2.tagLoaded === true, { tagLoaded: st2.tagLoaded, caps: s.ctx.captures.length });
     assert('T5 pageview for page 1 captured (decoded)', /index\.html/.test(allText), s.ctx.captures.map(c => c.url).slice(0, 4).map(u => u.slice(0, 90)));
     assert('T5 pageview for page 2 captured (decoded)', got2 && /best-dj-mixers-beginners\.html/.test(allText), s.ctx.captures.map(c => c.url).slice(0, 6).map(u => u.slice(0, 90)));
-    assert('T5 at least one page_view per page', (allText.match(/page_view|PAGE_VIEW/g) || []).length >= 2, (allText.match(/page_view|PAGE_VIEW/g) || []).length);
+    assert('T5 exactly one page_view per page (two total)', s.ctx.captures.filter(c => /(?:[?&]|^)en=page_view(?:&|$)/.test((c.url || '') + '&' + (c.postData || ''))).length === 2, (allText.match(/page_view|PAGE_VIEW/g) || []).length);
     assert('T5 _ga cookie persists across pages', hasGaCookie(st2.cookie), st2.cookie);
     await s.cleanup();
   }

@@ -62,6 +62,8 @@
 (function () {
   'use strict';
   if (typeof window === 'undefined') return;
+  if (window.__obConsentLoaderInstalled) return;
+  window.__obConsentLoaderInstalled = true;
 
   var PROPERTY = 'G-9MG87ETLPT';
   var GA_SRC = 'https://www.googletagmanager.com/gtag/js?id=' + PROPERTY;
@@ -126,6 +128,7 @@
   window.offbeatTrack = function (name, params) {
     try {
       if (readConsent() !== 'granted') return;                 // never transmit before consent
+      if (!Object.prototype.hasOwnProperty.call(EVENTS, String(name))) return;
       var spec = EVENTS[String(name)];
       if (!spec) return;                                         // allowlist: unknown event dropped
       params = (params && typeof params === 'object') ? params : {};
@@ -191,8 +194,10 @@
       row.appendChild(button('Change choice', 'reask'));
       row.appendChild(button('Withdraw consent', 'withdraw'));
     }
+    var restoreFocus = box.contains && box.contains(document.activeElement);
     while (box.firstChild) box.removeChild(box.firstChild);
     box.appendChild(p); box.appendChild(row);
+    if (restoreFocus && row.firstChild) row.firstChild.focus();
   }
 
   /* ---- withdrawal: explicit denial + cookie expiry + clean teardown --------
@@ -214,26 +219,42 @@
         });
       }
     } catch (e) { }
-    // GA sets first-party cookies named `_ga` plus `_ga_<id>` where <id> is the
-    // measurement id WITHOUT the `G-` prefix (confirmed by real-Chromium
-    // capture: `_ga` and `_ga_9MG87ETLPT`). Expire all plausible variants.
+    clearGaCookies();
+  }
+
+  function clearGaCookies() {
     var mid = String(PROPERTY).replace(/^G-/, '');
+    var domains = ['']; // host-only cookies, including older installations
+    var host = window.location.hostname || '';
+    var labels = host.split('.');
+    // GA's default cookie_domain is auto: production cookies can belong to a
+    // parent domain. Expiring a host-only cookie does not remove those cookies.
+    for (var i = 0; i < labels.length - 1; i++) {
+      domains.push('; domain=' + labels.slice(i).join('.'));
+    }
     ['_ga', '_ga_' + mid, '_ga4_' + mid, '_ga_' + PROPERTY, '_ga4_' + PROPERTY].forEach(function (c) {
-      try { document.cookie = c + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; } catch (e) { }
+      domains.forEach(function (domain) {
+        try { document.cookie = c + '=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' + domain; } catch (e) { }
+      });
     });
+  }
+
+  var teardownPending = false;
+  function stopAnalytics() {
+    // Disable the property before the consent update: an already loaded tag
+    // must not emit a denial/engagement ping during document teardown.
+    window['ga-disable-' + PROPERTY] = true;
+    denyAndTeardown();
+    refresh('denied');
+    if (window.__obGtagBooted && !window.__OFFBEAT_ANALYTICS_TEST && !teardownPending) {
+      teardownPending = true;
+      try { window.location.reload(); } catch (e) { }
+    }
   }
 
   function handle(action) {
     if (action === 'grant') { writeConsent('granted'); applyConsent('granted'); }
-    else if (action === 'deny') { writeConsent('denied'); refresh('denied'); }
-    else if (action === 'withdraw') {
-      writeConsent('denied');
-      denyAndTeardown();
-      if (window.__obGtagBooted && !window.__OFFBEAT_ANALYTICS_TEST) {
-        refresh('denied'); // announce the state before the document goes away
-        try { window.setTimeout(function () { try { window.location.reload(); } catch (e) { } }, 400); } catch (e) { }
-      }
-    }
+    else if (action === 'deny' || action === 'withdraw') { writeConsent('denied'); stopAnalytics(); }
     else if (action === 'reask') { refresh('reask'); } // re-choose without changing the store yet
   }
 
@@ -242,6 +263,7 @@
   // (defaults first, updated state second, then collection):
   function bootGtag() {
     if (window.__obGtagBooted) return;
+    window['ga-disable-' + PROPERTY] = false;
     window.__obGtagBooted = true;
     // 1) Explicit Consent Mode v2 default — all four consent types denied.
     //     Queued via the stub BEFORE the tag loads; the real tag processes it
@@ -286,9 +308,25 @@
     // Safe no-op gtag so any pre-existing reference is harmless.
     window.dataLayer = window.dataLayer || [];
     if (typeof window.gtag !== 'function') { window.gtag = function () { window.dataLayer.push(arguments); }; }
+    if (readConsent() !== 'granted') clearGaCookies();
     applyConsent(readConsent());   // consented -> boot+measure; else -> show choice UI, send nothing
   }
 
+  // Consent choices are shared across tabs. Stop any already loaded tag when
+  // another tab withdraws, including after a frozen page is restored.
+  function reconcileConsent() {
+    var consent = readConsent();
+    if (consent !== 'granted') {
+      if (window.__obGtagBooted) stopAnalytics();
+      else { clearGaCookies(); refresh(consent); }
+    }
+  }
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('storage', function (e) {
+      if (e.key === STORE_KEY || e.key === null) reconcileConsent();
+    });
+    window.addEventListener('pageshow', reconcileConsent);
+  }
   if (typeof document === 'undefined') return;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
