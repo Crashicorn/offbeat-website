@@ -1,51 +1,46 @@
-/* Offbeat Inc. analytics — Google Analytics 4 (GA4).
+/* Offbeat Inc. analytics — Google Analytics 4 (GA4) — consent-gated, single loader.
  *
  * Owner-verified property: G-9MG87ETLPT (property "Offbeat", web stream
- * https://offbeatinc.com). This file is the SINGLE GA4 loader for every
- * offbeatinc.com page. It is loaded once per page via:
+ * https://offbeatinc.com). This file is the SINGLE GA4 loader for the public site,
+ * loaded once per page via:
  *     <script defer src="assets/offbeat-analytics.js"></script>
  *
- * DATA-MINIMIZATION CONTRACT (see Privacy Policy, "Information We Collect"):
- *   We do NOT promise that no personal data can ever reach Google — GA4 still
- *   sends the standard telemetry it always sends (approximate location,
- *   browser / device / OS, interaction events) and sets a first-party `_ga`
- *   cookie. What we *do* do, deliberately and testably, is shrink the surface
- *   of what we put in front of GA4:
+ * DESIGN (privacy-bounded; see Privacy Policy §3 and the independent review of #967)
+ * -------------------------------------------------------------------------------
+ * The strongest, most testable way to stop analytics before consent — and thereby to
+ * stop Google's automatic Enhanced Measurement (site-search, outbound clicks,
+ * history) from running at all — is to NOT LOAD THE GOOGLE TAG until the visitor
+ * affirmatively allows analytics. Basic-consent semantics are enforced by omission:
  *
- *     1. One boot, one measurement: gtag.js is inserted at MOST once and
- *        `gtag('config', G-9MG87ETLPT)` fires EXACTLY once, so the default
- *        `page_view` fires exactly once per page (no double counting).
- *        Re-running this file is a no-op.
+ *   NO CONSENT / REJECT / WITHDRAW  ->  no gtag.js is injected, no request to
+ *                                       Google, no _ga cookie is created. (Zero.)
+ *   CONSENT                         ->  one minimized pageview (path-only URL,
+ *                                       NO referrer, a short static title) plus an
+ *                                       allowlisted "affiliate_click" event that
+ *                                       records only merchant/category.
  *
- *     2. URL minimization. GA4's default `page_location` is the full URL
- *        including the query string and fragment. We override it to only
- *        `origin + pathname` (e.g. `https://offbeatinc.com/best-ddj-flx3.html`)
- *        so a `?email=…`, `?token=…` or `#…` in the address bar is not sent.
- *        `page_referrer` is likewise trimmed to `origin + path`, and
- *        `page_title` is bounded (trimmed, 200 chars) instead of the raw DOM
- *        title.
+ * What this file explicitly does AND does NOT do:
+ *   - We minimize the one pageview we do send (page_location = origin+path only;
+ *     page_referrer omitted; page_title bounded and sanitized).
+ *   - We use a CLOSED allowlist for custom events (event names + field names +
+ *     allowed enum values). URLs, query strings, free text and unknown values are
+ *     dropped by construction — not a denylist of known-Pii names.
+ *   - We remember the visitor's choice in first-party localStorage and honor it on
+ *     every page/reload; withdrawal stops further sends and clears first-party GA
+ *     cookies we may have set this session.
+ *   - We do NOT set an unconditional `analytics_storage: granted` (see the "no
+ *     unconditional grant" requirement). Consented means "we loaded the tag after
+ *     the visitor opted in".
+ *   - We do NOT and CANNOT disable Google Enhanced Measurement from source. That is
+ *     a GA4 property/dashboard setting (Owner action: Admin -> Data collection and
+ *     modification -> Data streams -> Offbeat web stream G-9MG87ETLPT -> Enhanced
+ *     measurement: disable Site search, Outbound clicks, and history-based Page
+ *     views for this static site). This file works with either setting; it never
+ *     claims to change it.
+ *   - We do NOT promise absolute absence of PII. Google collects some standard
+ *     telemetry once a visitor has consented (that is why consent gates it).
  *
- *     3. Custom-event sanitization (fail closed, not shallow key-list).
- *        `offbeatTrack(name, params)` recursively walks the params object:
- *          - drops any PARAM KEY (at any nesting depth) that looks like PII;
- *          - drops any VALUE that looks like PII (email, phone, long blob,
- *            token/secret);
- *          - drops event names that are PII.
- *        We send only what is left. If you hand it a value we cannot prove
- *        safe, that value is dropped. This is a best-effort data-minimization
- *        filter, not a guarantee that arbitrary unknown future keys can never
- *        be PII.
- *
- *     4. Advertising tech is denied by default. We set Google Consent Mode v2
- *        defaults: `ad_storage` / `ad_user_data` / `ad_personalization`
- *        denied, `analytics_storage` granted. No ad cookies, no ad
- *        personalization on offbeatinc.com.
- *
- *   We still failsafe: if the Google script is blocked or offline the page
- *   still renders and every handler is a no-op (no exceptions).
- *
- * This is a source-only, DRAFT change. It creates no Google account, no new
- * property, and no credential, and it does not affect any other site.
+ * No new Google account, property or credential. No other site. DRAFT change.
  */
 (function () {
   'use strict';
@@ -53,159 +48,177 @@
 
   var PROPERTY = 'G-9MG87ETLPT';
   var GA_SRC = 'https://www.googletagmanager.com/gtag/js?id=' + PROPERTY;
+  var STORE_KEY = 'offbeat.ga-consent.v1';
+  var TITLE_MAX = 80;
 
-  /* ---- backward-compatible stubs -----------------------------------------
-   * Kept so any pre-existing inline handler that references dataLayer/gtag/
-   * offbeatTrack on a not-yet-loaded document continues to be safe. */
-  window.dataLayer = window.dataLayer || [];
-  if (typeof window.gtag !== 'function') {
-    window.gtag = function () { window.dataLayer.push(arguments); };
-  }
-
-  /* ---- PII handling (data minimization, fail closed) --------------------- */
-  // Keys whose presence means "do not forward this value" (checked at EVERY
-  // nesting depth, case-insensitive).
-  var PII_KEYS = [
-    'email', 'e-mail', 'mail', 'email_address', 'user_email',
-    'name', 'first_name', 'last_name', 'fullname', 'full_name', 'username',
-    'phone', 'tel', 'telephone', 'mobile', 'phone_number',
-    'address', 'street', 'address1', 'address2', 'address_line', 'city',
-    'region', 'state', 'zip', 'zipcode', 'postcode', 'postal', 'company',
-    'message', 'msg', 'comment', 'body', 'textarea', 'bio',
-    'password', 'passwd', 'secret', 'token', 'api_key', 'apikey',
-    'access_token', 'refresh_token', 'auth', 'session', 'session_id',
-    'card', 'card_number', 'ssn', 'social', 'bank', 'iban', 'cvv', 'dob',
-    'birthdate', 'birth_date', 'birthday'
-  ];
-
-  // Value-level signatures (defense in depth: a value that looks like PII is
-  // dropped even if its key does not match the list above).
-  var EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]+/i;
-  var TOKEN_RE = /(api[_-]?key|access[_-]?token|refresh[_-]?token|bearer|authorization|jwt)[=:]/i;
-  var MAX_SAFE_VALUE_LEN = 120;              // longer strings -> blob/message -> drop
-
-  function isPIIKey(k) {
-    return PII_KEYS.indexOf(String(k).toLowerCase()) !== -1;
-  }
-
-  function isPIIValue(v) {
-    if (typeof v !== 'string') return false; // numeric/boolean ids kept (avoid false positives)
-    if (v.length > MAX_SAFE_VALUE_LEN) return true;          // long blob / pasted body / token
-    if (EMAIL_RE.test(v)) return true;
-    if (TOKEN_RE.test(v)) return true;
-    // Human phone: separator present, 7-15 digits. Pure integer ids are NOT flagged.
-    var digits = v.replace(/\D/g, '');
-    if (/[\s\-().+]/.test(v) && digits.length >= 7 && digits.length <= 15) return true;
-    return false;
-  }
-
-  // Recursively sanitize. Returns the cleaned object, or `undefined` for a
-  // dropped leaf. Depth-bounded so pathological structures fail closed.
-  function sanitizeParams(value, depth) {
-    if (value === null || value === undefined) return value;
-    depth = depth || 0;
-    if (depth > 6) return undefined;                       // too deep -> drop (fail closed on structure)
-    var t = typeof value;
-    if (t === 'string') return isPIIValue(value) ? undefined : value;
-    if (t === 'number' || t === 'boolean') return value;
-    if (Object.prototype.toString.call(value) === '[object Array]') {
-      var arr = [];
-      for (var i = 0; i < value.length; i++) {
-        var ci = sanitizeParams(value[i], depth + 1);
-        if (ci !== undefined) arr.push(ci);
-      }
-      return arr;
-    }
-    if (t === 'object') {
-      var out = {};
-      for (var k in value) {
-        if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
-        if (isPIIKey(k)) continue;                          // drop PII key at any depth
-        var cv = sanitizeParams(value[k], depth + 1);
-        if (cv !== undefined) out[k] = cv;
-      }
-      return out;
-    }
-    return undefined;                                       // functions / other -> drop
-  }
-
-  window.offbeatTrack = function (eventName, params) {
-    try {
-      var name = String(eventName == null ? '' : eventName).slice(0, 128);
-      if (!name) return;
-      if (isPIIKey(name) || isPIIValue(name)) return;       // drop PII event names
-      var clean = sanitizeParams(params, 0);
-      var payload = (clean && typeof clean === 'object') ? clean : {};
-      if (typeof window.gtag === 'function') {
-        window.gtag('event', name, payload);
-      }
-    } catch (e) { /* analytics must never break the page */ }
+  /* ---- first-party consent store (localStorage) --------------------------
+   * Storing the visitor's OWN consent choice is a first-party, non-tracking
+   * persistence mechanism; it is not an analytics cookie and it carries no data
+   * about the visitor beyond "granted|denied". */
+  var ls = {
+    get: function (k) { try { return window.localStorage ? window.localStorage.getItem(k) : null; } catch (e) { return null; } },
+    set: function (k, v) { try { if (window.localStorage) window.localStorage.setItem(k, v); } catch (e) { } },
+    del: function (k) { try { if (window.localStorage) window.localStorage.removeItem(k); } catch (e) { } }
   };
 
-  /* ---- URL / referrer / title minimization ------------------------------ */
+  // 'unknown' => no choice recorded yet; 'denied'; 'granted'.
+  function readConsent() {
+    var raw = ls.get(STORE_KEY);
+    if (!raw) return 'unknown';
+    try { var o = JSON.parse(raw); return (o && o.analytics === 'granted') ? 'granted' : 'denied'; }
+    catch (e) { return 'denied'; } // fail closed
+  }
+  function writeConsent(analysis) {
+    ls.set(STORE_KEY, JSON.stringify({ analytics: analysis, v: 1, at: new Date().toISOString() }));
+  }
+  // Exposed (small, honest) so the UI and independent tests can read current state.
+  window.offbeatConsentState = function () { return readConsent(); };
+
+  /* ---- data minimization for the ONE pageview we send when consented ------ */
+  var EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]+/i;
   function safePath() {
     try {
       var l = window.location;
       var origin = l.origin || (l.protocol ? l.protocol + '//' + l.host : '');
       if (!origin) return 'https://offbeatinc.com/';
-      var path = l.pathname || '/';
-      return origin + path;                                  // no search, no hash
+      return origin + (l.pathname || '/'); // path only — no search, no hash
     } catch (e) { return 'https://offbeatinc.com/'; }
   }
-  function safeReferrer() {
-    try {
-      var r = String(document.referrer || '');
-      if (!r) return '';
-      var m = r.match(/^(https?:\/\/[^\/]+)(\/[^#?]*)?/i);    // origin + path only
-      if (!m) return '';
-      return m[1] + (m[2] || '/');
-    } catch (e) { return ''; }
-  }
   function safeTitle() {
-    try {
-      var t = String(document.title || '').replace(/\s+/g, ' ').trim();
-      return t.slice(0, 200);
-    } catch (e) { return ''; }
+    var s = String(document.title || '').replace(/\s+/g, ' ').trim().slice(0, TITLE_MAX);
+    if (!s) return '';
+    if (EMAIL_RE.test(s)) return '';                        // no emails in title
+    if (/(\+?1?[\s().-]?[0-9][0-9\s().-]{5,}[0-9])/.test(s)) return ''; // phone-like => drop
+    if (/^(https?:)?\/\//.test(s) || /\?[a-z0-9_]+=/i.test(s)) return ''; // URL/query-like => drop
+    return s;
   }
 
-  /* ---- single, idempotent GA4 boot --------------------------------------- */
-  function ensureBoot() {
-    if (window.__offbeatGA4Ready) return;              // already booted: never re-run
-    if (typeof document === 'undefined' || !document.head) return;
-    window.__offbeatGA4Ready = true;                    // set before async load to stop re-entry
+  /* ---- CLOSED allowlist for custom events (fail by construction) ---------
+   * Only the exact event names below, with only the exact safe field names and
+   * only the exact safe enum values, are ever forwarded. Anything else — a raw
+   * destination URL, a search term, free text, a nested object, a number — is
+   * dropped because it cannot match the closed schema. No arbitrary values. */
+  var MERCHANT = { amazon: 1, zzounds: 1, sweetwater: 1, guitarcenter: 1, 'guitar-center': 1,
+    pluginboutique: 1, loopmasters: 1, landr: 1, splice: 1, distrokid: 1, serato: 1, cdbaby: 1,
+    other: 1 };
+  var CATEGORY = { headphones: 1, 'headphone': 1, mixer: 1, controller: 1, monitor: 1, speaker: 1,
+    interface: 1, software: 1, plugin: 1, 'sample-pack': 1, sample: 1, course: 1, stand: 1,
+    turntable: 1, cartridge: 1, 'usb-drive': 1, cable: 1, accessory: 1, 'gig-bag': 1, other: 1 };
+  var EVENTS = { 'affiliate_click': { merchant: MERCHANT, category: CATEGORY } };
 
-    // Reuse an already-present gtag.js (idempotent); otherwise inject one.
-    var already = document.querySelector('script[src*="googletagmanager.com/gtag/js"]');
-    if (!already) {
-      var s = document.createElement('script');
-      s.async = true;
-      s.src = GA_SRC;
-      s.setAttribute('crossorigin', 'anonymous');
-      s.onerror = function () { /* blocked/offline: page still works */ };
+  window.offbeatTrack = function (name, params) {
+    try {
+      if (readConsent() !== 'granted') return;                 // never transmit before consent
+      var spec = EVENTS[String(name)];
+      if (!spec) return;                                         // allowlist: unknown event dropped
+      params = (params && typeof params === 'object') ? params : {};
+      var payload = {};
+      for (var k in spec) {
+        if (!Object.prototype.hasOwnProperty.call(params, k)) continue;
+        var v = params[k];
+        if (typeof v === 'string' && spec[k][v] === 1) payload[k] = v; // else dropped
+      }
+      if (typeof window.gtag === 'function') window.gtag('event', String(name), payload);
+    } catch (e) { /* never break the page */ }
+  };
+
+  /* ---- consent UI (small, accessible, non-blocking, no dark patterns) -----
+   * All buttons are real <button>s with clear, equal-prominence labels; the
+   * site stays fully usable with analytics off. */
+  var UI = null;
+  function el(tag, attrs, text) {
+    var n = document.createElement(tag);
+    if (attrs) { for (var a in attrs) { if (a.charAt(0) === 'o' && a.charAt(1) === 'n' && typeof attrs[a] === 'function') { n[a] = attrs[a]; } else { n.setAttribute(a, attrs[a]); } } }
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function button(label, action) {
+    var b = el('button', { type: 'button', 'class': 'ob-consent-btn' }, label);
+    b.addEventListener('click', function () { handle(action); });
+    return b;
+  }
+  function refresh(consent) {
+    if (!document.body) return;
+    if (UI && UI.parentNode) UI.parentNode.removeChild(UI); UI = null;
+    UI = el('div', { 'class': 'ob-consent', role: 'region', 'aria-label': 'Analytics choice (Offbeat)', 'aria-live': 'polite' });
+    var p = el('p', { 'class': 'ob-consent-text' });
+    var row = el('div', { 'class': 'ob-consent-actions' });
+    if (consent === 'unknown') {
+      p.textContent = 'Allow Offbeat to collect anonymous usage analytics to help us improve the guides? We limit what is sent to minimal page-level information (which guide you viewed). You can change or withdraw this choice at any time.';
+      row.appendChild(button('Allow analytics', 'grant'));
+      row.appendChild(button('Do not allow', 'deny'));
+    } else if (consent === 'denied') {
+      p.textContent = 'Analytics is off for you.';
+      row.appendChild(button('Turn on analytics', 'grant'));
+    } else { // granted
+      p.textContent = 'Analytics is on (minimal page-level data only).';
+      row.appendChild(button('Change choice', 'reask'));
+      row.appendChild(button('Withdraw consent', 'withdraw'));
+    }
+    UI.appendChild(p); UI.appendChild(row);
+    document.body.appendChild(UI);
+    if (consent === 'unknown') { UI.setAttribute('tabindex', '-1'); try { UI.focus({ preventScroll: true }); } catch (e) { } }
+  }
+
+  // Stop active sends if we had booted gtag this session, and clear 1st-party GA cookies.
+  function revokeActive() {
+    try { if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+    } } catch (e) { }
+    // GA sets first-party cookies named `_ga` plus `_ga_<id>` / `_ga4_<id>` where
+    // <id> is the measurement id WITHOUT the `G-` prefix (confirmed by the
+    // reviewer's real-Chromium capture: `_ga` and `_ga_9MG87ETLPT`). Expire all
+    // plausible variants to avoid stale-consent / cookie leakage.
+    var mid = String(PROPERTY).replace(/^G-/, '');
+    ['_ga', '_ga_' + mid, '_ga4_' + mid, '_ga_' + PROPERTY, '_ga4_' + PROPERTY].forEach(function (c) {
+      try { document.cookie = c + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; } catch (e) { }
+    });
+  }
+
+  function handle(action) {
+    if (action === 'grant') { writeConsent('granted'); applyConsent('granted'); }
+    else if (action === 'deny') { writeConsent('denied'); applyConsent('denied'); }
+    else if (action === 'withdraw') { writeConsent('denied'); revokeActive(); applyConsent('denied'); }
+    else if (action === 'reask') { refresh('unknown'); } // let them pick again without changing the store yet
+  }
+
+  // Load + measure ONLY after affirmative consent. Idempotent (one tag, one config).
+  function bootGtag() {
+    if (window.__obGtagBooted) return;
+    window.__obGtagBooted = true;
+    // TEST SEAM ONLY (used by local Chromium capture tests in tests/). In production
+    // this is undefined, so the real Google tag is injected below. Not a gate bypass.
+    var hook = window.__OFFBEAT_ANALYTICS_TEST;
+    if (hook && typeof hook.inject === 'function') { hook.inject(); }
+    else if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+      var s = el('script', null);
+      s.async = true; s.src = GA_SRC; s.setAttribute('crossorigin', 'anonymous');
+      s.onerror = function () { /* blocked: page still works */ };
       (document.head || document.documentElement).appendChild(s);
     }
     window.gtag('js', new Date());
-    // Consent Mode v2 conservative defaults: no ad-tech; analytics allowed.
-    window.gtag('consent', 'default', {
-      ad_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-      analytics_storage: 'granted'
-    });
-    // Exactly one config for this property => exactly one default page_view.
-    // URL/referrer/title are minimized so query strings, fragments and a
-    // sensitive external referrer are not forwarded.
+    // One minimized pageview. No referrer. Bounded static title.
     window.gtag('config', PROPERTY, {
       send_page_view: true,
       page_location: safePath(),
-      page_referrer: safeReferrer(),
+      page_referrer: '',
       page_title: safeTitle()
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureBoot, { once: true });
-  } else {
-    ensureBoot();
+  function applyConsent(consent) {
+    if (consent === 'granted') bootGtag();
+    refresh(consent);
   }
+
+  function boot() {
+    // Safe no-op gtag so any pre-existing reference is harmless.
+    window.dataLayer = window.dataLayer || [];
+    if (typeof window.gtag !== 'function') { window.gtag = function () { window.dataLayer.push(arguments); }; }
+    applyConsent(readConsent());   // consented -> boot+measure; else -> show choice UI, send nothing
+  }
+
+  if (typeof document === 'undefined') return;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();

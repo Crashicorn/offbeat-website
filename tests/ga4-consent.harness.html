@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Best DJ Headphones Under $50 — a curated, reviewed, and tested guide to the very top picks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/assets/style.css">
+<script>
+  // Scenario setup runs BEFORE the deferred loader (inline scripts run first).
+  (function () {
+    var q = new URLSearchParams(location.search);
+    var scenario = q.get('scenario') || 'fresh';
+    window.__SCENARIO = scenario;
+
+    var NEEDS_STUB = ['accept-click', 'preset-granted', 'withdraw', 'secret-query', 'arbitrary-event', 'history'];
+    if (NEEDS_STUB.indexOf(scenario) !== -1) {
+      // Faithful local stand-in for Google's gtag (endpoints "answered locally", never
+      // transmitted). In production the loader injects the real Google tag instead.
+      window.__OFFBEAT_ANALYTICS_TEST = { inject: function () { /* skip real Google fetch */ } };
+      window.__obGtagLog = [];
+      window.gtag = function () {
+        window.__obGtagLog.push(Array.prototype.slice.call(arguments));
+        if (arguments[0] === 'config') {
+          document.cookie = '_ga=GA-STUB; path=/';
+          document.cookie = '_ga_9MG87ETLPT=GA-STUB; path=/';
+        }
+        return undefined;
+      };
+    }
+
+    var PRESET = {
+      'preset-granted': 'granted',
+      'preset-denied': 'denied',
+      'withdraw': 'granted',
+      'secret-query': 'granted',
+      'arbitrary-event': 'granted',
+      'history': 'granted'
+    };
+    if (PRESET[scenario]) {
+      try { localStorage.setItem('offbeat.ga-consent.v1', JSON.stringify({ analytics: PRESET[scenario], v: 1, at: new Date().toISOString() })); } catch (e) {}
+    }
+  })();
+</script>
+<script defer src="/assets/offbeat-analytics.js"></script>
+<script defer>
+  (function () {
+    var scenario = window.__SCENARIO || 'fresh';
+
+    function finish() {
+      var resource = null; try {
+        resource = performance.getEntriesByType('resource')
+          .map(function (r) { return r.name; })
+          .filter(function (n) { return /google-analytics\.com|googletagmanager\.com/.test(n); });
+      } catch (e) { resource = ['ERR']; }
+      var out = {
+        scenario: scenario,
+        consentState: (typeof window.offbeatConsentState === 'function') ? window.offbeatConsentState() : null,
+        googleResources: resource,
+        cookies: (function () { try { return document.cookie; } catch (e) { return ''; } })(),
+        gtagLog: window.__obGtagLog || [],
+        ui: {
+          present: !!document.querySelector('.ob-consent'),
+          buttons: Array.prototype.map.call(document.querySelectorAll('.ob-consent-btn'), function (b) { return b.textContent; })
+        }
+      };
+      var pre = document.createElement('pre');
+      pre.id = '__RESULT__';
+      pre.textContent = '__RESULT__' + JSON.stringify(out) + '__RESULT_END__';
+      document.body.appendChild(pre);
+    }
+
+    function findBtn(label) {
+      var bs = document.querySelectorAll('.ob-consent-btn');
+      for (var i = 0; i < bs.length; i++) { if (bs[i].textContent === label) return bs[i]; }
+      return null;
+    }
+
+    window.addEventListener('load', function () {
+      // Let the UI render, then run the scenario action.
+      setTimeout(function () {
+        try {
+          if (scenario === 'reject-click') { var d = findBtn('Do not allow'); if (d) d.click(); }
+          else if (scenario === 'accept-click') { var a = findBtn('Allow analytics'); if (a) a.click(); }
+          else if (scenario === 'withdraw') { var w = findBtn('Withdraw consent'); if (w) w.click(); }
+          else if (scenario === 'arbitrary-event') {
+            window.offbeatTrack('affiliate_click', { merchant: 'zzounds' });
+            window.offbeatTrack('affiliate_click', { merchant: 'https://evil.example?x=' + 'secret-token&email=u%40x.test' });
+            window.offbeatTrack('affiliate_click', { merchant: 'zzounds', category: 'headphones', value: 'Alice Smith' });
+            window.offbeatTrack('totally_unknown_event', { merchant: 'amazon' });
+            window.offbeatTrack('affiliate_click', { nested: { secret: 'token-value', deep: [1, 'x@y.z'] } });
+          }
+          else if (scenario === 'secret-query') {
+            window.offbeatTrack('affiliate_click', { merchant: 'zzounds', destination: 'https://zz.example/item?token=' + 'secret-token' });
+          }
+          else if (scenario === 'history') {
+            history.pushState({}, '', '/best-dj-headphones-under-50.html?token=' + 'secret-token&email=a%40x.test');
+          }
+        } catch (e) { /* action error */ }
+        setTimeout(finish, 120);
+      }, 120);
+    });
+    // Fallback if 'load' already fired.
+    if (document.readyState === 'complete') setTimeout(function () { setTimeout(finish, 200); }, 220);
+  })();
+</script>
+</head>
+<body>
+<h1>Harness</h1>
+<p>served for GA4 consent + minimization capture (synthetic data only)</p>
+</body>
+</html>
