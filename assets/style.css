@@ -1529,3 +1529,18 @@ h3.mini {
   }
   .print-sheet .sheet-title { font-size: 15pt; }
 }
+
+/* Search: area chips inside the dialog */
+.search-groups {
+  display: flex; flex-wrap: wrap; gap: .35rem; margin: .1rem 0 .9rem;
+}
+.search-chip {
+  padding: .3rem .65rem; border: 1px solid var(--line); border-radius: 999px;
+  background: transparent; color: var(--muted); font-size: .78rem; cursor: pointer;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
+}
+.search-chip:hover { color: var(--text); border-color: var(--line-strong); }
+.search-chip.is-active {
+  color: var(--text); border-color: var(--flame);
+  background: rgba(255, 90, 31, .14);
+}

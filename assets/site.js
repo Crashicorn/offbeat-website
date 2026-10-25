@@ -242,6 +242,12 @@
     overlay.hidden = true;
     document.documentElement.style.overflow = "";
     active = -1;
+    groupFilter = "all";
+    if (groupHost) {
+      [].forEach.call(groupHost.querySelectorAll(".search-chip"), function (c) {
+        c.classList.toggle("is-active", c.getAttribute("data-group") === "all");
+      });
+    }
   }
 
   function loadIndex() {
@@ -249,10 +255,36 @@
     loading = true;
     fetch("assets/search-index.json")
       .then(function (r) { return r.json(); })
-      .then(function (data) { index = data; render(input.value); })
+      .then(function (data) { index = data; buildGroups(); render(input.value); })
       .catch(function () {
         if (status) status.textContent = "Search index unavailable — browse All DJ Guides instead.";
       });
+  }
+
+  var groupHost = overlay.querySelector("[data-search-groups]");
+
+  function buildGroups() {
+    if (!groupHost || !index) return;
+    var order = [];
+    var seen = {};
+    index.forEach(function (item) {
+      if (!seen[item.g]) { seen[item.g] = item.c; order.push(item.g); }
+    });
+    var html = '<button type="button" class="search-chip is-active" data-group="all">All</button>';
+    order.forEach(function (id) {
+      html += '<button type="button" class="search-chip" data-group="' + id + '">' +
+        seen[id].replace(/ &amp; /g, " & ") + "</button>";
+    });
+    groupHost.innerHTML = html;
+    groupHost.addEventListener("click", function (event) {
+      var chip = event.target.closest("[data-group]");
+      if (!chip) return;
+      groupFilter = chip.getAttribute("data-group");
+      [].forEach.call(groupHost.querySelectorAll(".search-chip"), function (c) {
+        c.classList.toggle("is-active", c === chip);
+      });
+      render(input.value);
+    });
   }
 
   function score(item, terms) {
@@ -267,6 +299,8 @@
     return total;
   }
 
+  var groupFilter = "all";
+
   function render(query) {
     if (!index) return;
     var terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
@@ -279,10 +313,13 @@
           .slice(0, 12)
           .map(function (r) { return r.item; })
       : index.filter(function (item) { return item.f; }).slice(0, 8);
+    if (groupFilter !== "all") {
+      list = list.filter(function (item) { return item.g === groupFilter; });
+    }
 
     if (status) {
-      status.textContent = terms.length
-        ? (list.length ? list.length + " results" : "No guides matched that search")
+      status.textContent = terms.length || groupFilter !== "all"
+        ? (list.length ? list.length + (list.length === 1 ? " result" : " results") : "No guides matched that search")
         : "Popular guides";
     }
     results.innerHTML = list.map(function (item) {
