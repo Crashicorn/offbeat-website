@@ -325,176 +325,166 @@
   var root = document.getElementById("matrix-root");
   if (!root) return;
 
-  var state = {
-    search: "",
-    software: "all",
-    channels: "all",
-    tier: "all"
+  var catalogIds = {
+    flx4: "pioneer-ddj-flx4", flx2: "pioneer-ddj-flx2", flx10: "pioneer-ddj-flx10",
+    grv6: "alphatheta-ddj-grv6", s2mk3: "traktor-kontrol-s2-mk3",
+    prime4plus: "denon-prime-4-plus", primego: "denon-prime-go",
+    inpulse500: "hercules-inpulse-500", ranefour: "rane-four"
   };
+  var state = { search: "", software: "all", channels: "all", tier: "all", compare: [], compareOpen: false };
+  var softwareLabels = { rekordbox: "rekordbox", serato: "Serato DJ", traktor: "Traktor Pro", djay: "djay Pro", virtualdj: "VirtualDJ", engine: "Engine DJ" };
+
+  function statusLabel(status) {
+    if (status === "unlock" || status === "pro-unlock") return "Included hardware unlock";
+    if (status === "lite") return "Lite edition included";
+    if (status === "native") return "Supported";
+    if (status === "mapped") return "MIDI mapping required";
+    if (status === "paid") return "Paid software required";
+    return "Not supported";
+  }
 
   function renderStatusBadge(status) {
-    if (status === "unlock" || status === "pro-unlock") {
-      return '<span class="mat-badge mat-badge--unlock" title="Full native hardware unlock included">✓ Native Unlock</span>';
-    } else if (status === "lite") {
-      return '<span class="mat-badge mat-badge--lite" title="Lite edition included, Pro is a paid upgrade">⚡ Lite Included</span>';
-    } else if (status === "native") {
-      return '<span class="mat-badge mat-badge--native" title="Plug-and-play supported">✓ Supported</span>';
-    } else if (status === "mapped") {
-      return '<span class="mat-badge mat-badge--mapped" title="Requires MIDI mapping file">⚙ MIDI Mapped</span>';
-    } else if (status === "paid") {
-      return '<span class="mat-badge mat-badge--paid" title="Supported with paid software license">$$ Paid Upgrade</span>';
-    }
-    return '<span class="mat-badge mat-badge--none">✕ No</span>';
+    var cls = "none", text = "Not supported";
+    if (status === "unlock" || status === "pro-unlock") { cls = "unlock"; text = "Included"; }
+    else if (status === "lite") { cls = "lite"; text = "Lite included"; }
+    else if (status === "native") { cls = "native"; text = "Supported"; }
+    else if (status === "mapped") { cls = "mapped"; text = "MIDI map"; }
+    else if (status === "paid") { cls = "paid"; text = "Paid"; }
+    return '<span class="mat-badge mat-badge--' + cls + '" title="' + statusLabel(status) + '">' + text + '</span>';
   }
 
   function filterControllers() {
     return CONTROLLERS.filter(function (item) {
       if (state.search) {
         var q = state.search.toLowerCase();
-        var match = item.name.toLowerCase().indexOf(q) !== -1 ||
-          item.brand.toLowerCase().indexOf(q) !== -1 ||
-          item.buyer.toLowerCase().indexOf(q) !== -1 ||
-          item.streaming.join(" ").toLowerCase().indexOf(q) !== -1 ||
-          item.stems.toLowerCase().indexOf(q) !== -1;
+        var match = item.name.toLowerCase().indexOf(q) !== -1 || item.brand.toLowerCase().indexOf(q) !== -1 ||
+          item.buyer.toLowerCase().indexOf(q) !== -1 || item.streaming.join(" ").toLowerCase().indexOf(q) !== -1 ||
+          item.stems.toLowerCase().indexOf(q) !== -1 || item.outputs.toLowerCase().indexOf(q) !== -1 || item.primary.toLowerCase().indexOf(q) !== -1;
         if (!match) return false;
       }
       if (state.software !== "all") {
         var s = state.software;
-        if (s === "rekordbox" && (item.rekordbox === "none" || !item.rekordbox)) return false;
-        if (s === "serato" && (item.serato === "none" || !item.serato)) return false;
-        if (s === "traktor" && (item.traktor === "none" || !item.traktor)) return false;
-        if (s === "djay" && (item.djay === "none" || !item.djay)) return false;
-        if (s === "standalone" && item.format !== "standalone") return false;
+        if (s === "standalone") { if (item.format !== "standalone") return false; }
+        else if (!item[s] || item[s] === "none") return false;
       }
-      if (state.channels !== "all") {
-        if (state.channels === "2" && item.channels !== "2-channel") return false;
-        if (state.channels === "4" && item.channels !== "4-channel") return false;
-      }
-      if (state.tier !== "all") {
-        if (state.tier !== item.tier) return false;
-      }
+      if (state.channels === "2" && item.channels !== "2-channel") return false;
+      if (state.channels === "4" && item.channels !== "4-channel") return false;
+      if (state.tier !== "all" && state.tier !== item.tier) return false;
       return true;
     });
   }
 
+  function renderCompareTable() {
+    if (!state.compareOpen || state.compare.length < 2) return "";
+    var selected = state.compare.map(function (id) { return CONTROLLERS.find(function (c) { return c.id === id; }); }).filter(Boolean);
+    if (selected.length < 2) return "";
+    var rows = [
+      ["Street price", function (c) { return c.price; }],
+      ["Deck layout", function (c) { return c.channels + (c.format === "standalone" ? " · standalone system" : " · laptop controller"); }],
+      ["Primary software", function (c) { return c.primary; }],
+      ["rekordbox", function (c) { return statusLabel(c.rekordbox); }],
+      ["Serato DJ", function (c) { return statusLabel(c.serato); }],
+      ["Traktor Pro", function (c) { return statusLabel(c.traktor); }],
+      ["djay Pro", function (c) { return statusLabel(c.djay); }],
+      ["VirtualDJ", function (c) { return statusLabel(c.virtualdj); }],
+      ["Engine DJ", function (c) { return statusLabel(c.engine); }],
+      ["Streaming", function (c) { return c.streaming.join(", "); }],
+      ["Outputs", function (c) { return c.outputs; }],
+      ["Microphone", function (c) { return c.mic; }],
+      ["Stems / performance", function (c) { return c.stems; }],
+      ["Good fit", function (c) { return c.buyer; }],
+      ["Trade-off", function (c) { return c.caveat; }]
+    ];
+    var html = '<section class="matrix-compare-panel" aria-labelledby="matrix-compare-title" id="matrix-compare-panel">';
+    html += '<div class="matrix-compare-heading"><div><p class="matrix-eyebrow">Shortlist comparison</p><h2 id="matrix-compare-title">Check the trade-offs side by side</h2><p>Software support is not all the same: an included unlock, a free Lite edition and a third-party MIDI map are different things.</p></div><button type="button" class="matrix-compare-close" data-compare-close>Hide comparison</button></div>';
+    html += '<p class="matrix-table-hint">On a phone, swipe the comparison table horizontally to see each controller.</p><div class="matrix-compare-scroll" tabindex="0" role="region" aria-label="Scrollable side-by-side controller comparison">';
+    html += '<table class="matrix-compare-table"><caption class="sr-only">Side-by-side compatibility and trade-off comparison</caption><thead><tr><th scope="col">Decision point</th>';
+    selected.forEach(function (c) { html += '<th scope="col">' + esc(c.name) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    rows.forEach(function (row) { html += '<tr><th scope="row">' + esc(row[0]) + '</th>'; selected.forEach(function (c) { html += '<td>' + esc(row[1](c)) + '</td>'; }); html += '</tr>'; });
+    html += '<tr><th scope="row">Next step</th>';
+    selected.forEach(function (c) {
+      var addToRig = catalogIds[c.id] ? '?add=' + encodeURIComponent(catalogIds[c.id]) : '';
+      html += '<td class="matrix-compare-links">' + (c.guide ? '<a href="' + esc(c.guide) + '">Read guide</a>' : '') + '<a href="build-your-dj-setup.html' + addToRig + '">Open Rig Studio</a></td>';
+    });
+    html += '</tr></tbody></table></div></section>';
+    return html;
+  }
+
   function render() {
     var list = filterControllers();
-    var html = "";
-
-    html += '<div class="matrix-toolbar">';
-    html += '<div class="matrix-search"><input type="search" placeholder="Search controller name, stems, outputs, or Apple Music…" data-mat-search value="' + esc(state.search) + '" aria-label="Search compatibility matrix"></div>';
-    html += '<div class="matrix-filters">';
+    state.compare = state.compare.filter(function (id) { return CONTROLLERS.some(function (c) { return c.id === id; }); });
+    var html = '<div class="matrix-toolbar"><div class="matrix-search"><input type="search" placeholder="Search a controller, software, stem workflow or output…" data-mat-search value="' + esc(state.search) + '" aria-label="Search compatibility matrix"></div><div class="matrix-filters">';
     html += '<select data-mat-soft aria-label="Filter by software"><option value="all"' + (state.software === "all" ? " selected" : "") + '>All Software Ecosystems</option><option value="rekordbox"' + (state.software === "rekordbox" ? " selected" : "") + '>rekordbox</option><option value="serato"' + (state.software === "serato" ? " selected" : "") + '>Serato DJ</option><option value="traktor"' + (state.software === "traktor" ? " selected" : "") + '>Traktor Pro</option><option value="djay"' + (state.software === "djay" ? " selected" : "") + '>djay Pro</option><option value="standalone"' + (state.software === "standalone" ? " selected" : "") + '>Standalone (No Laptop)</option></select>';
     html += '<select data-mat-chan aria-label="Filter by channels"><option value="all"' + (state.channels === "all" ? " selected" : "") + '>All Channel Layouts</option><option value="2"' + (state.channels === "2" ? " selected" : "") + '>2-Channel Decks</option><option value="4"' + (state.channels === "4" ? " selected" : "") + '>4-Channel Decks</option></select>';
-    html += '<select data-mat-tier aria-label="Filter by budget tier"><option value="all"' + (state.tier === "all" ? " selected" : "") + '>All Budget Tiers</option><option value="budget"' + (state.tier === "budget" ? " selected" : "") + '>Under $300 (Budget)</option><option value="mid"' + (state.tier === "mid" ? " selected" : "") + '>$300–$700 (Sweet Spot)</option><option value="pro"' + (state.tier === "pro" ? " selected" : "") + '>$700–$1,800 (Pro)</option><option value="flagship"' + (state.tier === "flagship" ? " selected" : "") + '>$2,000+ (Flagship)</option></select>';
-    html += '</div>';
-    html += '</div>';
-
-    html += '<p class="matrix-count">Showing <strong>' + list.length + '</strong> compatible hardware options</p>';
-
+    html += '<select data-mat-tier aria-label="Filter by budget tier"><option value="all"' + (state.tier === "all" ? " selected" : "") + '>All Budget Tiers</option><option value="budget"' + (state.tier === "budget" ? " selected" : "") + '>Under $300 (Budget)</option><option value="mid"' + (state.tier === "mid" ? " selected" : "") + '>$300–$700 (Sweet Spot)</option><option value="pro"' + (state.tier === "pro" ? " selected" : "") + '>$700–$1,800 (Pro)</option><option value="flagship"' + (state.tier === "flagship" ? " selected" : "") + '>$2,000+ (Flagship)</option></select></div></div>';
+    html += '<div class="matrix-count-row"><p class="matrix-count" aria-live="polite">Showing <strong>' + list.length + '</strong> of ' + CONTROLLERS.length + ' hardware options</p><p class="matrix-shortlist-count">' + state.compare.length + ' of 3 shortlisted</p></div>';
+    if (state.compare.length) {
+      html += '<div class="matrix-shortlist" role="region" aria-label="Your comparison shortlist"><div><strong>Build a shortlist</strong><span>' + state.compare.map(function (id) { var c = CONTROLLERS.find(function (x) { return x.id === id; }); return c ? esc(c.name) : ""; }).join(" · ") + '</span></div><div class="matrix-shortlist-actions"><button type="button" class="matrix-compare-go" data-compare-open' + (state.compare.length < 2 ? ' disabled' : '') + '>' + (state.compareOpen ? 'Refresh comparison' : 'Compare ' + state.compare.length + ' picks') + '</button><button type="button" class="matrix-clear-shortlist" data-compare-clear>Clear</button></div></div>';
+    } else {
+      html += '<p class="matrix-shortlist-hint">Select up to three decks to compare the software details, outputs and trade-offs together.</p>';
+    }
+    html += renderCompareTable();
     if (!list.length) {
-      html += '<div class="matrix-empty"><p>No controllers match those filters. Try clearing filters or searching for "FLX4" or "Serato".</p><button type="button" class="btn btn-secondary" data-mat-reset>Reset all filters</button></div>';
+      html += '<div class="matrix-empty"><p>No controllers match those filters. Try clearing a filter or searching for “FLX4” or “Serato”.</p><button type="button" class="btn btn-secondary" data-mat-reset>Reset filters</button></div>';
     } else {
       html += '<div class="matrix-cards">';
       list.forEach(function (c) {
-        html += '<div class="matrix-card" id="mat-' + c.id + '">';
-        html += '<div class="mat-head">';
-        html += '<div><span class="mat-brand">' + esc(c.brand) + ' · ' + esc(c.channels) + '</span>';
-        html += '<h3 class="mat-title">' + esc(c.name) + '</h3></div>';
-        html += '<span class="mat-price">' + esc(c.price) + '</span>';
-        html += '</div>';
-
-        html += '<div class="mat-software-grid">';
-        html += '<div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div>';
-        html += '<div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div>';
-        html += '<div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div>';
-        html += '<div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div>';
-        html += '</div>';
-
-        html += '<div class="mat-specs">';
-        html += '<p><strong>Stems:</strong> ' + esc(c.stems) + '</p>';
-        html += '<p><strong>Outputs:</strong> ' + esc(c.outputs) + '</p>';
-        html += '<p><strong>Streaming:</strong> ' + esc(c.streaming.join(", ")) + '</p>';
-        html += '</div>';
-
-        html += '<div class="mat-verdict">';
-        html += '<p class="mat-buyer"><strong>Best For:</strong> ' + esc(c.buyer) + '</p>';
-        html += '<p class="mat-caveat"><strong>Caveat:</strong> ' + esc(c.caveat) + '</p>';
-        html += '</div>';
-
-        var catalogMap = {
-          "flx4": "pioneer-ddj-flx4",
-          "flx2": "pioneer-ddj-flx2",
-          "flx10": "pioneer-ddj-flx10",
-          "grv6": "alphatheta-ddj-grv6",
-          "s2mk3": "traktor-kontrol-s2-mk3",
-          "prime4plus": "denon-prime-4-plus",
-          "primego": "denon-prime-go",
-          "inpulse500": "hercules-inpulse-500",
-          "ranefour": "rane-four"
-        };
-        var targetCatId = catalogMap[c.id] || "pioneer-ddj-flx4";
-
-        html += '<div class="mat-actions-row">';
-        if (c.guide) {
-          html += '<a class="mat-link" href="' + esc(c.guide) + '">Read Guide →</a>';
-        }
-        html += '<a class="mat-plan-btn" href="build-your-dj-setup.html?add=' + targetCatId + '">Plan in Rig Architect 🎛️</a>';
-        html += '</div>';
-
-        html += '</div>';
+        var catalogId = catalogIds[c.id] || "";
+        var addToRig = catalogId ? '?add=' + encodeURIComponent(catalogId) : '';
+        var short = state.compare.indexOf(c.id) !== -1;
+        html += '<article class="matrix-card" id="mat-' + esc(c.id) + '" data-product-id="' + esc(catalogId) + '">';
+        html += '<div class="mat-head"><div class="matrix-media-slot"></div><div class="mat-identity"><span class="mat-brand">' + esc(c.brand) + ' · ' + esc(c.channels) + '</span><h3 class="mat-title">' + esc(c.name) + '</h3><p class="mat-primary">' + esc(c.primary) + '</p></div><span class="mat-price">' + esc(c.price) + '</span></div>';
+        html += '<div class="mat-quick-facts"><span>' + esc(c.format === "standalone" ? "Standalone · no laptop" : "Laptop required") + '</span><span>' + esc(c.outputs.split(",")[0]) + '</span></div>';
+        html += '<div class="mat-software-grid" aria-label="Core software compatibility"><div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div><div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div><div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div><div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div></div>';
+        html += '<details class="mat-more"><summary>Streaming, connections &amp; the fine print</summary><div class="mat-more-grid"><p><strong>Best for</strong>' + esc(c.buyer) + '</p><p><strong>Trade-off</strong>' + esc(c.caveat) + '</p><p><strong>Outputs</strong>' + esc(c.outputs) + '</p><p><strong>Microphone</strong>' + esc(c.mic) + '</p><p><strong>Streaming</strong>' + esc(c.streaming.join(", ")) + '</p><p><strong>Stems / performance</strong>' + esc(c.stems) + '</p><p><strong>VirtualDJ</strong>' + esc(statusLabel(c.virtualdj)) + '</p><p><strong>Engine DJ</strong>' + esc(statusLabel(c.engine)) + '</p><p><strong>Platforms</strong>' + esc(c.mobile) + '</p></div></details>';
+        html += '<div class="mat-actions-row"><button type="button" class="mat-compare-toggle' + (short ? ' is-selected' : '') + '" data-mat-compare="' + esc(c.id) + '" aria-pressed="' + (short ? 'true' : 'false') + '">' + (short ? '✓ Added to compare' : '+ Add to compare') + '</button>' + (c.guide ? '<a class="mat-link" href="' + esc(c.guide) + '">Read guide</a>' : '') + '<a class="mat-plan-btn" href="build-your-dj-setup.html' + addToRig + '">' + (catalogId ? 'Add to Rig Studio' : 'Open Rig Studio') + '</a></div>';
+        html += '</article>';
       });
       html += '</div>';
     }
-
     root.innerHTML = html;
+    if (window.OffbeatProductMedia) window.OffbeatProductMedia.refresh(root);
+    attachListeners();
+    if (state.compareOpen) {
+      var panel = root.querySelector("#matrix-compare-panel");
+      if (panel && root.dataset.scrollCompare === "true") panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    root.dataset.scrollCompare = "false";
+  }
 
-    // Attach listeners
+  function attachListeners() {
     var searchInput = root.querySelector("[data-mat-search]");
-    if (searchInput) {
-      searchInput.addEventListener("input", function () {
-        state.search = searchInput.value;
+    if (searchInput) searchInput.addEventListener("input", function () { state.search = searchInput.value; render(); var input = root.querySelector("[data-mat-search]"); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } });
+    [["[data-mat-soft]", "software"], ["[data-mat-chan]", "channels"], ["[data-mat-tier]", "tier"]].forEach(function (entry) {
+      var select = root.querySelector(entry[0]);
+      if (select) select.addEventListener("change", function () { state[entry[1]] = select.value; render(); });
+    });
+    var reset = root.querySelector("[data-mat-reset]");
+    if (reset) reset.addEventListener("click", function () { state.search = ""; state.software = "all"; state.channels = "all"; state.tier = "all"; render(); });
+    var addButtons = root.querySelectorAll("[data-mat-compare]");
+    Array.prototype.forEach.call(addButtons, function (button) {
+      button.addEventListener("click", function () {
+        var id = button.getAttribute("data-mat-compare"), index = state.compare.indexOf(id);
+        if (index !== -1) state.compare.splice(index, 1);
+        else if (state.compare.length < 3) state.compare.push(id);
+        else { button.textContent = "Shortlist full (3 max)"; return; }
+        state.compareOpen = false;
         render();
-        var reInput = root.querySelector("[data-mat-search]");
-        if (reInput) { reInput.focus(); reInput.setSelectionRange(reInput.value.length, reInput.value.length); }
+        var restored = root.querySelector('[data-mat-compare="' + id + '"]');
+        if (restored) restored.focus();
       });
-    }
-
-    var softSel = root.querySelector("[data-mat-soft]");
-    if (softSel) {
-      softSel.addEventListener("change", function () {
-        state.software = softSel.value;
-        render();
-      });
-    }
-
-    var chanSel = root.querySelector("[data-mat-chan]");
-    if (chanSel) {
-      chanSel.addEventListener("change", function () {
-        state.channels = chanSel.value;
-        render();
-      });
-    }
-
-    var tierSel = root.querySelector("[data-mat-tier]");
-    if (tierSel) {
-      tierSel.addEventListener("change", function () {
-        state.tier = tierSel.value;
-        render();
-      });
-    }
-
-    var resetBtn = root.querySelector("[data-mat-reset]");
-    if (resetBtn) {
-      resetBtn.addEventListener("click", function () {
-        state = { search: "", software: "all", channels: "all", tier: "all" };
-        render();
-      });
-    }
+    });
+    var open = root.querySelector("[data-compare-open]");
+    if (open) open.addEventListener("click", function () { state.compareOpen = true; root.dataset.scrollCompare = "true"; render(); });
+    var close = root.querySelector("[data-compare-close]");
+    if (close) close.addEventListener("click", function () { state.compareOpen = false; render(); var button = root.querySelector("[data-compare-open]"); if (button) button.focus(); });
+    var clear = root.querySelector("[data-compare-clear]");
+    if (clear) clear.addEventListener("click", function () { state.compare = []; state.compareOpen = false; render(); var first = root.querySelector("[data-mat-compare]"); if (first) first.focus(); });
   }
 
   function esc(str) {
-    return String(str || "").replace(/[&<>"]/g, function (m) {
+    return String(str || "").replace(/[&<>\"]/g, function (m) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m];
     });
   }

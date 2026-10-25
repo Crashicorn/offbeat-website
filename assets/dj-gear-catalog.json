@@ -84,7 +84,16 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The default first controller for most people"
+      "pick": "The default first controller for most people",
+      "product_photo": {
+        "src": "assets/img/products/photos/pioneer-ddj-flx4-commons.jpg",
+        "alt": "Pioneer DJ DDJ-FLX4 photographed at the Taipei Media School booth",
+        "credit": "Solomon203 / Wikimedia Commons",
+        "source": "https://commons.wikimedia.org/wiki/File:Pioneer_DDJ-FLX4_at_Taipei_Media_School_booth_20250810.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "modification": "Rotated 180° to correct orientation and resized to 1920 × 1080."
+      }
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -347,7 +356,16 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The booth standard"
+      "pick": "The booth standard",
+      "product_photo": {
+        "src": "assets/img/products/photos/sennheiser-hd25-commons.jpg",
+        "alt": "Sennheiser HD 25-1 headphones photographed on a light surface",
+        "credit": "Bizzarle / Wikimedia Commons",
+        "source": "https://commons.wikimedia.org/wiki/File:Sennheiser_hd-25_headphones.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "modification": "Resized to 1920 × 1152."
+      }
     },
     {
       "id": "ath-m50x",
