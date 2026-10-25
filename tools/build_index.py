@@ -77,6 +77,19 @@ OVERRIDES = {
     "dj-equipment-checklist": "start",
     "dj-equipment-beginners": "start",
     "build-your-dj-setup": "start",
+    "numark-scratch-review": "controllers",
+    "ddj-flx2-review": "controllers",
+    "ddj-grv6-review": "controllers",
+    "rane-one-review": "controllers",
+    "denon-prime-go-review": "controllers",
+    "denon-sc6000-review": "controllers",
+    "pioneer-cdj-3000-review": "controllers",
+    "pioneer-ddj-flx10-review": "controllers",
+    "pioneer-ddj-flx4-review": "controllers",
+    "how-to-become-a-dj": "skills",
+    "how-to-get-dj-gigs": "skills",
+    "how-to-promote-dj-mixes": "skills",
+    "how-to-record-dj-mix": "skills",
 }
 
 
@@ -96,6 +109,8 @@ def group_for(slug):
 def main():
     items = []
     for path in sorted(glob.glob("*.html")):
+        if path in ("index.html", "404.html"):
+            continue
         src = open(path, encoding="utf-8").read()
         title_match = re.search(r"<title>(.*?)</title>", src, re.S)
         title = clean(title_match.group(1)) if title_match else path
@@ -105,7 +120,8 @@ def main():
         if not desc:
             hero = re.search(r'<p class="hero-sub">(.*?)</p>', src, re.S)
             desc = clean(hero.group(1)) if hero else ""
-        desc = desc[:190]
+        if len(desc) > 150:
+            desc = desc[:150].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
         gid, heading, blurb = group_for(path)
         items.append({
             "u": path,

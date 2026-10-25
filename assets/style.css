@@ -1433,3 +1433,26 @@ table td strong { color: var(--text); }
 .vs-card li { margin-bottom: .5rem; color: var(--text-2); font-size: .9rem; line-height: 1.5; }
 .vs-card li:last-child { margin-bottom: 0; }
 @media (max-width: 760px) { .vs-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Freshly reviewed strip on the homepage */
+.recent-section { padding-top: 2.6rem; }
+.recent-list {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem;
+  margin: 1.3rem 0 0; padding: 0; list-style: none; counter-reset: recent;
+}
+.recent-list li { margin: 0; }
+.recent-list a {
+  display: flex; flex-direction: column; gap: .35rem; height: 100%;
+  padding: .95rem 1rem 1.05rem; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .022); text-decoration: none; color: inherit;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+.recent-list a:hover { border-color: var(--line-warm); background: rgba(255, 90, 31, .06); transform: translateY(-2px); }
+.recent-meta {
+  color: var(--flame-2); font-size: .68rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+}
+.recent-list strong { color: var(--text); font-size: 1.06rem; line-height: 1.3; font-family: var(--display); }
+.recent-desc { color: var(--muted); font-size: .85rem; line-height: 1.5; }
+@media (max-width: 1000px) { .recent-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .recent-list { grid-template-columns: minmax(0, 1fr); } }
