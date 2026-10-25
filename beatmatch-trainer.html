@@ -129,6 +129,16 @@
     <p>Because the tool knows where both kicks are, it can tell you something your ears cannot yet: how far apart they were, and for how much of the drill you kept them together.</p>
   </section>
 
+  <div class="ear-demos" aria-labelledby="ear-demos-title">
+    <h3 id="ear-demos-title">Ear training audio check — what does it sound like?</h3>
+    <p>Tap below to hear what you are listening for before you start your drill:</p>
+    <div class="ear-demo-buttons">
+      <button type="button" class="btn-ear-demo" data-demo="locked"><span>▶</span> <strong>Locked mix</strong> (kicks hit as one punchy transient)</button>
+      <button type="button" class="btn-ear-demo" data-demo="dragging"><span>▶</span> <strong>Dragging flam</strong> (Deck B trailing: ba-dum, ba-dum)</button>
+      <button type="button" class="btn-ear-demo" data-demo="rushing"><span>▶</span> <strong>Rushing flam</strong> (Deck B ahead: dum-ba, dum-ba)</button>
+    </div>
+  </div>
+
   <section class="teacher" id="trainer" aria-labelledby="trainer-title">
     <div class="teacher-head">
       <div>
@@ -157,7 +167,21 @@
           <span class="deck-label">Deck A <em>master</em></span>
           <span class="deck-bpm"><b data-bpm-a>124.0</b> BPM</span>
         </div>
-        <div class="deck-wave" data-live-a aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="deck-visual-row">
+          <div class="deck-platter-wrap">
+            <div class="deck-platter" data-platter-a aria-hidden="true">
+              <div class="platter-pip"></div>
+              <div class="platter-spindle"></div>
+            </div>
+          </div>
+          <div class="deck-visual-meta">
+            <div class="deck-wave" data-live-a aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="deck-toolbar">
+              <button type="button" class="btn-deck-tool" data-solo-a aria-label="Solo deck A">Solo A</button>
+              <button type="button" class="btn-deck-tool" data-split-cue aria-label="Toggle split cue headphones mode">🎧 Split Cue (L/R)</button>
+            </div>
+          </div>
+        </div>
         <div class="deck-controls">
           <div class="deck-fixed">
             <span class="pitch-label">Pitch fader <b>fixed</b></span>
@@ -172,13 +196,28 @@
           <span class="deck-label">Deck B <em>you</em></span>
           <span class="deck-bpm"><b data-bpm-b>124.0</b> BPM</span>
         </div>
-        <div class="deck-wave" data-live-b aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="deck-visual-row">
+          <div class="deck-platter-wrap">
+            <div class="deck-platter" data-platter-b title="Drag or swipe to nudge platter" aria-label="Deck B Jog Platter (drag to nudge)">
+              <div class="platter-pip"></div>
+              <div class="platter-spindle"></div>
+            </div>
+          </div>
+          <div class="deck-visual-meta">
+            <div class="deck-wave" data-live-b aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="deck-toolbar">
+              <button type="button" class="btn-deck-tool" data-solo-b aria-label="Solo deck B">Solo B</button>
+              <span class="deck-note" style="margin: auto 0 auto .3rem;">Drag platter or use nudges</span>
+            </div>
+          </div>
+        </div>
         <div class="deck-controls">
           <label class="pitch">
             <span class="pitch-label">Pitch fader <b data-pitch-value>+0.00%</b></span>
             <input type="range" min="-8" max="8" step="0.05" value="0" data-pitch aria-label="Pitch fader for deck B">
           </label>
-          <div class="nudges">
+          <div class="nudges-wrap">
+            <button type="button" class="btn-cue" data-cue aria-label="CUE button: drop deck B on the downbeat">CUE</button>
             <button type="button" class="nudge" data-nudge-back aria-label="Slow deck B (nudge back)">◀ slow</button>
             <button type="button" class="nudge" data-nudge-fwd aria-label="Push deck B (nudge forward)">push ▶</button>
           </div>
@@ -209,6 +248,33 @@
     <p class="teacher-verdict" data-verdict></p>
     <p class="teacher-best" data-best hidden>Personal best: —</p>
 
+    <div class="scorecard" data-scorecard hidden aria-labelledby="scorecard-title">
+      <div class="scorecard-head">
+        <h3 id="scorecard-title">Drill Performance Card</h3>
+        <span class="scorecard-badge" data-score-grade>CLUB READY</span>
+      </div>
+      <div class="scorecard-grid">
+        <div class="scorecard-metric">
+          <span>In Lock</span>
+          <b data-score-val>0%</b>
+        </div>
+        <div class="scorecard-metric">
+          <span>Avg Offset</span>
+          <b data-score-drift>±0 ms</b>
+        </div>
+        <div class="scorecard-metric">
+          <span>Best Streak</span>
+          <b data-score-streak>0.0s</b>
+        </div>
+      </div>
+      <p class="scorecard-tip"><strong>Coaching Tip:</strong> <span data-score-tip>Match pitch first before nudging.</span></p>
+      <div class="scorecard-actions">
+        <button type="button" class="btn" data-scorecard-retry>Practice Again (<kbd>R</kbd>)</button>
+        <button type="button" class="btn btn-secondary" data-scorecard-copy>Share Result</button>
+        <button type="button" class="btn btn-secondary" data-scorecard-close>Close Card</button>
+      </div>
+    </div>
+
     <div class="teacher-actions">
       <button type="button" class="btn" data-start>Start the drill</button>
       <button type="button" class="btn btn-secondary" data-stop disabled>Stop</button>
@@ -218,11 +284,11 @@
     <div class="teacher-help">
       <h3>How to use it</h3>
       <ol>
-        <li><strong>Tempo first.</strong> Use the pitch fader (or ↑ / ↓) until the double-kick stops speeding up or slowing down. Ignore position.</li>
-        <li><strong>Then phase.</strong> Hold the slow or push button (or ← / →) for a fraction of a second to line the kicks up. Small moves, often.</li>
-        <li><strong>Then hold it.</strong> The score is the share of the drill the kicks stayed within 18 ms — roughly the point where they read as one kick rather than a flam. Your best score per difficulty is kept on this device, so you can see whether the drilling is working.</li>
+        <li><strong>Tempo first.</strong> Use the pitch fader (or <kbd>↑</kbd> / <kbd>↓</kbd>) until the double-kick stops speeding up or slowing down. Ignore position.</li>
+        <li><strong>Then phase.</strong> Tap the CUE button to drop on the 1, or hold the slow/push buttons (or <kbd>←</kbd> / <kbd>→</kbd> / platter drag) for a fraction of a second to line the kicks up.</li>
+        <li><strong>Then hold it.</strong> The score is the share of the drill the kicks stayed within 18 ms — roughly the point where they read as one punchy kick rather than a flam. Your best score per difficulty is kept on this device.</li>
       </ol>
-      <p class="teacher-keys"><kbd>↑</kbd><kbd>↓</kbd> pitch · <kbd>←</kbd><kbd>→</kbd> nudge · <kbd>space</kbd> stop</p>
+      <p class="teacher-keys"><kbd>Space</kbd> start/stop · <kbd>C</kbd> cue · <kbd>↑</kbd><kbd>↓</kbd> pitch · <kbd>←</kbd><kbd>→</kbd> nudge · <kbd>M</kbd> split cue · <kbd>1</kbd>/<kbd>2</kbd> solo deck</p>
     </div>
   </section>
 

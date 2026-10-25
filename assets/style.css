@@ -1609,6 +1609,30 @@ h3.mini {
 /* =============================================================================
    Beatmatching trainer (beatmatch-trainer.html)
    ========================================================================== */
+/* Audio preview band (Hear the difference before drilling) */
+.ear-demos {
+  margin: 1.2rem 0 1.6rem; padding: 1.1rem 1.3rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .02);
+}
+.ear-demos h3 {
+  margin: 0 0 .3rem; font-size: .88rem; font-family: var(--display);
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text);
+}
+.ear-demos p { margin: 0 0 .8rem; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.ear-demo-buttons { display: flex; flex-wrap: wrap; gap: .6rem; }
+.btn-ear-demo {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .45rem .85rem; border: 1px solid var(--line); border-radius: var(--r-xs);
+  background: var(--panel-2); color: var(--text-2); font: inherit; font-size: .82rem;
+  cursor: pointer; transition: all .15s ease;
+}
+.btn-ear-demo:hover { border-color: var(--line-warm); color: var(--text); background: rgba(255, 90, 31, .08); }
+.btn-ear-demo.is-playing {
+  border-color: var(--flame); color: #fff; background: var(--flame);
+  box-shadow: 0 0 12px rgba(255, 90, 31, .35);
+}
+
 .teacher {
   margin: 1.4rem 0 2.6rem; padding: clamp(1rem, 2.6vw, 1.8rem);
   border: 1px solid var(--line); border-radius: var(--r-lg);
@@ -1616,6 +1640,7 @@ h3.mini {
     radial-gradient(120% 130% at 0% 0%, rgba(255, 90, 31, .10), transparent 55%),
     linear-gradient(180deg, var(--panel), var(--ink-2));
   box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .9);
+  position: relative;
 }
 .teacher-head {
   display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start;
@@ -1635,6 +1660,7 @@ h3.mini {
 .deck {
   padding: 1rem 1.1rem 1.15rem; border: 1px solid var(--line); border-radius: var(--r-md);
   background: rgba(255, 255, 255, .025);
+  display: flex; flex-direction: column;
 }
 .deck--b { border-color: var(--line-warm); background: rgba(255, 90, 31, .05); }
 .deck-head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; margin-bottom: .8rem; }
@@ -1643,7 +1669,44 @@ h3.mini {
 .deck-bpm { color: var(--muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
 .deck-bpm b { color: var(--flame-2); font-size: .95rem; }
 
-.deck-wave { display: flex; align-items: flex-end; gap: 3px; height: 44px; margin-bottom: .7rem; }
+/* Rotating vinyl/CDJ jog platter representation */
+.deck-visual-row {
+  display: flex; align-items: center; gap: .9rem; margin-bottom: .7rem;
+}
+.deck-platter-wrap {
+  position: relative; width: 72px; height: 72px; flex-shrink: 0;
+  border-radius: 50%;
+}
+.deck-platter {
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #1b1b22 0%, #1b1b22 24%, #282832 25%, #18181f 55%, #111117 100%);
+  border: 2px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .5);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .04s linear;
+  touch-action: none; user-select: none;
+}
+.deck--b .deck-platter {
+  border-color: rgba(255, 90, 31, .35); cursor: grab;
+}
+.deck--b .deck-platter:active { cursor: grabbing; border-color: var(--flame); }
+.platter-spindle {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at center, #8a8880, #3a3832);
+  border: 1px solid rgba(255, 255, 255, .25);
+  box-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.platter-pip {
+  position: absolute; top: 4px; left: calc(50% - 2px); width: 4px; height: 12px;
+  border-radius: 2px; background: #fff;
+  box-shadow: 0 0 6px rgba(255,255,255,.8);
+}
+.deck--b .platter-pip { background: var(--flame); box-shadow: 0 0 6px var(--flame); }
+
+.deck-visual-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+
+.deck-wave { display: flex; align-items: flex-end; gap: 3px; height: 38px; margin-bottom: .3rem; }
 .deck-wave i {
   display: block; flex: 1; height: 30%; border-radius: 2px; background: rgba(255, 255, 255, .16);
   transition: height .09s linear, background .09s linear;
@@ -1652,7 +1715,8 @@ h3.mini {
 .deck-wave i:nth-child(4) { height: 90%; }
 .deck--a .deck-wave.is-beat i, .deck--b .deck-wave.is-beat i { background: var(--flame); }
 .deck-wave.is-beat i:nth-child(4) { height: 100%; }
-.deck-note { margin: 0; color: var(--muted-2); font-size: .76rem; line-height: 1.45; }
+
+.deck-note { margin: 0; color: var(--muted-2); font-size: .74rem; line-height: 1.4; }
 .deck-fixed {
   padding: .55rem .7rem .6rem; border: 1px dashed rgba(255, 255, 255, .10);
   border-radius: var(--r-xs);
@@ -1661,12 +1725,33 @@ h3.mini {
 .deck-fixed p { margin: 0; color: var(--muted-2); font-size: .78rem; line-height: 1.5; }
 
 .deck-controls { display: grid; gap: .7rem; }
+.deck-toolbar { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .2rem; }
+.btn-deck-tool {
+  padding: .3rem .6rem; border: 1px solid var(--line); border-radius: var(--r-xs);
+  background: rgba(255, 255, 255, .04); color: var(--muted); font: inherit; font-size: .74rem;
+  cursor: pointer; transition: all .12s ease;
+}
+.btn-deck-tool:hover { color: var(--text); border-color: var(--line-warm); }
+.btn-deck-tool.is-active {
+  background: var(--flame); color: #fff; border-color: var(--flame);
+}
+
 .pitch { display: grid; gap: .35rem; }
 .pitch-label { display: flex; justify-content: space-between; color: var(--muted); font-size: .76rem; }
 .pitch-label b { color: var(--text); font-variant-numeric: tabular-nums; }
 .pitch input[type="range"] {
-  width: 100%; accent-color: var(--flame); height: 1.4rem;
+  width: 100%; accent-color: var(--flame); height: 1.4rem; cursor: pointer;
 }
+.nudges-wrap { display: grid; grid-template-columns: 80px 1fr 1fr; gap: .45rem; }
+.btn-cue {
+  padding: .5rem .4rem; border: 1px solid rgba(255, 122, 0, .4); border-radius: var(--r-xs);
+  background: rgba(255, 122, 0, .15); color: #ff9944;
+  font-family: var(--display); font-size: .85rem; font-weight: 700; letter-spacing: .05em;
+  cursor: pointer; touch-action: manipulation; user-select: none;
+}
+.btn-cue:hover { background: rgba(255, 122, 0, .28); color: #fff; }
+.btn-cue:active { background: #ff7a00; color: #000; }
+
 .nudges { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
 .nudge {
   padding: .5rem .4rem; border: 1px solid var(--line); border-radius: var(--r-xs);
@@ -1705,6 +1790,14 @@ h3.mini {
 }
 .drift-bar.is-locked .drift-pip { background: var(--mint); }
 
+.status-badge {
+  display: inline-block; padding: .1rem .45rem; border-radius: 3px; font-size: .72rem;
+  font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-right: .3rem;
+}
+.status-badge--lock { background: rgba(99, 217, 168, .2); color: var(--mint); border: 1px solid var(--mint); }
+.status-badge--close { background: rgba(255, 193, 77, .2); color: var(--amber); border: 1px solid var(--amber); }
+.status-badge--drift { background: rgba(255, 122, 122, .2); color: var(--rose); border: 1px solid var(--rose); }
+
 .teacher-status { margin: .8rem 0 .2rem; color: var(--text-2); font-size: .92rem; min-height: 1.4em; }
 .teacher-verdict { margin: 0; font-size: .92rem; color: var(--muted); }
 .teacher-verdict[data-grade="great"] { color: var(--mint); }
@@ -1714,6 +1807,44 @@ h3.mini {
 
 .teacher-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
 .teacher-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Detailed scorecard after drill */
+.scorecard {
+  margin-top: 1.2rem; padding: 1.2rem 1.4rem;
+  border: 1px solid var(--line-warm); border-radius: var(--r-md);
+  background: rgba(14, 14, 20, .95);
+  box-shadow: 0 16px 40px rgba(0,0,0,.6);
+  animation: fadeInScore .25s ease-out;
+}
+@keyframes fadeInScore { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.scorecard-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: .8rem; }
+.scorecard-head h3 { margin: 0; font-size: 1.1rem; color: var(--text); }
+.scorecard-badge {
+  padding: .2rem .6rem; border-radius: 4px; font-size: .75rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.scorecard-badge--great { background: rgba(99, 217, 168, .2); color: var(--mint); border: 1px solid var(--mint); }
+.scorecard-badge--good { background: rgba(255, 193, 77, .2); color: var(--amber); border: 1px solid var(--amber); }
+.scorecard-badge--ok { background: rgba(140, 196, 255, .2); color: var(--sky); border: 1px solid var(--sky); }
+.scorecard-badge--rough { background: rgba(255, 122, 122, .2); color: var(--rose); border: 1px solid var(--rose); }
+
+.scorecard-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-bottom: 1rem;
+}
+.scorecard-metric {
+  padding: .6rem .8rem; border: 1px solid var(--line); border-radius: var(--r-xs);
+  background: rgba(255, 255, 255, .03); text-align: center;
+}
+.scorecard-metric span { display: block; font-size: .68rem; color: var(--muted-2); text-transform: uppercase; letter-spacing: .08em; }
+.scorecard-metric b { display: block; font-size: 1.25rem; color: var(--text); font-family: var(--display); margin-top: .15rem; }
+
+.scorecard-tip {
+  margin: 0 0 1rem; padding: .65rem .85rem; border-radius: var(--r-xs);
+  background: rgba(255, 255, 255, .04); color: var(--text-2); font-size: .86rem; line-height: 1.45;
+}
+.scorecard-tip strong { color: var(--flame-2); margin-right: .3rem; }
+
+.scorecard-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 
 .is-hidden-readout .teacher-readout { opacity: .18; filter: blur(2px); }
 .is-hidden-readout .teacher-readout:hover { opacity: 1; filter: none; }
@@ -1733,6 +1864,8 @@ h3.mini {
   .teacher-stage { grid-template-columns: minmax(0, 1fr); }
   .teacher-readout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .readout--drift { grid-column: 1 / -1; }
+  .nudges-wrap { grid-template-columns: 1fr; }
+  .scorecard-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Homepage practice band (beatmatching trainer) ---------- */
