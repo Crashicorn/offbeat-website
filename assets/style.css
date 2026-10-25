@@ -1398,3 +1398,25 @@ table td strong { color: var(--text); }
   .planner-band { grid-template-columns: minmax(0, 1fr); }
   .planner-band-art { order: -1; }
 }
+
+/* =============================================================================
+   Review verdict card — the four questions a buyer actually asks
+   ========================================================================== */
+.verdict {
+  margin: 2rem 0 2.4rem; padding: 1.25rem 1.35rem 1.35rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .01));
+}
+.verdict-kicker {
+  margin: 0 0 .9rem; color: var(--flame-2); font-size: .7rem; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.verdict-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.1rem 1.4rem; }
+.verdict-grid span {
+  display: block; margin-bottom: .3rem; color: var(--muted-2);
+  font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+}
+.verdict-grid p { margin: 0; color: var(--text-2); font-size: .88rem; line-height: 1.5; }
+.verdict-grid strong { color: var(--text); font-weight: 600; }
+@media (max-width: 900px) { .verdict-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .verdict-grid { grid-template-columns: minmax(0, 1fr); gap: .9rem; } }
