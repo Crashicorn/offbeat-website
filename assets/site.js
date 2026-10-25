@@ -90,23 +90,67 @@
   })();
 
 
-  /* ---------- 5. Long-guide navigation: contents card + progress bar ---------- */
+  /* ---------- 5. Long-guide navigation ----------
+   * Three pieces that make a 10-minute guide navigable:
+   *   a. section ids + hover permalinks on every heading
+   *   b. a collapsible "In this guide" card (all widths) and, on wide screens,
+   *      a sticky rail that follows the reader down the page
+   *   c. numbered badges on "Step N" sections and a reading-progress bar
+   */
   (function guideNavigation() {
     var main = document.querySelector("main");
     if (!main) return;
-    var headings = [].slice.call(main.querySelectorAll(".content-wrap h2, .page-content h2"))
-      .filter(function (h) { return h.textContent.trim().length > 3; });
-    if (headings.length < 6) return;
+    var wrap = main.querySelector(".content-wrap") || main.querySelector(".page-content");
+    if (!wrap) return;
 
-    headings.forEach(function (heading, i) {
-      if (!heading.id) {
-        heading.id = "section-" + (i + 1) + "-" + heading.textContent.trim()
-          .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
-      }
+    var headings = [].slice.call(wrap.querySelectorAll("h2")).filter(function (h) {
+      return h.textContent.trim().length > 3 && !h.closest("details");
+    });
+    if (headings.length < 4) return;
+
+    var slug = function (text) {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+    };
+    var shortLabel = function (text) {
+      return text.replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+[—–]\s+.*$/, "").trim();
+    };
+
+    /* Labels are captured before badges and permalinks touch the headings */
+    var entries = headings.map(function (heading) {
+      return { el: heading, label: shortLabel(heading.textContent.replace(/\s+/g, " ").trim()) };
     });
 
-    var items = headings.slice(0, 14).map(function (heading) {
-      return '<li><a href="#' + heading.id + '">' + heading.textContent.trim() + "</a></li>";
+    headings.forEach(function (heading, i) {
+      if (!heading.id) heading.id = "section-" + (i + 1) + "-" + slug(heading.textContent);
+      heading.classList.add("anchored");
+      var link = document.createElement("a");
+      link.className = "heading-anchor";
+      link.href = "#" + heading.id;
+      link.setAttribute("aria-label", "Link to “" + entries[i].label + "”");
+      link.innerHTML = "#";
+      heading.appendChild(link);
+    });
+
+    /* Numbered badges for step-by-step sections */
+    Array.prototype.forEach.call(wrap.querySelectorAll(".article-section, .format-section, .ofb-section, section"), function (section) {
+      var h2 = section.querySelector("h2");
+      if (!h2) return;
+      var match = h2.textContent.match(/^Step\s+(\d+)\s*[:.—-]\s*/i);
+      if (!match) return;
+      section.classList.add("is-step");
+      var badge = document.createElement("span");
+      badge.className = "step-num";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = match[1];
+      var text = h2.textContent.replace(match[0], "");
+      h2.textContent = "";
+      h2.appendChild(badge);
+      h2.appendChild(document.createTextNode(text));
+    });
+
+    /* a. Collapsible contents card */
+    var items = entries.slice(0, 16).map(function (entry) {
+      return '<li><a href="#' + entry.el.id + '">' + entry.label + "</a></li>";
     }).join("");
 
     var toc = document.createElement("nav");
@@ -114,16 +158,51 @@
     toc.setAttribute("aria-label", "On this page");
     toc.innerHTML =
       '<details><summary>In this guide <span class="toc-count">' + headings.length +
-      ' sections</span></summary><ol class="toc-list">' + items + "</ol></details>";
+      " sections</span></summary><ol class=\"toc-list\">" + items + "</ol></details>";
 
-    var anchor = main.querySelector(".content-wrap > .article-section, .page-content > .article-section");
-    if (anchor && anchor.parentNode) {
-      anchor.parentNode.insertBefore(toc, anchor.nextSibling);
-    } else {
-      main.appendChild(toc);
+    var anchor = wrap.querySelector(".article-section") || wrap.firstElementChild;
+    if (anchor) anchor.parentNode.insertBefore(toc, anchor.nextSibling);
+    else wrap.appendChild(toc);
+
+    /* b. Sticky rail for wide screens */
+    var rail = document.createElement("aside");
+    rail.className = "guide-rail";
+    rail.setAttribute("aria-label", "Guide contents");
+    rail.innerHTML =
+      '<div class="rail-inner">' +
+      '<p class="rail-label">On this page</p>' +
+      '<ol class="rail-list">' +
+      entries.slice(0, 18).map(function (entry) {
+        return '<li><a href="#' + entry.el.id + '">' + entry.label + "</a></li>";
+      }).join("") +
+      "</ol>" +
+      '<a class="rail-top" href="#top">Back to top <span aria-hidden="true">↑</span></a>' +
+      "</div>";
+    wrap.insertBefore(rail, wrap.firstElementChild);
+    wrap.classList.add("has-rail");
+
+    var links = [].slice.call(rail.querySelectorAll(".rail-list a"));
+    var byId = {};
+    links.forEach(function (link) { byId[link.getAttribute("href").slice(1)] = link; });
+    var current = null;
+
+    function setActive(id) {
+      if (current === id) return;
+      current = id;
+      links.forEach(function (link) { link.classList.toggle("is-active", link === byId[id]); });
     }
 
-    // Reading progress
+    if ("IntersectionObserver" in window) {
+      var seen = {};
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { seen[entry.target.id] = entry.isIntersecting; });
+        var visible = headings.filter(function (h) { return seen[h.id]; });
+        if (visible.length) setActive(visible[0].id);
+      }, { rootMargin: "-15% 0px -70% 0px", threshold: 0 });
+      headings.forEach(function (h) { observer.observe(h); });
+    }
+
+    /* c. Reading progress */
     var bar = document.createElement("div");
     bar.className = "read-progress";
     bar.setAttribute("aria-hidden", "true");
