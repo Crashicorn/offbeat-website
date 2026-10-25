@@ -1080,3 +1080,38 @@ table td strong { color: var(--text); }
 .hub-lede > .intro-text { max-width: 62ch; }
 .roadmap-step-body { min-width: 0; }
 .qp, .quick-picks, .rank-1, .product-hero, .intro, .headphone-buy-grid-section { display: block; }
+
+/* ---------- Rig map: how the parts of a setup connect ---------- */
+.rig-map {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem;
+  margin: 1.4rem 0 1.8rem; padding: 0; list-style: none; counter-reset: rig;
+}
+.rig-map li {
+  position: relative; margin: 0; padding: 1rem 1rem 1.1rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--panel), var(--ink-2));
+  counter-increment: rig;
+}
+.rig-map li::before {
+  content: counter(rig, decimal-leading-zero);
+  display: block; margin-bottom: .45rem; color: var(--flame-2);
+  font-family: var(--display); font-size: .78rem; font-weight: 600; letter-spacing: .1em;
+}
+.rig-map li::after {
+  content: ""; position: absolute; top: 50%; right: -.42rem; width: .5rem; height: 1px;
+  background: var(--line-strong);
+}
+.rig-map li:last-child::after { display: none; }
+.rig-map strong { display: block; color: var(--text); font-size: .98rem; font-weight: 600; }
+.rig-map span { display: block; margin-top: .25rem; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+.rig-map a { display: inline-block; margin-top: .45rem; font-size: .84rem; font-weight: 600; }
+@media (max-width: 760px) {
+  .rig-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rig-map li::after { display: none; }
+}
+
+/* Tighten the join between the hero strip and the first section */
+.hero-foot { padding-bottom: .5rem; }
+.hero + .content-wrap { padding-top: clamp(1.4rem, 2.4vw, 2rem); }
+.content-wrap > .article-section:first-child,
+.content-wrap > section:first-child { margin-top: 1.2rem; }
