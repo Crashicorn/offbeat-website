@@ -1815,3 +1815,20 @@ h3.mini {
   .inline-practice { grid-template-columns: minmax(0, 1fr); }
   .inline-practice-art { order: -1; }
 }
+
+/* ---------- Numbered journey steps (buying journey, checklists) ---------- */
+.journey-steps {
+  counter-reset: step; margin: 1.2rem 0 1.4rem; padding: 0; list-style: none;
+  display: grid; gap: .7rem;
+}
+.journey-steps li {
+  counter-increment: step; position: relative; margin: 0;
+  padding: .85rem 1rem .85rem 3rem; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .02); color: var(--text-2); font-size: .94rem;
+}
+.journey-steps li::before {
+  content: counter(step, decimal-leading-zero); position: absolute; left: .9rem; top: .8rem;
+  color: var(--flame-2); font-family: var(--display); font-size: .82rem; font-weight: 700;
+  letter-spacing: .02em;
+}
+.journey-steps strong { color: var(--text); }
