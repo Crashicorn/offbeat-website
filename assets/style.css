@@ -1832,3 +1832,13 @@ h3.mini {
   letter-spacing: .02em;
 }
 .journey-steps strong { color: var(--text); }
+
+/* Six-card spec grid: three even columns so no empty tracks show through the
+   1px line background, two rows exactly. */
+.spec-grid.spec-grid--six { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) {
+  .spec-grid.spec-grid--six { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 430px) {
+  .spec-grid.spec-grid--six { grid-template-columns: minmax(0, 1fr); }
+}
