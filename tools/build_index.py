@@ -62,8 +62,29 @@ def clean(text):
     return html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", text))).strip()
 
 
+# Pages whose subject is not obvious from the slug alone.
+OVERRIDES = {
+    "controller-software-compatibility-matrix": "software",
+    "best-dj-controllers-for-beginners": "controllers",
+    "best-dj-controllers-for-serato": "controllers",
+    "best-dj-controllers-for-rekordbox": "controllers",
+    "best-budget-dj-equipment": "start",
+    "best-dj-software-beginners-2026": "software",
+    "best-daw-for-music-production": "production",
+    "music-production-software-free": "production",
+    "how-to-connect-dj-controller-to-speakers": "start",
+    "dj-equipment-checklist": "start",
+    "dj-equipment-beginners": "start",
+}
+
+
 def group_for(slug):
     stem = slug[:-5]
+    if stem in OVERRIDES:
+        gid = OVERRIDES[stem]
+        for g in GROUPS:
+            if g[0] == gid:
+                return g[0], g[1], g[2]
     for gid, heading, blurb, keys in GROUPS:
         if any(k in stem for k in keys):
             return gid, heading, blurb

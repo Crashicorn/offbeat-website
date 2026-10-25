@@ -901,8 +901,8 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
 .format-section > h2, .ofb-section > h2, .intro-section > h2, .intro-section > h3 {
   max-width: var(--read);
 }
-.content-wrap h2, .content-wrap h3, .content-wrap h4 { max-width: 34ch; }
 .content-wrap > h2, .content-wrap > h3 { max-width: 40ch; }
+.article-section h3, .format-section h3, .roadmap-step h3, .card h3 { max-width: none; }
 
 /* Remove the empty hero band left when a page has no hero image */
 .hero-inner:not(.has-media) { padding-bottom: clamp(1.6rem, 3vw, 2.4rem); }
@@ -979,3 +979,7 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
   background: linear-gradient(90deg, var(--flame), var(--amber));
   transform: scaleX(0); transform-origin: 0 50%; pointer-events: none;
 }
+
+/* Commission notes written as paragraphs (legacy markup) must wrap like prose */
+p.commission-tag, span.commission-tag { display: block; width: auto; max-width: 100%; white-space: normal; }
+p.commission-tag { margin: .5rem 0 .2rem; padding: 0; border: 0; background: none; color: var(--muted); font-size: .86rem; line-height: 1.55; }

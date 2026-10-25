@@ -39,6 +39,7 @@ class Walker(HTMLParser):
         self.errors = []
         self.counts = {"html": 0, "body": 0, "main": 0}
         self.h2 = []
+        self.h3 = []
         self.imgs = []
         self.hrefs = []
         self.ld = []
@@ -64,6 +65,9 @@ class Walker(HTMLParser):
         if tag == "script" and a.get("type") == "application/ld+json":
             self._in_ld = True
             self._ld_buf = []
+        if tag == "h3":
+            self.h3_depth = getattr(self, "h3_depth", 0) + 1
+            self._h3_buf = []
         if tag == "h2":
             self.h2_depth += 1
             self._h2_buf = []
@@ -77,6 +81,11 @@ class Walker(HTMLParser):
             self.main_depth -= 1
         if tag in ("header", "nav", "footer") and self.chrome_depth:
             self.chrome_depth -= 1
+        if tag == "h3" and getattr(self, "h3_depth", 0):
+            self.h3_depth -= 1
+            text = "".join(self._h3_buf).strip()
+            if text:
+                self.h3.append(text)
         if tag == "h2" and self.h2_depth:
             self.h2_depth -= 1
             text = "".join(self._h2_buf).strip()
@@ -102,6 +111,8 @@ class Walker(HTMLParser):
             self._ld_buf.append(data)
         if self.h2_depth:
             self._h2_buf.append(data)
+        if getattr(self, "h3_depth", 0):
+            self._h3_buf.append(data)
 
 
 def check_page(path):
@@ -137,7 +148,14 @@ def check_page(path):
         errors.append(f"{len(h2_outside)} <h2> outside <main>/header/nav/footer: {h2_outside[:2]}")
 
     # JSON-LD ItemList: entries must be real visible product headings.
-    h2_text = " | ".join(h for h, _ in w.h2)
+    # Compare against every visible heading level, normalised for punctuation, so
+    # structured data is checked against what a reader can actually see.
+    def norm(value):
+        value = value.replace("\u2019", "'").replace("\u2018", "'")
+        value = re.sub(r"[\u2013\u2014:\-\u00b7|]+", " ", value)
+        return re.sub(r"\s+", " ", value).strip().lower()
+
+    h2_text = norm(" | ".join([h for h, _ in w.h2] + list(w.h3)))
     for block in w.ld:
         try:
             d = json.loads(block)
@@ -152,7 +170,7 @@ def check_page(path):
             if obj.get("numberOfItems") != len(names):
                 errors.append(f"ItemList numberOfItems={obj.get('numberOfItems')} but {len(names)} entries")
             for n in names:
-                if n not in h2_text:
+                if norm(n) not in h2_text:
                     errors.append(f"ItemList entry not a visible heading: {n!r}")
                 for dc in DISCONTINUED:
                     if dc in n:
