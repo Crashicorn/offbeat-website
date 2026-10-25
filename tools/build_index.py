@@ -77,6 +77,7 @@ OVERRIDES = {
     "dj-equipment-checklist": "start",
     "dj-equipment-beginners": "start",
     "build-your-dj-setup": "start",
+    "dj-glossary": "start",
     "numark-scratch-review": "controllers",
     "ddj-flx2-review": "controllers",
     "ddj-grv6-review": "controllers",

@@ -46,7 +46,48 @@
     if (direct) direct.classList.add("is-current");
   })();
 
-  /* ---------- 3. Library filter (all-dj-guides.html) ---------- */
+  /* ---------- 3. Glossary filter (dj-glossary.html) ---------- */
+  (function glossary() {
+    var input = document.querySelector("[data-glossary-input]");
+    var terms = document.querySelectorAll(".glossary-term");
+    var chips = document.querySelectorAll(".glossary-chip");
+    var empty = document.querySelector("[data-glossary-empty]");
+    var count = document.querySelector("[data-glossary-count]");
+    if (!input || !terms.length) return;
+    var letter = "all";
+
+    function apply() {
+      var query = input.value.toLowerCase().trim();
+      var shown = 0;
+      terms.forEach(function (term) {
+        var text = term.getAttribute("data-terms") || term.textContent.toLowerCase();
+        var initial = (term.getAttribute("data-letter") || "").toLowerCase();
+        var letterOk = letter === "all" || initial === letter;
+        var matchOk = !query || text.indexOf(query) !== -1;
+        var visible = letterOk && matchOk;
+        term.hidden = !visible;
+        if (visible) shown++;
+      });
+      if (empty) empty.hidden = shown !== 0;
+      if (count) count.textContent = shown + (shown === 1 ? " term" : " terms");
+    }
+
+    input.addEventListener("input", apply);
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        letter = chip.getAttribute("data-letter");
+        chips.forEach(function (other) {
+          var on = other === chip;
+          other.classList.toggle("is-active", on);
+          other.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        apply();
+      });
+    });
+    apply();
+  })();
+
+  /* ---------- 3b. Library filter (all-dj-guides.html) ---------- */
   (function library() {
     var input = document.querySelector("[data-library-input]");
     var chips = document.querySelectorAll(".chip-filter");
