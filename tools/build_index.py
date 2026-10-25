@@ -25,6 +25,7 @@ FEATURED = {
     "best-budget-dj-equipment.html",
     "how-to-mix-music-beginners.html",
     "dj-gear-hub.html",
+    "build-your-dj-setup.html",
 }
 
 # (group id, heading, blurb, keyword tests). First match wins.
@@ -75,6 +76,7 @@ OVERRIDES = {
     "how-to-connect-dj-controller-to-speakers": "start",
     "dj-equipment-checklist": "start",
     "dj-equipment-beginners": "start",
+    "build-your-dj-setup": "start",
 }
 
 
