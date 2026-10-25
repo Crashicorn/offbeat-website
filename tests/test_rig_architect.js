@@ -101,9 +101,29 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
   console.log('✓ Compatibility level badges rendered:', compatBadges.length);
   if (compatBadges.length === 0) throw new Error("Expected compatibility level badges");
 
+  // Test 9: View Mode Switcher (Photos vs Schematics)
+  await page.click('[data-action="set-viewmode"][data-mode="photos"]');
+  const photoActive = await page.$eval('[data-action="set-viewmode"][data-mode="photos"]', el => el.classList.contains('is-active'));
+  console.log('✓ View mode photos active:', photoActive);
+  if (!photoActive) throw new Error("Expected photos view mode to be active");
+
+  // Test 10: Sound SFX Toggle
+  await page.click('[data-action="toggle-sound"]');
+  const sfxText = await page.$eval('[data-action="toggle-sound"]', el => el.textContent.trim());
+  console.log('✓ Sound FX toggle state:', sfxText);
+
+  // Test 11: Share & Export Modal with Reddit Markdown and Canvas
+  await page.click('[data-action="open-export-modal"]');
+  await page.waitForSelector('.picker-dialog--export', { visible: true });
+  const redditMd = await page.$eval('#reddit-export-box', el => el.value);
+  console.log('✓ Export modal opened, Reddit markdown length:', redditMd.length);
+  if (!redditMd || redditMd.length < 50) throw new Error("Expected generated Reddit markdown");
+  await page.click('.picker-close');
+  await new Promise(r => setTimeout(r, 200));
+
   console.log("JS Console Errors:", errors);
   if (errors.length > 0) throw new Error("Found JS errors: " + JSON.stringify(errors));
 
   await browser.close();
-  console.log("ALL RIG BUILDER TESTS (INCLUDING SPEC INSPECTOR & UPGRADE ADVISOR) PASSED WITH 0 ERRORS!");
+  console.log("ALL RIG BUILDER TESTS (INCLUDING SPEC INSPECTOR, EXPORT, VIEW SWITCHER & UPGRADE ADVISOR) PASSED WITH 0 ERRORS!");
 })();

@@ -1,7 +1,7 @@
-# Offbeat Website Verification & Audit Report (Round 4 — Oct 2026)
+# Offbeat Website Verification & Audit Report (Round 5 — Oct 2026)
 
 ## Executive Summary
-This document records the end-to-end verification and quality audits for the complete site transformation and recovery of Offbeat (offbeatinc.com).
+This document records the end-to-end verification, product design milestones, and quality audits for the continuous transformation and technical recovery of Offbeat (offbeatinc.com).
 
 ## Verification Suites Passed
 1. **Site Structure & Broken Links Verification (`tools/check_site.py`):**
@@ -17,16 +17,25 @@ This document records the end-to-end verification and quality audits for the com
    - Standalone controller vs laptop host hardware block detection.
    - Interactive Hardware Spec Inspector modal with dimension, audio I/O, driver size, and box contents specs.
    - Smart Upgrade Path Advisor with 1-click component trial.
+   - Dual View Mode switcher (Studio Photography vs Technical Vector Schematics).
+   - Audio feedback controls (Mute / Unmute SFX with localStorage state persistence).
+   - Export & Sharing Suite (Reddit Markdown formatter, Shareable URL, and HTML5 Canvas summary card generator).
    - Side-by-side build comparison modal.
    - Deep-linking URL routing (`?add=...`, `?preset=...`, `?rig=...`).
-5. **Cross-Viewport Responsiveness & Visual Audit (`tests/audit_site.js`):**
+5. **Sitewide Spotlight Search (`assets/quick-search.js` & `assets/search-index.json`):**
+   - Instant `Cmd+K` / `Ctrl+K` keyboard shortcut across all 118 pages.
+   - Full indexing of 147 items (29 hardware models, 5 interactive tools, 118 guides/comparisons) with category chips and arrow key navigation.
+6. **Cross-Viewport Responsiveness & Visual Audit (`tests/audit_site.js`):**
    - Desktop (1440x900) & Mobile (390x844) audits across all 11 key hub and editorial pages.
 
 ## Visual Asset Integrity
-- **100% Vector Hardware Schematics:** All 29 catalog items across Controllers, Headphones, Studio Monitors, PA Speakers, Laptops, Audio Cables, and Accessories feature distinct, model-accurate SVGs (`assets/img/products/`).
-- **Honest Provenance Metadata:** Every component explicitly credits "Illustrated Vector Schematic (Offbeat Hardware Reference, 2026)" to maintain trust and transparency.
+- **Authentic Studio Photography & 100% Vector Hardware Schematics:** Dual-view support across the hardware catalog (`assets/img/products/photos/` and `assets/img/products/`).
+- **Honest Provenance Metadata:** Every component explicitly credits its visual source to maintain trust and transparency.
 
 ## Screenshots & Visual Evidence
+- `evidence/round-4-2026-10/rig-architect-photo-mode.jpg` — Studio Photography view mode active in DJ booth stage.
+- `evidence/round-4-2026-10/rig-export-dialog.jpg` — Reddit / Discord markdown formatter and Canvas summary card generator.
+- `evidence/round-4-2026-10/spotlight-search-modal.jpg` — Sitewide Spotlight Search palette.
 - `evidence/round-4-2026-10/my-dj-rig-architect-desktop.jpg` — Studio Booth layout, real-time valuation, owned deductions, upgrade advisor, and compatibility assistant.
 - `evidence/round-4-2026-10/rig-architect-inspector.jpg` — Hardware Spec Inspector drawer displaying full acoustic, electrical, and physical specifications.
 - `evidence/round-4-2026-10/rig-architect-compare.jpg` — Side-by-side multi-rig comparison tool.

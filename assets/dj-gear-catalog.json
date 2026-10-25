@@ -71,7 +71,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/pioneer-ddj-flx4.jpg",
+      "has_photo": true
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -99,7 +101,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/pioneer-ddj-flx2.svg",
+      "has_photo": false
     },
     {
       "id": "pioneer-ddj-flx10",
@@ -130,7 +134,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/pioneer-ddj-flx10.jpg",
+      "has_photo": true
     },
     {
       "id": "alphatheta-ddj-grv6",
@@ -160,7 +166,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/alphatheta-ddj-grv6.svg",
+      "has_photo": false
     },
     {
       "id": "traktor-kontrol-s2-mk3",
@@ -188,7 +196,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/traktor-s2-mk3.svg",
+      "has_photo": false
     },
     {
       "id": "denon-prime-4-plus",
@@ -220,7 +230,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/denon-prime-4.jpg",
+      "has_photo": true
     },
     {
       "id": "denon-prime-go",
@@ -250,7 +262,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/denon-prime-go.svg",
+      "has_photo": false
     },
     {
       "id": "hercules-inpulse-500",
@@ -279,7 +293,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/hercules-inpulse-500.svg",
+      "has_photo": false
     },
     {
       "id": "rane-four",
@@ -309,7 +325,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/rane-four.svg",
+      "has_photo": false
     },
     {
       "id": "sennheiser-hd25",
@@ -330,7 +348,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/sennheiser-hd25.jpg",
+      "has_photo": true
     },
     {
       "id": "ath-m50x",
@@ -351,7 +371,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/ath-m50x.jpg",
+      "has_photo": true
     },
     {
       "id": "ath-m20x",
@@ -372,7 +394,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/ath-m20x.svg",
+      "has_photo": false
     },
     {
       "id": "pioneer-hdj-cue1",
@@ -393,7 +417,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/pioneer-hdj-cue1.svg",
+      "has_photo": false
     },
     {
       "id": "sony-mdr-7506",
@@ -414,7 +440,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/sony-mdr-7506.svg",
+      "has_photo": false
     },
     {
       "id": "pioneer-dm40d",
@@ -438,7 +466,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/pioneer-dm40d.jpg",
+      "has_photo": true
     },
     {
       "id": "pioneer-dm50d",
@@ -463,7 +493,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/pioneer-dm50d.svg",
+      "has_photo": false
     },
     {
       "id": "krk-rokit-5-g4",
@@ -487,7 +519,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/krk-classic-5.jpg",
+      "has_photo": true
     },
     {
       "id": "yamaha-hs5",
@@ -511,7 +545,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/yamaha-hs5.jpg",
+      "has_photo": true
     },
     {
       "id": "jbl-eon-715",
@@ -535,7 +571,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/jbl-eon715.svg",
+      "has_photo": false
     },
     {
       "id": "macbook-air-m2",
@@ -555,7 +593,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/photos/macbook-air-dj.jpg",
+      "has_photo": true
     },
     {
       "id": "windows-dj-laptop",
@@ -575,7 +615,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/windows-dj-laptop.svg",
+      "has_photo": false
     },
     {
       "id": "standalone-usb-only",
@@ -595,7 +637,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/sandisk-extreme-usb.svg",
+      "has_photo": false
     },
     {
       "id": "cable-rca-rca",
@@ -615,7 +659,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/cables-pro-audio.svg",
+      "has_photo": false
     },
     {
       "id": "cable-rca-trs",
@@ -635,7 +681,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/cable-rca-trs.svg",
+      "has_photo": false
     },
     {
       "id": "cable-xlr-xlr",
@@ -655,7 +703,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/cable-xlr-xlr.svg",
+      "has_photo": false
     },
     {
       "id": "adapter-headphone-jack",
@@ -675,7 +725,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/headphone-adapter.svg",
+      "has_photo": false
     },
     {
       "id": "laptop-stand-pyle",
@@ -694,7 +746,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/pyle-laptop-stand.svg",
+      "has_photo": false
     },
     {
       "id": "usb-sandisk-extreme",
@@ -714,7 +768,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/sandisk-extreme-usb.svg",
+      "has_photo": false
     },
     {
       "id": "mic-shure-sm58",
@@ -733,7 +789,9 @@
       "provenance": "Offbeat Hardware Illustration & Spec Reference (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Illustrated Vector Schematic"
+      "visual_type": "Illustrated Vector Schematic",
+      "photo_image": "assets/img/products/shure-sm58.svg",
+      "has_photo": false
     }
   ],
   "presets": [

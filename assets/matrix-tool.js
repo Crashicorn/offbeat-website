@@ -422,9 +422,25 @@
         html += '<p class="mat-caveat"><strong>Caveat:</strong> ' + esc(c.caveat) + '</p>';
         html += '</div>';
 
+        var catalogMap = {
+          "flx4": "pioneer-ddj-flx4",
+          "flx2": "pioneer-ddj-flx2",
+          "flx10": "pioneer-ddj-flx10",
+          "grv6": "alphatheta-ddj-grv6",
+          "s2mk3": "traktor-kontrol-s2-mk3",
+          "prime4plus": "denon-prime-4-plus",
+          "primego": "denon-prime-go",
+          "inpulse500": "hercules-inpulse-500",
+          "ranefour": "rane-four"
+        };
+        var targetCatId = catalogMap[c.id] || "pioneer-ddj-flx4";
+
+        html += '<div class="mat-actions-row">';
         if (c.guide) {
-          html += '<a class="mat-link" href="' + esc(c.guide) + '">Read full review & buying guide →</a>';
+          html += '<a class="mat-link" href="' + esc(c.guide) + '">Read Guide →</a>';
         }
+        html += '<a class="mat-plan-btn" href="build-your-dj-setup.html?add=' + targetCatId + '">Plan in Rig Architect 🎛️</a>';
+        html += '</div>';
 
         html += '</div>';
       });

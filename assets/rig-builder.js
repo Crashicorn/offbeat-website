@@ -8,6 +8,8 @@
 
   var CATALOG = null;
   var audioCtx = null;
+  var soundEnabled = localStorage.getItem("offbeat.rig.sfx") !== "muted";
+  var viewMode = localStorage.getItem("offbeat.rig.viewmode") || "photos"; // "photos" or "schematics"
 
   // Active Rig State (Supports modular items, quantities, and owned gear)
   var currentRig = {
@@ -32,6 +34,7 @@
 
   /* ------------------------------------------------------------- Web Audio Feedback */
   function playClickSfx(type) {
+    if (!soundEnabled) return;
     try {
       if (!audioCtx) {
         var AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -203,6 +206,14 @@
 
   function getSlotItem(slot) {
     return getItem(slot.itemId);
+  }
+
+  function getItemImageSrc(item) {
+    if (!item) return "";
+    if (viewMode === "photos" && item.photo_image) {
+      return item.photo_image;
+    }
+    return item.image || item.photo_image || "";
   }
 
   /* ----------------------------------------------------------- Calculations */
@@ -447,11 +458,27 @@
             <p class="rig-subtitle">Assemble modular equipment, toggle gear you already own, verify audio signal connections, and generate an itemized shopping list.</p>
           </div>
           <div class="rig-dash-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="copy-checklist">📋 Copy Checklist</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="share-rig">🔗 Share Build</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="save-rig">💾 Save Rig</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="open-compare">⚖️ Compare Builds</button>
-            <button type="button" class="btn btn-sm" data-action="random-rig">🎲 Quick Preset</button>
+            <!-- View Mode Switcher -->
+            <div class="rig-viewmode-switch" role="group" aria-label="Visual display mode">
+              <button type="button" class="btn-viewmode ${viewMode === 'photos' ? 'is-active' : ''}" data-action="set-viewmode" data-mode="photos" title="Show authentic studio photography">
+                📷 Studio Photos
+              </button>
+              <button type="button" class="btn-viewmode ${viewMode === 'schematics' ? 'is-active' : ''}" data-action="set-viewmode" data-mode="schematics" title="Show technical vector schematics">
+                📐 Tech Schematics
+              </button>
+            </div>
+
+            <!-- Sound FX Toggle -->
+            <button type="button" class="btn-sfx-toggle ${soundEnabled ? 'is-on' : 'is-muted'}" data-action="toggle-sound" title="Toggle audio feedback sounds">
+              ${soundEnabled ? '🔊 Audio FX: ON' : '🔇 Audio FX: OFF'}
+            </button>
+
+            <!-- Export / Share Actions -->
+            <button type="button" class="btn btn-secondary btn-sm" data-action="open-export-modal">📤 Share &amp; Export</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="copy-checklist">📋 Checklist</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="save-rig">💾 Save</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="open-compare">⚖️ Compare</button>
+            <button type="button" class="btn btn-sm" data-action="random-rig">🎲 Preset</button>
           </div>
         </div>
 
@@ -511,7 +538,7 @@
       <section class="rig-booth-section">
         <div class="section-head">
           <h3>DJ Studio Booth &amp; Signal Routing</h3>
-          <p>Interactive 2D booth layout with authentic vector schematics. Click any piece of gear to swap components, change quantities, or toggle ownership.</p>
+          <p>Interactive 2D booth layout. Toggle between studio photography and vector diagrams, swap components, or toggle owned gear.</p>
         </div>
         <div class="rig-booth-stage">
           <!-- Top Row: Monitors, Host Platform, Extra Gear -->
@@ -651,6 +678,7 @@
     }
 
     var qtyStr = slot.qty > 1 ? ` <span class="booth-qty-badge">x${slot.qty}</span>` : '';
+    var imgSrc = getItemImageSrc(item);
 
     return `
       <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
@@ -662,7 +690,7 @@
         </div>
         <div class="booth-card-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">
           <div class="booth-thumb-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
+            <img src="${imgSrc}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
           </div>
           <div class="booth-info">
             <span class="booth-brand">${escapeHtml(item.brand)}</span>
@@ -701,6 +729,7 @@
     }
 
     var linePrice = item.price * qty;
+    var imgSrc = getItemImageSrc(item);
     var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
@@ -712,7 +741,7 @@
         </td>
         <td class="cell-item">
           <div class="item-summary-box">
-            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
+            <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
             <div class="item-summary-copy">
               <div class="item-title-row">
                 <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
@@ -851,12 +880,13 @@
 
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
+      var imgSrc = getItemImageSrc(item);
       return `
         <article class="picker-card ${isCurrent ? 'is-selected' : ''}">
           <div class="picker-card-img-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
-            <span class="picker-provenance-tag">${escapeHtml(item.visual_type || 'Vector Schematic')}</span>
+            <span class="picker-provenance-tag">${viewMode === 'photos' && item.has_photo ? 'Studio Photo' : 'Vector Schematic'}</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
@@ -883,6 +913,7 @@
   function openInspectorModal(itemId) {
     var item = getItem(itemId);
     if (!item) return;
+    var imgSrc = getItemImageSrc(item);
 
     var modalHtml = `
       <div class="picker-backdrop" data-action="close-modal">
@@ -897,13 +928,13 @@
 
           <div class="inspector-content">
             <div class="inspector-visual-col">
-              <img src="${item.image}" alt="${escapeHtml(item.model)}" class="inspector-hero-img">
+              <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="inspector-hero-img">
               <p class="inspector-provenance-note">${escapeHtml(item.provenance || 'Offbeat Hardware Reference (2026)')}</p>
             </div>
             <div class="inspector-info-col">
               <div class="inspector-price-row">
                 <span class="inspector-price">$${item.price}</span>
-                <span class="inspector-price-sub">Est. US Retail (Oct 2026)</span>
+                <span class="inspector-price-sub">Est. US Retail (Late 2026)</span>
               </div>
               <p class="inspector-summary">${escapeHtml(item.tagline || '')}</p>
               
@@ -930,6 +961,176 @@
     container.innerHTML = modalHtml;
     container.hidden = false;
     document.body.classList.add("modal-open");
+  }
+
+  function openExportModal() {
+    var stats = calculateRigStats();
+    var shareUrl = window.location.href;
+
+    var redditMarkdown = `**[${currentRig.name}](${shareUrl})**\n\n` +
+      `| Category | Equipment | Price |\n` +
+      `| :--- | :--- | :--- |\n` +
+      currentRig.items.map(function (s) {
+        var it = getSlotItem(s);
+        if (!it) return "";
+        var status = s.owned ? "*(Already Owned)*" : "";
+        return `| **${s.category.toUpperCase()}** | ${it.brand} ${it.model} ${status} | $${it.price * (s.qty || 1)} |`;
+      }).filter(Boolean).join("\n") +
+      `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
+      `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
+      `* **Actual Out-of-Pocket Spend:** **$${stats.purchaseCost.toLocaleString()}**\n\n` +
+      `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`;
+
+    var modalHtml = `
+      <div class="picker-backdrop" data-action="close-modal">
+        <div class="picker-dialog picker-dialog--export" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+          <div class="picker-header">
+            <div>
+              <span class="picker-eyebrow">Export &amp; Share DJ Setup</span>
+              <h3 id="export-modal-title">Share Your Custom Build</h3>
+            </div>
+            <button type="button" class="picker-close" data-action="close-modal" aria-label="Close dialog">✕</button>
+          </div>
+
+          <div class="export-modal-tabs">
+            <button type="button" class="export-tab is-active" data-export-tab="reddit">Reddit / Discord Markdown</button>
+            <button type="button" class="export-tab" data-export-tab="link">Shareable URL Link</button>
+            <button type="button" class="export-tab" data-export-tab="image">Download Summary Card</button>
+          </div>
+
+          <div class="export-tab-pane is-active" id="pane-reddit">
+            <p class="export-help">Copy this formatted markdown table to post on r/DJs, r/Beatmatch, or Discord asking for setup feedback:</p>
+            <textarea class="export-textarea" id="reddit-export-box" readonly>${escapeHtml(redditMarkdown)}</textarea>
+            <div class="export-pane-footer">
+              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-reddit-md">📋 Copy Reddit Markdown</button>
+            </div>
+          </div>
+
+          <div class="export-tab-pane" id="pane-link" hidden>
+            <p class="export-help">Direct link to load your exact equipment and ownership selections:</p>
+            <input type="text" class="export-input-url" id="link-export-box" value="${escapeHtml(shareUrl)}" readonly>
+            <div class="export-pane-footer">
+              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-share-url">🔗 Copy Link to Clipboard</button>
+            </div>
+          </div>
+
+          <div class="export-tab-pane" id="pane-image" hidden>
+            <p class="export-help">Generate a graphic summary card to save or post to Instagram / Discord:</p>
+            <div class="canvas-preview-wrap">
+              <canvas id="rig-export-canvas" width="800" height="480" class="rig-card-canvas"></canvas>
+            </div>
+            <div class="export-pane-footer">
+              <button type="button" class="btn btn-sm" data-action="download-canvas-image">🖼️ Download Rig Image (.PNG)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    var container = document.getElementById("rig-modal-container");
+    container.innerHTML = modalHtml;
+    container.hidden = false;
+    document.body.classList.add("modal-open");
+
+    // Handle tab switching inside export modal
+    var tabs = container.querySelectorAll(".export-tab");
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        tabs.forEach(function (t) { t.classList.remove("is-active"); });
+        tab.classList.add("is-active");
+        var target = tab.getAttribute("data-export-tab");
+        container.querySelectorAll(".export-tab-pane").forEach(function (p) { p.hidden = true; });
+        var targetPane = container.querySelector("#pane-" + target);
+        if (targetPane) targetPane.hidden = false;
+        if (target === "image") drawRigCanvas();
+      });
+    });
+  }
+
+  function drawRigCanvas() {
+    var canvas = document.getElementById("rig-export-canvas");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var stats = calculateRigStats();
+
+    // Background Gradient
+    var bgGrad = ctx.createLinearGradient(0, 0, 800, 480);
+    bgGrad.addColorStop(0, "#0c0b14");
+    bgGrad.addColorStop(0.6, "#141224");
+    bgGrad.addColorStop(1, "#07070c");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 800, 480);
+
+    // Accent Border
+    ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(12, 12, 776, 456);
+
+    // Header Glow
+    ctx.fillStyle = "#a78bfa";
+    ctx.font = "bold 14px 'Syne', system-ui, sans-serif";
+    ctx.fillText("OFFBEAT. MY DJ RIG ARCHITECT (2026)", 36, 50);
+
+    // Title
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 26px 'Syne', system-ui, sans-serif";
+    ctx.fillText(currentRig.name, 36, 88);
+
+    // Price Badges
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 18px system-ui, sans-serif";
+    ctx.fillText("Spend: $" + stats.purchaseCost.toLocaleString(), 36, 122);
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "14px system-ui, sans-serif";
+    ctx.fillText("(Valuation: $" + stats.totalValue.toLocaleString() + " · Saved: -$" + stats.ownedValue.toLocaleString() + ")", 210, 122);
+
+    // Separator line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(36, 142);
+    ctx.lineTo(764, 142);
+    ctx.stroke();
+
+    // Gear List Grid
+    var yPos = 176;
+    currentRig.items.forEach(function (slot, idx) {
+      var it = getSlotItem(slot);
+      if (!it || idx > 5) return;
+
+      var col = idx < 3 ? 36 : 410;
+      var rowY = yPos + (idx % 3) * 80;
+
+      // Role tag
+      ctx.fillStyle = "#a78bfa";
+      ctx.font = "bold 11px system-ui, sans-serif";
+      ctx.fillText(slot.category.toUpperCase(), col, rowY);
+
+      // Model name
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px system-ui, sans-serif";
+      ctx.fillText(it.brand + " " + it.model, col, rowY + 22);
+
+      // Price & status
+      ctx.fillStyle = slot.owned ? "#4ade80" : "#cbd5e1";
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText((slot.owned ? "✓ Owned ($0 out of pocket)" : "$" + (it.price * (slot.qty || 1))), col, rowY + 42);
+    });
+
+    // Watermark Footer
+    ctx.fillStyle = "#64748b";
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("offbeatinc.com/build-your-dj-setup.html", 36, 442);
+  }
+
+  function downloadCanvasImage() {
+    var canvas = document.getElementById("rig-export-canvas");
+    if (!canvas) return;
+    var link = document.createElement("a");
+    link.download = currentRig.name.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-rig.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   }
 
   function closeModal() {
@@ -1116,7 +1317,38 @@
         return;
       }
 
-      if (action === "pick") {
+      if (action === "set-viewmode") {
+        var mode = btn.getAttribute("data-mode");
+        if (mode) {
+          viewMode = mode;
+          localStorage.setItem("offbeat.rig.viewmode", mode);
+          playClickSfx("toggle");
+          renderApp();
+        }
+      } else if (action === "toggle-sound") {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem("offbeat.rig.sfx", soundEnabled ? "on" : "muted");
+        if (soundEnabled) playClickSfx("toggle");
+        renderApp();
+      } else if (action === "open-export-modal") {
+        openExportModal();
+      } else if (action === "copy-reddit-md") {
+        var redBox = document.getElementById("reddit-export-box");
+        if (redBox) {
+          navigator.clipboard.writeText(redBox.value).then(function () {
+            alert("✓ Reddit Markdown copied to clipboard!");
+          });
+        }
+      } else if (action === "copy-share-url") {
+        var linkBox = document.getElementById("link-export-box");
+        if (linkBox) {
+          navigator.clipboard.writeText(linkBox.value).then(function () {
+            alert("✓ Shareable link copied to clipboard!");
+          });
+        }
+      } else if (action === "download-canvas-image") {
+        downloadCanvasImage();
+      } else if (action === "pick") {
         var slotId = btn.getAttribute("data-slot-id");
         var category = btn.getAttribute("data-category");
         if (slotId && category) openPickerModal(slotId, category);
@@ -1192,7 +1424,7 @@
       } else if (action === "copy-checklist") {
         copyChecklistToClipboard();
       } else if (action === "share-rig") {
-        copyShareUrlToClipboard();
+        openExportModal();
       } else if (action === "save-rig") {
         promptSaveRig();
       } else if (action === "open-compare") {
@@ -1293,15 +1525,6 @@
       alert("✓ Shopping checklist copied to clipboard!");
     }).catch(function () {
       prompt("Copy your shopping checklist below:", text);
-    });
-  }
-
-  function copyShareUrlToClipboard() {
-    var url = window.location.href;
-    navigator.clipboard.writeText(url).then(function () {
-      alert("✓ Shareable rig link copied to clipboard!");
-    }).catch(function () {
-      prompt("Copy your shareable rig link below:", url);
     });
   }
 
