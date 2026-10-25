@@ -85,6 +85,15 @@ def check_page(path):
         if script.count("{") != script.count("}"):
             problems.append(f"{path}: unbalanced JSON-LD braces")
 
+    # A link inside a card link is invalid HTML and breaks the card layout
+    # in browsers that reparent anchors. Cheap to detect, easy to miss by eye.
+    for card in re.finditer(r'<a\b[^>]*class="[^"]*ofb-card[^"]*"[^>]*>', src):
+        window = src[card.end():card.end() + 900]
+        close = window.find("</a>")
+        if "<a " in window[: close if close != -1 else len(window)]:
+            problems.append(f"{path}: nested <a> inside a card link")
+            break
+
 
 def check_machine_copy(path, src):
     meta = " ".join(re.findall(r'<meta [^>]*content="([^"]*)"[^>]*>', src))
