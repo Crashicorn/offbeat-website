@@ -29,21 +29,22 @@
     if (!navLinks) return;
     var here = location.pathname.split("/").pop() || "index.html";
     var groups = {
-      "beginner-dj-hub.html": ["start", "beginner", "how-to-start", "learn-djing", "first", "setup"],
-      "dj-controllers-hub.html": ["controller", "ddj", "flx", "xdj", "inpulse", "rane", "mixtrack"],
-      "dj-software-hub.html": ["software", "serato", "rekordbox", "traktor", "djay", "virtual-dj", "daw", "ableton", "fl-studio", "logic"],
-      "dj-gear-hub.html": ["gear", "headphone", "mixer", "turntable", "cdj", "laptop", "cartridge", "usb", "monitor", "speaker", "stand", "equipment", "budget"],
-      "dj-skills-performance-hub.html": ["skill", "mix", "beatmatch", "gig", "wedding", "record", "promote", "festival"]
+      "beginner-dj-hub.html": ["start", "beginner", "how-to-start", "learn-djing", "first", "setup", "can-you-dj"],
+      "dj-controllers-hub.html": ["controller", "ddj", "flx", "xdj", "inpulse", "rane", "mixtrack", "cdj"],
+      "dj-gear-hub.html": ["gear", "headphone", "mixer", "turntable", "laptop", "cartridge", "usb", "monitor", "speaker", "stand", "equipment", "budget", "audio-interface", "festival-dj-gear"],
+      "dj-software-hub.html": ["software", "serato", "rekordbox", "traktor", "djay", "virtual-dj", "daw", "ableton", "fl-studio", "logic", "music-production", "distribution", "distrokid", "tunecore", "splice", "loopmasters"],
+      "dj-skills-performance-hub.html": ["skill", "mix", "beatmatch", "gig", "wedding", "record", "promote", "festival", "become-a-dj", "online-dj-courses"]
     };
     Object.keys(groups).forEach(function (target) {
       var link = navLinks.querySelector('a[href="' + target + '"]');
       if (!link) return;
       if (groups[target].some(function (key) { return here.indexOf(key) !== -1; })) {
         link.classList.add("is-current");
+        link.setAttribute("aria-current", "page");
       }
     });
     var direct = navLinks.querySelector('a[href="' + here + '"]');
-    if (direct) direct.classList.add("is-current");
+    if (direct) { direct.classList.add("is-current"); direct.setAttribute("aria-current", "page"); }
   })();
 
   /* ---------- 3. Glossary filter (dj-glossary.html) ---------- */
@@ -195,7 +196,13 @@
 
     /* Labels are captured before badges and permalinks touch the headings */
     var entries = headings.map(function (heading) {
-      return { el: heading, label: shortLabel(heading.textContent.replace(/\s+/g, " ").trim()) };
+      var pickName = heading.querySelector(".pick-name");
+      var pickRole = heading.querySelector(".pick-role");
+      var raw = pickName
+        ? pickName.textContent.trim() + (pickRole ? " — " + pickRole.textContent.trim() : "")
+        : heading.textContent.replace(/\s+/g, " ").trim();
+      var label = raw.replace(/\s+/g, " ").trim();
+      return { el: heading, label: pickName ? label : shortLabel(label) };
     });
 
     headings.forEach(function (heading, i) {
@@ -383,17 +390,17 @@
     if (!index) return;
     var terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     active = -1;
-    var list = terms.length
+    var candidates = groupFilter === "all"
       ? index
+      : index.filter(function (item) { return item.g === groupFilter; });
+    var list = terms.length
+      ? candidates
           .map(function (item) { return { item: item, s: score(item, terms) }; })
           .filter(function (r) { return r.s > 0; })
           .sort(function (a, b) { return b.s - a.s; })
           .slice(0, 12)
           .map(function (r) { return r.item; })
-      : index.filter(function (item) { return item.f; }).slice(0, 8);
-    if (groupFilter !== "all") {
-      list = list.filter(function (item) { return item.g === groupFilter; });
-    }
+      : candidates.filter(function (item) { return item.f; }).slice(0, 8);
 
     if (status) {
       status.textContent = terms.length || groupFilter !== "all"
@@ -440,7 +447,14 @@
     if ((event.key === "/" || (event.key === "k" && (event.metaKey || event.ctrlKey))) &&
         overlay.hidden && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
       event.preventDefault();
-      openSearch();
+      var librarySearch = document.querySelector("[data-library-input]");
+      if (event.key === "/" && librarySearch) {
+        librarySearch.focus();
+        var librarySection = document.getElementById("all-guides");
+        if (librarySection) librarySection.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        openSearch();
+      }
     }
   });
 })();
