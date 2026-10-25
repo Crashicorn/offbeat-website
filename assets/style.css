@@ -1468,3 +1468,64 @@ h3.mini {
   letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
 }
 .verdict-heading { font-size: clamp(1.15rem, 2vw, 1.4rem); }
+
+/* =============================================================================
+   Print — the gear checklist is meant to be carried, so give it a usable sheet
+   ========================================================================== */
+@media print {
+  *, *::before, *::after {
+    background: #fff !important; color: #111 !important;
+    box-shadow: none !important; text-shadow: none !important;
+    border-color: #b5b5b5 !important;
+  }
+  @page { margin: 16mm 14mm; }
+  body { font-size: 10.5pt; line-height: 1.45; }
+  nav, .nav-inner, .hero-figure, .hero-ctas, .hero-foot, .crumbs, footer,
+  .ob-consent, .read-progress, .guide-rail, .toc, .search-overlay,
+  .related-articles, .author-box, .decoration, .shop-cta,
+  .recent-list, .planner-band, .library-tools, .product-buy-row, .ofb-ctas,
+  .affiliate-cta-box, .hero-meta { display: none !important; }
+  .hero { background: none !important; border: 0; padding: 0 0 .4cm; }
+  .hero-inner { display: block; padding: 0; }
+  h1 { font-size: 20pt; line-height: 1.15; }
+  h2 { font-size: 13.5pt; margin-top: .8cm; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; page-break-after: avoid; }
+  p, li, td, th { font-size: 10pt; }
+  .content-wrap { max-width: none; padding: 0; display: block; }
+  .article-section, section, .format-action-row, .post-card, li {
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  a { text-decoration: underline; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; color: #555 !important; }
+  .fig svg { max-height: 8.5cm; }
+  img { max-width: 100% !important; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #b5b5b5 !important; padding: 4pt 5pt; }
+}
+
+/* Printable one-page checklist (dj-equipment-checklist.html) */
+.print-sheet { display: none; }
+.sheet-head { border-bottom: 1px solid var(--line); padding-bottom: .5rem; margin-bottom: 1rem; }
+.sheet-title { font-family: var(--display); font-size: 1.05rem; margin: 0; }
+.sheet-note { margin: .2rem 0 0; color: var(--muted); font-size: .8rem; }
+.sheet-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6rem; }
+.sheet-cols h3 { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 .5rem; }
+.sheet-list { margin: 0 0 1.2rem; padding-left: 1.2rem; }
+.sheet-list li { margin-bottom: .4rem; font-size: .9rem; }
+.sheet-foot { margin: 0; font-size: .8rem; color: var(--muted); }
+
+@media print {
+  body.page-checklist .content-wrap > * { display: none !important; }
+  body.page-checklist .content-wrap > .print-sheet { display: block !important; }
+  .print-sheet .no-print { display: none !important; }
+  .print-sheet h2 { margin: 0 0 3mm; font-size: 12pt; }
+  .print-sheet .sheet-cols { gap: 12mm; }
+  .print-sheet .sheet-list { padding-left: 0; list-style: none; margin-bottom: 5mm; }
+  .print-sheet .sheet-list li { margin-bottom: 1.8mm; padding-left: 6mm; position: relative; font-size: 9.5pt; line-height: 1.35; }
+  .print-sheet .sheet-note, .print-sheet .sheet-foot { font-size: 8pt; }
+  .print-sheet .sheet-list li::before {
+    content: ""; position: absolute; left: 0; top: 1.2mm;
+    width: 3.4mm; height: 3.4mm; border: .4mm solid #666;
+  }
+  .print-sheet .sheet-title { font-size: 15pt; }
+}
