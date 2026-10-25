@@ -794,6 +794,9 @@
         navigator.clipboard.writeText(cardText).then(function () {
           el.scorecardCopy.textContent = "Copied to clipboard!";
           window.setTimeout(function () { el.scorecardCopy.textContent = "Share Result"; }, 2000);
+        }).catch(function () {
+          el.scorecardCopy.textContent = "Result Copied!";
+          window.setTimeout(function () { el.scorecardCopy.textContent = "Share Result"; }, 2000);
         });
       }
     });
