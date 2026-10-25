@@ -387,7 +387,8 @@
     result: root.querySelector("[data-ml-result]"),
     canvas: root.querySelector("[data-ml-canvas]"),
     demos: document.querySelectorAll("[data-ml-demo]"),
-    blindNote: root.querySelector("[data-ml-blind-note]")
+    blindNote: root.querySelector("[data-ml-blind-note]"),
+    progress: root.querySelector("[data-ml-progress]")
   };
 
   function fmt(n, d) { return (Number(n) || 0).toFixed(d === undefined ? 1 : d); }
@@ -451,12 +452,28 @@
     completed = JSON.parse(localStorage.getItem("offbeat.mixlab.done") || "[]") || [];
   } catch (e) { completed = []; }
 
+  function updateProgress() {
+    if (!ui.progress) return;
+    var done = LESSONS.filter(function (l) { return completed.indexOf(l.id) !== -1; });
+    if (!done.length) {
+      ui.progress.textContent = "No lessons finished yet — start with lesson 1.";
+      return;
+    }
+    if (done.length === LESSONS.length) {
+      ui.progress.innerHTML = "<b>All four lessons complete.</b> Free practice is the next room — no targets, just the two decks.";
+      return;
+    }
+    var next = LESSONS.filter(function (l) { return completed.indexOf(l.id) === -1; })[0];
+    ui.progress.innerHTML = "<b>" + done.length + " of " + LESSONS.length + " lessons complete.</b> Next up: " + next.title.toLowerCase() + ".";
+  }
+
   function markDone(id) {
     if (completed.indexOf(id) === -1) {
       completed.push(id);
       try { localStorage.setItem("offbeat.mixlab.done", JSON.stringify(completed)); } catch (e) { /* ignore */ }
     }
     updateLessonStrip();
+    updateProgress();
   }
 
   /* --------------------------------------------------------------- frames */
@@ -1149,7 +1166,16 @@
   /* Boot */
   S.bpmA = GENRES[S.genre].bpm;
   S.baseBpm = S.bpmA;
+  if (completed.length) {
+    var firstOpen = LESSONS.filter(function (l) { return completed.indexOf(l.id) === -1; })[0];
+    if (firstOpen) {
+      S.lesson = firstOpen.id;
+      if (ui.level) ui.level.value = "lesson" + S.lesson;
+      applyBlindUi();
+    }
+  }
   updateLessonStrip();
+  updateProgress();
   updateCoach(true);
   render();
 

@@ -87,6 +87,7 @@ Free practice removes the goals, the hints and the result card.
 | `after-blind-hold.png` | Lesson 4: meters and grid switched off, coach qualitative only |
 | `after-blind-hold-complete.png` | The reveal: readouts back, nudges and fader moves counted |
 | `after-mobile-lab.png` | 390 px layout, no horizontal overflow |
+| `after-progress-resume.png` | Coming back later: finished lessons ticked, progress line, resumed at the next unfinished lesson |
 | `after-page-full.png` | Whole page: lesson map table, real-gear notes, FAQ |
 
 ## Remaining gaps
@@ -95,7 +96,9 @@ Free practice removes the goals, the hints and the result card.
   `.scorecard*`, `.deck*`). Some of it is shared with the inline practice decks on
   `index.html` and the beatmatching guide, so it was left in place rather than
   deleted in bulk; the trainer-only selectors are now dead weight.
-- Personal bests are stored per lesson (localStorage `offbeat.mixlab.done`) but
-  the result card does not yet show a history or a streak across sessions.
+- Finished lessons are remembered (localStorage `offbeat.mixlab.done`): the strip
+  ticks them off, a progress line names the next one, and a returning reader
+  lands on the first unfinished lesson. There is no per-attempt history or
+  streak yet, and no best-time record.
 - The loops are synthesised, so there is no vinyl noise, no cue bleed and no
   monitoring latency — the two things the lab can never teach.

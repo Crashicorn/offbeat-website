@@ -488,3 +488,13 @@
 .ml.is-blind .ml-meters,
 .ml.is-blind .ml-timeline { display: none; }
 .ml.is-blind .ml-phrase-dots i.is-on { background: rgba(255, 255, 255, .3); }
+
+.ml-progress {
+  margin: .55rem 0 0 !important;
+  font-size: .78rem !important;
+  color: var(--muted) !important;
+}
+.ml-progress b { color: #c4b5fd; font-weight: 650; }
+.ml-lesson.is-done .ml-lesson-num::after { content: "✓"; }
+.ml-lesson.is-done .ml-lesson-num { font-size: 0; }
+.ml-lesson.is-done .ml-lesson-num::after { font-size: .72rem; }
