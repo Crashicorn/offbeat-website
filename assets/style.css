@@ -1544,3 +1544,12 @@ h3.mini {
   color: var(--text); border-color: var(--flame);
   background: rgba(255, 90, 31, .14);
 }
+
+/* Checklist ticks and crosses as drawn marks, not emoji glyphs */
+.check-icon {
+  display: inline-block; width: .85rem; height: .85rem; margin-right: .15rem;
+  border: 1.5px solid var(--line-strong); border-radius: 3px; vertical-align: -.08em;
+}
+.cross { color: var(--rose); font-weight: 700; }
+.check-icon--done { border-color: var(--flame); background: rgba(255, 90, 31, .25); }
+.tick { color: var(--mint); font-weight: 600; }
