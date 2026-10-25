@@ -250,3 +250,18 @@
     }
   });
 })();
+
+/* ---------- 7. Table affordance: show a scroll hint on wide tables (mobile) ---------- */
+(function tableHints() {
+  document.querySelectorAll(".table-wrap, .comparison-table-wrap, .comparison-table-wrapper, .table-wrapper").forEach(function (wrap) {
+    var table = wrap.querySelector("table");
+    if (!table) return;
+    function check() {
+      var scrollable = wrap.scrollWidth > wrap.clientWidth + 4;
+      wrap.classList.toggle("is-scrollable", scrollable);
+      wrap.setAttribute("data-scrollable", scrollable ? "true" : "false");
+    }
+    check();
+    window.addEventListener("resize", check, { passive: true });
+  });
+})();

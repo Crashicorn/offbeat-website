@@ -983,3 +983,29 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
 /* Commission notes written as paragraphs (legacy markup) must wrap like prose */
 p.commission-tag, span.commission-tag { display: block; width: auto; max-width: 100%; white-space: normal; }
 p.commission-tag { margin: .5rem 0 .2rem; padding: 0; border: 0; background: none; color: var(--muted); font-size: .86rem; line-height: 1.55; }
+
+/* ---------- Tables: affordance, sticky first column, price emphasis ---------- */
+.table-wrap, .comparison-table-wrap, .comparison-table-wrapper, .table-wrapper { position: relative; }
+.table-wrap.is-scrollable::after,
+.comparison-table-wrap.is-scrollable::after {
+  content: "Scroll sideways for more columns →";
+  position: sticky; left: 0; display: block; width: max-content;
+  margin: .1rem 0 .45rem; padding: .2rem .7rem;
+  color: var(--muted-2); font-size: .72rem; letter-spacing: .02em;
+  pointer-events: none;
+}
+td:first-child, th:first-child { position: sticky; left: 0; z-index: 2; background: var(--ink-2); }
+th:first-child { background: var(--panel-2); z-index: 3; }
+tbody tr:hover td:first-child { background: #101018; }
+td:nth-child(2) { font-variant-numeric: tabular-nums; }
+/* Price cells: first currency-looking cell in a row reads as a figure */
+table td strong { color: var(--text); }
+@media (max-width: 760px) {
+  th, td { padding: .7rem .8rem; font-size: .88rem; }
+}
+
+@media (max-width: 760px) {
+  td:first-child, th:first-child { position: static; background: var(--ink-2); }
+  th:first-child { background: var(--panel-2); }
+  .table-wrap table, .comparison-table-wrap table { min-width: 680px; }
+}
