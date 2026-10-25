@@ -725,6 +725,21 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.6rem 1.2rem;
 }
 .footer-brand-col { grid-column: span 2; }
+/* Six footer columns (brand + five link groups) should stay on one row on desktop
+   instead of letting the last two wrap into a ragged second row. */
+@media (min-width: 1120px) {
+  /* Brand spans two tracks, so the template needs eight: two for the brand
+     plus one each for Start, Controllers, Software, Gear, Skills and Offbeat. */
+  .footer-nav-grid, .footer-nav-grid.footer-nav-grid--compact {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, .5fr) repeat(6, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1119px) and (min-width: 720px) {
+  .footer-nav-grid, .footer-nav-grid.footer-nav-grid--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .footer-brand-col { grid-column: 1 / -1; }
+}
 .footer-brand-col p { margin: .6rem 0 0; color: var(--muted); font-size: .88rem; max-width: 30ch; }
 .footer-col h4 {
   margin: 0 0 .6rem; color: var(--text); font-size: .72rem; font-weight: 700;
@@ -825,6 +840,15 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
   .hero-inner.has-media, .hero.hero--compact .hero-inner { grid-template-columns: minmax(0, 1fr); }
   .hero-figure { order: 2; }
   .ofb-top { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Nine nav items need a little less breathing room before the drawer takes over. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .nav-links { gap: 0; }
+  .nav-links a { padding: .45rem .5rem; font-size: .87rem; }
+  .nav-inner { gap: .5rem; }
+  .nav-search { padding: .4rem .6rem; }
+  .nav-search kbd { display: none; }
 }
 
 @media (max-width: 900px) {
@@ -1709,4 +1733,85 @@ h3.mini {
   .teacher-stage { grid-template-columns: minmax(0, 1fr); }
   .teacher-readout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .readout--drift { grid-column: 1 / -1; }
+}
+
+/* ---------- Homepage practice band (beatmatching trainer) ---------- */
+.practice-band {
+  display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  gap: clamp(1.2rem, 3vw, 2.6rem); align-items: center;
+  margin: 1.6rem 0 0; padding: clamp(1.4rem, 3vw, 2.6rem);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(140, 196, 255, .10), transparent 58%),
+    linear-gradient(180deg, var(--ink-2), var(--panel));
+}
+.practice-band h2 { margin: .2rem 0 .7rem; font-size: clamp(1.5rem, 3vw, 2.1rem); }
+.practice-band p { margin: 0 0 1.1rem; color: var(--text-2); max-width: 54ch; }
+.practice-points { margin: 0 0 1.3rem; padding: 0; list-style: none; display: grid; gap: .55rem; }
+.practice-points li {
+  position: relative; padding-left: 1.35rem; color: var(--text-2); font-size: .92rem; margin: 0;
+}
+.practice-points li::before {
+  content: ""; position: absolute; left: 0; top: .5em; width: .5rem; height: .5rem;
+  border-radius: 2px; background: var(--flame);
+}
+.practice-points strong { color: var(--text); }
+
+.practice-band-art {
+  align-self: center; min-height: 260px; align-content: center;
+  display: grid; gap: .55rem; padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .035), transparent),
+    rgba(0, 0, 0, .35);
+}
+.practice-deck { display: grid; gap: .45rem; }
+.practice-label {
+  color: var(--muted); font-family: var(--display); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase;
+}
+.practice-label em { color: var(--muted-2); font-style: normal; font-size: .68rem; }
+.practice-deck .deck-wave { height: 34px; margin: 0; }
+.practice-deck--b .deck-wave i { background: var(--flame); opacity: .95; }
+.practice-drift {
+  position: relative; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .08);
+  margin-top: .3rem;
+}
+.practice-drift::before {
+  content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px;
+  background: rgba(255, 255, 255, .4);
+}
+.practice-drift span {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 14px; margin-left: -7px;
+  border-radius: 999px; background: var(--mint);
+}
+.practice-caption { margin: 0; color: var(--mint); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; }
+
+@media (max-width: 860px) {
+  .practice-band { grid-template-columns: minmax(0, 1fr); }
+  .practice-band-art { order: -1; }
+}
+
+/* ---------- Inline practice prompt (beatmatching guide) ---------- */
+.inline-practice {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+  gap: clamp(1rem, 2.4vw, 1.8rem); align-items: center;
+  margin: 1.8rem 0 .4rem; padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  border: 1px solid var(--line-warm); border-radius: var(--r-md);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(255, 90, 31, .12), transparent 60%), var(--panel);
+}
+.inline-practice h3 { margin: .1rem 0 .6rem; font-size: 1.15rem; }
+.inline-practice p { margin: 0 0 .9rem; color: var(--text-2); font-size: .92rem; }
+.inline-practice-art {
+  display: grid; gap: .5rem; padding: .9rem 1rem; border-radius: var(--r-xs);
+  background: rgba(0, 0, 0, .35); border: 1px solid var(--line);
+}
+.inline-practice-art .deck-wave { height: 26px; margin: 0; }
+.inline-practice-art .deck-wave i { background: rgba(255, 255, 255, .18); }
+.inline-practice-art .deck-wave.is-beat i { background: var(--flame); }
+.inline-practice-badge {
+  color: var(--muted-2); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+}
+@media (max-width: 760px) {
+  .inline-practice { grid-template-columns: minmax(0, 1fr); }
+  .inline-practice-art { order: -1; }
 }
