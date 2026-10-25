@@ -90,7 +90,17 @@ def clean(src):
             drop.append((start, end, None))
             continue
         if heading in CHECKLIST_HEADINGS:
-            if seen_check:
+            # A page that already has a real "before you buy" section keeps it;
+            # the generic block would only repeat it.
+            has_real_check = any(
+                key in heading_of(other)
+                for start2, end2, attrs2, other in sections
+                if (start2, end2) != (start, end) and ('buy-check' not in attrs2)
+                for key in ("before you buy", "before you purchase", "buyer checklist", "buying checklist")
+            )
+            if has_real_check:
+                drop.append((start, end, None))
+            elif seen_check:
                 drop.append((start, end, None))
             else:
                 drop.append((start, end, CLEAN_CHECKLIST))

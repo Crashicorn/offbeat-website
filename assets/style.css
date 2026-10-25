@@ -1009,3 +1009,74 @@ table td strong { color: var(--text); }
   th:first-child { background: var(--panel-2); }
   .table-wrap table, .comparison-table-wrap table { min-width: 680px; }
 }
+
+/* ---------- Legacy component aliases ----------
+   Older pages use a handful of one-off class names. Rather than rewrite every
+   page, map them onto the current components so nothing renders unstyled. */
+.full-width-section { width: 100%; }
+.comparison-table { font-variant-numeric: tabular-nums; }
+.hero-disclosure--compact { max-width: 46rem; }
+.buy-check { margin-top: 2.4rem; }
+.comparison-with-pick { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .6fr); gap: 1.2rem; align-items: start; }
+.card-label, .verdict-label {
+  display: block; margin: 0 0 .4rem; color: var(--flame-2);
+  font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+}
+.card-title { color: var(--text); font-weight: 600; }
+.card-text { color: var(--muted); font-size: .92rem; }
+.card-footer { margin-top: auto; padding-top: .8rem; }
+.cta-copy { min-width: 0; }
+.verdict-callout, .callout-inner, .highlight-box {
+  margin: 1.6rem 0; padding: 1.1rem 1.25rem; border: 1px solid var(--line);
+  border-left: 2px solid var(--flame); border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: rgba(255, 90, 31, .06);
+}
+.ofb-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; }
+.star-rating-badge {
+  display: inline-flex; align-items: center; gap: .5rem; margin: 0 0 .8rem;
+  padding: .35rem .75rem; border: 1px solid rgba(255, 193, 77, .3); border-radius: var(--r-pill);
+  background: rgba(255, 193, 77, .1); color: var(--amber); font-size: .82rem; font-weight: 650;
+}
+.star-rating-badge .stars { letter-spacing: .1em; }
+.star-rating-badge .rating-text { color: var(--text-2); font-weight: 500; }
+.format-top-pick {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem 1.5rem; align-items: center;
+  margin: 1.6rem 0; padding: 1.15rem 1.3rem; border: 1px solid var(--line-warm);
+  border-radius: var(--r-md); background: radial-gradient(600px 160px at 0% 0%, rgba(255, 90, 31, .16), transparent 70%), var(--panel);
+}
+.format-kicker {
+  display: block; margin-bottom: .35rem; color: var(--flame-2);
+  font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+}
+.format-internal-link { font-weight: 600; }
+.priority-optional { border-color: var(--line); background: rgba(255, 255, 255, .03); color: var(--muted); }
+.effective-date { color: var(--muted-2); font-size: .82rem; }
+.demoted-heading { font-size: 1.02rem; font-weight: 600; color: var(--text); }
+.lead { font-size: 1.08rem; color: var(--text-2); }
+.legacy-hero, .hero-content, .hero-subtitle { display: block; }
+.budget-table, .sw-comparison-table { width: 100%; border-collapse: collapse; }
+.pill-overflow, .overflow-x-auto { max-width: 100%; overflow-x: auto; }
+@media (max-width: 900px) { .comparison-with-pick { grid-template-columns: minmax(0, 1fr); } }
+
+/* Category hooks on <body> (used for accent colour and future theming) */
+.category-controllers { --cat-accent: var(--flame); }
+.category-software { --cat-accent: var(--blue); }
+.category-gear { --cat-accent: var(--amber); }
+.category-skills { --cat-accent: var(--mint); }
+.category-producer { --cat-accent: #c9a6ff; }
+.category-start { --cat-accent: var(--flame-2); }
+.hero-eyebrow { color: var(--cat-accent, var(--flame-2)); }
+
+/* Article-heading section used by a few older pages */
+.section > h2:first-child { margin-top: 0; }
+
+/* Product card internals from the review template */
+.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; align-items: baseline; margin-bottom: .5rem; }
+.card-rank { color: var(--flame-2); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.card-name { margin: 0; font-family: var(--display); font-size: 1.16rem; font-weight: 600; color: var(--text); }
+.card-price { color: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+
+/* Small layout helpers still referenced by a few pages */
+.hub-lede > .intro-text { max-width: 62ch; }
+.roadmap-step-body { min-width: 0; }
+.qp, .quick-picks, .rank-1, .product-hero, .intro, .headphone-buy-grid-section { display: block; }
