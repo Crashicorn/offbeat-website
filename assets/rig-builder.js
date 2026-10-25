@@ -19,7 +19,6 @@
       { slotId: "core-spk", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
       { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: true },
       { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false },
-      { slotId: "core-storage", category: "storage", itemId: "usb-sandisk-extreme", qty: 1, owned: false },
       { slotId: "core-cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
     ]
   };
@@ -77,7 +76,7 @@
         osc.stop(now + 0.08);
       }
     } catch (e) {
-      // Audio feedback is purely enhancement; silent fallback
+      // Silent fallback
     }
   }
 
@@ -519,7 +518,7 @@
       <section class="rig-booth-section">
         <div class="section-head">
           <h3>DJ Studio Booth &amp; Signal Routing</h3>
-          <p>Interactive 2D booth layout with authentic technical schematics. Click any piece of gear to swap components, adjust quantities, or toggle owned gear.</p>
+          <p>Interactive 2D booth layout. Click any piece of gear to swap components, adjust quantities, or toggle owned gear.</p>
         </div>
         <div class="rig-booth-stage">
           <!-- Top Row: Monitors, Host Platform, Stands/Media -->
@@ -734,12 +733,11 @@
           </div>
         </td>
         <td class="cell-qty">
-          <select class="qty-select" data-action="change-qty" data-slot-id="${slot.slotId}" aria-label="Quantity for ${escapeHtml(item.model)}">
-            <option value="1" ${qty === 1 ? 'selected' : ''}>1</option>
-            <option value="2" ${qty === 2 ? 'selected' : ''}>2</option>
-            <option value="3" ${qty === 3 ? 'selected' : ''}>3</option>
-            <option value="4" ${qty === 4 ? 'selected' : ''}>4</option>
-          </select>
+          <div class="qty-stepper-wrap">
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>-</button>
+            <span class="qty-display">${qty}</span>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+          </div>
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}">
@@ -755,8 +753,8 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
-            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
+            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
             <button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>
           </div>
@@ -1011,7 +1009,6 @@
     container.hidden = false;
     document.body.classList.add("modal-open");
 
-    // Handle tab switching inside export modal
     var tabs = container.querySelectorAll(".export-tab");
     tabs.forEach(function (tab) {
       tab.addEventListener("click", function () {
@@ -1298,7 +1295,20 @@
         return;
       }
 
-      if (action === "toggle-sound") {
+      if (action === "step-qty") {
+        var stepSlotId = btn.getAttribute("data-slot-id");
+        var stepVal = parseInt(btn.getAttribute("data-step"), 10) || 1;
+        var sToStep = currentRig.items.find(function (s) { return s.slotId === stepSlotId; });
+        if (sToStep) {
+          var newQ = (sToStep.qty || 1) + stepVal;
+          if (newQ >= 1 && newQ <= 4) {
+            sToStep.qty = newQ;
+            playClickSfx("toggle");
+            saveActiveState();
+            renderApp();
+          }
+        }
+      } else if (action === "toggle-sound") {
         soundEnabled = !soundEnabled;
         localStorage.setItem("offbeat.rig.sfx", soundEnabled ? "on" : "muted");
         if (soundEnabled) playClickSfx("toggle");
@@ -1408,20 +1418,6 @@
       } else if (action === "delete-saved-rig") {
         var delIdx = parseInt(btn.getAttribute("data-index"), 10);
         deleteSavedRig(delIdx);
-      }
-    });
-
-    // Quantity dropdown change
-    document.addEventListener("change", function (e) {
-      if (e.target.matches("[data-action='change-qty']")) {
-        var slotId = e.target.getAttribute("data-slot-id");
-        var slot = currentRig.items.find(function (s) { return s.slotId === slotId; });
-        if (slot) {
-          slot.qty = parseInt(e.target.value, 10) || 1;
-          playClickSfx("toggle");
-          saveActiveState();
-          renderApp();
-        }
       }
     });
 

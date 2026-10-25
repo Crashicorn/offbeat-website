@@ -63,11 +63,13 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
   const postToggleSpend = await page.$eval(".metric-val--spend", el => el.textContent.trim());
   console.log("Spend before owned toggle:", preToggleSpend, "-> after owned toggle:", postToggleSpend);
 
-  // Test 4: Quantity adjustment
+  // Test 4: Quantity adjustment using + stepper
   const preQtySpend = await page.$eval(".spend-total-num", el => el.textContent.trim());
-  await page.select(".qty-select", "2");
+  await page.click('[data-action="step-qty"][data-step="1"]');
   await new Promise(r => setTimeout(r, 200));
-  console.log("Adjusted quantity to 2");
+  const newQty = await page.$eval(".qty-display", el => el.textContent.trim());
+  console.log("Adjusted quantity via stepper to:", newQty);
+  if (newQty !== "2") throw new Error("Expected quantity to be 2, got: " + newQty);
 
   // Test 5: Open Compare Builds Modal
   await page.click('[data-action="open-compare"]');
