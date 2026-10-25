@@ -111,8 +111,7 @@ def main():
 
         meta = "".join("<span>%s</span>" % m for m in cfg["meta"])
         stats = "".join(
-            '<div class="stat"><span class="stat-num">%s</span><span class="stat-label">%s</span></div>' % (num, label)
-            for num, label in cfg["stats"]
+            "<div><b>%s</b><span>%s</span></div>" % (num, label) for num, label in cfg["stats"]
         )
         cards = "".join(card_html(c) for c in cfg["cards"])
 
@@ -135,7 +134,7 @@ def main():
             '<div class="content-wrap">'
             '<section class="article-section hub-lede">'
             '<p class="intro-text">%s</p>'
-            '<div class="stats-bar">%s</div>'
+            '<div class="stat-line">%s</div>'
             '<div class="section-head"><h2>Start with the guides people actually need</h2>'
             '<a href="all-dj-guides.html">All %s guides →</a></div>'
             '<div class="card-grid">%s</div>'
