@@ -1043,6 +1043,21 @@
     "</span>";
   }
 
+  /* The list of things still to buy, as data. renderShop() draws it and the
+     browser test (tests/test_rig_studio.js) checks the same source, so the
+     panel cannot drift from the rule "owned gear never appears". */
+  function shoppingList(rig) {
+    var r = rig || computeRig();
+    var out = [];
+    ROLE_ORDER.forEach(function (cat) {
+      (r.groups[cat] || []).forEach(function (line) {
+        if (!line.item || line.slot.owned) return;
+        out.push({ itemId: line.item.id, category: cat, qty: line.qty, lineTotal: line.lineTotal });
+      });
+    });
+    return out;
+  }
+
   function renderShop(rig) {
     var needLines = [];
     var ownedLines = [];
@@ -1107,6 +1122,7 @@
         '<span class="rs-saved-cost">' + money(total) + "</span>" +
         '<div class="rs-saved-actions">' +
           '<button type="button" class="rs-btn rs-btn--sm" data-rs="load-saved" data-index="' + i + '">Open</button>' +
+          '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="compare-saved" data-index="' + i + '">Compare</button>' +
           '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="share-saved" data-index="' + i + '">Share</button>' +
           '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm rs-saved-del" data-rs="del-saved" data-index="' + i + '">Delete</button>' +
         "</div></div>";
@@ -2364,6 +2380,14 @@
       if (input) copyText(input.value, "Share link copied");
     },
     "compare": function () { state.modal = { kind: "compare", compare: { a: 0, b: 1 } }; state.menuOpen = false; render(); },
+    "compare-saved": function (el) {
+      /* option order in the compare modal is: this rig, templates…, saved… */
+      var i = parseInt(el.getAttribute("data-index"), 10);
+      var asA = 1 + presets().length + i;
+      state.modal = { kind: "compare", compare: { a: asA, b: 0 } };
+      state.menuOpen = false;
+      render();
+    },
     "close-modal": function () {
       state.modal = null;
       renderModal();
@@ -2592,6 +2616,20 @@
           '<a href="dj-equipment-checklist.html">printable equipment checklist</a> instead.</p></div></div>';
         console.error("Rig Studio: catalog failed", err);
       });
+
+    /* Test hooks. Read-only views of the same state the UI renders. */
+    window.__rigStudio = {
+      state: function () { return { name: state.name, items: state.items.slice(), budget: state.budget }; },
+      cost: function () {
+        var r = computeRig();
+        return { fullTotal: r.value, ownedTotal: r.ownedValue, buyTotal: r.buyTotal, itemCount: r.itemCount };
+      },
+      shoppingList: function () {
+        return shoppingList(computeRig()).map(function (l) { return { itemId: l.itemId, qty: l.qty, lineTotal: l.lineTotal }; });
+      },
+      shareUrl: function () { return shareUrl({ n: state.name, i: state.items }); },
+      readiness: function () { return (computeRig().checks || []).map(function (c) { return { key: c.key, level: c.level }; }); }
+    };
 
     window.addEventListener("resize", function () {
       window.clearTimeout(drawWires._t);

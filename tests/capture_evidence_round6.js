@@ -18,8 +18,8 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
 
   // 2. Beatmatch Trainer in Guided Mode with Live Actionable Coach Banner
   await page.goto("http://127.0.0.1:8099/beatmatch-trainer.html", { waitUntil: "networkidle0" });
-  await page.click("[data-start]");
-  await new Promise(r => setTimeout(r, 400));
+  await page.click("[data-ml-play]");
+  await new Promise(r => setTimeout(r, 900));
   await page.screenshot({ path: "evidence/round-4-2026-10/trainer-guided-mode.jpg", fullPage: false });
   console.log("Captured trainer-guided-mode.jpg");
 
