@@ -83,9 +83,27 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
   console.log("Deep-linked controller:", deepLinkedModel);
   if (deepLinkedModel !== "DDJ-FLX10") throw new Error("Expected deep-linked DDJ-FLX10");
 
+  // Test 7: Hardware Spec Inspector Modal
+  await page.click('.booth-card--main .booth-spec-btn');
+  await page.waitForSelector('.picker-dialog--inspector', { visible: true });
+  const inspectorTitle = await page.$eval('#inspector-title', el => el.textContent.trim());
+  console.log('✓ Inspector modal opened for:', inspectorTitle);
+  if (inspectorTitle !== "DDJ-FLX10") throw new Error("Expected inspector for DDJ-FLX10, got: " + inspectorTitle);
+  await page.click('.picker-close');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Test 8: Upgrade Path Advisory & Compatibility Badges
+  const upgradeText = await page.$eval('.upgrade-body strong', el => el.textContent.trim());
+  console.log('✓ Upgrade advisory active:', upgradeText);
+  if (!upgradeText) throw new Error("Expected upgrade advisory text");
+
+  const compatBadges = await page.$$('.compat-level-badge');
+  console.log('✓ Compatibility level badges rendered:', compatBadges.length);
+  if (compatBadges.length === 0) throw new Error("Expected compatibility level badges");
+
   console.log("JS Console Errors:", errors);
   if (errors.length > 0) throw new Error("Found JS errors: " + JSON.stringify(errors));
 
   await browser.close();
-  console.log("ALL RIG BUILDER TESTS PASSED WITH 0 ERRORS!");
+  console.log("ALL RIG BUILDER TESTS (INCLUDING SPEC INSPECTOR & UPGRADE ADVISOR) PASSED WITH 0 ERRORS!");
 })();

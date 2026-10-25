@@ -2679,3 +2679,195 @@ h3.mini {
 }
 .plan-gear-copy strong { display: block; font-size: 1rem; color: #fff; font-family: var(--display); margin-bottom: .2rem; }
 .plan-gear-copy p { margin: 0; font-size: .85rem; color: var(--text-2); }
+
+/* Smart Upgrade Path Advisor Card */
+.upgrade-advisory-card {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(56, 189, 248, 0.08)), var(--panel);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.upgrade-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.2);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+.upgrade-body {
+  flex: 1 1 320px;
+}
+.upgrade-body strong {
+  display: block;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+.upgrade-body p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+.btn-upgrade-swap {
+  white-space: nowrap;
+}
+
+/* Compatibility Level Badges */
+.compat-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.compat-level-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+.level--verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.level--workable {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.level--incompatible {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Inspector Modal & Spec Viewer */
+.picker-dialog--inspector {
+  max-width: 680px;
+}
+.inspector-content {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+@media (max-width: 640px) {
+  .inspector-content {
+    grid-template-columns: 1fr;
+  }
+}
+.inspector-visual-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 1.25rem;
+  text-align: center;
+}
+.inspector-hero-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  margin-bottom: 0.75rem;
+}
+.inspector-provenance-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.3;
+  margin: 0;
+}
+.inspector-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.inspector-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.inspector-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  font-family: var(--display);
+}
+.inspector-price-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.inspector-summary {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  margin: 0;
+  line-height: 1.45;
+}
+.inspector-specs-table {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.insp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.insp-row:last-child {
+  border-bottom: none;
+}
+.insp-row span {
+  color: var(--muted);
+}
+.insp-row strong {
+  color: var(--text);
+  text-align: right;
+}
+.inspector-actions {
+  margin-top: 0.5rem;
+}
+
+/* Booth & Table Spec Buttons */
+.booth-spec-btn, .picker-inspect-btn, .btn-item-info {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.booth-spec-btn:hover, .picker-inspect-btn:hover, .btn-item-info:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

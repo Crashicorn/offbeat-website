@@ -7,6 +7,7 @@
   "use strict";
 
   var CATALOG = null;
+  var audioCtx = null;
 
   // Active Rig State (Supports modular items, quantities, and owned gear)
   var currentRig = {
@@ -28,6 +29,54 @@
   // DOM Mount Root
   var builderRoot = document.getElementById("rig-app-root");
   if (!builderRoot) return;
+
+  /* ------------------------------------------------------------- Web Audio Feedback */
+  function playClickSfx(type) {
+    try {
+      if (!audioCtx) {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (!audioCtx || audioCtx.state === "suspended") {
+        if (audioCtx && audioCtx.resume) audioCtx.resume();
+      }
+      if (!audioCtx) return;
+
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === "toggle") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.04);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      } else if (type === "select") {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.06); // A5
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } else if (type === "preset") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(261.63, now); // C4
+        osc.frequency.exponentialRampToValueAtTime(523.25, now + 0.08); // C5
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+    } catch (e) {
+      // Audio feedback is purely enhancement; silent fallback
+    }
+  }
 
   /* ----------------------------------------------------------------- Init */
   function init() {
@@ -118,7 +167,6 @@
     if (data.items && Array.isArray(data.items)) {
       currentRig = data;
     } else if (data.slots) {
-      // Migrate legacy 6-slot object into modular items array
       currentRig.name = data.name || "My Custom DJ Rig";
       currentRig.items = [];
       var cats = ["controllers", "headphones", "speakers", "laptops", "cables", "accessories"];
@@ -182,6 +230,7 @@
     });
 
     var compatibility = runDeepCompatibilityChecks();
+    var nextUpgrade = recommendNextUpgrade();
 
     return {
       totalValue: totalValue,
@@ -189,7 +238,8 @@
       purchaseCost: purchaseCost,
       itemCount: itemCount,
       ownedCount: ownedCount,
-      compatibility: compatibility
+      compatibility: compatibility,
+      nextUpgrade: nextUpgrade
     };
   }
 
@@ -210,7 +260,7 @@
     var fatalErrors = 0;
     var warnings = 0;
 
-    // 1. Audio Signal Cable Matching (3-Way Verification: Controller Out <-> Selected Cable <-> Speaker In)
+    // 1. Audio Signal Cable Matching (3-Way Verification)
     if (controller && speakers) {
       var ctrlOutputs = controller.master_outputs || [];
       var spkInputs = speakers.inputs || [];
@@ -223,7 +273,6 @@
       var hasXLRIn = spkInputs.some(function (i) { return i.indexOf("XLR") !== -1; });
       var hasTRSIn = spkInputs.some(function (i) { return i.indexOf("TRS") !== -1 || i.indexOf("1/4\"") !== -1; });
 
-      // Determine the ideal audio interconnect
       var idealCableId = "cable-rca-rca";
       var idealCableName = "Dual RCA to Dual RCA Cable";
       if (hasXLROut && hasXLRIn) {
@@ -234,7 +283,6 @@
         idealCableName = "Dual RCA to Dual 1/4\" TS Cable";
       }
 
-      // Check if user actually has the right cable in their rig
       var hasSelectedMatchingCable = cableSlots.some(function (cs) {
         return cs.itemId === idealCableId;
       });
@@ -242,14 +290,16 @@
       if (hasSelectedMatchingCable) {
         checks.push({
           type: "success",
-          title: "Audio Signal Chain Fully Verified",
-          desc: "Your selected " + idealCableName + " directly links " + controller.model + " outputs to " + speakers.model + " inputs with zero mismatch.",
+          statusLevel: "verified",
+          title: "Audio Signal Chain Verified",
+          desc: "Your selected " + idealCableName + " directly links " + controller.model + " outputs to " + speakers.model + " inputs with zero impedance mismatch.",
           fixCableId: null
         });
       } else {
         checks.push({
           type: "warning",
-          title: "Audio Cable Optimization Alert",
+          statusLevel: "workable",
+          title: "Audio Cable Optimization Needed",
           desc: controller.model + " outputs and " + speakers.model + " inputs perform best with a " + idealCableName + ". Your setup currently has another cable selected.",
           fixCableId: idealCableId,
           fixActionText: "Auto-select " + idealCableName
@@ -259,8 +309,9 @@
     } else if (controller && !speakers) {
       checks.push({
         type: "info",
-        title: "No Monitor Speakers Selected",
-        desc: "You can DJ with headphones only, but adding studio monitors (like Pioneer DM-40D) allows you to practice hearing room acoustics and beat transitions.",
+        statusLevel: "workable",
+        title: "Headphones-Only Practice Rig",
+        desc: "You can practice transitions in headphones without speakers. Add studio monitors (like Pioneer DM-40D) when you want to hear room acoustics.",
         fixCableId: null
       });
     }
@@ -270,6 +321,7 @@
       if (laptop.id === "standalone-usb-only" && !controller.standalone) {
         checks.push({
           type: "error",
+          statusLevel: "incompatible",
           title: "Host Computer Required for DJing",
           desc: controller.brand + " " + controller.model + " is a MIDI controller without an internal computer. It cannot play music from USB sticks without a laptop running DJ software.",
           fixActionText: "Switch to MacBook Air Laptop",
@@ -280,13 +332,15 @@
       } else if (controller.standalone) {
         checks.push({
           type: "success",
-          title: "Standalone USB Performance Ready",
+          statusLevel: "verified",
+          title: "Standalone USB Performance Verified",
           desc: controller.brand + " " + controller.model + " has internal processing and Wi-Fi streaming. You can perform laptop-free directly from USB drives.",
           fixCableId: null
         });
       } else {
         checks.push({
           type: "success",
+          statusLevel: "verified",
           title: "Hardware Unlock & Driver Compatibility",
           desc: controller.model + " connects via USB to " + laptop.model + " with plug-and-play CoreAudio/ASIO driver support.",
           fixCableId: null
@@ -303,6 +357,7 @@
       if (ctrlJack.indexOf("3.5mm") !== -1 && hpJack.indexOf("1/4\"") !== -1 && !hasAdapter) {
         checks.push({
           type: "info",
+          statusLevel: "workable",
           title: "Headphone Jack Adapter Advisory",
           desc: "Your controller uses a 3.5mm mini-jack. Make sure your headphones include a 3.5mm plug or add a gold 3.5mm-to-1/4\" adapter to your checklist.",
           fixCableId: "adapter-headphone-jack",
@@ -325,6 +380,56 @@
       checks: checks,
       fatalErrors: fatalErrors,
       warnings: warnings
+    };
+  }
+
+  /* ------------------------------------------- Smart Upgrade Path Advisor */
+  function recommendNextUpgrade() {
+    var controllerSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
+    var headphonesSlot = currentRig.items.find(function (s) { return s.category === "headphones"; });
+    var speakersSlot = currentRig.items.find(function (s) { return s.category === "speakers"; });
+    var accSlot = currentRig.items.find(function (s) { return s.itemId === "laptop-stand-pyle"; });
+
+    var controller = controllerSlot ? getSlotItem(controllerSlot) : null;
+    var headphones = headphonesSlot ? getSlotItem(headphonesSlot) : null;
+    var speakers = speakersSlot ? getSlotItem(speakersSlot) : null;
+
+    if (headphones && headphones.price < 100 && controller && controller.price >= 299) {
+      return {
+        role: "Headphones Upgrade",
+        targetName: "Sennheiser HD 25 ($149)",
+        desc: "Upgrading from entry headphones to industry-standard HD 25s provides maximum club booth acoustic isolation and rotating one-ear monitoring.",
+        targetId: "sennheiser-hd25",
+        targetSlotId: headphonesSlot.slotId
+      };
+    }
+
+    if (controller && controller.channels === 4 && speakers && speakers.price < 200) {
+      return {
+        role: "Studio Monitor Upgrade",
+        targetName: "Yamaha HS5 ($398 Pair)",
+        desc: "Your 4-channel controller has balanced outputs. Upgrading to bi-amped 5-inch Yamaha monitors delivers transparent frequency response for advanced mixing.",
+        targetId: "yamaha-hs5",
+        targetSlotId: speakersSlot.slotId
+      };
+    }
+
+    if (!accSlot && controller && !controller.standalone) {
+      return {
+        role: "Ergonomic Upgrade",
+        targetName: "Pyle Pro Laptop Stand ($29)",
+        desc: "Elevating your laptop directly above your controller platters saves table footprint and prevents neck strain during long practice sets.",
+        targetId: "laptop-stand-pyle",
+        targetSlotId: "core-acc"
+      };
+    }
+
+    return {
+      role: "Club Readiness",
+      targetName: "SanDisk Extreme PRO USB 3.2 ($28)",
+      desc: "Fast solid-state flash memory ensures instant waveform loading and zero lag when exporting rekordbox playlists to club CDJ-3000s.",
+      targetId: "usb-sandisk-extreme",
+      targetSlotId: "core-acc"
     };
   }
 
@@ -386,13 +491,27 @@
             <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "✓ 100% Fully Verified" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : "⚠️ " + stats.compatibility.warnings + " cable optimization"}</span>
           </div>
         </div>
+
+        <!-- Upgrade Path Advisory Card -->
+        ${stats.nextUpgrade ? `
+          <div class="upgrade-advisory-card">
+            <div class="upgrade-tag">💡 Smart Upgrade Path Advisor</div>
+            <div class="upgrade-body">
+              <strong>${escapeHtml(stats.nextUpgrade.role)}: ${escapeHtml(stats.nextUpgrade.targetName)}</strong>
+              <p>${escapeHtml(stats.nextUpgrade.desc)}</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm btn-upgrade-swap" data-action="auto-fix-slot" data-slot-id="${stats.nextUpgrade.targetSlotId}" data-item-id="${stats.nextUpgrade.targetId}">
+              Try in this rig →
+            </button>
+          </div>
+        ` : ''}
       </section>
 
       <!-- Visual DJ Booth Studio Layout -->
       <section class="rig-booth-section">
         <div class="section-head">
           <h3>DJ Studio Booth &amp; Signal Routing</h3>
-          <p>Interactive 2D booth layout. Click any piece of gear to swap components, change quantities, or toggle ownership.</p>
+          <p>Interactive 2D booth layout with authentic vector schematics. Click any piece of gear to swap components, change quantities, or toggle ownership.</p>
         </div>
         <div class="rig-booth-stage">
           <!-- Top Row: Monitors, Host Platform, Extra Gear -->
@@ -427,7 +546,7 @@
           <div class="compat-header">
             <h4>⚡ Hardware &amp; Signal Compatibility Assistant</h4>
             <span class="compat-status-tag ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'tag--ok' : stats.compatibility.fatalErrors > 0 ? 'tag--err' : 'tag--warn'}">
-              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? '✓ All Connections Verified' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : '⚠️ Cable Optimization Needed'}
+              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? '✓ Verified Compatible' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : '⚠️ Cable Optimization Needed'}
             </span>
           </div>
           <div class="compat-items-grid">
@@ -435,7 +554,10 @@
               return `<div class="compat-item compat-item--${c.type}">
                 <div class="compat-icon">${c.type === 'success' ? '✓' : c.type === 'error' ? '❌' : c.type === 'warning' ? '⚠️' : 'ℹ️'}</div>
                 <div class="compat-body">
-                  <strong>${escapeHtml(c.title)}</strong>
+                  <div class="compat-title-row">
+                    <strong>${escapeHtml(c.title)}</strong>
+                    <span class="compat-level-badge level--${c.statusLevel}">${c.statusLevel === 'verified' ? 'Verified Match' : c.statusLevel === 'incompatible' ? 'Hardware Block' : 'Workable with Note'}</span>
+                  </div>
                   <p>${escapeHtml(c.desc)}</p>
                   ${c.fixCableId ? `<button type="button" class="btn-text-action" data-action="auto-fix-cable" data-cable-id="${c.fixCableId}">${escapeHtml(c.fixActionText || 'Auto-select recommended cable →')}</button>` : ''}
                   ${c.fixSlotId && c.fixItemId ? `<button type="button" class="btn-text-action" data-action="auto-fix-slot" data-slot-id="${c.fixSlotId}" data-item-id="${c.fixItemId}">${escapeHtml(c.fixActionText)}</button>` : ''}
@@ -473,7 +595,7 @@
                 <th scope="col">Qty</th>
                 <th scope="col">Ownership</th>
                 <th scope="col">Price Est.</th>
-                <th scope="col">Actions</th>
+                <th scope="col">Retailer Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -550,9 +672,14 @@
             </span>
           </div>
         </div>
-        <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">
-          Swap / Customize →
-        </button>
+        <div class="booth-card-footer">
+          <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">
+            Swap Gear →
+          </button>
+          <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed hardware specs">
+            Specs ℹ️
+          </button>
+        </div>
       </div>
     `;
   }
@@ -587,7 +714,10 @@
           <div class="item-summary-box">
             <img src="${item.image}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
             <div class="item-summary-copy">
-              <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
+              <div class="item-title-row">
+                <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
+                <button type="button" class="btn-item-info" data-action="inspect-item" data-item-id="${item.id}">Specs</button>
+              </div>
               <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
               ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
             </div>
@@ -615,9 +745,9 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
-            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Check price on Amazon">Amazon →</a>
-            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
-            <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used on Reverb">Reverb (Used)</a>
+            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
+            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
+            <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
             <button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>
           </div>
         </td>
@@ -726,6 +856,7 @@
           <div class="picker-card-img-wrap">
             <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
+            <span class="picker-provenance-tag">${escapeHtml(item.visual_type || 'Vector Schematic')}</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
@@ -742,11 +873,63 @@
             <button type="button" class="btn ${isCurrent ? 'btn-secondary' : ''} btn-sm btn-select-item" data-action="select-item" data-item-id="${item.id}">
               ${isCurrent ? '✓ In Your Rig' : 'Select for Rig'}
             </button>
-            ${item.slug ? `<a href="${item.slug}" class="picker-review-link" target="_blank">Full Review ↗</a>` : ''}
+            <button type="button" class="picker-inspect-btn" data-action="inspect-item" data-item-id="${item.id}">Specs ℹ️</button>
           </div>
         </article>
       `;
     }).join("");
+  }
+
+  function openInspectorModal(itemId) {
+    var item = getItem(itemId);
+    if (!item) return;
+
+    var modalHtml = `
+      <div class="picker-backdrop" data-action="close-modal">
+        <div class="picker-dialog picker-dialog--inspector" role="dialog" aria-modal="true" aria-labelledby="inspector-title">
+          <div class="picker-header">
+            <div>
+              <span class="picker-eyebrow">${escapeHtml(item.brand)} Detailed Specifications</span>
+              <h3 id="inspector-title">${escapeHtml(item.model)}</h3>
+            </div>
+            <button type="button" class="picker-close" data-action="close-modal" aria-label="Close dialog">✕</button>
+          </div>
+
+          <div class="inspector-content">
+            <div class="inspector-visual-col">
+              <img src="${item.image}" alt="${escapeHtml(item.model)}" class="inspector-hero-img">
+              <p class="inspector-provenance-note">${escapeHtml(item.provenance || 'Offbeat Hardware Reference (2026)')}</p>
+            </div>
+            <div class="inspector-info-col">
+              <div class="inspector-price-row">
+                <span class="inspector-price">$${item.price}</span>
+                <span class="inspector-price-sub">Est. US Retail (Oct 2026)</span>
+              </div>
+              <p class="inspector-summary">${escapeHtml(item.tagline || '')}</p>
+              
+              <div class="inspector-specs-table">
+                ${item.channels ? `<div class="insp-row"><span>Audio Channels:</span><strong>${item.channels} Decks</strong></div>` : ''}
+                ${item.master_outputs ? `<div class="insp-row"><span>Master Outputs:</span><strong>${item.master_outputs.join(", ")}</strong></div>` : ''}
+                ${item.inputs ? `<div class="insp-row"><span>Audio Inputs:</span><strong>${item.inputs.join(", ")}</strong></div>` : ''}
+                ${item.headphone_jack ? `<div class="insp-row"><span>Headphone Jack:</span><strong>${item.headphone_jack}</strong></div>` : ''}
+                ${item.software_unlocks ? `<div class="insp-row"><span>Software Unlocks:</span><strong>${item.software_unlocks.join(", ")}</strong></div>` : ''}
+                ${item.driver_mm ? `<div class="insp-row"><span>Driver Size:</span><strong>${item.driver_mm} mm</strong></div>` : ''}
+                ${item.impedance_ohm ? `<div class="insp-row"><span>Impedance:</span><strong>${item.impedance_ohm} Ω</strong></div>` : ''}
+                ${item.driver_size ? `<div class="insp-row"><span>Woofer / Driver:</span><strong>${item.driver_size}</strong></div>` : ''}
+                <div class="insp-row"><span>Ideal For:</span><strong>${escapeHtml(item.ideal_for || 'DJ Practice')}</strong></div>
+              </div>
+
+              ${item.slug ? `<div class="inspector-actions"><a href="${item.slug}" class="btn btn-secondary btn-sm" target="_blank">Read Full In-Depth Review ↗</a></div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    var container = document.getElementById("rig-modal-container");
+    container.innerHTML = modalHtml;
+    container.hidden = false;
+    document.body.classList.add("modal-open");
   }
 
   function closeModal() {
@@ -763,15 +946,12 @@
     var saved = getSavedRigs();
     var allRigsToCompare = [];
 
-    // Add current active rig
     allRigsToCompare.push({ name: currentRig.name + " (Current)", items: currentRig.items });
 
-    // Add presets
     CATALOG.presets.forEach(function (p) {
       allRigsToCompare.push({ name: p.name + " (" + p.badge + ")", items: convertPresetToItems(p) });
     });
 
-    // Add saved builds
     saved.forEach(function (s) {
       allRigsToCompare.push({ name: s.name, items: s.items || [] });
     });
@@ -928,6 +1108,7 @@
               owned: false
             });
           }
+          playClickSfx("select");
           closeModal();
           saveActiveState();
           renderApp();
@@ -939,6 +1120,9 @@
         var slotId = btn.getAttribute("data-slot-id");
         var category = btn.getAttribute("data-category");
         if (slotId && category) openPickerModal(slotId, category);
+      } else if (action === "inspect-item") {
+        var inspId = btn.getAttribute("data-item-id");
+        if (inspId) openInspectorModal(inspId);
       } else if (action === "close-modal" || btn.classList.contains("picker-close")) {
         closeModal();
       } else if (action === "toggle-slot-owned") {
@@ -946,6 +1130,7 @@
         var slotToToggle = currentRig.items.find(function (s) { return s.slotId === tSlotId; });
         if (slotToToggle) {
           slotToToggle.owned = !slotToToggle.owned;
+          playClickSfx("toggle");
           saveActiveState();
           renderApp();
         }
@@ -964,6 +1149,7 @@
               owned: false
             });
           }
+          playClickSfx("select");
           saveActiveState();
           renderApp();
         }
@@ -973,12 +1159,25 @@
         var targetFixSlot = currentRig.items.find(function (s) { return s.slotId === fixSlotId; });
         if (targetFixSlot) {
           targetFixSlot.itemId = fixItemId;
-          saveActiveState();
-          renderApp();
+        } else {
+          var fixItem = getItem(fixItemId);
+          if (fixItem) {
+            currentRig.items.push({
+              slotId: fixSlotId,
+              category: fixItem.category,
+              itemId: fixItemId,
+              qty: 1,
+              owned: false
+            });
+          }
         }
+        playClickSfx("select");
+        saveActiveState();
+        renderApp();
       } else if (action === "remove-slot") {
         var rSlotId = btn.getAttribute("data-slot-id");
         currentRig.items = currentRig.items.filter(function (s) { return s.slotId !== rSlotId; });
+        playClickSfx("toggle");
         saveActiveState();
         renderApp();
       } else if (action === "open-add-slot") {
@@ -1016,6 +1215,7 @@
         var slot = currentRig.items.find(function (s) { return s.slotId === slotId; });
         if (slot) {
           slot.qty = parseInt(e.target.value, 10) || 1;
+          playClickSfx("toggle");
           saveActiveState();
           renderApp();
         }
@@ -1028,7 +1228,10 @@
       if (!presetBtn) return;
       var pId = presetBtn.getAttribute("data-preset-id");
       var preset = CATALOG.presets.find(function (p) { return p.id === pId; });
-      if (preset) loadPresetData(preset);
+      if (preset) {
+        playClickSfx("preset");
+        loadPresetData(preset);
+      }
     });
 
     // Title edit
@@ -1055,6 +1258,7 @@
   function loadRandomPreset() {
     if (!CATALOG || !CATALOG.presets) return;
     var randomIdx = Math.floor(Math.random() * CATALOG.presets.length);
+    playClickSfx("preset");
     loadPresetData(CATALOG.presets[randomIdx]);
   }
 
@@ -1135,6 +1339,7 @@
     var r = saved[index];
     currentRig.name = r.name;
     currentRig.items = r.items ? JSON.parse(JSON.stringify(r.items)) : convertPresetToItems(r);
+    playClickSfx("preset");
     saveActiveState();
     renderApp();
   }
