@@ -25,3 +25,26 @@ Branch: `arena/7ba83faf-offbeat-website` (base: fork `main` = upstream `main` = 
 - Laptop page: six "Verify current price and exact model" cells remain. NOT fixed in this round (no dated laptop price sources gathered).
 - Mobile: the flagship and homepage tables sit in horizontally scrolling wrappers by design (min-width 560px); the document does not scroll sideways.
 - Evidence added: flagship-top-desktop-round2.png (text-first hero as rendered in the sandbox).
+
+## Round 3: controller-journey corrections (commit 3d606ee)
+
+Scope: controller-buying pages (flagship, FLX4 review, DDJ-400 vs FLX4, under-200/300/500, under-1000, beginners, budget, laptop, gear hub, homepage).
+
+What changed, verified by reading the HTML and by `tests/check_site_structure.py`:
+- Removed fabricated first-hand test claims on the FLX4 review: latency measurements and test rigs, "40 hours" testing, numeric scores, sensory claims. Replaced with statements that the guide relies on published specifications and retailer listings.
+- Removed the unsupported "12yr Hands-On Experience" stat from the DDJ-400 vs FLX4 page and the homepage "hands-on tested" claim.
+- Discontinued products: the Denon MC7000 is no longer a pick (dated note only; removed from the ItemList and FAQ); the DDJ-800 bundle and link are removed.
+- Prices reconciled to sourced figures (US retailer search, October 2026): FLX4 about $329 (some listings $399 MSRP); FLX10 about $1,729 (launch $1,599 excluding tax); Party Mix II about $129; Inpulse 500 list $349.99, retailers about $299.
+- Images: AlphaTheta CDN photos removed from eight controller pages (rights not established, generic alt text). Generic Unsplash photos removed from Rane One, Denon Prime Go and Denon SC6000 pages. FLX4 review and DDJ-400 vs FLX4 now use Wikimedia Commons photos with credit: FLX4 (Solomon203, CC BY-SA 4.0) and DDJ-400 (Nelsnelson, CC BY-SA 4.0).
+- Structural: under-300 nesting repaired; dj-equipment-beginners nesting repaired; laptop ItemList rebuilt from visible headings.
+
+Results:
+- `python3 tests/check_site_structure.py`: 108/115 root pages pass (previously 102/115).
+- Local link check on all changed HTML files: 0 broken local href/src references.
+
+Not verified (blockers):
+- Desktop and mobile rendering: headless Chromium could not be run in the sandbox (network-service crash / hang), so no screenshots were produced for this round. Overflow and layout were NOT checked visually.
+- Commons photo pixels were not inspected; identity and licence come from the Commons file pages (metadata only).
+- Remaining unsourced prices on pages not yet reconciled (for example Rane One, Reloop Beatmix 4, DDJ-200 and headphone prices in guides, and the FLX6-GT range on the FLX4 vs FLX6 page).
+- Under $200 page still has older ordering language in some sections; needs a full rewrite.
+- Seven root pages still fail the structural check (software and laptop-setup guides outside the core controller path).
