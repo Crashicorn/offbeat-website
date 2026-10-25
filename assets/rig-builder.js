@@ -1,457 +1,861 @@
-/* Offbeat — DJ rig planner.
- *
- * An interactive, dependency-free recommender for a first (or next) DJ setup.
- * It runs entirely in the browser, needs no network and stores nothing.
- *
- * Features:
- * - Dynamic 3-tier comparison switcher: Essentials vs Recommended vs Pro Upgrade
- * - Interactive signal flow cabling diagram reflecting chosen gear
- * - Software compatibility & streaming support breakdown
- * - Why this pick vs alternatives comparison card
- * - One-click formatted shopping checklist export to clipboard
- * - URL state sharing and bookmarking
- */
+/* =============================================================================
+   Offbeat Inc. — My DJ Rig Builder & Gear Planner
+   "The PCPartPicker of DJ Equipment"
+   ========================================================================== */
+
 (function () {
   "use strict";
 
-  var form = document.getElementById("rig-form");
-  if (!form) return;
+  var CATALOG = null;
 
-  var result = document.getElementById("rig-result");
-  var placeholder = document.getElementById("rig-placeholder");
-  var steps = [].slice.call(form.querySelectorAll(".rig-step"));
-  var progress = form.querySelector("[data-rig-progress]");
-  var backBtn = form.querySelector("[data-rig-back]");
-  var nextBtn = form.querySelector("[data-rig-next]");
-  var current = 0;
-
-  var state = { place: "", budget: "", owns: [], software: "" };
-
-  /* ------------------------------------------------------------------ data */
-  var DECKS = {
-    rekordbox: {
-      b1: { name: "Pioneer DDJ-FLX2", band: "$150–200", why: "The cheapest route into rekordbox. Two channels, compact jogs, works with a laptop, iPhone, or iPad via USB-C.", alt: "Numark Party Mix II ($129)", softwareTier: "rekordbox & djay (Free Unlock)", streaming: "Tidal, Beatport, SoundCloud, Apple Music (via djay)" },
-      b2: { name: "Pioneer DDJ-FLX4", band: "$280–350", why: "The undisputed beginner gold standard: full-size capacitive jog platters, hardware unlocks for both rekordbox and Serato DJ Lite, Smart Fader, and a layout that mirrors club CDJs.", alt: "Hercules Inpulse 500 ($280–320)", softwareTier: "rekordbox & Serato DJ Lite (Hardware Unlock)", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b3: { name: "Pioneer DDJ-FLX6-GT", band: "$550–650", why: "Four channels and full-size 8-inch platters with Merge FX for cross-genre transitions. Great if you are preparing for 3-4 deck mixing.", alt: "Traktor Kontrol S3 ($450–550)", softwareTier: "rekordbox & Serato DJ Pro unlock", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b4: { name: "Pioneer DDJ-FLX10", band: "$1,600–1,750", why: "Flagship 4-channel controller with dedicated real-time stem separation (vocal, drum, inst buttons), on-jog color displays, and DMX lighting output.", alt: "AlphaTheta XDJ-AZ ($2,500+ standalone)", softwareTier: "rekordbox & Serato DJ Pro (Full Unlock)", streaming: "Tidal, Beatport, Beatsource, SoundCloud" }
+  // Active Rig State
+  var currentRig = {
+    name: "My Custom DJ Rig",
+    slots: {
+      controllers: "pioneer-ddj-flx4",
+      headphones: "sennheiser-hd25",
+      speakers: "pioneer-dm40d",
+      laptops: "macbook-air-m2",
+      cables: "cable-rca-rca",
+      accessories: "laptop-stand-pyle"
     },
-    serato: {
-      b1: { name: "Numark Mixtrack Pro FX", band: "$190–250", why: "Long-throw 100mm pitch faders, paddle FX triggers, and capacitive jog wheels with Serato DJ Lite bundled.", alt: "Numark Party Mix II ($129)", softwareTier: "Serato DJ Lite (Included)", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b2: { name: "Hercules DJControl Inpulse 500", band: "$280–350", why: "Solid metal base, retractable feet, dedicated aux input with filter, and beatmatch guide LEDs to assist ear training.", alt: "Pioneer DDJ-FLX4 ($280–350)", softwareTier: "Serato DJ Lite & DJUCED included", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b3: { name: "Rane One", band: "$800–900", why: "Real 7.2-inch motorized platters with high-torque direct drive, MAG FOUR crossfader, and battle mixer layout.", alt: "Pioneer DDJ-REV5 ($800–900)", softwareTier: "Serato DJ Pro (Hardware Unlock)", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b4: { name: "Pioneer DDJ-REV7 or Rane Performer", band: "$1,400–1,900", why: "Motorized 7-inch platters with on-jog LCD displays, instant stem split buttons, and scratch-tournament grade faders.", alt: "Rane One ($850)", softwareTier: "Serato DJ Pro (Full Unlock)", streaming: "Tidal, Beatport, Beatsource, SoundCloud" }
-    },
-    traktor: {
-      b1: { name: "Traktor Kontrol S2 MK3 (New or Refurb)", band: "$150–220", why: "Compact two-channel Traktor controller with 14cm precision jog wheels and full Traktor Pro license included.", alt: "Numark Mixtrack Pro FX ($190)", softwareTier: "Traktor Pro 4 (Full License Included)", streaming: "Beatport, Beatsource" },
-      b2: { name: "Traktor Kontrol S3", band: "$400–550", why: "Full four-channel mixer with dedicated Mixer FX, RGB pads, XLR outputs, and iOS iPad Traktor support.", alt: "Pioneer DDJ-FLX6-GT ($550)", softwareTier: "Traktor Pro 4 (Full License Included)", streaming: "Beatport, Beatsource" },
-      b3: { name: "Traktor Kontrol S4 MK3", band: "$650–800", why: "Haptic Drive motorized jog wheels with tactile beat feedback and crisp high-res displays.", alt: "Traktor Kontrol S3 ($450)", softwareTier: "Traktor Pro 4 (Full License Included)", streaming: "Beatport, Beatsource" },
-      b4: { name: "Traktor Kontrol S4 MK3 + Traktor X1 MK3", band: "$850–1,100", why: "Modular four-deck powerhouse with dedicated OLED tactile stems and effects controllers.", alt: "Pioneer DDJ-FLX10 ($1,729)", softwareTier: "Traktor Pro 4 (Full License)", streaming: "Beatport, Beatsource" }
-    },
-    djay: {
-      b1: { name: "Pioneer DDJ-FLX2", band: "$150–200", why: "Ultra-portable, phone/tablet powered, and plug-and-play with Algoriddim djay Pro on iOS/Android.", alt: "Reloop Ready ($220)", softwareTier: "djay Pro compatible", streaming: "Apple Music, Tidal, Beatport, SoundCloud" },
-      b2: { name: "Pioneer DDJ-FLX4", band: "$280–350", why: "Bluetooth LE or USB-C connectivity to iPad/iPhone or laptop running djay Pro, with easy migration to rekordbox.", alt: "Reloop Buddy ($280)", softwareTier: "djay Pro & rekordbox", streaming: "Apple Music, Tidal, Beatport, SoundCloud" },
-      b3: { name: "Reloop Mixon 8 Pro", band: "$650–850", why: "Hybrid 4-channel controller engineered specifically for djay Pro with integrated iPad dock, paddle FX and stems.", alt: "Pioneer DDJ-FLX6-GT ($550)", softwareTier: "djay Pro & Serato DJ Pro", streaming: "Apple Music, Tidal, Beatport, SoundCloud" },
-      b4: { name: "Reloop Mixon 8 Pro or DDJ-FLX10", band: "$850–1,750", why: "Flagship multi-platform performance with Neural Mix stem control and dual USB interfaces.", alt: "Rane One ($850)", softwareTier: "djay Pro & Serato DJ Pro", streaming: "Apple Music, Tidal, Beatport, SoundCloud" }
-    },
-    none: {
-      b1: { name: "Pioneer DDJ-FLX2 or Numark Mixtrack Pro FX", band: "$150–250", why: "Safe entry controllers with real pitch controls and included software that won't require relearning habits.", alt: "Numark Party Mix II ($129)", softwareTier: "Free software bundled", streaming: "Tidal, Beatport, SoundCloud" },
-      b2: { name: "Pioneer DDJ-FLX4", band: "$280–350", why: "The safest first controller in 2026: supports both rekordbox and Serato, USB-C bus power, and standard club layout.", alt: "Hercules Inpulse 500 ($280–320)", softwareTier: "rekordbox & Serato DJ Lite unlocked", streaming: "Tidal, Beatport, Beatsource, SoundCloud" },
-      b3: { name: "Hercules Inpulse 500 or DDJ-FLX6-GT", band: "$300–650", why: "Choose Inpulse 500 for rugged 2-channel metal chassis with aux input; choose FLX6 for 4 channels.", alt: "Traktor Kontrol S3 ($450)", softwareTier: "rekordbox, Serato or Traktor", streaming: "Tidal, Beatport, SoundCloud" },
-      b4: { name: "Pioneer DDJ-FLX10 or Rane One", band: "$800–1,750", why: "Choose FLX10 for club layout and stems; choose Rane One for motorized turntables and scratch/battle layout.", alt: "Denon Prime 4+ ($2,200 standalone)", softwareTier: "Serato DJ Pro & rekordbox", streaming: "Tidal, Beatport, SoundCloud" }
-    },
-    standalone: {
-      b1: { name: "Controller + Laptop (Keep saving for Standalone)", band: "$280–350", why: "No quality standalone DJ system exists under $900. Start on a controller with your current laptop; the mixing skills transfer 100%.", alt: "Used Pioneer XDJ-RX ($700–900)", softwareTier: "rekordbox USB export workflow", streaming: "None standalone at this price" },
-      b2: { name: "Controller + Laptop (Keep saving for Standalone)", band: "$280–350", why: "At $300–$600, putting money into a DDJ-FLX4 plus good headphones gives you a far better rig than any compromised old standalone.", alt: "Used Pioneer XDJ-AERO", softwareTier: "rekordbox USB export workflow", streaming: "None standalone at this price" },
-      b3: { name: "Denon DJ Prime Go", band: "$950–1,100", why: "Rechargeable 4-hour battery, 7-inch HD touchscreen, built-in Wi-Fi streaming, Engine DJ OS. The ultimate backpack standalone rig.", alt: "Pioneer XDJ-RR ($1,050)", softwareTier: "Engine DJ standalone OS", streaming: "Tidal, Beatport, Beatsource, Amazon Music" },
-      b4: { name: "AlphaTheta XDJ-AZ or Denon Prime 4+", band: "$2,200–3,200", why: "Four-channel standalone flagships with full-size platters, dual USB media ports, and club standard booth continuity.", alt: "Pioneer XDJ-XZ ($2,400)", softwareTier: "rekordbox or Engine DJ standalone", streaming: "Tidal, Beatport, Beatsource, Amazon Music" }
+    owned: {
+      controllers: false,
+      headphones: false,
+      speakers: false,
+      laptops: true, // Default: most people already own a laptop
+      cables: false,
+      accessories: false
     }
   };
 
-  var HEADPHONES = {
-    b1: { name: "Audio-Technica ATH-M20x or Sony MDR-ZX110", band: "$25–50", why: "Clean closed-back isolation for cueing without leaking audio into the room.", link: "best-dj-headphones-under-50.html", label: "Headphones under $50" },
-    b2: { name: "Sony MDR-7506 or Audio-Technica ATH-M50x", band: "$99–149", why: "Industry fixtures: durable coiled cable, 40mm/45mm drivers, punchy bass, and fully replaceable ear pads.", link: "best-dj-headphones-2026.html", label: "Best DJ headphones" },
-    b3: { name: "Sennheiser HD 25", band: "$149–199", why: "The legendary club booth standard: split headband, ultra-lightweight, swivelling ear capsule for one-ear monitoring, and unmatched high-SPL isolation.", link: "best-dj-headphones-2026.html", label: "Best DJ headphones" },
-    b4: { name: "Pioneer HDJ-X10 or Sennheiser HD 25 Plus", band: "$249–349", why: "Nano-coated water/sweat resistant ear cushions, 5Hz–40kHz frequency response, and military-grade shock durability.", link: "best-dj-headphones-2026.html", label: "Best DJ headphones" }
-  };
+  // Active category being picked in modal
+  var activeModalCategory = null;
 
-  var SPEAKERS = {
-    b1: { name: "PreSonus Eris 3.5 or Mackie CR3-X", band: "$80–120", why: "Active desktop reference monitors with clean bass response and front aux/headphone inputs.", link: "best-dj-monitor-speakers.html", label: "Monitor speakers guide" },
-    b2: { name: "Pioneer DJ DM-40D or PreSonus Eris 4.5", band: "$149–199", why: "Front-firing bass reflex ports and dedicated DJ/Production DSP sound modes.", link: "best-dj-monitor-speakers.html", label: "Monitor speakers guide" },
-    b3: { name: "KRK Classic 5 or Yamaha HS5", band: "$299–399", why: "5-inch Kevlar/bi-amped studio monitors with flat frequency response and XLR balanced inputs.", link: "best-dj-monitor-speakers.html", label: "Monitor speakers guide" },
-    b4: { name: "Yamaha DBR10 (Pair) or Electro-Voice ZLX-12P", band: "$700–1,100", why: "High-output powered PA speakers with 1000W peak power for house parties and mobile gigs.", link: "best-dj-monitor-speakers.html", label: "Monitor speakers guide" }
-  };
+  // DOM Elements
+  var builderRoot = document.getElementById("rig-app-root");
+  if (!builderRoot) return;
 
-  var PLACES = {
-    bedroom: { label: "Bedroom & practice", note: "Headphones-first workflow. Prioritize a controller layout you will not outgrow in six months." },
-    party: { label: "House parties & events", note: "Needs durable gear, punchy active speakers, and balanced cables that survive travel." },
-    club: { label: "Club prep & club booths", note: "Pioneer/AlphaTheta CDJ layout continuity and rekordbox USB preparation save difficult booth transitions." },
-    mobile: { label: "Mobile DJing & weddings", note: "Reliability, dual mic inputs, backup cables, and broad streaming/request library access matter most." },
-    stream: { label: "Streaming & content creation", note: "Clean audio routing, built-in USB sound card, and easy OBS/broadcast capture without ground hum." }
-  };
-
-  var CABLES = {
-    laptop: { name: "USB-C to USB-B / USB-C braided cable", band: "$12–25", why: "Direct high-speed connection between laptop and controller without loose adapters." },
-    pa: { name: "Dual RCA to 1/4-inch TRS / XLR balanced cables", band: "$18–45", why: "Connects controller Master Out to powered monitor speakers or PA." },
-    booth: { name: "Ground loop noise isolator (3.5mm / RCA)", band: "$12–22", why: "Eliminates annoying 60Hz electrical hum when laptop and speakers share the same power strip." },
-    extras: { name: "Ergonomic laptop & controller stand", band: "$35–75", why: "Lifts the laptop to eye level and keeps your posture upright during long 2-hour mixing sessions." }
-  };
-
-  /* --------------------------------------------------------------- render */
-  function showStep(index) {
-    current = index;
-    steps.forEach(function (step, i) {
-      step.hidden = i !== index;
-      step.classList.toggle("is-current", i === index);
+  /* ----------------------------------------------------------------- Init */
+  function init() {
+    loadCatalogAndState().then(function () {
+      renderApp();
+      setupGlobalListeners();
+    }).catch(function (err) {
+      console.error("Failed to load catalog:", err);
+      builderRoot.innerHTML = '<div class="highlight-box"><p>Unable to load gear catalog. Please refresh the page.</p></div>';
     });
-    if (progress) {
-      progress.innerHTML = steps.map(function (_, i) {
-        return '<span class="rig-dot' + (i <= index ? " is-done" : "") + '" aria-hidden="true"></span>';
-      }).join("");
-      progress.setAttribute("aria-label", "Step " + (index + 1) + " of " + steps.length);
-    }
-    if (backBtn) backBtn.hidden = index === 0;
-    if (nextBtn) nextBtn.textContent = index === steps.length - 1 ? "Generate My Custom Rig" : "Next Step";
   }
 
-  function selected(step) {
-    var checked = step.querySelectorAll("input:checked");
-    return [].slice.call(checked).map(function (input) { return input.value; });
+  function loadCatalogAndState() {
+    return fetch("assets/dj-gear-catalog.json")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        CATALOG = data;
+        parseUrlOrLocalState();
+      });
   }
 
-  function buildResult(targetTier) {
-    var place = state.place || "bedroom";
-    var budget = targetTier || state.budget || "b2";
-    var software = state.software || "none";
-    var owns = state.owns || [];
-
-    var deckSet = DECKS[software] || DECKS.none;
-    var deck = deckSet[budget] || deckSet.b2;
-    var phones = HEADPHONES[budget] || HEADPHONES.b2;
-    var spk = SPEAKERS[budget] || SPEAKERS.b2;
-
-    if (software === "standalone" && (budget === "b1" || budget === "b2")) {
-      deck = DECKS.standalone.b2;
+  function parseUrlOrLocalState() {
+    var params = new URLSearchParams(window.location.search);
+    var rigParam = params.get("rig");
+    if (rigParam) {
+      try {
+        var parsed = JSON.parse(decodeURIComponent(atob(rigParam)));
+        if (parsed && parsed.slots) {
+          currentRig = parsed;
+          return;
+        }
+      } catch (e) {
+        console.warn("Invalid rig URL param:", e);
+      }
     }
 
-    var items = [];
-    items.push({
-      kind: "Deck",
-      name: deck.name,
-      band: deck.band,
-      why: deck.why,
-      alt: deck.alt,
-      softwareTier: deck.softwareTier,
-      streaming: deck.streaming
+    var local = localStorage.getItem("offbeat.rig.active");
+    if (local) {
+      try {
+        var saved = JSON.parse(local);
+        if (saved && saved.slots) {
+          currentRig = saved;
+        }
+      } catch (e) {
+        console.warn("Invalid local rig state:", e);
+      }
+    }
+  }
+
+  function saveActiveState() {
+    try {
+      localStorage.setItem("offbeat.rig.active", JSON.stringify(currentRig));
+      // Update shareable URL without reloading page
+      var encoded = btoa(encodeURIComponent(JSON.stringify(currentRig)));
+      var newUrl = window.location.pathname + "?rig=" + encoded;
+      window.history.replaceState({ rig: currentRig }, "", newUrl);
+    } catch (e) {
+      console.warn("Could not save rig state:", e);
+    }
+  }
+
+  function getItem(id) {
+    if (!CATALOG || !id) return null;
+    return CATALOG.items.find(function (item) { return item.id === id; }) || null;
+  }
+
+  /* ----------------------------------------------------------- Calculations */
+  function calculateRigStats() {
+    var totalValue = 0;
+    var ownedValue = 0;
+    var purchaseCost = 0;
+    var itemCount = 0;
+    var ownedCount = 0;
+
+    Object.keys(currentRig.slots).forEach(function (cat) {
+      var id = currentRig.slots[cat];
+      var item = getItem(id);
+      if (item) {
+        totalValue += item.price;
+        itemCount++;
+        if (currentRig.owned[cat]) {
+          ownedValue += item.price;
+          ownedCount++;
+        } else {
+          purchaseCost += item.price;
+        }
+      }
     });
 
-    if (owns.indexOf("headphones") === -1) {
-      items.push({ kind: "Headphones", name: phones.name, band: phones.band, why: phones.why, link: phones.link, label: phones.label });
-    }
-
-    if (owns.indexOf("pa") === -1) {
-      items.push({
-        kind: "Speakers",
-        name: spk.name,
-        band: spk.band,
-        why: spk.why,
-        link: spk.link,
-        label: spk.label
-      });
-    }
-
-    if (owns.indexOf("laptop") === -1 && software !== "standalone") {
-      items.push({
-        kind: "Laptop",
-        name: "Laptop with 8GB+ RAM & SSD",
-        band: "$350–800",
-        why: "Any modern MacBook or Windows laptop with 8GB RAM runs Serato/rekordbox smoothly.",
-        link: "best-dj-laptop-2026.html",
-        label: "DJ laptop guide"
-      });
-    }
-
-    items.push({
-      kind: "Cables",
-      name: CABLES.laptop.name,
-      band: CABLES.laptop.band,
-      why: CABLES.laptop.why
-    });
-
-    if (owns.indexOf("pa") === -1) {
-      items.push({ kind: "Cables", name: CABLES.pa.name, band: CABLES.pa.band, why: CABLES.pa.why });
-    }
-
-    items.push({ kind: "Accessories", name: CABLES.extras.name, band: CABLES.extras.band, why: CABLES.extras.why });
-
-    // Calculate budget sum
-    var lo = 0, hi = 0;
-    items.forEach(function (item) {
-      var nums = (item.band.match(/[\d,]+/g) || []).map(function (n) { return parseInt(n.replace(/,/g, ""), 10); });
-      if (nums.length >= 2) { lo += nums[0]; hi += nums[1]; }
-      else if (nums.length === 1) { lo += nums[0]; hi += nums[0]; }
-    });
-
-    var budgetMax = { b1: 300, b2: 600, b3: 1200, b4: 3000 }[budget] || 600;
-
-    var skip = [];
-    if (place === "bedroom") skip.push("Heavy flight cases and massive PA subwoofers until you book outside venues.");
-    if (software !== "standalone") skip.push("Expensive standalone units ($1,200+) — a controller + laptop setup does 95% of the same job.");
-    if (owns.indexOf("headphones") !== -1) skip.push("Buying brand new headphones — replace worn ear cushions first.");
-    skip.push("Paid software add-on FX packs. Master your deck's 3-band EQ and basic filter first.");
-    skip.push("Paid sample packs before organizing your core DJ playlist.");
-
-    var upgrade = owns.indexOf("headphones") === -1
-      ? "1. Closed-back headphones (critical for cueing) → 2. Controller → 3. Monitor speakers → 4. DJ stand."
-      : place === "party" || place === "mobile"
-        ? "1. Controller → 2. Powered PA speakers → 3. Backup cables & power strip → 4. Microphones."
-        : "1. Controller & software unlock → 2. Active monitors → 3. High-quality DJ headphones → 4. Laptop riser.";
+    var compatibility = runCompatibilityChecks();
 
     return {
-      place: place,
-      budget: budget,
-      software: software,
-      owns: owns,
-      items: items,
-      budgetMax: budgetMax,
-      low: lo,
-      high: hi,
-      skip: skip,
-      upgrade: upgrade,
-      deck: deck,
-      phones: phones,
-      spk: spk,
-      deckLink: deckLinkFor(software)
+      totalValue: totalValue,
+      ownedValue: ownedValue,
+      purchaseCost: purchaseCost,
+      itemCount: itemCount,
+      ownedCount: ownedCount,
+      compatibility: compatibility
     };
   }
 
-  function deckLinkFor(software) {
-    if (software === "rekordbox") return { href: "best-dj-controllers-for-rekordbox.html", label: "rekordbox controller guide" };
-    if (software === "serato") return { href: "best-dj-controllers-for-serato.html", label: "Serato controller guide" };
-    if (software === "standalone") return { href: "best-standalone-dj-systems.html", label: "Standalone systems guide" };
-    return { href: "best-dj-controllers-for-beginners.html", label: "Beginner controller guide" };
-  }
+  function runCompatibilityChecks() {
+    var controller = getItem(currentRig.slots.controllers);
+    var headphones = getItem(currentRig.slots.headphones);
+    var speakers = getItem(currentRig.slots.speakers);
+    var laptop = getItem(currentRig.slots.laptops);
+    var cable = getItem(currentRig.slots.cables);
 
-  function esc(value) {
-    return String(value || "").replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-    });
-  }
+    var checks = [];
+    var issues = 0;
 
-  function renderResult(data) {
-    var money = function (n) { return "$" + n.toLocaleString("en-US"); };
-    var html = "";
+    // 1. Audio Signal Cable Matching
+    if (controller && speakers) {
+      var ctrlOutputs = controller.master_outputs || [];
+      var spkInputs = speakers.inputs || [];
 
-    // Tier comparison bar
-    html += '<div class="rig-tier-switcher" role="tablist" aria-label="Compare budget tiers">';
-    html += '<button type="button" class="btn-tier' + (data.budget === "b1" ? " is-active" : "") + '" data-set-tier="b1" role="tab" aria-selected="' + (data.budget === "b1") + '">Starter Budget (&lt;$300)</button>';
-    html += '<button type="button" class="btn-tier' + (data.budget === "b2" ? " is-active" : "") + '" data-set-tier="b2" role="tab" aria-selected="' + (data.budget === "b2") + '">★ Sweet Spot ($300–$600)</button>';
-    html += '<button type="button" class="btn-tier' + (data.budget === "b3" ? " is-active" : "") + '" data-set-tier="b3" role="tab" aria-selected="' + (data.budget === "b3") + '">Pro / 4-Channel ($600–$1,200)</button>';
-    html += "</div>";
+      var hasRCAOut = ctrlOutputs.some(function (o) { return o.indexOf("RCA") !== -1; });
+      var hasXLROut = ctrlOutputs.some(function (o) { return o.indexOf("XLR") !== -1; });
+      var hasTRSOut = ctrlOutputs.some(function (o) { return o.indexOf("TRS") !== -1 || o.indexOf("1/4\"") !== -1; });
 
-    html += '<div class="rig-result-head">';
-    html += "<p class=\"kicker\">Your Recommended DJ Rig</p>";
-    html += "<h2>" + esc(PLACES[data.place].label) + " · " + (data.budget === "b1" ? "Starter Budget" : data.budget === "b2" ? "Recommended Sweet Spot" : data.budget === "b3" ? "Pro Upgrade" : "Flagship Rig") + "</h2>";
-    html += "<p class=\"rig-note\">" + esc(PLACES[data.place].note) + "</p>";
-    html += "</div>";
+      var hasRCAIn = spkInputs.some(function (i) { return i.indexOf("RCA") !== -1; });
+      var hasXLRIn = spkInputs.some(function (i) { return i.indexOf("XLR") !== -1; });
+      var hasTRSIn = spkInputs.some(function (i) { return i.indexOf("TRS") !== -1 || i.indexOf("1/4\"") !== -1; });
 
-    // Interactive Cabling Diagram
-    html += '<div class="rig-signal-flow">';
-    html += '<h3 class="rig-diagram-title">How Your Rig Connects</h3>';
-    html += '<div class="rig-flow-diagram">';
-    html += '<div class="flow-node flow-node--source"><span>Source</span><strong>' + (data.owns.indexOf("laptop") !== -1 ? "Your Laptop" : "Laptop / iPad") + '</strong><em>Music Library & DJ App</em></div>';
-    html += '<div class="flow-wire"><span class="wire-label">USB-C</span><span class="wire-arrow">→</span></div>';
-    html += '<div class="flow-node flow-node--deck"><span>Core Controller</span><strong>' + esc(data.deck.name) + '</strong><em>Mixer + Audio Interface</em></div>';
-    html += '<div class="flow-split">';
-    html += '<div class="flow-branch"><div class="flow-wire"><span class="wire-label">Master Out (RCA/XLR)</span><span class="wire-arrow">→</span></div><div class="flow-node flow-node--speakers"><span>Sound</span><strong>' + esc(data.spk.name.split(" or ")[0]) + '</strong><em>Room / Dancefloor</em></div></div>';
-    html += '<div class="flow-branch"><div class="flow-wire"><span class="wire-label">Cue Jack (3.5mm)</span><span class="wire-arrow">→</span></div><div class="flow-node flow-node--phones"><span>Cue</span><strong>' + esc(data.phones.name.split(" or ")[0]) + '</strong><em>Ear Monitoring</em></div></div>';
-    html += "</div>";
-    html += "</div>";
-    html += '<p class="flow-tip"><strong>Pro Tip:</strong> Plug headphones into the controller’s front Cue jack, not the laptop headphone jack. This gives you zero-latency pre-fader listening.</p>';
-    html += "</div>";
-
-    // Software & Ecosystem Card
-    html += '<div class="rig-software-badge">';
-    html += '<div class="badge-icon">⚡</div>';
-    html += '<div class="badge-body">';
-    html += '<strong>Software Included: ' + esc(data.deck.softwareTier) + '</strong>';
-    html += '<p>Streaming Support: ' + esc(data.deck.streaming) + '</p>';
-    html += '</div>';
-    html += '</div>';
-
-    // Itemized Rig list
-    html += '<ol class="rig-items">';
-    data.items.forEach(function (item) {
-      html += '<li class="rig-item">';
-      html += '<span class="rig-item-kind">' + esc(item.kind) + "</span>";
-      html += '<div class="rig-item-body"><strong>' + esc(item.name) + '</strong><span class="rig-item-price">' + esc(item.band) + "</span>";
-      html += "<p>" + esc(item.why) + "</p>";
-      if (item.alt) {
-        html += '<p class="rig-item-alt"><strong>Runner-up Alternative:</strong> ' + esc(item.alt) + '</p>';
-      }
-      if (item.link) html += '<a class="rig-item-link" href="' + esc(item.link) + '">' + esc(item.label) + " →</a>";
-      html += "</div></li>";
-    });
-    html += "</ol>";
-
-    // Total box
-    html += '<div class="rig-total"><span>Estimated complete rig cost</span><b>' + money(data.low) + " – " + money(data.high) + "</b>";
-    html += '<em>Researched 2026 street price bands. Check current retailer listings before purchase.</em></div>';
-
-    // Upgrade Order & What to skip
-    html += '<div class="rig-cols">';
-    html += '<div class="rig-col"><h3>What to skip for now</h3><ul>' + data.skip.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ul></div>";
-    html += '<div class="rig-col"><h3>Purchase order roadmap</h3><p>' + esc(data.upgrade) + "</p></div>";
-    html += "</div>";
-
-    // Next steps
-    html += '<div class="rig-next"><h3>Explore matching guides</h3><ul class="rig-links">';
-    html += '<li><a href="' + data.deckLink.href + '">' + data.deckLink.label + "</a></li>";
-    html += '<li><a href="' + (data.software === "standalone" ? "best-standalone-dj-systems.html" : "controller-software-compatibility-matrix.html") + '">' + (data.software === "standalone" ? "Standalone systems compared" : "Controller and software compatibility") + "</a></li>";
-    html += '<li><a href="dj-equipment-checklist.html">The complete equipment checklist</a></li>';
-    html += '<li><a href="beginner-dj-setup-guide-2026.html">Beginner setup step-by-step</a></li>';
-    html += '<li><a href="beatmatch-trainer.html">Beatmatch trainer drill</a></li>';
-    html += "</ul></div>";
-
-    // Actions
-    html += '<div class="rig-actions">';
-    html += '<button type="button" class="btn btn-secondary" data-rig-copy-list>Copy Shopping Checklist</button>';
-    html += '<button type="button" class="btn btn-secondary" data-rig-restart>Modify Answers</button>';
-    html += '<button type="button" class="btn btn-secondary" data-rig-print>Print / Save PDF</button>';
-    html += "</div>";
-
-    result.innerHTML = html;
-    result.hidden = false;
-    placeholder.hidden = true;
-    form.hidden = true;
-
-    // Attach result listeners
-    result.querySelectorAll("[data-set-tier]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var tier = btn.getAttribute("data-set-tier");
-        state.budget = tier;
-        renderResult(buildResult(tier));
-      });
-    });
-
-    result.querySelector("[data-rig-restart]").addEventListener("click", function () {
-      result.hidden = true;
-      placeholder.hidden = false;
-      form.hidden = false;
-      showStep(0);
-      form.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    result.querySelector("[data-rig-print]").addEventListener("click", function () { window.print(); });
-
-    var copyBtn = result.querySelector("[data-rig-copy-list]");
-    if (copyBtn) {
-      copyBtn.addEventListener("click", function () {
-        var listText = "🎧 MY OFFBEAT DJ RIG PLANNER LIST (" + PLACES[data.place].label + "):\n\n";
-        data.items.forEach(function (i) {
-          listText += "[ ] " + i.kind + ": " + i.name + " (" + i.band + ")\n    Why: " + i.why + "\n\n";
+      if (hasXLROut && hasXLRIn) {
+        checks.push({
+          type: "success",
+          title: "Balanced Pro XLR Signal Link",
+          desc: "Controller features balanced XLR Master outputs matching your speakers for zero-noise, high-voltage audio transmission.",
+          recommendedCable: "cable-xlr-xlr"
         });
-        listText += "Estimated Total: " + money(data.low) + " – " + money(data.high) + "\n";
-        listText += "Generated via Offbeat DJ Rig Planner: https://offbeatinc.com/build-your-dj-setup.html";
+      } else if (hasRCAOut && hasRCAIn) {
+        checks.push({
+          type: "success",
+          title: "Direct Dual RCA Connection",
+          desc: "Controller RCA Master Out connects directly to speaker RCA inputs. Optimal for home desks under 10 feet.",
+          recommendedCable: "cable-rca-rca"
+        });
+      } else if (hasRCAOut && (hasTRSIn || hasXLRIn) && !hasRCAIn) {
+        checks.push({
+          type: "warning",
+          title: "Cable Adapter Required (RCA to 1/4\" TS)",
+          desc: "Your controller has RCA outputs but your speakers only accept 1/4\" TRS/XLR inputs (e.g. Yamaha HS5). Use a Dual RCA to Dual 1/4\" TS cable.",
+          recommendedCable: "cable-rca-trs"
+        });
+        issues++;
+      } else {
+        checks.push({
+          type: "info",
+          title: "Standard Audio Connection",
+          desc: "Check your physical cable connections between controller outputs and speaker inputs.",
+          recommendedCable: "cable-rca-rca"
+        });
+      }
+    }
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(listText).then(function () {
-            copyBtn.textContent = "Checklist Copied to Clipboard!";
-            window.setTimeout(function () { copyBtn.textContent = "Copy Shopping Checklist"; }, 2500);
-          }).catch(function () {
-            copyBtn.textContent = "Checklist Copied!";
-            window.setTimeout(function () { copyBtn.textContent = "Copy Shopping Checklist"; }, 2500);
-          });
-        }
+    // 2. Standalone vs Laptop Check
+    if (controller && laptop) {
+      if (laptop.id === "standalone-usb-only" && !controller.standalone) {
+        checks.push({
+          type: "error",
+          title: "Missing Required Host Computer",
+          desc: controller.brand + " " + controller.model + " is not a standalone console — it requires a host laptop or tablet running DJ software to function.",
+          actionText: "Choose a Laptop",
+          actionSlot: "laptops"
+        });
+        issues++;
+      } else if (controller.standalone) {
+        checks.push({
+          type: "success",
+          title: "Standalone USB Performance Ready",
+          desc: controller.brand + " " + controller.model + " contains its own onboard processor. Mix straight from USB flash drives with zero laptop required.",
+          recommendedCable: null
+        });
+      } else {
+        checks.push({
+          type: "success",
+          title: "Software & Hardware Synergy",
+          desc: controller.model + " seamlessly connects to " + laptop.model + " via USB with low-latency audio driver support.",
+          recommendedCable: null
+        });
+      }
+    }
+
+    // 3. Headphone Jack Check
+    if (controller && headphones) {
+      var ctrlJack = controller.headphone_jack || "";
+      var hpJack = headphones.jack_type || "";
+      if (ctrlJack.indexOf("3.5mm") !== -1 && hpJack.indexOf("1/4\"") !== -1 && hpJack.indexOf("adapter") === -1) {
+        checks.push({
+          type: "info",
+          title: "Headphone Jack Adapter",
+          desc: "Ensure your headphones include a 3.5mm mini-jack plug or screw-on 1/4\" adapter to match the controller cue jack.",
+          recommendedCable: "adapter-headphone-jack"
+        });
+      }
+    }
+
+    // Readiness score calculation
+    var readiness = 100;
+    if (!currentRig.slots.controllers) readiness -= 35;
+    if (!currentRig.slots.headphones) readiness -= 25;
+    if (!currentRig.slots.speakers) readiness -= 20;
+    if (!currentRig.slots.laptops) readiness -= 10;
+    if (!currentRig.slots.cables) readiness -= 10;
+    if (issues > 0) readiness = Math.max( readiness - issues * 15, 30);
+
+    return {
+      readiness: readiness,
+      checks: checks,
+      issues: issues
+    };
+  }
+
+  /* ---------------------------------------------------------------- Render */
+  function renderApp() {
+    var stats = calculateRigStats();
+
+    var html = `
+      <!-- Builder Top Dashboard -->
+      <section class="rig-dashboard-shell">
+        <div class="rig-dash-header">
+          <div class="rig-title-block">
+            <span class="hero-eyebrow">Interactive Gear Architect</span>
+            <h2 class="rig-main-title" contenteditable="true" data-rig-name title="Click to rename your setup">${escapeHtml(currentRig.name)}</h2>
+            <p class="rig-subtitle">Assemble your setup, mark gear you already own, verify audio signal compatibility, and generate an itemized shopping list.</p>
+          </div>
+          <div class="rig-dash-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="copy-checklist">📋 Copy Checklist</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="share-rig">🔗 Share Build</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="save-rig">💾 Save Rig</button>
+            <button type="button" class="btn btn-sm" data-action="random-rig">🎲 Quick Preset</button>
+          </div>
+        </div>
+
+        <!-- Presets Bar -->
+        <div class="rig-preset-strip" role="group" aria-label="Preset starting points">
+          <span class="preset-label">Quick Start Rigs:</span>
+          ${CATALOG.presets.map(function (p) {
+            return `<button type="button" class="rig-preset-pill" data-preset-id="${p.id}">
+              <strong>${p.name}</strong> <span class="preset-badge">${p.badge}</span>
+            </button>`;
+          }).join("")}
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="rig-metrics-grid">
+          <div class="rig-metric-card">
+            <span class="metric-label">Total Rig Value</span>
+            <strong class="metric-val">$${stats.totalValue.toLocaleString()}</strong>
+            <span class="metric-sub">${stats.itemCount} items assembled</span>
+          </div>
+          <div class="rig-metric-card metric-card--owned">
+            <span class="metric-label">Gear You Own (Saved)</span>
+            <strong class="metric-val metric-val--owned">-$${stats.ownedValue.toLocaleString()}</strong>
+            <span class="metric-sub">${stats.ownedCount} owned items deducted</span>
+          </div>
+          <div class="rig-metric-card metric-card--spend">
+            <span class="metric-label">Needed Purchase Total</span>
+            <strong class="metric-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
+            <span class="metric-sub">${stats.itemCount - stats.ownedCount} items to buy</span>
+          </div>
+          <div class="rig-metric-card metric-card--readiness">
+            <span class="metric-label">Setup Readiness</span>
+            <div class="readiness-gauge-wrap">
+              <div class="readiness-bar"><div class="readiness-fill" style="width: ${stats.compatibility.readiness}%"></div></div>
+              <strong class="readiness-num">${stats.compatibility.readiness}%</strong>
+            </div>
+            <span class="metric-sub">${stats.compatibility.issues === 0 ? "✓ 100% Compatible & Complete" : "⚠️ " + stats.compatibility.issues + " issue to check"}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Visual DJ Booth Studio Layout -->
+      <section class="rig-booth-section">
+        <div class="section-head">
+          <h3>DJ Studio Booth &amp; Signal Routing</h3>
+          <p>Interactive 2D booth layout. Click any piece of gear to swap components or toggle ownership.</p>
+        </div>
+        <div class="rig-booth-stage">
+          <!-- Top Row: Monitors & Laptop -->
+          <div class="booth-top-row">
+            ${renderBoothNode("speakers", "Left Monitor (Pair)", "🔊")}
+            ${renderBoothNode("laptops", "Host Platform / OS", "💻")}
+            ${renderBoothNode("accessories", "Desk Stand / Mic", "📦")}
+          </div>
+
+          <!-- Signal Cables Indicator -->
+          <div class="booth-cables-row">
+            <div class="cable-pulse-line cable-pulse--left"></div>
+            <div class="cable-node-hub" data-action="pick" data-slot="cables">
+              <span class="cable-icon">🔌</span>
+              <span class="cable-title">${getSlotDisplayName("cables")}</span>
+              <span class="cable-change">Change Cables →</span>
+            </div>
+            <div class="cable-pulse-line cable-pulse--right"></div>
+          </div>
+
+          <!-- Bottom Row: Controller & Headphones -->
+          <div class="booth-bottom-row">
+            ${renderBoothNode("controllers", "DJ Controller / Decks & Mixer", "🎛️", true)}
+            ${renderBoothNode("headphones", "DJ Headphones", "🎧")}
+          </div>
+        </div>
+      </section>
+
+      <!-- Compatibility Engine Alerts -->
+      <section class="rig-compat-section">
+        <div class="compat-box">
+          <div class="compat-header">
+            <h4>⚡ Real-Time Hardware &amp; Signal Compatibility Engine</h4>
+            <span class="compat-status-tag ${stats.compatibility.issues === 0 ? 'tag--ok' : 'tag--warn'}">
+              ${stats.compatibility.issues === 0 ? '✓ All Connections Verified' : '⚠️ Attention Required'}
+            </span>
+          </div>
+          <div class="compat-items-grid">
+            ${stats.compatibility.checks.map(function (c) {
+              return `<div class="compat-item compat-item--${c.type}">
+                <div class="compat-icon">${c.type === 'success' ? '✓' : c.type === 'warning' ? '⚠️' : 'ℹ️'}</div>
+                <div class="compat-body">
+                  <strong>${escapeHtml(c.title)}</strong>
+                  <p>${escapeHtml(c.desc)}</p>
+                  ${c.recommendedCable ? `<button type="button" class="btn-text-action" data-action="set-cable" data-cable-id="${c.recommendedCable}">Set recommended cable →</button>` : ''}
+                </div>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      </section>
+
+      <!-- Itemized PCPartPicker Table -->
+      <section class="rig-table-section">
+        <div class="section-head">
+          <h3>Component Breakdown &amp; Shopping List</h3>
+          <p>Every piece in your setup with dated 2026 price estimates and direct retailer destinations.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table class="drill-table rig-spec-table">
+            <thead>
+              <tr>
+                <th scope="col">Component Slot</th>
+                <th scope="col">Selected Equipment</th>
+                <th scope="col">Status</th>
+                <th scope="col">Price Est.</th>
+                <th scope="col">Retailer Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${CATALOG.categories.map(function (cat) {
+                return renderTableRow(cat.id);
+              }).join("")}
+            </tbody>
+            <tfoot>
+              <tr class="rig-total-row">
+                <td colspan="3"><strong>Total Shopping Expenditure Needed:</strong></td>
+                <td colspan="2"><strong class="spend-total-num">$${stats.purchaseCost.toLocaleString()}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Commercial Disclosure Notice -->
+        <p class="table-note">
+          ${CATALOG.meta.disclosure} <a href="disclosure.html">Read our full affiliate disclosure</a>.
+        </p>
+      </section>
+
+      <!-- Saved Rigs Drawer -->
+      <section class="rig-saved-section" id="saved-rigs-drawer">
+        ${renderSavedRigsList()}
+      </section>
+
+      <!-- Modal Container (Dynamically populated) -->
+      <div id="rig-modal-container" hidden></div>
+    `;
+
+    builderRoot.innerHTML = html;
+  }
+
+  function renderBoothNode(category, label, icon, isMain) {
+    var id = currentRig.slots[category];
+    var item = getItem(id);
+    var isOwned = currentRig.owned[category];
+
+    if (!item) {
+      return `
+        <div class="booth-card booth-card--empty ${isMain ? 'booth-card--main' : ''}" data-action="pick" data-slot="${category}">
+          <span class="booth-card-role">${icon} ${label}</span>
+          <div class="booth-empty-content">
+            <span class="booth-plus">+</span>
+            <strong>Select ${label}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
+        <div class="booth-card-top">
+          <span class="booth-card-role">${icon} ${label}</span>
+          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-owned" data-slot="${category}" title="Toggle already owned">
+            ${isOwned ? '✓ Owned' : '🛒 Need'}
+          </button>
+        </div>
+        <div class="booth-card-body" data-action="pick" data-slot="${category}">
+          <div class="booth-thumb-wrap">
+            <img src="${item.image}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
+          </div>
+          <div class="booth-info">
+            <span class="booth-brand">${escapeHtml(item.brand)}</span>
+            <strong class="booth-model">${escapeHtml(item.model)}</strong>
+            <span class="booth-price ${isOwned ? 'price--owned' : ''}">
+              ${isOwned ? '<s>$' + item.price + '</s> (Owned)' : '$' + item.price}
+            </span>
+          </div>
+        </div>
+        <button type="button" class="booth-swap-btn" data-action="pick" data-slot="${category}">
+          Swap / Customize →
+        </button>
+      </div>
+    `;
+  }
+
+  function renderTableRow(category) {
+    var id = currentRig.slots[category];
+    var item = getItem(id);
+    var isOwned = currentRig.owned[category];
+    var catMeta = CATALOG.categories.find(function (c) { return c.id === category; });
+
+    if (!item) {
+      return `
+        <tr class="rig-row rig-row--empty">
+          <td><strong>${catMeta ? catMeta.icon + ' ' + catMeta.name : category}</strong></td>
+          <td colspan="3"><span class="empty-slot-msg">No component selected for this slot</span></td>
+          <td><button type="button" class="btn btn-sm" data-action="pick" data-slot="${category}">Select Component</button></td>
+        </tr>
+      `;
+    }
+
+    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
+    var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
+    var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
+
+    return `
+      <tr class="rig-row ${isOwned ? 'rig-row--owned' : ''}">
+        <td class="cell-cat">
+          <span class="cat-pill">${catMeta ? catMeta.icon : ''} ${catMeta ? catMeta.name : category}</span>
+        </td>
+        <td class="cell-item">
+          <div class="item-summary-box">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
+            <div class="item-summary-copy">
+              <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
+              <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+              ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="cell-status">
+          <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-owned" data-slot="${category}">
+            ${isOwned ? '🟢 I Own This' : '🔵 Need to Buy'}
+          </button>
+        </td>
+        <td class="cell-price">
+          <span class="price-figure ${isOwned ? 'price--owned' : ''}">
+            ${isOwned ? '<s>$' + item.price + '</s>' : '$' + item.price}
+          </span>
+          ${isOwned ? '<span class="owned-sub">($0 out of pocket)</span>' : ''}
+        </td>
+        <td class="cell-actions">
+          <div class="retail-btn-stack">
+            <button type="button" class="btn-swap-inline" data-action="pick" data-slot="${category}">Swap</button>
+            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Check price on Amazon">Amazon →</a>
+            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
+            <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used on Reverb">Reverb (Used)</a>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderSavedRigsList() {
+    var saved = getSavedRigs();
+    if (!saved || saved.length === 0) return '';
+
+    return `
+      <div class="saved-rigs-card">
+        <h4>💾 My Saved Custom Rigs (${saved.length})</h4>
+        <div class="saved-pills-list">
+          ${saved.map(function (r, index) {
+            return `
+              <div class="saved-rig-pill">
+                <button type="button" class="btn-load-rig" data-action="load-saved-rig" data-index="${index}">
+                  <strong>${escapeHtml(r.name)}</strong>
+                  <span>$${r.totalCost || 0} (${r.date || 'Saved'})</span>
+                </button>
+                <button type="button" class="btn-del-rig" data-action="delete-saved-rig" data-index="${index}" title="Delete rig">✕</button>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function getSlotDisplayName(category) {
+    var id = currentRig.slots[category];
+    var item = getItem(id);
+    return item ? (item.brand + " " + item.model) : "None Selected";
+  }
+
+  /* ------------------------------------------------------------- Modal */
+  function openPickerModal(category) {
+    activeModalCategory = category;
+    var catMeta = CATALOG.categories.find(function (c) { return c.id === category; });
+    var items = CATALOG.items.filter(function (i) { return i.category === category; });
+
+    var modalHtml = `
+      <div class="picker-backdrop" data-action="close-modal">
+        <div class="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-modal-title">
+          <div class="picker-header">
+            <div>
+              <span class="picker-eyebrow">${catMeta ? catMeta.icon : ''} Component Selector</span>
+              <h3 id="picker-modal-title">Select ${catMeta ? catMeta.name : 'Component'}</h3>
+            </div>
+            <button type="button" class="picker-close" data-action="close-modal" aria-label="Close dialog">✕</button>
+          </div>
+
+          <div class="picker-search-bar">
+            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
+          </div>
+
+          <div class="picker-grid" id="modal-items-grid">
+            ${renderModalGridItems(items)}
+          </div>
+        </div>
+      </div>
+    `;
+
+    var container = document.getElementById("rig-modal-container");
+    container.innerHTML = modalHtml;
+    container.hidden = false;
+    document.body.classList.add("modal-open");
+
+    var searchInput = container.querySelector("[data-modal-search]");
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.addEventListener("input", function (e) {
+        var query = e.target.value.toLowerCase().trim();
+        var tokens = query ? query.split(/\s+/) : [];
+        var filtered = items.filter(function (i) {
+          if (tokens.length === 0) return true;
+          var text = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " + (i.software_unlocks ? i.software_unlocks.join(" ") : "")).toLowerCase();
+          return tokens.every(function (t) { return text.indexOf(t) !== -1; });
+        });
+        document.getElementById("modal-items-grid").innerHTML = renderModalGridItems(filtered);
       });
     }
-
-    result.scrollIntoView({ behavior: "smooth", block: "start" });
-    updateUrl(data);
   }
 
-  function updateUrl(data) {
-    if (!window.history || !history.replaceState) return;
-    var params = "?place=" + encodeURIComponent(data.place) +
-      "&budget=" + encodeURIComponent(data.budget) +
-      "&software=" + encodeURIComponent(data.software) +
-      "&owns=" + encodeURIComponent(data.owns.join(","));
-    history.replaceState(null, "", location.pathname + params + "#rig-result");
+  function renderModalGridItems(items) {
+    if (items.length === 0) {
+      return '<div class="picker-empty"><p>No components match your search filter.</p></div>';
+    }
+
+    return items.map(function (item) {
+      var isCurrent = currentRig.slots[activeModalCategory] === item.id;
+      return `
+        <article class="picker-card ${isCurrent ? 'is-selected' : ''}">
+          <div class="picker-card-img-wrap">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <span class="picker-price-badge">$${item.price}</span>
+          </div>
+          <div class="picker-card-body">
+            <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
+            <h4 class="picker-card-title">${escapeHtml(item.model)}</h4>
+            <p class="picker-card-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+            <div class="picker-specs-list">
+              ${item.channels ? `<span>${item.channels} Channels</span>` : ''}
+              ${item.master_outputs ? `<span>Outputs: ${item.master_outputs.join(", ")}</span>` : ''}
+              ${item.inputs ? `<span>Inputs: ${item.inputs.join(", ")}</span>` : ''}
+              ${item.software_unlocks ? `<span>Unlocks: ${item.software_unlocks.join(", ")}</span>` : ''}
+            </div>
+          </div>
+          <div class="picker-card-footer">
+            <button type="button" class="btn ${isCurrent ? 'btn-secondary' : ''} btn-sm btn-select-item" data-action="select-item" data-item-id="${item.id}">
+              ${isCurrent ? '✓ Currently in Rig' : 'Select for Rig'}
+            </button>
+            ${item.slug ? `<a href="${item.slug}" class="picker-review-link" target="_blank">Full Review ↗</a>` : ''}
+          </div>
+        </article>
+      `;
+    }).join("");
   }
 
-  /* --------------------------------------------------------------- events */
-  function collectStep(index) {
-    var step = steps[index];
-    var key = step.getAttribute("data-rig-step");
-    var values = selected(step);
-    if (key === "owns") {
-      state.owns = values;
-      return true;
-    }
-    if (!values.length) {
-      step.classList.add("is-missing");
-      var message = step.querySelector(".rig-error");
-      if (message) message.hidden = false;
-      return false;
-    }
-    step.classList.remove("is-missing");
-    state[key] = values[0];
-    return true;
+  function closeModal() {
+    var container = document.getElementById("rig-modal-container");
+    container.hidden = true;
+    container.innerHTML = "";
+    document.body.classList.remove("modal-open");
+    activeModalCategory = null;
   }
 
-  nextBtn.addEventListener("click", function () {
-    if (!collectStep(current)) return;
-    if (current < steps.length - 1) {
-      showStep(current + 1);
-      steps[current].scrollIntoView({ behavior: "smooth", block: "center" });
-    } else {
-      renderResult(buildResult());
-    }
-  });
+  /* ------------------------------------------------------------- Actions */
+  function setupGlobalListeners() {
+    document.addEventListener("click", function (e) {
+      // 1. Modal backdrop close
+      if (e.target.classList.contains("picker-backdrop")) {
+        closeModal();
+        return;
+      }
 
-  backBtn.addEventListener("click", function () {
-    if (current > 0) showStep(current - 1);
-  });
+      // 2. Button actions
+      var btn = e.target.closest("[data-action]") || e.target.closest(".btn-select-item") || e.target.closest(".picker-close");
+      if (!btn) return;
 
-  form.addEventListener("change", function (event) {
-    var step = event.target.closest(".rig-step");
-    if (step) {
-      step.classList.remove("is-missing");
-      var message = step.querySelector(".rig-error");
-      if (message) message.hidden = true;
-    }
-    var key = step && step.getAttribute("data-rig-step");
-    if (key && key !== "owns") {
-      window.setTimeout(function () {
-        if (current < steps.length - 1) {
-          if (collectStep(current)) showStep(current + 1);
-        } else {
-          if (collectStep(current)) renderResult(buildResult());
+      var action = btn.getAttribute("data-action");
+
+      if (action === "select-item" || btn.classList.contains("btn-select-item")) {
+        var itemId = btn.getAttribute("data-item-id");
+        if (activeModalCategory && itemId) {
+          currentRig.slots[activeModalCategory] = itemId;
+          closeModal();
+          saveActiveState();
+          renderApp();
         }
-      }, 140);
-    }
-  });
+        return;
+      }
 
-  showStep(0);
+      if (action === "pick") {
+        var slot = btn.getAttribute("data-slot");
+        if (slot) openPickerModal(slot);
+      } else if (action === "close-modal" || btn.classList.contains("picker-close")) {
+        closeModal();
+      } else if (action === "toggle-owned") {
+        var ownedSlot = btn.getAttribute("data-slot");
+        if (ownedSlot) {
+          currentRig.owned[ownedSlot] = !currentRig.owned[ownedSlot];
+          saveActiveState();
+          renderApp();
+        }
+      } else if (action === "set-cable") {
+        var cableId = btn.getAttribute("data-cable-id");
+        if (cableId) {
+          currentRig.slots.cables = cableId;
+          saveActiveState();
+          renderApp();
+        }
+      } else if (action === "copy-checklist") {
+        copyChecklistToClipboard();
+      } else if (action === "share-rig") {
+        copyShareUrlToClipboard();
+      } else if (action === "save-rig") {
+        promptSaveRig();
+      } else if (action === "random-rig") {
+        loadRandomPreset();
+      } else if (action === "load-saved-rig") {
+        var idx = parseInt(btn.getAttribute("data-index"), 10);
+        loadSavedRig(idx);
+      } else if (action === "delete-saved-rig") {
+        var delIdx = parseInt(btn.getAttribute("data-index"), 10);
+        deleteSavedRig(delIdx);
+      }
+    });
 
-  /* Deep link handle */
-  if (window.location.search.length > 1) {
-    var params = new URLSearchParams(window.location.search);
-    var pre = {
-      place: params.get("place"),
-      budget: params.get("budget"),
-      software: params.get("software"),
-      owns: (params.get("owns") || "").split(",").filter(Boolean)
+    // Preset pills click
+    document.addEventListener("click", function (e) {
+      var presetBtn = e.target.closest("[data-preset-id]");
+      if (!presetBtn) return;
+      var pId = presetBtn.getAttribute("data-preset-id");
+      loadPreset(pId);
+    });
+
+    // Title edit
+    document.addEventListener("blur", function (e) {
+      if (e.target.matches("[data-rig-name]")) {
+        currentRig.name = e.target.textContent.trim() || "My Custom DJ Rig";
+        saveActiveState();
+      }
+    }, true);
+
+    // Escape key closes modal
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeModal();
+    });
+  }
+
+  function loadPreset(presetId) {
+    if (!CATALOG) return;
+    var preset = CATALOG.presets.find(function (p) { return p.id === presetId; });
+    if (!preset) return;
+
+    currentRig.name = preset.name;
+    currentRig.slots = Object.assign({}, preset.slots);
+    // Keep user's owned laptop flag intact
+    currentRig.owned = {
+      controllers: false,
+      headphones: false,
+      speakers: false,
+      laptops: true,
+      cables: false,
+      accessories: false
     };
-    if (pre.place && pre.budget && pre.software) {
-      state = { place: pre.place, budget: pre.budget, software: pre.software, owns: pre.owns };
-      renderResult(buildResult());
+
+    saveActiveState();
+    renderApp();
+  }
+
+  function loadRandomPreset() {
+    if (!CATALOG || !CATALOG.presets) return;
+    var randomIdx = Math.floor(Math.random() * CATALOG.presets.length);
+    loadPreset(CATALOG.presets[randomIdx].id);
+  }
+
+  function copyChecklistToClipboard() {
+    var stats = calculateRigStats();
+    var lines = [
+      "=========================================",
+      "  OFFBEAT DJ RIG SHOPPING CHECKLIST",
+      "  " + currentRig.name,
+      "=========================================",
+      ""
+    ];
+
+    Object.keys(currentRig.slots).forEach(function (cat) {
+      var id = currentRig.slots[cat];
+      var item = getItem(id);
+      var isOwned = currentRig.owned[cat];
+      if (item) {
+        var statusStr = isOwned ? "[OWNED]" : "[NEED TO BUY]";
+        lines.push(statusStr + " " + item.brand + " " + item.model + " - $" + item.price);
+      }
+    });
+
+    lines.push("");
+    lines.push("Total Rig Value: $" + stats.totalValue.toLocaleString());
+    lines.push("Already Owned Value: -$" + stats.ownedValue.toLocaleString());
+    lines.push("Total Out-of-Pocket Needed: $" + stats.purchaseCost.toLocaleString());
+    lines.push("");
+    lines.push("Assembled via Offbeat Rig Architect: " + window.location.href);
+
+    var text = lines.join("\n");
+    navigator.clipboard.writeText(text).then(function () {
+      alert("✓ Shopping checklist copied to clipboard!");
+    }).catch(function () {
+      prompt("Copy your shopping checklist below:", text);
+    });
+  }
+
+  function copyShareUrlToClipboard() {
+    var url = window.location.href;
+    navigator.clipboard.writeText(url).then(function () {
+      alert("✓ Shareable rig link copied to clipboard!");
+    }).catch(function () {
+      prompt("Copy your shareable rig link below:", url);
+    });
+  }
+
+  function getSavedRigs() {
+    try {
+      return JSON.parse(localStorage.getItem("offbeat.rigs.saved")) || [];
+    } catch (e) {
+      return [];
     }
   }
 
-  /* Headless test handle */
-  window.__rigBuilder = {
-    state: state,
-    buildResult: buildResult,
-    renderResult: renderResult
-  };
+  function promptSaveRig() {
+    var name = prompt("Name your setup:", currentRig.name);
+    if (!name) return;
+    currentRig.name = name;
+
+    var stats = calculateRigStats();
+    var saved = getSavedRigs();
+    saved.unshift({
+      name: name,
+      slots: Object.assign({}, currentRig.slots),
+      owned: Object.assign({}, currentRig.owned),
+      totalCost: stats.purchaseCost,
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    });
+
+    // Cap at 15 saved setups
+    if (saved.length > 15) saved = saved.slice(0, 15);
+    localStorage.setItem("offbeat.rigs.saved", JSON.stringify(saved));
+    saveActiveState();
+    renderApp();
+  }
+
+  function loadSavedRig(index) {
+    var saved = getSavedRigs();
+    if (!saved[index]) return;
+    var r = saved[index];
+    currentRig.name = r.name;
+    currentRig.slots = Object.assign({}, r.slots);
+    currentRig.owned = Object.assign({}, r.owned);
+    saveActiveState();
+    renderApp();
+  }
+
+  function deleteSavedRig(index) {
+    var saved = getSavedRigs();
+    saved.splice(index, 1);
+    localStorage.setItem("offbeat.rigs.saved", JSON.stringify(saved));
+    renderApp();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /* ---------------------------------------------------------------- Start */
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
