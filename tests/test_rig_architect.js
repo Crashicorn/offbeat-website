@@ -101,11 +101,19 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
   console.log('✓ Compatibility level badges rendered:', compatBadges.length);
   if (compatBadges.length === 0) throw new Error("Expected compatibility level badges");
 
-  // Test 9: View Mode Switcher (Photos vs Schematics)
-  await page.click('[data-action="set-viewmode"][data-mode="photos"]');
-  const photoActive = await page.$eval('[data-action="set-viewmode"][data-mode="photos"]', el => el.classList.contains('is-active'));
-  console.log('✓ View mode photos active:', photoActive);
-  if (!photoActive) throw new Error("Expected photos view mode to be active");
+  // Test 9: Dedicated Multi-Accessory Coexistence Test
+  // Add a Shure SM58 mic without replacing the laptop stand
+  await page.click('[data-action="open-add-slot"]');
+  await page.waitForSelector('[data-action="add-new-slot"][data-category="microphones"]');
+  await page.click('[data-action="add-new-slot"][data-category="microphones"]');
+  await page.waitForSelector('.picker-card');
+  await page.click('.picker-card'); // Click to select Shure SM58
+  await new Promise(r => setTimeout(r, 200));
+
+  const hasStand = await page.$eval('.rig-spec-table', el => el.textContent.includes('Pyle Pro'));
+  const hasMic = await page.$eval('.rig-spec-table', el => el.textContent.includes('SM58'));
+  console.log('✓ Multi-accessory coexistence (Stand + Mic both present):', hasStand && hasMic);
+  if (!hasStand || !hasMic) throw new Error("Expected both Stand and Microphone to coexist in rig!");
 
   // Test 10: Sound SFX Toggle
   await page.click('[data-action="toggle-sound"]');
@@ -125,5 +133,5 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
   if (errors.length > 0) throw new Error("Found JS errors: " + JSON.stringify(errors));
 
   await browser.close();
-  console.log("ALL RIG BUILDER TESTS (INCLUDING SPEC INSPECTOR, EXPORT, VIEW SWITCHER & UPGRADE ADVISOR) PASSED WITH 0 ERRORS!");
+  console.log("ALL RIG BUILDER TESTS (INCLUDING MULTI-ACCESSORY COEXISTENCE & EXPORT) PASSED WITH 0 ERRORS!");
 })();

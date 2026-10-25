@@ -9,7 +9,6 @@
   var CATALOG = null;
   var audioCtx = null;
   var soundEnabled = localStorage.getItem("offbeat.rig.sfx") !== "muted";
-  var viewMode = localStorage.getItem("offbeat.rig.viewmode") || "photos"; // "photos" or "schematics"
 
   // Active Rig State (Supports modular items, quantities, and owned gear)
   var currentRig = {
@@ -19,8 +18,9 @@
       { slotId: "core-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
       { slotId: "core-spk", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
       { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: true },
-      { slotId: "core-cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false },
-      { slotId: "core-acc", category: "accessories", itemId: "laptop-stand-pyle", qty: 1, owned: false }
+      { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false },
+      { slotId: "core-storage", category: "storage", itemId: "usb-sandisk-extreme", qty: 1, owned: false },
+      { slotId: "core-cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
     ]
   };
 
@@ -104,7 +104,7 @@
   function parseUrlOrLocalState() {
     var params = new URLSearchParams(window.location.search);
 
-    // 1. Deep link to add a specific gear item (e.g. ?add=pioneer-ddj-flx4)
+    // 1. Deep link to add a specific gear item (e.g. ?add=pioneer-ddj-flx10)
     var addParam = params.get("add");
     if (addParam) {
       var targetItem = getItem(addParam);
@@ -172,8 +172,7 @@
     } else if (data.slots) {
       currentRig.name = data.name || "My Custom DJ Rig";
       currentRig.items = [];
-      var cats = ["controllers", "headphones", "speakers", "laptops", "cables", "accessories"];
-      cats.forEach(function (cat) {
+      Object.keys(data.slots).forEach(function (cat) {
         var id = data.slots[cat];
         if (id) {
           currentRig.items.push({
@@ -206,14 +205,6 @@
 
   function getSlotItem(slot) {
     return getItem(slot.itemId);
-  }
-
-  function getItemImageSrc(item) {
-    if (!item) return "";
-    if (viewMode === "photos" && item.photo_image) {
-      return item.photo_image;
-    }
-    return item.image || item.photo_image || "";
   }
 
   /* ----------------------------------------------------------- Calculations */
@@ -399,7 +390,7 @@
     var controllerSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
     var headphonesSlot = currentRig.items.find(function (s) { return s.category === "headphones"; });
     var speakersSlot = currentRig.items.find(function (s) { return s.category === "speakers"; });
-    var accSlot = currentRig.items.find(function (s) { return s.itemId === "laptop-stand-pyle"; });
+    var standSlot = currentRig.items.find(function (s) { return s.category === "stands"; });
 
     var controller = controllerSlot ? getSlotItem(controllerSlot) : null;
     var headphones = headphonesSlot ? getSlotItem(headphonesSlot) : null;
@@ -425,13 +416,13 @@
       };
     }
 
-    if (!accSlot && controller && !controller.standalone) {
+    if (!standSlot && controller && !controller.standalone) {
       return {
         role: "Ergonomic Upgrade",
         targetName: "Pyle Pro Laptop Stand ($29)",
         desc: "Elevating your laptop directly above your controller platters saves table footprint and prevents neck strain during long practice sets.",
         targetId: "laptop-stand-pyle",
-        targetSlotId: "core-acc"
+        targetSlotId: "core-stand"
       };
     }
 
@@ -440,7 +431,7 @@
       targetName: "SanDisk Extreme PRO USB 3.2 ($28)",
       desc: "Fast solid-state flash memory ensures instant waveform loading and zero lag when exporting rekordbox playlists to club CDJ-3000s.",
       targetId: "usb-sandisk-extreme",
-      targetSlotId: "core-acc"
+      targetSlotId: "core-storage"
     };
   }
 
@@ -458,16 +449,6 @@
             <p class="rig-subtitle">Assemble modular equipment, toggle gear you already own, verify audio signal connections, and generate an itemized shopping list.</p>
           </div>
           <div class="rig-dash-actions">
-            <!-- View Mode Switcher -->
-            <div class="rig-viewmode-switch" role="group" aria-label="Visual display mode">
-              <button type="button" class="btn-viewmode ${viewMode === 'photos' ? 'is-active' : ''}" data-action="set-viewmode" data-mode="photos" title="Show authentic studio photography">
-                📷 Studio Photos
-              </button>
-              <button type="button" class="btn-viewmode ${viewMode === 'schematics' ? 'is-active' : ''}" data-action="set-viewmode" data-mode="schematics" title="Show technical vector schematics">
-                📐 Tech Schematics
-              </button>
-            </div>
-
             <!-- Sound FX Toggle -->
             <button type="button" class="btn-sfx-toggle ${soundEnabled ? 'is-on' : 'is-muted'}" data-action="toggle-sound" title="Toggle audio feedback sounds">
               ${soundEnabled ? '🔊 Audio FX: ON' : '🔇 Audio FX: OFF'}
@@ -538,14 +519,14 @@
       <section class="rig-booth-section">
         <div class="section-head">
           <h3>DJ Studio Booth &amp; Signal Routing</h3>
-          <p>Interactive 2D booth layout. Toggle between studio photography and vector diagrams, swap components, or toggle owned gear.</p>
+          <p>Interactive 2D booth layout with authentic technical schematics. Click any piece of gear to swap components, adjust quantities, or toggle owned gear.</p>
         </div>
         <div class="rig-booth-stage">
-          <!-- Top Row: Monitors, Host Platform, Extra Gear -->
+          <!-- Top Row: Monitors, Host Platform, Stands/Media -->
           <div class="booth-top-row">
             ${renderBoothSlot(findSlot("speakers") || { slotId: "core-spk", category: "speakers", itemId: null }, "Monitors / Speakers", "🔊")}
             ${renderBoothSlot(findSlot("laptops") || { slotId: "core-host", category: "laptops", itemId: null }, "Host Platform / OS", "💻")}
-            ${renderBoothSlot(findSlot("accessories") || { slotId: "core-acc", category: "accessories", itemId: null }, "Stands & Accessories", "📦")}
+            ${renderBoothSlot(findSlot("stands") || findSlot("storage") || findSlot("microphones") || { slotId: "core-stand", category: "stands", itemId: null }, "Stands, Mics & Media", "🏗️")}
           </div>
 
           <!-- Signal Cables Hub Indicator -->
@@ -603,12 +584,14 @@
             <p>Every piece in your setup with dated 2026 price estimates, quantities, and direct retailer links.</p>
           </div>
           <div class="add-slot-dropdown-wrap">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="open-add-slot">+ Add Component Slot ▾</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="open-add-slot">+ Add Equipment Slot ▾</button>
             <div class="add-slot-menu" id="add-slot-menu" hidden>
+              <button type="button" data-action="add-new-slot" data-category="microphones">🎤 Add Vocal / Host Microphone</button>
+              <button type="button" data-action="add-new-slot" data-category="stands">🏗️ Add DJ Laptop Stand / Riser</button>
+              <button type="button" data-action="add-new-slot" data-category="storage">💾 Add USB Media / Flash Drive</button>
               <button type="button" data-action="add-new-slot" data-category="speakers">🔊 Add Extra Monitor / PA Speaker</button>
               <button type="button" data-action="add-new-slot" data-category="cables">🔌 Add Audio Cable / Adapter</button>
-              <button type="button" data-action="add-new-slot" data-category="accessories">📦 Add Stand, Case or Microphone</button>
-              <button type="button" data-action="add-new-slot" data-category="controllers">🎛️ Add Second Deck / Turntable</button>
+              <button type="button" data-action="add-new-slot" data-category="controllers">🎛️ Add Second Controller / Deck</button>
             </div>
           </div>
         </div>
@@ -678,7 +661,6 @@
     }
 
     var qtyStr = slot.qty > 1 ? ` <span class="booth-qty-badge">x${slot.qty}</span>` : '';
-    var imgSrc = getItemImageSrc(item);
 
     return `
       <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
@@ -690,7 +672,7 @@
         </div>
         <div class="booth-card-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">
           <div class="booth-thumb-wrap">
-            <img src="${imgSrc}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
+            <img src="${item.image}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
           </div>
           <div class="booth-info">
             <span class="booth-brand">${escapeHtml(item.brand)}</span>
@@ -729,7 +711,6 @@
     }
 
     var linePrice = item.price * qty;
-    var imgSrc = getItemImageSrc(item);
     var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
@@ -741,7 +722,7 @@
         </td>
         <td class="cell-item">
           <div class="item-summary-box">
-            <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
             <div class="item-summary-copy">
               <div class="item-title-row">
                 <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
@@ -842,7 +823,7 @@
           </div>
 
           <div class="picker-search-bar">
-            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
+            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, Prime 4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
           </div>
 
           <div class="picker-grid" id="modal-items-grid">
@@ -880,13 +861,12 @@
 
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
-      var imgSrc = getItemImageSrc(item);
       return `
-        <article class="picker-card ${isCurrent ? 'is-selected' : ''}">
+        <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}">
           <div class="picker-card-img-wrap">
-            <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
-            <span class="picker-provenance-tag">${viewMode === 'photos' && item.has_photo ? 'Studio Photo' : 'Vector Schematic'}</span>
+            <span class="picker-provenance-tag">Vector Schematic</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
@@ -913,7 +893,6 @@
   function openInspectorModal(itemId) {
     var item = getItem(itemId);
     if (!item) return;
-    var imgSrc = getItemImageSrc(item);
 
     var modalHtml = `
       <div class="picker-backdrop" data-action="close-modal">
@@ -928,8 +907,8 @@
 
           <div class="inspector-content">
             <div class="inspector-visual-col">
-              <img src="${imgSrc}" alt="${escapeHtml(item.model)}" class="inspector-hero-img">
-              <p class="inspector-provenance-note">${escapeHtml(item.provenance || 'Offbeat Hardware Reference (2026)')}</p>
+              <img src="${item.image}" alt="${escapeHtml(item.model)}" class="inspector-hero-img">
+              <p class="inspector-provenance-note">${escapeHtml(item.provenance || 'Offbeat Illustrated Spec Guide (2026)')}</p>
             </div>
             <div class="inspector-info-col">
               <div class="inspector-price-row">
@@ -1288,18 +1267,20 @@
         return;
       }
 
-      // 2. Button actions
+      // 2. Button / Card actions
       var btn = e.target.closest("[data-action]") || e.target.closest(".btn-select-item") || e.target.closest(".picker-close");
       if (!btn) return;
 
       var action = btn.getAttribute("data-action");
 
-      if (action === "select-item" || btn.classList.contains("btn-select-item")) {
+      // Handle item selection from modal (both button click and card click)
+      if (action === "select-item" || btn.classList.contains("btn-select-item") || btn.classList.contains("picker-card")) {
         var itemId = btn.getAttribute("data-item-id");
         if (activeModalSlotId && itemId) {
           var targetSlot = currentRig.items.find(function (s) { return s.slotId === activeModalSlotId; });
           if (targetSlot) {
             targetSlot.itemId = itemId;
+            targetSlot.category = activeModalCategory || targetSlot.category;
           } else {
             currentRig.items.push({
               slotId: activeModalSlotId,
@@ -1317,15 +1298,7 @@
         return;
       }
 
-      if (action === "set-viewmode") {
-        var mode = btn.getAttribute("data-mode");
-        if (mode) {
-          viewMode = mode;
-          localStorage.setItem("offbeat.rig.viewmode", mode);
-          playClickSfx("toggle");
-          renderApp();
-        }
-      } else if (action === "toggle-sound") {
+      if (action === "toggle-sound") {
         soundEnabled = !soundEnabled;
         localStorage.setItem("offbeat.rig.sfx", soundEnabled ? "on" : "muted");
         if (soundEnabled) playClickSfx("toggle");
@@ -1423,8 +1396,6 @@
         openPickerModal(newSlotId, addCat);
       } else if (action === "copy-checklist") {
         copyChecklistToClipboard();
-      } else if (action === "share-rig") {
-        openExportModal();
       } else if (action === "save-rig") {
         promptSaveRig();
       } else if (action === "open-compare") {

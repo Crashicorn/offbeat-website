@@ -175,35 +175,54 @@
     UI_IN_BODY = true;
     return UI;
   }
+
+  function dismissUI() {
+    if (UI && UI.parentNode) {
+      try { UI.parentNode.removeChild(UI); } catch (e) { }
+    }
+    UI_IN_BODY = false;
+  }
+
   function refresh(consent) {
+    // When consent has been decided (granted or denied), dismiss and completely remove UI
+    if (consent === 'granted' || consent === 'denied') {
+      dismissUI();
+      return;
+    }
+
     var box = ensureUI();
     if (!box) return;
-    var pill = (consent === 'granted' || consent === 'denied');
-    box.setAttribute('class', 'ob-consent' + (pill ? ' ob-consent--pill' : ''));
+    box.setAttribute('class', 'ob-consent');
     var p = el('span', { 'class': 'ob-consent-text' });
     var row = el('div', { 'class': 'ob-consent-actions' });
+
     if (consent === 'unknown') {
-      p.textContent = 'Optional analytics help us see which guides are used. Nothing loads until you allow it, and we send only the page path plus basic device details. Change your mind any time.';
+      p.textContent = 'We use privacy-friendly analytics to learn which DJ guides are helpful. No ad tracking.';
       row.appendChild(button('Allow analytics', 'grant'));
-      row.appendChild(button('Do not allow', 'deny'));
+      row.appendChild(button('Necessary only', 'deny'));
       row.appendChild(privacyLink());
     } else if (consent === 'reask') {
-      p.textContent = 'Change your analytics choice. Switching off stops analytics, clears its cookies and reloads once to remove the tag.';
+      p.textContent = 'Change your analytics choice. You can allow analytics or withdraw consent at any time.';
       row.appendChild(button('Allow analytics', 'grant'));
-      row.appendChild(button('Withdraw', 'withdraw'));
+      row.appendChild(button('Necessary only', 'withdraw'));
       row.appendChild(privacyLink());
-    } else if (consent === 'denied') {
-      p.textContent = 'Analytics off.';
-      row.appendChild(button('Turn on analytics', 'grant'));
-    } else { // granted
-      p.textContent = 'Analytics on.';
-      row.appendChild(button('Change choice', 'reask'));
-      row.appendChild(button('Withdraw consent', 'withdraw'));
     }
+
     var restoreFocus = box.contains && box.contains(document.activeElement);
     while (box.firstChild) box.removeChild(box.firstChild);
     box.appendChild(p); box.appendChild(row);
     if (restoreFocus && row.firstChild) row.firstChild.focus();
+  }
+
+  // Allow reopening consent preferences from footer or settings link
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', function (e) {
+      var trigger = e.target && e.target.closest && e.target.closest('[data-reopen-consent]');
+      if (trigger) {
+        e.preventDefault();
+        handle('reask');
+      }
+    });
   }
 
   /* ---- withdrawal: explicit denial + cookie expiry + clean teardown --------

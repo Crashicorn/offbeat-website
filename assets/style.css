@@ -3261,3 +3261,127 @@ h3.mini {
   color: #fff;
   border-color: rgba(139, 92, 246, 0.6);
 }
+
+/* Footer Cookie Preferences Button */
+.footer-privacy-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s ease;
+  text-align: left;
+}
+.footer-privacy-btn:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* =============================================================================
+   Trainer Mode Strip & Live Actionable DJ Coach Banner
+   ========================================================================== */
+.trainer-mode-strip {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 4px;
+  margin-bottom: 1.25rem;
+  gap: 4px;
+}
+.trainer-mode-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.trainer-mode-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+.trainer-mode-tab.is-active {
+  background: rgba(139, 92, 246, 0.25);
+  color: #fff;
+  font-weight: 700;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+/* Actionable DJ Coach Banner */
+.coach-banner {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.25s ease;
+}
+.coach-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.coach-body strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+.coach-body p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.coach--tempo {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fef08a;
+}
+.coach--tempo strong {
+  color: #facc15;
+}
+.coach--tempo p {
+  color: #fef9c3;
+}
+
+.coach--phase {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+}
+.coach--phase strong {
+  color: #38bdf8;
+}
+.coach--phase p {
+  color: #e0f2fe;
+}
+
+.coach--locked {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #bbf7d0;
+  animation: pulseGlow 1.5s infinite alternate;
+}
+.coach--locked strong {
+  color: #4ade80;
+}
+.coach--locked p {
+  color: #f0fdf4;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px rgba(34, 197, 94, 0.15); }
+  100% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.35); }
+}
