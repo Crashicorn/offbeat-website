@@ -5,14 +5,15 @@ scoreboard on top. It worked, but it asked a beginner to fix tempo and phase at
 the same time, told them a percentage instead of what to do, and sounded like a
 metronome with a bass note rather than like two records.
 
-This rebuild replaces the engine and the page around it with a **three-lesson
-lab** that runs in the order a working DJ actually mixes.
+This rebuild replaces the engine and the page around it with a **four-lesson
+lab** that runs in the order a working DJ actually mixes, and then takes the
+training wheels off.
 
 ## What changed, in the order a visitor meets it
 
 | Before (`da7b3cf` / `99fd8a2`) | After |
 | --- | --- |
-| One drill, two modes (guided practice / 45-second timed) | **Three lessons** — tempo, phase, then both — plus **free practice** |
+| One drill, two modes (guided practice / 45-second timed) | **Four lessons** — tempo, phase, both, then blind — plus **free practice** |
 | Ear demos sat in a separate block above the tool with different styling | The ear check is the **first thing inside the lab**: locked / late / early, played on the real decks |
 | Two loops deliberately in **different keys** (A minor vs B♭ minor) | Both loops in **A minor, same 4-bar progression**, different drum machines, so a correct blend is consonant and a wrong one flams |
 | Drums only: kick, hat, snare, a synth bass note | Full musical loop: kick, hats, snare, bass, **four-chord pad**, plus a Deck B pluck that only swells in when the lock is held |
@@ -37,6 +38,11 @@ off speed. The nudge cannot help: the goal is a tempo hold (within 0.06 BPM for
    both and hold ±18 ms for eight seconds; Deck B's musical layer swells in as
    the hold progresses, so the reward is a mix rather than a number.
 
+4. **Blind hold.** The same problem as lesson 3, but the meters and the beat
+   grid are switched off until you finish: twelve seconds inside ±18 ms by ear
+   alone. The result card reveals the numbers, plus how many nudges and fader
+   moves it took.
+
 Free practice removes the goals, the hints and the result card.
 
 ## Engineering notes
@@ -55,16 +61,33 @@ Free practice removes the goals, the hints and the result card.
 
 ## Verification
 
-- `node tests/test_mixlab.js` → **8/8 checks passed, 0 console errors**
-  (lessons offered, play/pause, fader clamp, lesson 1 solvable by pitch alone,
-  result card + next-lesson routing, lesson 2 solvable by nudge alone, demo
-  takeover and hand-back, space-to-pause, no console noise).
+- `node tests/test_mixlab.js` → **all checks passed, 0 console errors**
+  (four lessons offered, play/pause, fader clamp, lesson 1 solvable by pitch
+  alone, result card + next-lesson routing, lesson 2 solvable by nudge alone,
+  demo takeover and hand-back, blind mode hides then reveals the readouts and is
+  solvable by ear, space-to-pause, no console noise).
 - All three lessons were also driven to completion in a real browser session
   (`after-lesson-1-result.png`, `after-lesson-3-complete.png`) — lesson 1 in
   ~3.4 s of simulated practice, lesson 3 after an 8 s hold.
 - `python3 tools/check_site.py` → `118 pages checked, no problems found`.
 - `python3 tests/check_site_structure.py` → `118/118 pages passed`.
 - No horizontal overflow at 390 × 844 (`scrollWidth === clientWidth === 390`).
+
+## Screenshots in this folder
+
+| File | What it shows |
+| --- | --- |
+| `before-trainer.png` | The old drill as it shipped: one mode strip, one score, no lesson structure |
+| `after-hero.png` | New hero and intro above the lab |
+| `after-lab-idle.png` | Four lessons, ear check, both decks, beat grid, meters, coach |
+| `after-ear-demo-late.png` | Ear check playing the "Deck B late" flam |
+| `after-lesson-1-result.png` | Lesson 1 solved by pitch alone, with the result card and next lesson |
+| `after-lesson-3-running.png` | Lesson 3 with both tempo and phase wrong — the coach picks one job |
+| `after-lesson-3-complete.png` | Eight-second blend held, phrase readout live |
+| `after-blind-hold.png` | Lesson 4: meters and grid switched off, coach qualitative only |
+| `after-blind-hold-complete.png` | The reveal: readouts back, nudges and fader moves counted |
+| `after-mobile-lab.png` | 390 px layout, no horizontal overflow |
+| `after-page-full.png` | Whole page: lesson map table, real-gear notes, FAQ |
 
 ## Remaining gaps
 

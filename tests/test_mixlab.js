@@ -56,12 +56,15 @@ const BASE = `http://127.0.0.1:${PORT}`;
   await page.goto(`${BASE}/beatmatch-trainer.html`, { waitUntil: "load" });
   await page.waitForFunction(() => !!window.__mixlab, { timeout: 8000 });
 
-  /* 1 — the three lessons and free practice are offered */
+  /* 1 — four lessons and a free-practice session are offered */
   const lessonIds = await page.$$eval("[data-ml-lesson]", (els) =>
     els.map((e) => e.getAttribute("data-ml-lesson"))
   );
-  assert.deepStrictEqual(lessonIds, ["1", "2", "3"], "three lessons expected");
-  assert.ok(await page.$("[data-ml-free]"), "free practice entry expected");
+  assert.deepStrictEqual(lessonIds, ["1", "2", "3", "4"], "four lessons expected");
+  assert.ok(
+    await page.$('select[data-ml-level] option[value="free"]'),
+    "free practice should be selectable in the session menu"
+  );
 
   /* 2 — the lab starts silent and only runs after play */
   assert.strictEqual(await page.evaluate(() => window.__mixlab.metrics().running), false);
@@ -126,7 +129,45 @@ const BASE = `http://127.0.0.1:${PORT}`;
   assert.notStrictEqual(afterDemo.mode, "demo", "the demo should stop by itself");
   assert.strictEqual(afterDemo.running, false, "the demo should not leave a deck playing");
 
-  /* 7 — keyboard: space pauses only once the lab has focus / is running */
+  /* 7 — lesson 4 is the blind hold: readouts off while you play, back after */
+  await page.select("[data-ml-level]", "lesson4");
+  await new Promise((r) => setTimeout(r, 250));
+  const blindUi = await page.evaluate(() => ({
+    blind: document.querySelector("[data-mixlab]").classList.contains("is-blind"),
+    meters: getComputedStyle(document.querySelector(".ml-meters")).display,
+    note: !document.querySelector("[data-ml-blind-note]").hidden
+  }));
+  assert.ok(blindUi.blind, "lesson 4 should switch the lab into blind mode");
+  assert.strictEqual(blindUi.meters, "none", "meters should be hidden in blind mode");
+  assert.ok(blindUi.note, "blind mode should explain itself before you start");
+
+  await page.click("[data-ml-play]");
+  const blind = await page.evaluate(async () => {
+    const read = () => window.__mixlab.metrics();
+    for (let i = 0; i < 700; i++) {
+      const m = read();
+      if (m.lessonDone) return { done: true, ms: m };
+      if (Math.abs(m.tempoDiff) > 0.025) {
+        const need = -(m.tempoDiff / m.bpmA) * 100;
+        window.__mixlab.setPitch(m.pitch + Math.max(-0.02, Math.min(0.02, need)));
+      } else if (Math.abs(m.offsetMs) > 5) {
+        window.__mixlab.nudge(m.offsetMs);
+      }
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    return { done: false, ms: read() };
+  });
+  assert.ok(blind.done, "the blind hold should complete after twelve locked seconds");
+  const revealed = await page.evaluate(() => ({
+    blind: document.querySelector("[data-mixlab]").classList.contains("is-blind"),
+    meters: getComputedStyle(document.querySelector(".ml-meters")).display
+  }));
+  assert.strictEqual(revealed.blind, false, "the readouts should return when the blind hold is done");
+  assert.notStrictEqual(revealed.meters, "none", "meters should be visible again");
+
+  /* 8 — keyboard: space pauses only once the lab has focus / is running */
+  await page.click("[data-ml-reset]");          /* the blind hold is still rolling at this point */
+  await new Promise((r) => setTimeout(r, 150));
   await page.click("[data-ml-play]");
   await new Promise((r) => setTimeout(r, 300));
   assert.ok((await page.evaluate(() => window.__mixlab.metrics().running)) === true);
@@ -134,11 +175,11 @@ const BASE = `http://127.0.0.1:${PORT}`;
   await new Promise((r) => setTimeout(r, 200));
   assert.strictEqual(await page.evaluate(() => window.__mixlab.metrics().running), false, "space should pause");
 
-  /* 8 — no console noise anywhere */
+  /* 9 — no console noise anywhere */
   assert.deepStrictEqual(errors, [], `console errors: ${errors.join(" | ")}`);
 
   await browser.close();
-  console.log("Mix Lab: 8/8 checks passed, 0 console errors");
+  console.log("Mix Lab: all checks passed, 0 console errors");
 })().catch((err) => {
   console.error("Mix Lab test failed:", err.message);
   process.exit(1);

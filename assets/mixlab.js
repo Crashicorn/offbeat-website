@@ -73,8 +73,19 @@
       hint: "Tempo first, then phase. When the kicks fuse, hold the fader still and let the second track come in.",
       setup: { tempoError: 0.011, phase: 0.23 },
       check: "hold"
+    },
+    {
+      id: 4,
+      title: "Blind hold",
+      short: "No meters, no grid, no numbers. Eight seconds of listening, then twelve.",
+      goal: "Hold the blend for 12 seconds with every readout hidden.",
+      hint: "The numbers come back when you are done. Trust the flam, not the screen — make one small correction at a time and then listen.",
+      setup: { tempoError: 0.008, phase: 0.15 },
+      check: "blind"
     }
   ];
+
+  var BLIND_HOLD_MS = 12000;
 
   var S = {
     running: false,
@@ -375,7 +386,8 @@
     status: root.querySelector("[data-ml-status]"),
     result: root.querySelector("[data-ml-result]"),
     canvas: root.querySelector("[data-ml-canvas]"),
-    demos: document.querySelectorAll("[data-ml-demo]")
+    demos: document.querySelectorAll("[data-ml-demo]"),
+    blindNote: root.querySelector("[data-ml-blind-note]")
   };
 
   function fmt(n, d) { return (Number(n) || 0).toFixed(d === undefined ? 1 : d); }
@@ -389,9 +401,17 @@
     if (ui.bpmB) ui.bpmB.textContent = fmt(currentBpmB(), 1);
   }
 
+  function applyBlindUi() {
+    var lesson = LESSONS[S.lesson - 1];
+    var blind = S.mode === "lesson" && !!lesson && lesson.check === "blind" && !S.lessonDone;
+    root.classList.toggle("is-blind", blind);
+    if (ui.blindNote) ui.blindNote.hidden = !blind;
+  }
+
   function setLesson(id) {
     S.lesson = id;
     S.mode = "lesson";
+    applyBlindUi();
     stop();
     resetDeckToLesson();
     updateLessonStrip();
@@ -403,7 +423,7 @@
   function resetDeckToLesson() {
     var lesson = LESSONS[S.lesson - 1];
     S.lessonDone = false;
-    S.stats = { tempoSec: null, phaseSec: null, holdSec: 0 };
+    S.stats = { tempoSec: null, phaseSec: null, holdSec: 0, nudges: 0, pitchMoves: 0 };
     S.lockSince = 0;
     S.streakStart = 0;
     S.holdMs = 0;
@@ -485,6 +505,7 @@
       if (lesson.check === "tempo") pass = S.stats.tempoSec !== null;
       else if (lesson.check === "phase") pass = S.stats.phaseSec !== null;
       else if (lesson.check === "hold") pass = S.locked && S.holdMs >= 8000;
+      else if (lesson.check === "blind") pass = S.locked && S.holdMs >= BLIND_HOLD_MS;
 
       /* During the hold lesson, the second track arrives as you keep it locked. */
       if (lesson.check === "hold" && S.locked) {
@@ -591,6 +612,19 @@
       state = "ok";
       title = "Lesson complete";
       msg = "That is the skill. Reset when you want to do it again without any readouts helping you.";
+    } else if (LESSONS[S.lesson - 1] && LESSONS[S.lesson - 1].check === "blind" && S.mode === "lesson") {
+      state = S.locked ? "ok" : "warn";
+      title = S.locked
+        ? "Blind hold · " + Math.max(0, Math.ceil((BLIND_HOLD_MS - S.holdMs) / 1000)) + "s of clean blend left"
+        : "Blind hold · trust the flam";
+      if (S.locked) {
+        msg = "That is the sound. Keep your hand off everything until it asks you again.";
+      } else if (Math.abs(S.tempoDiff) > TEMPO_LOCK) {
+        msg = "The gap is still moving — Deck B is " + (S.tempoDiff > 0 ? "a shade <b>fast</b>" : "a shade <b>slow</b>") +
+          ". Small fader moves, then listen for two bars before touching it again.";
+      } else {
+        msg = "The tempo is close enough; the kicks are just smeared. One nudge, then listen — you will hear the flam close.";
+      }
     } else if (Math.abs(S.tempoDiff) > TEMPO_LOCK) {
       state = "warn";
       var fast = S.tempoDiff > 0;
@@ -790,6 +824,7 @@
 
   function completeLesson() {
     S.lessonDone = true;
+    applyBlindUi();
     markDone(S.lesson);
     S.musicB = 0.85;
     if (A.musicB) A.musicB.gain.setTargetAtTime(0.85, S.ctx.currentTime, 0.15);
@@ -805,7 +840,8 @@
       ui.result.hidden = false;
       ui.result.querySelector("[data-ml-result-title]").textContent = "Lesson " + lesson.id + " complete · " + lesson.title;
       ui.result.querySelector("[data-ml-result-badge]").textContent =
-        lesson.check === "tempo" ? "Tempo matched" : lesson.check === "phase" ? "Phase locked" : "Blend held";
+        lesson.check === "tempo" ? "Tempo matched" : lesson.check === "phase" ? "Phase locked"
+          : lesson.check === "blind" ? "Blind held" : "Blend held";
 
       var started = Math.max(0.1, Math.abs(S.stats.startTempo));
       var startGap = Math.abs(Math.round(S.stats.startOffset));
@@ -814,13 +850,20 @@
           " by ear, without touching the nudge. On real gear the fader would now be within a millimetre of where it belongs."
         : lesson.check === "phase"
           ? "You closed a " + startGap + " ms gap down to a single transient. That is the correction every blend needs, and the smallest one that will still work."
-          : "Tempo, phase and eight seconds of holding it. The second track is now fully in the mix — that is what a blend sounds like when it works.";
+          : lesson.check === "blind"
+            ? "Twelve seconds of blend with no meters, no grid and no numbers — " + (S.stats.nudges || 0) + " nudges and " +
+              (S.stats.pitchMoves || 0) + " fader moves. That is the version of this skill that travels to real gear."
+            : "Tempo, phase and eight seconds of holding it. The second track is now fully in the mix — that is what a blend sounds like when it works.";
 
       var statsEl = ui.result.querySelector("[data-ml-result-stats]");
       if (statsEl) {
         var cells = '<div><span>Tempo matched in</span><b>' + (stats.tempo ? fmt(stats.tempo, 1) + "s" : "—") + "</b></div>";
         if (lesson.check !== "tempo") {
           cells += '<div><span>Phase locked in</span><b>' + (stats.phase ? fmt(stats.phase, 1) + "s" : "—") + "</b></div>";
+        }
+        if (lesson.check === "blind") {
+          cells += '<div><span>Nudges used</span><b>' + (S.stats.nudges || 0) + "</b></div>";
+          cells += '<div><span>Fader moves</span><b>' + (S.stats.pitchMoves || 0) + "</b></div>";
         }
         cells += '<div><span>Longest hold</span><b>' + fmt(S.bestHold / 1000, 1) + "s</b></div>";
         statsEl.innerHTML = cells;
@@ -855,6 +898,7 @@
 
   function reset() {
     stop();
+    applyBlindUi();
     S.pitch = 0;
     if (S.ctx) S.nudgeQueue = 0;
     setPitch(0);
@@ -878,6 +922,7 @@
 
   function nudge(ms) {
     if (!S.running) return;
+    S.stats.nudges = (S.stats.nudges || 0) + 1;
     /* queue a short jog so the correction happens over a few audio frames
        instead of jumping the playhead (which would click) */
     S.nudgeQueue = Math.max(-260, Math.min(260, S.nudgeQueue + ms));
@@ -929,7 +974,10 @@
   }
   if (ui.reset) ui.reset.addEventListener("click", reset);
   if (ui.pitch) {
-    ui.pitch.addEventListener("input", function (e) { setPitch(parseFloat(e.target.value)); });
+    ui.pitch.addEventListener("input", function (e) {
+      if (S.running) S.stats.pitchMoves = (S.stats.pitchMoves || 0) + 1;
+      setPitch(parseFloat(e.target.value));
+    });
     ui.pitch.addEventListener("dblclick", function () { setPitch(0); });
   }
   if (ui.genre) {
@@ -977,8 +1025,8 @@
       if (ui.level) ui.level.value = "lesson" + S.lesson;
     });
   }
-  if (ui.nudgeBack) ui.nudgeBack.addEventListener("click", function () { nudge(-22); });
-  if (ui.nudgeFwd) ui.nudgeFwd.addEventListener("click", function () { nudge(22); });
+  if (ui.nudgeBack) ui.nudgeBack.addEventListener("click", function () { nudge(-22, true); });
+  if (ui.nudgeFwd) ui.nudgeFwd.addEventListener("click", function () { nudge(22, true); });
   if (ui.cue) ui.cue.addEventListener("click", cue);
 
   if (ui.soloA) ui.soloA.addEventListener("click", function () {
@@ -1031,7 +1079,7 @@
       var dx = e.clientX - lastX;
       var dy = lastY - e.clientY;
       lastX = e.clientX; lastY = e.clientY;
-      nudge((dx + dy) * 1.4);
+      nudge((dx + dy) * 1.4, true);
     });
     function endDrag() { dragging = false; }
     ui.platterB.addEventListener("pointerup", endDrag);
@@ -1048,14 +1096,15 @@
     if (e.target.matches("input, select, textarea, [contenteditable]")) {
       if (e.target === ui.pitch && (e.code === "ArrowUp" || e.code === "ArrowDown")) {
         e.preventDefault();
+        if (S.running) S.stats.pitchMoves = (S.stats.pitchMoves || 0) + 1;
         setPitch(S.pitch + (e.code === "ArrowUp" ? 0.02 : -0.02));
       }
       return;
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.code === "Space") { e.preventDefault(); if (S.running) stop(); else start(); }
-    else if (e.code === "ArrowLeft") { e.preventDefault(); nudge(-22); }
-    else if (e.code === "ArrowRight") { e.preventDefault(); nudge(22); }
+    else if (e.code === "ArrowLeft") { e.preventDefault(); nudge(-22, true); }
+    else if (e.code === "ArrowRight") { e.preventDefault(); nudge(22, true); }
     else if (e.code === "ArrowUp") { e.preventDefault(); setPitch(S.pitch + 0.02); }
     else if (e.code === "ArrowDown") { e.preventDefault(); setPitch(S.pitch - 0.02); }
     else if (e.code === "KeyC") { e.preventDefault(); cue(); }

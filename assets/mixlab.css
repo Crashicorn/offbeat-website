@@ -475,3 +475,16 @@
   .ml-phrase { gap: .35rem; }
   .ml-demos { gap: .5rem; }
 }
+
+/* Blind hold: the meters and grid are deliberately unavailable */
+.ml-blind-note {
+  margin: 0 0 .9rem; padding: .6rem .75rem;
+  border: 1px solid rgba(252, 211, 77, .35); border-radius: var(--r-sm);
+  background: rgba(251, 191, 36, .08);
+  color: var(--text-2); font-size: .82rem; line-height: 1.5;
+}
+.ml-blind-note strong { color: #fcd34d; }
+.ml-blind-note[hidden] { display: none; }
+.ml.is-blind .ml-meters,
+.ml.is-blind .ml-timeline { display: none; }
+.ml.is-blind .ml-phrase-dots i.is-on { background: rgba(255, 255, 255, .3); }

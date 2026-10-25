@@ -5,7 +5,7 @@
 <meta content="width=device-width,initial-scale=1" name="viewport">
 <title>Beatmatching Trainer: Tempo, Phase and Holding a Blend | Offbeat</title>
 <link href="assets/favicon.svg" rel="icon" type="image/svg+xml">
-<meta content="A free three-lesson beatmatching drill: find the tempo with a pitch fader, line up the kicks, then hold a blend for eight seconds. Two synthesised records, live in your browser." name="description">
+<meta content="A free four-lesson beatmatching drill: find the tempo with a pitch fader, line up the kicks, hold a blend, then do it with the readouts off. Two synthesised records, live in your browser." name="description">
 <meta content="beatmatch trainer, learn to beatmatch, djing practice tool, manual mixing drill" name="keywords">
 <link href="https://offbeatinc.com/beatmatch-trainer.html" rel="canonical">
 <script type="application/ld+json">
@@ -18,7 +18,7 @@
       "url": "https://offbeatinc.com/beatmatch-trainer.html",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Any modern browser",
-      "description": "A three-lesson browser drill for learning manual beatmatching: find the tempo with a pitch fader, align the kicks, then hold a blend. Sound is synthesised live in the browser.",
+      "description": "A four-lesson browser drill for learning manual beatmatching: find the tempo with a pitch fader, align the kicks, hold a blend, then repeat it with the readouts hidden. Sound is synthesised live in the browser.",
       "isAccessibleForFree": true,
       "publisher": { "@id": "https://offbeatinc.com/#org" }
     },
@@ -40,8 +40,8 @@
         },
         {
           "@type": "Question",
-          "name": "What do the three lessons in the trainer teach?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Lesson one isolates tempo: the beats start together but drift, so only the pitch fader can fix it. Lesson two isolates phase: the tempo is already right and you shift the beat by milliseconds. Lesson three gives you both problems at once and asks you to hold the lock for eight seconds." }
+          "name": "What do the lessons in the mix lab teach?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Lesson one isolates tempo: the beats start together but drift, so only the pitch fader can fix it. Lesson two isolates phase: the tempo is already right and you shift the beat by milliseconds. Lesson three gives you both problems at once and asks you to hold the lock for eight seconds. Lesson four hides every readout and asks for twelve seconds of blend by ear." }
         },
         {
           "@type": "Question",
@@ -73,8 +73,8 @@
       <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a></li><li><a href="dj-skills-performance-hub.html">Skills &amp; Performance</a></li><li>Beatmatching trainer</li></ol></nav>
       <span class="hero-eyebrow">Practice tool</span>
       <h1>Learn to beatmatch in the browser</h1>
-      <p class="hero-sub">Two synthesised records and one job: get them playing as one. Three short lessons take tempo and phase apart, then hand them back together — with the milliseconds measured instead of guessed at.</p>
-      <div class="hero-meta"><span>Offbeat Editorial</span><span>Three lessons + free practice</span><span>No audio files</span></div>
+      <p class="hero-sub">Two synthesised records and one job: get them playing as one. Four short lessons take tempo and phase apart, hand them back together, then switch the readouts off — with the milliseconds measured instead of guessed at.</p>
+      <div class="hero-meta"><span>Offbeat Editorial</span><span>Four lessons + free practice</span><span>No audio files</span></div>
       <div class="hero-ctas"><a class="btn" href="#trainer">Open the mix lab</a><a class="btn btn-secondary" href="how-to-beatmatch-manually.html">Read the five steps</a></div>
     </div>
     <figure class="hero-figure">
@@ -88,16 +88,16 @@
 <div class="content-wrap">
   <section class="article-section intro-section">
     <p>Reading about beatmatching and doing it are different skills, and most people practise in the wrong order: they try to learn inside a real mix, where one bad nudge costs them the blend and a good one teaches them nothing because they never find out what was wrong. The mix lab separates the job into the order it is actually done: <strong>find the tempo, line up the beats, hold the blend</strong>.</p>
-    <p>Deck A is a fixed four-bar house loop — the record already in the room. Deck B is a second loop in the same key on a different drum machine, and it arrives slightly out of tempo, slightly out of position, or both, depending on the lesson. Both are generated live in your browser, so nothing loads and nothing is recorded.</p>
+    <p>Deck A is a fixed four-bar house loop — the record already in the room. Deck B is a second loop in the same key on a different drum machine, and it arrives slightly out of tempo, slightly out of position, or both, depending on the lesson. Both are generated live in your browser, so nothing loads and nothing is recorded. The fourth lesson does the honest thing and takes the readouts away.</p>
     <p>Because the page knows where both kicks are, it can tell you something your ear cannot yet: exactly how far apart they were, in milliseconds, and whether the gap is closing or opening.</p>
   </section>
 
   <section class="ml" id="trainer" data-mixlab aria-labelledby="trainer-title">
     <div class="ml-head">
       <div>
-        <p class="ml-kicker">Mix lab · three lessons</p>
+        <p class="ml-kicker">Mix lab · four lessons</p>
         <h2 id="trainer-title">Match the second record to the one already playing</h2>
-        <p>One deck is the room. The other is yours: a pitch fader, a jog platter and two nudge buttons. Each lesson isolates one part of the job, then hands the two back to you together.</p>
+        <p>One deck is the room. The other is yours: a pitch fader, a jog platter and two nudge buttons. Each lesson isolates one part of the job, then hands the two back to you together — and the last one takes the readouts away.</p>
       </div>
       <div class="ml-selects">
         <label class="ml-select"><span>Genre</span>
@@ -114,6 +114,7 @@
             <option value="lesson1" selected>Lesson 1 · Tempo</option>
             <option value="lesson2">Lesson 2 · Phase</option>
             <option value="lesson3">Lesson 3 · Blend</option>
+            <option value="lesson4">Lesson 4 · Blind hold</option>
             <option value="free">Free practice</option>
           </select>
         </label>
@@ -145,13 +146,16 @@
         <span class="ml-lesson-num">3</span>
         <span class="ml-lesson-copy"><strong>Hold the blend</strong><span>Both are wrong and nobody tells you which.</span></span>
       </button>
-      <button type="button" class="ml-lesson" data-ml-free role="tab" aria-selected="false">
-        <span class="ml-lesson-num">∞</span>
-        <span class="ml-lesson-copy"><strong>Free practice</strong><span>No goals, no readout prompts. Just the two decks.</span></span>
+      <button type="button" class="ml-lesson" data-ml-lesson="4" role="tab" aria-selected="false">
+        <span class="ml-lesson-num">4</span>
+        <span class="ml-lesson-copy"><strong>Blind hold</strong><span>Every readout hidden. Twelve seconds on your ears.</span></span>
       </button>
     </div>
 
     <div class="ml-stage">
+      <p class="ml-blind-note" data-ml-blind-note hidden>
+        <strong>Blind hold.</strong> The meters and the beat grid are switched off until you finish. One small correction at a time, then listen — the numbers come back with the result.
+      </p>
       <div class="ml-grid">
         <article class="ml-deck ml-deck--a">
           <div class="ml-deck-head">
@@ -318,7 +322,7 @@
 
   <section class="article-section">
     <h2>What each lesson is really teaching you</h2>
-    <p>The three lessons are not difficulty levels, they are the three parts of one move. The order matters more than the score.</p>
+    <p>The lessons are not difficulty levels, they are the parts of one move, in the order the move is made. The fourth removes the training wheels on purpose.</p>
     <div class="table-wrap">
       <table class="drill-table">
         <thead><tr><th scope="col">Lesson</th><th scope="col">What the deck is doing</th><th scope="col">What it feels like on real gear</th></tr></thead>
@@ -326,6 +330,7 @@
           <tr><td><strong>1 · Find the tempo</strong><br><span class="text-muted">beats start aligned, then drift</span></td><td>Deck B is up to 2% off speed. The gap widens or closes on its own, and your job is to make it stop moving.</td><td>The second record sounds "eager" or "lazy" but you cannot hear where to nudge yet. You move the fader in 0.05% steps and wait a few bars between each one.</td></tr>
           <tr><td><strong>2 · Line up the beats</strong><br><span class="text-muted">tempo already right</span></td><td>The same tempo, but the kicks sit tens of milliseconds apart. The pitch fader is disabled as a solution by the setup, so you have to shift the beat.</td><td>Tapping the jog wheel or pressing nudge while the track keeps playing. Small, forwards, once — then listen before touching it again.</td></tr>
           <tr><td><strong>3 · Hold the blend</strong><br><span class="text-muted">both problems at once</span></td><td>Both the tempo and the phase are wrong, and the coach stops telling you which. Success is eight seconds inside ±18 ms.</td><td>The real thing: a live transition, where you are also choosing the moment to bring the fader across.</td></tr>
+          <tr><td><strong>4 · Blind hold</strong><br><span class="text-muted">no meters, no grid</span></td><td>Same problem as lesson 3, but the readouts disappear until you have held the blend for twelve seconds. The result card tells you how many nudges it took.</td><td>Mixing with your eyes off the laptop. This is the version of the skill that is still there when the booth is dark and the monitor is behind you.</td></tr>
         </tbody>
       </table>
     </div>
@@ -334,7 +339,7 @@
 
   <section class="article-section">
     <h2>Taking it to real gear</h2>
-    <p>The lab removes the two things that make real practice hard: you do not have to find two records that fit, and a mistake costs nothing. When all three lessons are done, switch to <strong>free practice</strong> — no goal, no hint, no result card — and hold a blend for a full minute. Then move to your controller and repeat it with two copies of one track: pitch only for the first minute, phase second.</p>
+    <p>The lab removes the two things that make real practice hard: you do not have to find two records that fit, and a mistake costs nothing. When all four lessons are done, switch to <strong>free practice</strong> — no goal, no hint, no result card — and hold a blend for a full minute. Then move to your controller and repeat it with two copies of one track: pitch only for the first minute, phase second.</p>
     <ul>
       <li><a href="how-to-beatmatch-manually.html">The full beatmatching guide</a> — the five steps, the maths and a four-week plan.</li>
       <li><a href="how-to-mix-music-beginners.html">Mixing beyond the beatmatch</a> — phrasing, EQ and where to bring a track in.</li>
@@ -346,7 +351,7 @@
     <h2>Questions about the mix lab</h2>
     <details><summary>Can you learn to beatmatch without DJ equipment?</summary><p>Yes. Beatmatching is a listening skill, and this lab trains the same ear you use on a controller. What it cannot teach is the feel of a jog wheel and the cue/monitor workflow — that needs hardware, and the <a href="how-to-beatmatch-manually.html">guide</a> covers it.</p></details>
     <details><summary>Why do the two decks sound different?</summary><p>So you can tell them apart while they overlap. Both loops sit in A minor and follow the same four-chord progression, so a correct blend is consonant and a wrong one flams — but Deck A uses a rounder kick, offbeat hats and a snare, while Deck B uses a tighter kick, shuffled shakers and an offbeat pluck. Identical loops would let you lock them by accident and never know.</p></details>
-    <details><summary>Do I need any of the readouts to learn?</summary><p>No, and they are not the point. The offset meter and the beat grid exist so you can check yourself while you are still learning what "wrong" sounds like. Once free practice feels steady, ignore them and mix with your eyes shut.</p></details>
+    <details><summary>Do I need any of the readouts to learn?</summary><p>No, and they are not the point. The offset meter and the beat grid exist so you can check yourself while you are still learning what "wrong" sounds like — lesson 4 switches them off entirely and only shows the numbers once you have held the blend. After that, free practice is the place to mix with your eyes shut.</p></details>
     <details><summary>Does this work on a phone?</summary><p>Yes — tap the nudge buttons, drag the pitch fader, and drag the platter to shift the beat. Headphones make the detail much easier to hear, especially the flam between the two kicks; phone speakers cannot reproduce it.</p></details>
     <details><summary>Is anything recorded?</summary><p>No. The audio is generated by your browser, the score is calculated locally, and nothing leaves the page.</p></details>
   </section>
