@@ -9,6 +9,7 @@ Covers the things that actually break a static site:
   * the shared shell is present (header, footer, search dialog, stylesheet)
   * no remote image is used as a page hero (placeholder-art guard)
   * no leftover "page-visuals" placeholder illustrations are referenced
+  * no machine-generated metadata strings reach <meta> or JSON-LD
 
 Usage: python3 tools/check_site.py
 Exit code 0 when clean, 1 when problems are found.
@@ -23,6 +24,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
 problems = []
+
+# Strings that only ever came from the automated page generator. They read as
+# keyword lists rather than sentences and should never ship.
+MACHINE_COPY = (
+    "practical recommendations and current buying notes",
+    "Comprehensive guide to",
+)
 
 
 def check_page(path):
@@ -78,10 +86,21 @@ def check_page(path):
             problems.append(f"{path}: unbalanced JSON-LD braces")
 
 
+def check_machine_copy(path, src):
+    meta = " ".join(re.findall(r'<meta [^>]*content="([^"]*)"[^>]*>', src))
+    schema = " ".join(re.findall(r'<script type="application/ld\+json">(.*?)</script>', src, re.S))
+    for phrase in MACHINE_COPY:
+        if phrase in meta:
+            problems.append(f"{path}: machine-written phrase in <meta>: {phrase!r}")
+        if phrase in schema:
+            problems.append(f"{path}: machine-written phrase in JSON-LD: {phrase!r}")
+
+
 def main():
     pages = sorted(glob.glob("*.html"))
     for page in pages:
         check_page(page)
+        check_machine_copy(page, open(page, encoding="utf-8").read())
     for asset in glob.glob("assets/**/*", recursive=True):
         if os.path.isdir(asset):
             continue
