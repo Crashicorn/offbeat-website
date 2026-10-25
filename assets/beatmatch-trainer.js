@@ -22,6 +22,7 @@
     clock: root.querySelector("[data-clock]"),
     score: root.querySelector("[data-score]"),
     verdict: root.querySelector("[data-verdict]"),
+    best: root.querySelector("[data-best]"),
     pitch: root.querySelector("[data-pitch]"),
     pitchValue: root.querySelector("[data-pitch-value]"),
     bpmA: root.querySelector("[data-bpm-a]"),
@@ -233,6 +234,54 @@
     if (el.bpmB) el.bpmB.textContent = fmt(state.bpmB, 2);
   }
 
+  var BEST_KEY = "offbeat.beatmatch.best";
+
+  function bestScores() {
+    try {
+      var raw = window.localStorage.getItem(BEST_KEY);
+      var parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function difficultyKey() {
+    return el.difficulty ? el.difficulty.value : "steady";
+  }
+
+  function showBest() {
+    if (!el.best) return;
+    var value = bestScores()[difficultyKey()];
+    if (typeof value === "number") {
+      el.best.textContent = "Personal best on " + difficultyKey() + ": " + value + "%";
+      el.best.hidden = false;
+      el.best.setAttribute("data-personal-best", String(value));
+    } else {
+      el.best.textContent = "No score on " + difficultyKey() + " yet. This device remembers your best.";
+      el.best.hidden = false;
+      el.best.removeAttribute("data-personal-best");
+    }
+  }
+
+  function recordBest(pct) {
+    var scores = bestScores();
+    var key = difficultyKey();
+    var previous = typeof scores[key] === "number" ? scores[key] : -1;
+    if (pct > previous) {
+      scores[key] = pct;
+      try {
+        window.localStorage.setItem(BEST_KEY, JSON.stringify(scores));
+      } catch (error) {
+        /* private mode or a full quota: the drill still works */
+      }
+      showBest();
+      return true;
+    }
+    showBest();
+    return false;
+  }
+
   function resetScore() {
     state.lockedMs = 0;
     state.totalMs = 0;
@@ -323,7 +372,7 @@
     else if (pct >= 65) { text = "Solid. One more pass and it will hold without thinking."; grade = "good"; }
     else if (pct >= 40) { text = "Getting there. The tempo is close; the phase is what keeps slipping."; grade = "ok"; }
     else { text = "Rough. Slow down: fix the tempo first, then nudge once. Do not chase it."; grade = "rough"; }
-    el.verdict.textContent = text;
+    el.verdict.textContent = recordBest(pct) ? text + " That is a new personal best on this difficulty." : text;
     el.verdict.setAttribute("data-grade", grade);
   }
 
@@ -378,6 +427,19 @@
     if (el.status) el.status.textContent = "Ready. Press start.";
   });
 
+  if (el.difficulty) {
+    el.difficulty.addEventListener("change", function () {
+      // Changing difficulty mid-drill would mix two scoring standards, so stop cleanly.
+      if (state.running) {
+        stop("manual");
+        if (el.status) el.status.textContent = "Stopped. Difficulty changed — start again for a fresh attempt.";
+      }
+      randomiseStart();
+      showBest();
+    });
+  }
+  showBest();
+
   if (el.pitch) {
     el.pitch.addEventListener("input", function () {
       setPitch(parseFloat(el.pitch.value));
@@ -401,6 +463,13 @@
     });
     ["pointerup", "pointerleave", "pointercancel"].forEach(function (type) {
       button.addEventListener(type, releaseNudge);
+    });
+    // A click (keyboard Enter/Space, or an assistive input that only fires click)
+    // becomes a short 140 ms nudge so the control is not pointer-only.
+    button.addEventListener("click", function () {
+      if (!state.running || state.nudge !== 0) return;
+      nudge(dir);
+      window.setTimeout(releaseNudge, 140);
     });
   });
 

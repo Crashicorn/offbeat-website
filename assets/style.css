@@ -1842,3 +1842,8 @@ h3.mini {
 @media (max-width: 430px) {
   .spec-grid.spec-grid--six { grid-template-columns: minmax(0, 1fr); }
 }
+
+.teacher-best {
+  margin: .1rem 0 0; color: var(--muted-2); font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
