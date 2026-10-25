@@ -86,7 +86,7 @@ class Walker(HTMLParser):
             self._in_ld = False
             self.ld.append("".join(self._ld_buf))
         if not self.stack or self.stack[-1] != tag:
-            self.errors.append(f"mis-nested </{tag}> (open: {self.stack[-3:]})")
+            self.errors.append(f"line {self.getpos()[0]}: mis-nested </{tag}> (open: {self.stack[-3:]})")
             if tag in self.stack:
                 while self.stack and self.stack[-1] != tag:
                     self.stack.pop()
