@@ -1456,3 +1456,15 @@ table td strong { color: var(--text); }
 .recent-desc { color: var(--muted); font-size: .85rem; line-height: 1.5; }
 @media (max-width: 1000px) { .recent-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .recent-list { grid-template-columns: minmax(0, 1fr); } }
+
+/* Footer column labels are navigation, not document headings */
+.footer-heading {
+  margin: 0 0 .6rem; color: var(--text); font-family: var(--font);
+  font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+}
+/* Inline sub-headings inside a pros/cons block */
+h3.mini {
+  margin: 1rem 0 .5rem; font-family: var(--font); font-size: .78rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+}
+.verdict-heading { font-size: clamp(1.15rem, 2vw, 1.4rem); }
