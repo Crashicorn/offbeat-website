@@ -58,14 +58,30 @@ const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
 
   // Test 3: Toggle "Already Own"
   const preToggleSpend = await page.$eval(".metric-val--spend", el => el.textContent.trim());
-  await page.click('.booth-card--main [data-action="toggle-owned"]');
+  await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
   await new Promise(r => setTimeout(r, 200));
   const postToggleSpend = await page.$eval(".metric-val--spend", el => el.textContent.trim());
   console.log("Spend before owned toggle:", preToggleSpend, "-> after owned toggle:", postToggleSpend);
 
-  // Test 4: Compatibility Check
-  const compatStatus = await page.$eval(".compat-status-tag", el => el.textContent.trim());
-  console.log("Compatibility status tag:", compatStatus);
+  // Test 4: Quantity adjustment
+  const preQtySpend = await page.$eval(".spend-total-num", el => el.textContent.trim());
+  await page.select(".qty-select", "2");
+  await new Promise(r => setTimeout(r, 200));
+  console.log("Adjusted quantity to 2");
+
+  // Test 5: Open Compare Builds Modal
+  await page.click('[data-action="open-compare"]');
+  await page.waitForSelector("#compare-modal-title", { timeout: 3000 });
+  console.log("✓ Compare setups modal opened");
+  await page.click('.picker-close');
+  await new Promise(r => setTimeout(r, 200));
+
+  // Test 6: Deep link test (?add=pioneer-ddj-flx10)
+  await page.goto("http://127.0.0.1:8099/build-your-dj-setup.html?add=pioneer-ddj-flx10", { waitUntil: "load" });
+  await page.waitForSelector(".booth-card--main", { timeout: 5000 });
+  const deepLinkedModel = await page.$eval(".booth-card--main .booth-model", el => el.textContent.trim());
+  console.log("Deep-linked controller:", deepLinkedModel);
+  if (deepLinkedModel !== "DDJ-FLX10") throw new Error("Expected deep-linked DDJ-FLX10");
 
   console.log("JS Console Errors:", errors);
   if (errors.length > 0) throw new Error("Found JS errors: " + JSON.stringify(errors));

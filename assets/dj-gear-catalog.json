@@ -64,9 +64,13 @@
       "stems_support": true,
       "ideal_for": "Beginner to intermediate home practice and small parties",
       "tagline": "The gold standard 2-channel beginner controller with dual software unlock.",
-      "image": "assets/img/editorial/controller-macro.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx4.svg",
       "slug": "pioneer-ddj-flx4-review.html",
-      "amazon_search": "Pioneer DJ DDJ-FLX4 2-Channel DJ Controller"
+      "amazon_search": "Pioneer DJ DDJ-FLX4 2-Channel DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -87,9 +91,13 @@
       "stems_support": true,
       "ideal_for": "Ultra-portable smartphone and tablet DJing",
       "tagline": "Entry-level ultra-compact controller with Bluetooth LE and multi-app support.",
-      "image": "assets/img/editorial/controller-macro.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx4.svg",
       "slug": "ddj-flx2-review.html",
-      "amazon_search": "AlphaTheta DDJ-FLX2 DJ Controller"
+      "amazon_search": "AlphaTheta DDJ-FLX2 DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "pioneer-ddj-flx10",
@@ -113,9 +121,13 @@
       "stems_support": true,
       "ideal_for": "Professional club DJs, mobile pros, and live mashup performers",
       "tagline": "Flagship 4-channel club controller with dedicated hardware Stem buttons and On-Jog screens.",
-      "image": "assets/img/editorial/mixer-hero.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx10.svg",
       "slug": "pioneer-ddj-flx10-review.html",
-      "amazon_search": "Pioneer DJ DDJ-FLX10 4-Channel DJ Controller"
+      "amazon_search": "Pioneer DJ DDJ-FLX10 4-Channel DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "alphatheta-ddj-grv6",
@@ -138,9 +150,13 @@
       "stems_support": true,
       "ideal_for": "Groove Circuit remixing, 4-deck club sets, and advanced transitions",
       "tagline": "4-channel controller with dedicated Groove Circuit drum replacement and club-standard CDJ layout.",
-      "image": "assets/img/editorial/mixer-hero.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx10.svg",
       "slug": "ddj-grv6-review.html",
-      "amazon_search": "AlphaTheta DDJ-GRV6 4-Channel Controller"
+      "amazon_search": "AlphaTheta DDJ-GRV6 4-Channel Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "traktor-kontrol-s2-mk3",
@@ -161,9 +177,13 @@
       "stems_support": true,
       "ideal_for": "Electronic and techno DJs who prefer Traktor Pro 4 precision",
       "tagline": "Precise jog wheels, full Traktor Pro 4 license included, and Mixer FX macros.",
-      "image": "assets/img/editorial/controller-macro.jpg",
+      "image": "assets/img/products/traktor-s2-mk3.svg",
       "slug": "best-dj-controllers-for-beginners.html",
-      "amazon_search": "Native Instruments Traktor Kontrol S2 MK3"
+      "amazon_search": "Native Instruments Traktor Kontrol S2 MK3",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "denon-prime-4-plus",
@@ -188,9 +208,13 @@
       "stems_support": true,
       "ideal_for": "Mobile DJs, wedding pros, and festival stages requiring zero-laptop standalone power",
       "tagline": "The most powerful standalone 4-deck DJ system with 10\" HD touchscreen and zone output.",
-      "image": "assets/img/editorial/mixer-hero.jpg",
+      "image": "assets/img/products/denon-prime-4-plus.svg",
       "slug": "xdj-az-vs-denon-prime-4-plus.html",
-      "amazon_search": "Denon DJ Prime 4 Plus Standalone DJ System"
+      "amazon_search": "Denon DJ Prime 4 Plus Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "denon-prime-go",
@@ -213,9 +237,13 @@
       "stems_support": false,
       "ideal_for": "Beach sets, outdoor popups, mobile rehearsals, and travel DJing",
       "tagline": "Rechargeable battery-powered standalone 2-channel console with built-in Wi-Fi streaming.",
-      "image": "assets/img/editorial/mobile-dj-hero.jpg",
+      "image": "assets/img/products/denon-prime-4-plus.svg",
       "slug": "denon-prime-go-review.html",
-      "amazon_search": "Denon DJ Prime GO Rechargeable DJ Console"
+      "amazon_search": "Denon DJ Prime GO Rechargeable DJ Console",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "hercules-inpulse-500",
@@ -237,9 +265,13 @@
       "stems_support": true,
       "ideal_for": "Beginners seeking sturdy metal chassis, retractable feet, and dual 1/4\" outputs",
       "tagline": "Sturdy build with hardware beatmatch guide lights and AUX audio filtering.",
-      "image": "assets/img/editorial/controller-macro.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx4.svg",
       "slug": "best-dj-controllers-under-300.html",
-      "amazon_search": "Hercules DJControl Inpulse 500 DJ Controller"
+      "amazon_search": "Hercules DJControl Inpulse 500 DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "rane-four",
@@ -262,9 +294,13 @@
       "stems_support": true,
       "ideal_for": "Open-format scratch DJs and performance remixers using Serato Stems",
       "tagline": "Industry-leading dedicated Serato Stems controls with OLED display jog wheels and MAG FOUR crossfader.",
-      "image": "assets/img/editorial/mixer-hero.jpg",
+      "image": "assets/img/products/pioneer-ddj-flx10.svg",
       "slug": "best-dj-controllers-2026.html",
-      "amazon_search": "Rane Four 4-Channel Serato Stems DJ Controller"
+      "amazon_search": "Rane Four 4-Channel Serato Stems DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "sennheiser-hd25",
@@ -278,9 +314,13 @@
       "isolation": "Exceptional passive isolation (Split headband)",
       "ideal_for": "Club booths, festivals, and high-SPL monitoring",
       "tagline": "The legendary club DJ standard for over 30 years \u2014 lightweight, indestructible, modular parts.",
-      "image": "assets/img/editorial/headphones-hero.jpg",
+      "image": "assets/img/products/sennheiser-hd25.svg",
       "slug": "best-dj-headphones-2026.html",
-      "amazon_search": "Sennheiser HD 25 Professional DJ Headphones"
+      "amazon_search": "Sennheiser HD 25 Professional DJ Headphones",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "ath-m50x",
@@ -294,9 +334,13 @@
       "isolation": "High around-ear acoustic seal",
       "ideal_for": "DJing, music production, and critical home listening",
       "tagline": "Deep, tight bass response with 90\u00b0 swiveling earcups for easy one-ear monitoring.",
-      "image": "assets/img/editorial/headphones-hero.jpg",
+      "image": "assets/img/products/ath-m50x.svg",
       "slug": "best-dj-headphones-2026.html",
-      "amazon_search": "Audio-Technica ATH-M50x Professional Studio Headphones"
+      "amazon_search": "Audio-Technica ATH-M50x Professional Studio Headphones",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "ath-m20x",
@@ -310,9 +354,13 @@
       "isolation": "Good closed-back seal",
       "ideal_for": "Beginner bedroom practice and tight budgets",
       "tagline": "Unbeatable entry-level audio clarity and comfortable earcups under $50.",
-      "image": "assets/img/editorial/headphones-hero.jpg",
+      "image": "assets/img/products/ath-m50x.svg",
       "slug": "best-dj-headphones-under-50.html",
-      "amazon_search": "Audio-Technica ATH-M20x Professional Studio Monitor Headphones"
+      "amazon_search": "Audio-Technica ATH-M20x Professional Studio Monitor Headphones",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "pioneer-hdj-cue1",
@@ -326,9 +374,13 @@
       "isolation": "Moderate on-ear isolation",
       "ideal_for": "Beginner controllers (DDJ-FLX4, FLX2) and practice sets",
       "tagline": "Punchy low-end tuning with DJ fold mechanism and customizable color accessory packs.",
-      "image": "assets/img/editorial/headphones-hero.jpg",
+      "image": "assets/img/products/sennheiser-hd25.svg",
       "slug": "best-dj-headphones-under-100-2026.html",
-      "amazon_search": "Pioneer DJ HDJ-CUE1 DJ Headphones"
+      "amazon_search": "Pioneer DJ HDJ-CUE1 DJ Headphones",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "sony-mdr-7506",
@@ -342,9 +394,13 @@
       "isolation": "Reliable studio seal",
       "ideal_for": "Broadcast, scratch mixing, and clear vocal EQ auditioning",
       "tagline": "Surgical mid-range detail and durable coiled cable for precise phase listening.",
-      "image": "assets/img/editorial/headphones-hero.jpg",
+      "image": "assets/img/products/sony-mdr-7506.svg",
       "slug": "best-dj-headphones-2026.html",
-      "amazon_search": "Sony MDR-7506 Professional Large Diaphragm Headphone"
+      "amazon_search": "Sony MDR-7506 Professional Large Diaphragm Headphone",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "pioneer-dm40d",
@@ -361,9 +417,13 @@
       "sound_modes": "DJ / Production switchable DSP switch",
       "ideal_for": "Bedroom DJ desks and direct RCA controller pairing",
       "tagline": "Front-loaded bass reflex with a DSP switch between punchy DJ mode and flat Production mode.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/pioneer-dm40d.svg",
       "slug": "best-dj-monitor-speakers.html",
-      "amazon_search": "Pioneer DJ DM-40D 4-inch Desktop Monitor Speaker Pair"
+      "amazon_search": "Pioneer DJ DM-40D 4-inch Desktop Monitor Speaker Pair",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "pioneer-dm50d",
@@ -381,9 +441,13 @@
       "sound_modes": "DJ / Production switchable DSP switch",
       "ideal_for": "Home studios requiring deeper bass and balanced 1/4\" TRS connectivity",
       "tagline": "Class D amplifier power with balanced 1/4\" TRS inputs for zero-hum connection to pro controllers.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/pioneer-dm40d.svg",
       "slug": "best-dj-monitor-speakers.html",
-      "amazon_search": "Pioneer DJ DM-50D 5-inch Desktop Monitor Speaker Pair"
+      "amazon_search": "Pioneer DJ DM-50D 5-inch Desktop Monitor Speaker Pair",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "krk-rokit-5-g4",
@@ -400,9 +464,13 @@
       "sound_modes": "Onboard DSP room tuning EQ",
       "ideal_for": "Electronic music production and punchy low-end DJ practice",
       "tagline": "Iconic yellow Kevlar drivers delivering tight, impactful kick transient response.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/krk-classic-5.svg",
       "slug": "best-studio-monitors.html",
-      "amazon_search": "KRK Classic 5 Studio Monitor Pair"
+      "amazon_search": "KRK Classic 5 Studio Monitor Pair",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "yamaha-hs5",
@@ -419,9 +487,13 @@
       "sound_modes": "Room Control and High Trim switches",
       "ideal_for": "Serious music production and ultra-accurate mix balance",
       "tagline": "Legendary white-cone monitors with unhyped, clinically honest frequency response.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/yamaha-hs5.svg",
       "slug": "best-studio-monitors.html",
-      "amazon_search": "Yamaha HS5 Powered Studio Monitor Pair"
+      "amazon_search": "Yamaha HS5 Powered Studio Monitor Pair",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "jbl-eon-715",
@@ -438,9 +510,13 @@
       "sound_modes": "dbx DriveRack DSP feedback suppression",
       "ideal_for": "Mobile wedding DJs, house parties, and medium venue live sound",
       "tagline": "1300 watts of high-output portable PA power with integrated mixer and app control.",
-      "image": "assets/img/editorial/mobile-dj-hero.jpg",
+      "image": "assets/img/products/jbl-eon715.svg",
       "slug": "festival-dj-gear-checklist.html",
-      "amazon_search": "JBL EON715 15-inch Powered PA Speaker"
+      "amazon_search": "JBL EON715 15-inch Powered PA Speaker",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "macbook-air-m2",
@@ -453,9 +529,13 @@
       "ports": "2x Thunderbolt / USB-C, MagSafe 3, 3.5mm Headphone",
       "ideal_for": "The rock-solid club and bedroom DJ standard",
       "tagline": "Fanless silent operation, 18-hour battery life, and flawless low-latency CoreAudio stability.",
-      "image": "assets/img/editorial/software-desk.jpg",
+      "image": "assets/img/products/macbook-air-dj.svg",
       "slug": "best-dj-laptop-2026.html",
-      "amazon_search": "Apple MacBook Air 13 M2 16GB"
+      "amazon_search": "Apple MacBook Air 13 M2 16GB",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "windows-dj-laptop",
@@ -468,9 +548,13 @@
       "ports": "USB-A 3.2, USB-C, HDMI, 3.5mm Audio",
       "ideal_for": "Affordable dual-purpose DJing, gaming, and production",
       "tagline": "High performance-to-cost ratio with native USB-A ports for legacy DJ equipment.",
-      "image": "assets/img/editorial/software-desk.jpg",
+      "image": "assets/img/products/macbook-air-dj.svg",
       "slug": "best-dj-laptop-2026.html",
-      "amazon_search": "Intel Core i7 16GB RAM Laptop"
+      "amazon_search": "Intel Core i7 16GB RAM Laptop",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "standalone-usb-only",
@@ -483,9 +567,13 @@
       "ports": "USB Flash Drive / SD Card",
       "ideal_for": "DJs with Standalone hardware (Prime 4+, Prime GO, XDJ) who perform laptop-free",
       "tagline": "Zero laptop crashes, zero screen glare. Export tracks in rekordbox/Engine DJ and play straight from USB.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/sandisk-extreme-usb.svg",
       "slug": "best-standalone-dj-systems.html",
-      "amazon_search": "SanDisk Extreme Pro 128GB USB Flash Drive"
+      "amazon_search": "SanDisk Extreme Pro 128GB USB Flash Drive",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "cable-rca-rca",
@@ -498,9 +586,13 @@
       "shielding": "Double shielded OFC braided wire",
       "ideal_for": "Connecting controllers (DDJ-FLX4, S2 MK3) to desktop monitors (Pioneer DM-40D)",
       "tagline": "Essential audio cable for connecting entry-level DJ controllers to RCA desktop monitors.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/cables-pro-audio.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
-      "amazon_search": "Dual RCA to Dual RCA Audio Cable 6ft"
+      "amazon_search": "Dual RCA to Dual RCA Audio Cable 6ft",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "cable-rca-trs",
@@ -513,9 +605,13 @@
       "shielding": "Oxygen-Free Copper (OFC) conductors",
       "ideal_for": "Connecting RCA controllers (DDJ-FLX4) to 1/4\" pro studio monitors (Yamaha HS5, DM-50D)",
       "tagline": "Bridges unbalanced RCA controller master outputs to 1/4-inch monitor speaker inputs.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/cables-pro-audio.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
-      "amazon_search": "Hosa Dual RCA to Dual 1/4 TS Cable 6ft"
+      "amazon_search": "Hosa Dual RCA to Dual 1/4 TS Cable 6ft",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "cable-xlr-xlr",
@@ -528,9 +624,13 @@
       "shielding": "Balanced differential noise-cancelling braided shield",
       "ideal_for": "Connecting pro controllers (FLX10, Prime 4+, Rane Four) to studio monitors or PA club systems",
       "tagline": "Balanced pro-audio transmission over long cable runs without ground hum or RF interference.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/cables-pro-audio.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
-      "amazon_search": "Balanced XLR Cable Pair 10ft"
+      "amazon_search": "Balanced XLR Cable Pair 10ft",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "adapter-headphone-jack",
@@ -543,9 +643,13 @@
       "shielding": "Solid brass gold-plated",
       "ideal_for": "Plugging consumer 3.5mm headphones into pro mixers and club CDJ setups",
       "tagline": "Never get stuck in a club booth with the wrong headphone jack size.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/headphone-adapter.svg",
       "slug": "dj-equipment-checklist.html",
-      "amazon_search": "UGREEN 3.5mm to 1/4 inch audio adapter"
+      "amazon_search": "UGREEN 3.5mm to 1/4 inch audio adapter",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "laptop-stand-pyle",
@@ -557,9 +661,13 @@
       "height_adjust": "4 height settings (7.9\" to 14.5\")",
       "ideal_for": "Elevating laptops above DJ controllers to save table space",
       "tagline": "Elevates your laptop directly above your controller platters for ergonomic posture and screen visibility.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/pyle-laptop-stand.svg",
       "slug": "best-dj-stands-accessories.html",
-      "amazon_search": "Pyle Pro DJ Laptop Stand Heavy Duty"
+      "amazon_search": "Pyle Pro DJ Laptop Stand Heavy Duty",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "usb-sandisk-extreme",
@@ -572,9 +680,13 @@
       "chassis": "Solid aluminum metal casing",
       "ideal_for": "Instant rekordbox / Engine DJ track loading on Pioneer CDJ-3000s and Denon Prime players",
       "tagline": "Solid-state speed in a flash drive format \u2014 instant waveform rendering and zero playback lag.",
-      "image": "assets/img/editorial/gear-flatlay.jpg",
+      "image": "assets/img/products/sandisk-extreme-usb.svg",
       "slug": "best-dj-usb-drives.html",
-      "amazon_search": "SanDisk Extreme PRO 128GB USB 3.2 Flash Drive"
+      "amazon_search": "SanDisk Extreme PRO 128GB USB 3.2 Flash Drive",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     },
     {
       "id": "mic-shure-sm58",
@@ -586,9 +698,13 @@
       "connector": "XLR 3-Pin",
       "ideal_for": "Mobile wedding announcements, MCing, and live club vocals",
       "tagline": "The legendary touring microphone with built-in spherical wind and pop filter.",
-      "image": "assets/img/editorial/hero-gig-small.jpg",
+      "image": "assets/img/products/shure-sm58.svg",
       "slug": "how-to-dj-at-a-wedding.html",
-      "amazon_search": "Shure SM58 Dynamic Cardioid Vocal Microphone"
+      "amazon_search": "Shure SM58 Dynamic Cardioid Vocal Microphone",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Hardware CAD & Vector Schematics Lab (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab"
     }
   ],
   "presets": [

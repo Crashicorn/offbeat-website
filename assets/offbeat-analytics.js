@@ -284,10 +284,14 @@
     var hook = window.__OFFBEAT_ANALYTICS_TEST;
     if (hook && typeof hook.inject === 'function') { hook.inject(); }
     else if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
-      var s = el('script', null);
-      s.async = true; s.src = GA_SRC; s.setAttribute('crossorigin', 'anonymous');
-      s.onerror = function () { /* blocked: page still works */ };
-      (document.head || document.documentElement).appendChild(s);
+      var host = (window.location && (window.location.hostname || window.location.host)) || '';
+      var isPreviewHost = /(github\.io|localhost|127\.0\.0\.1|e2b\.app)/i.test(host);
+      if (!isPreviewHost) {
+        var s = el('script', null);
+        s.async = true; s.src = GA_SRC; s.setAttribute('crossorigin', 'anonymous');
+        s.onerror = function () { /* blocked: page still works */ };
+        (document.head || document.documentElement).appendChild(s);
+      }
     }
     // 3) Explicit update — the visitor affirmed consent, so grant analytics;
     //    the three advertising consent types remain denied.
