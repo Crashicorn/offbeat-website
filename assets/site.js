@@ -46,7 +46,102 @@
     if (direct) direct.classList.add("is-current");
   })();
 
-  /* ---------- 3. Search ---------- */
+  /* ---------- 3. Library filter (all-dj-guides.html) ---------- */
+  (function library() {
+    var input = document.querySelector("[data-library-input]");
+    var chips = document.querySelectorAll(".chip-filter");
+    var items = document.querySelectorAll(".library-item");
+    var groups = document.querySelectorAll(".library-group");
+    var empty = document.querySelector("[data-library-empty]");
+    if (!input || !items.length) return;
+    var group = "all";
+
+    function apply() {
+      var terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      var shown = 0;
+      items.forEach(function (item) {
+        var text = item.getAttribute("data-terms") || "";
+        var inGroup = group === "all" || item.getAttribute("data-group") === group;
+        var matches = terms.every(function (t) { return text.indexOf(t) !== -1; });
+        var visible = inGroup && matches;
+        item.hidden = !visible;
+        if (visible) shown++;
+      });
+      groups.forEach(function (section) {
+        var has = section.querySelector(".library-item:not([hidden])");
+        section.hidden = !has;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    }
+
+    input.addEventListener("input", apply);
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        group = chip.getAttribute("data-filter");
+        chips.forEach(function (other) {
+          var on = other === chip;
+          other.classList.toggle("is-active", on);
+          other.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        apply();
+      });
+    });
+    apply();
+  })();
+
+
+  /* ---------- 5. Long-guide navigation: contents card + progress bar ---------- */
+  (function guideNavigation() {
+    var main = document.querySelector("main");
+    if (!main) return;
+    var headings = [].slice.call(main.querySelectorAll(".content-wrap h2, .page-content h2"))
+      .filter(function (h) { return h.textContent.trim().length > 3; });
+    if (headings.length < 6) return;
+
+    headings.forEach(function (heading, i) {
+      if (!heading.id) {
+        heading.id = "section-" + (i + 1) + "-" + heading.textContent.trim()
+          .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+      }
+    });
+
+    var items = headings.slice(0, 14).map(function (heading) {
+      return '<li><a href="#' + heading.id + '">' + heading.textContent.trim() + "</a></li>";
+    }).join("");
+
+    var toc = document.createElement("nav");
+    toc.className = "toc";
+    toc.setAttribute("aria-label", "On this page");
+    toc.innerHTML =
+      '<details><summary>In this guide <span class="toc-count">' + headings.length +
+      ' sections</span></summary><ol class="toc-list">' + items + "</ol></details>";
+
+    var anchor = main.querySelector(".content-wrap > .article-section, .page-content > .article-section");
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(toc, anchor.nextSibling);
+    } else {
+      main.appendChild(toc);
+    }
+
+    // Reading progress
+    var bar = document.createElement("div");
+    bar.className = "read-progress";
+    bar.setAttribute("aria-hidden", "true");
+    document.body.appendChild(bar);
+    var ticking = false;
+    function update() {
+      var height = document.documentElement.scrollHeight - window.innerHeight;
+      var ratio = height > 0 ? Math.min(1, Math.max(0, window.scrollY / height)) : 0;
+      bar.style.transform = "scaleX(" + ratio + ")";
+      ticking = false;
+    }
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  })();
+
+  /* ---------- 6. Search ---------- */
   var overlay = document.getElementById("site-search");
   var openers = document.querySelectorAll("[data-search-open]");
   if (!overlay || !openers.length) return;

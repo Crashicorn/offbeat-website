@@ -162,6 +162,10 @@
     b.addEventListener('click', function () { handle(action); });
     return b;
   }
+  function privacyLink() {
+    var a = el('a', { 'class': 'ob-consent-link', href: 'privacy.html' }, 'Privacy');
+    return a;
+  }
   function ensureUI() {
     if (!document.body) return null;
     if (UI && UI_IN_BODY) return UI;
@@ -179,18 +183,20 @@
     var p = el('span', { 'class': 'ob-consent-text' });
     var row = el('div', { 'class': 'ob-consent-actions' });
     if (consent === 'unknown') {
-      p.textContent = 'Allow Offbeat to use Google Analytics to see which guides are helpful? With your consent we send only minimal page-level data — the path of the page you viewed, plus the standard pseudonymous browser and device details Google attaches to analytics hits. You can change or withdraw this choice at any time.';
+      p.textContent = 'Optional analytics help us see which guides are used. Nothing loads until you allow it, and we send only the page path plus basic device details. Change your mind any time.';
       row.appendChild(button('Allow analytics', 'grant'));
       row.appendChild(button('Do not allow', 'deny'));
+      row.appendChild(privacyLink());
     } else if (consent === 'reask') {
-      p.textContent = 'Change your analytics choice. If you switch off, we stop analytics, clear Google’s analytics cookies, and reload the page once so the analytics tag is fully removed.';
+      p.textContent = 'Change your analytics choice. Switching off stops analytics, clears its cookies and reloads once to remove the tag.';
       row.appendChild(button('Allow analytics', 'grant'));
-      row.appendChild(button('Do not allow (withdraw)', 'withdraw'));
+      row.appendChild(button('Withdraw', 'withdraw'));
+      row.appendChild(privacyLink());
     } else if (consent === 'denied') {
-      p.textContent = 'Analytics is off.';
+      p.textContent = 'Analytics off.';
       row.appendChild(button('Turn on analytics', 'grant'));
     } else { // granted
-      p.textContent = 'Analytics is on (minimal page-level data only).';
+      p.textContent = 'Analytics on.';
       row.appendChild(button('Change choice', 'reask'));
       row.appendChild(button('Withdraw consent', 'withdraw'));
     }
