@@ -1420,3 +1420,16 @@ table td strong { color: var(--text); }
 .verdict-grid strong { color: var(--text); font-weight: 600; }
 @media (max-width: 900px) { .verdict-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .verdict-grid { grid-template-columns: minmax(0, 1fr); gap: .9rem; } }
+
+/* Two-card "choose A / choose B" decision block */
+.vs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; margin: 1.2rem 0 1.4rem; }
+.vs-card {
+  padding: 1.1rem 1.2rem 1.2rem; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .012));
+}
+.vs-card--alt { border-color: var(--line-warm); background: linear-gradient(180deg, rgba(255, 90, 31, .10), rgba(255, 90, 31, .02)); }
+.vs-card .kicker { margin: 0 0 .6rem; }
+.vs-card ul { margin: 0; padding-left: 1.1rem; }
+.vs-card li { margin-bottom: .5rem; color: var(--text-2); font-size: .9rem; line-height: 1.5; }
+.vs-card li:last-child { margin-bottom: 0; }
+@media (max-width: 760px) { .vs-grid { grid-template-columns: minmax(0, 1fr); } }
