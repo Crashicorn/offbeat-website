@@ -13,16 +13,16 @@
   "category": "Interactive Tools"
  },
  {
-  "t": "Interactive Beatmatch Trainer",
+  "t": "Mix Lab — beatmatching trainer",
   "u": "beatmatch-trainer.html",
-  "d": "Practice ear-matching BPM drifts with rotating vinyl platters, split cueing, and performance scoring.",
+  "d": "Three short lessons: find the tempo with the pitch fader, line up the kicks, then hold a blend. Two synthesised records, live in your browser.",
   "c": "Interactive Tools",
   "g": "tools",
-  "k": "beatmatching drill tempo pitch ear training bpm vinyl turntable cue",
+  "k": "beatmatch trainer beatmatching practice tempo phase pitch fader jog nudge mix lab ear training",
   "f": true,
-  "title": "Interactive Beatmatch Trainer",
+  "title": "Mix Lab — beatmatching trainer",
   "url": "beatmatch-trainer.html",
-  "desc": "Practice ear-matching BPM drifts with rotating vinyl platters, split cueing, and performance scoring.",
+  "desc": "Three short lessons: find the tempo with the pitch fader, line up the kicks, then hold a blend. Two synthesised records, live in your browser.",
   "category": "Interactive Tools"
  },
  {
