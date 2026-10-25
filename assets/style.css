@@ -1765,6 +1765,123 @@ h3.mini {
 @media (max-width: 820px) { .glossary-list { grid-template-columns: minmax(0, 1fr); gap: .9rem; } }
 
 /* =============================================================================
+   Skills learning path & Harmonic wheel (dj-skills-learning-path.html)
+   ========================================================================== */
+.milestone-tracker-shell {
+  margin: 1.4rem 0 2.2rem; padding: 1.2rem 1.4rem;
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--panel); box-shadow: var(--shadow-sm);
+}
+.tracker-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .8rem;
+  margin-bottom: .9rem;
+}
+.tracker-head h3 { margin: 0; font-size: 1.1rem; color: var(--text); font-family: var(--display); }
+.tracker-progress-text { font-size: .84rem; color: var(--flame-2); font-weight: 600; }
+
+.tracker-bar-bg {
+  width: 100%; height: 8px; border-radius: 999px;
+  background: rgba(255, 255, 255, .08); margin-bottom: 1.2rem; overflow: hidden;
+}
+.tracker-bar-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--flame), var(--mint));
+  transition: width .25s ease-out;
+}
+
+.week-tracker-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem;
+}
+.week-tracker-card {
+  padding: .9rem 1.1rem; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(255, 255, 255, .02); display: flex; gap: .8rem; align-items: flex-start;
+  transition: all .15s ease;
+}
+.week-tracker-card:hover { border-color: var(--line-strong); background: rgba(255, 255, 255, .035); }
+.week-tracker-card.is-completed {
+  border-color: rgba(99, 217, 168, .4); background: rgba(99, 217, 168, .05);
+}
+.week-tracker-card input[type="checkbox"] {
+  accent-color: var(--mint); width: 1.2rem; height: 1.2rem; margin-top: .15rem; flex-shrink: 0; cursor: pointer;
+}
+.week-card-body strong { display: block; font-size: .95rem; color: var(--text); }
+.week-card-body p { margin: .25rem 0 .4rem; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.week-card-link { font-size: .8rem; font-weight: 600; color: var(--flame-2); text-decoration: none; }
+.week-card-link:hover { text-decoration: underline; color: var(--flame); }
+
+/* Camelot Harmonic Mixing Tool */
+.camelot-shell {
+  margin: 1.6rem 0 2.6rem; padding: clamp(1rem, 2.5vw, 1.8rem);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 120% at 0% 100%, rgba(99, 217, 168, .08), transparent 50%),
+    linear-gradient(180deg, var(--panel), var(--ink-2));
+  box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .9);
+}
+.camelot-head { margin-bottom: 1.2rem; }
+.camelot-head h3 { margin: 0 0 .3rem; font-size: 1.2rem; font-family: var(--display); color: var(--text); }
+.camelot-head p { margin: 0; color: var(--muted); font-size: .88rem; }
+
+.camelot-grid-wrap { display: flex; flex-direction: column; gap: .7rem; margin-bottom: 1.4rem; }
+.camelot-row { display: flex; flex-direction: column; gap: .35rem; }
+.camelot-row-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); font-weight: 600; }
+.camelot-btn-group { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .3rem; }
+.btn-cam {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: .45rem .2rem; border: 1px solid var(--line); border-radius: var(--r-xs);
+  background: var(--panel-2); color: var(--text-2); font: inherit; cursor: pointer;
+  transition: all .12s ease;
+}
+.btn-cam b { font-size: .82rem; font-family: var(--display); }
+.btn-cam span { font-size: .62rem; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.btn-cam:hover { border-color: var(--line-warm); color: var(--text); }
+.btn-cam.is-selected {
+  background: var(--flame); color: #fff; border-color: var(--flame);
+  box-shadow: 0 0 10px rgba(255, 90, 31, .4);
+}
+.btn-cam.is-selected span { color: rgba(255, 255, 255, .85); }
+
+.camelot-results {
+  padding: 1.2rem 1.3rem; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: rgba(0, 0, 0, .3);
+}
+.camelot-current {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .8rem;
+  margin-bottom: 1.1rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line);
+}
+.cam-now-badge { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--flame-2); font-weight: 600; }
+.cam-now-title { margin: .2rem 0 0; font-size: 1.15rem; color: var(--text); font-family: var(--display); }
+.btn-cam-audio { padding: .4rem .75rem; font-size: .8rem; }
+
+.cam-matches-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem;
+}
+.cam-match-card {
+  padding: .85rem 1rem; border: 1px solid var(--line); border-radius: var(--r-xs);
+  background: rgba(255, 255, 255, .02);
+}
+.cam-match-tag { display: block; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin-bottom: .3rem; }
+.cam-match--same { border-color: rgba(99, 217, 168, .4); }
+.cam-match--same .cam-match-tag { color: var(--mint); }
+.cam-match--rel { border-color: rgba(140, 196, 255, .4); }
+.cam-match--rel .cam-match-tag { color: var(--sky); }
+.cam-match--boost { border-color: rgba(255, 193, 77, .4); }
+.cam-match--boost .cam-match-tag { color: var(--amber); }
+.cam-match--drop { border-color: rgba(255, 122, 122, .3); }
+.cam-match--drop .cam-match-tag { color: var(--rose); }
+.cam-match--lift { border-color: rgba(255, 90, 31, .4); }
+.cam-match--lift .cam-match-tag { color: var(--flame-2); }
+
+.cam-match-card h5 { margin: 0 0 .25rem; font-size: .98rem; color: var(--text); font-family: var(--display); }
+.cam-match-card p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+
+@media (max-width: 820px) {
+  .week-tracker-grid { grid-template-columns: minmax(0, 1fr); }
+  .camelot-btn-group { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .cam-matches-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* =============================================================================
    Beatmatching trainer (beatmatch-trainer.html)
    ========================================================================== */
 /* Audio preview band (Hear the difference before drilling) */
