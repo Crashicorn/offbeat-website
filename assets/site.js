@@ -50,11 +50,14 @@
   (function glossary() {
     var input = document.querySelector("[data-glossary-input]");
     var terms = document.querySelectorAll(".glossary-term");
-    var chips = document.querySelectorAll(".glossary-chip");
+    var letterChips = document.querySelectorAll(".glossary-chip[data-letter]");
+    var catChips = document.querySelectorAll(".glossary-cat-chip");
     var empty = document.querySelector("[data-glossary-empty]");
     var count = document.querySelector("[data-glossary-count]");
+    var randomBtn = document.querySelector("[data-glossary-random]");
     if (!input || !terms.length) return;
     var letter = "all";
+    var category = "all";
 
     function apply() {
       var query = input.value.toLowerCase().trim();
@@ -62,9 +65,11 @@
       terms.forEach(function (term) {
         var text = term.getAttribute("data-terms") || term.textContent.toLowerCase();
         var initial = (term.getAttribute("data-letter") || "").toLowerCase();
+        var cat = (term.getAttribute("data-cat") || "").toLowerCase();
         var letterOk = letter === "all" || initial === letter;
+        var catOk = category === "all" || cat === category;
         var matchOk = !query || text.indexOf(query) !== -1;
-        var visible = letterOk && matchOk;
+        var visible = letterOk && catOk && matchOk;
         term.hidden = !visible;
         if (visible) shown++;
       });
@@ -73,10 +78,11 @@
     }
 
     input.addEventListener("input", apply);
-    chips.forEach(function (chip) {
+
+    letterChips.forEach(function (chip) {
       chip.addEventListener("click", function () {
         letter = chip.getAttribute("data-letter");
-        chips.forEach(function (other) {
+        letterChips.forEach(function (other) {
           var on = other === chip;
           other.classList.toggle("is-active", on);
           other.setAttribute("aria-pressed", on ? "true" : "false");
@@ -84,6 +90,37 @@
         apply();
       });
     });
+
+    catChips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        category = chip.getAttribute("data-cat");
+        catChips.forEach(function (other) {
+          var on = other === chip;
+          other.classList.toggle("is-active", on);
+          other.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        apply();
+      });
+    });
+
+    if (randomBtn) {
+      randomBtn.addEventListener("click", function () {
+        letter = "all";
+        category = "all";
+        input.value = "";
+        letterChips.forEach(function (c) { c.classList.toggle("is-active", c.getAttribute("data-letter") === "all"); });
+        catChips.forEach(function (c) { c.classList.toggle("is-active", c.getAttribute("data-cat") === "all"); });
+        apply();
+        var randIndex = Math.floor(Math.random() * terms.length);
+        var chosen = terms[randIndex];
+        if (chosen) {
+          chosen.scrollIntoView({ behavior: "smooth", block: "center" });
+          chosen.classList.add("is-highlighted");
+          window.setTimeout(function () { chosen.classList.remove("is-highlighted"); }, 2000);
+        }
+      });
+    }
+
     apply();
   })();
 
