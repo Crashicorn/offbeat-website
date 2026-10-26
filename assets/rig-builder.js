@@ -232,6 +232,16 @@
     return getItem(slot.itemId);
   }
 
+  // Owning the old product does not mean owning its replacement.
+  function replaceSlotItem(slot, itemId) {
+    var item = getItem(itemId);
+    if (!slot || !item) return false;
+    if (slot.itemId !== item.id) slot.owned = false;
+    slot.itemId = item.id;
+    slot.category = item.category;
+    return true;
+  }
+
   /* ----------------------------------------------------------- Calculations */
   function calculateRigStats() {
     var totalValue = 0;
@@ -300,36 +310,47 @@
       var hasXLRIn = spkInputs.some(function (i) { return i.indexOf("XLR") !== -1; });
       var hasTRSIn = spkInputs.some(function (i) { return i.indexOf("TRS") !== -1 || i.indexOf("1/4\"") !== -1; });
 
-      var idealCableId = "cable-rca-rca";
-      var idealCableName = "Dual RCA to Dual RCA Cable";
-      if (hasXLROut && hasXLRIn) {
-        idealCableId = "cable-xlr-xlr";
-        idealCableName = "Balanced XLR Cable Pair";
-      } else if (hasRCAOut && !hasRCAIn && (hasTRSIn || hasXLRIn)) {
-        idealCableId = "cable-rca-trs";
-        idealCableName = "Dual RCA to Dual 1/4\" TS Cable";
-      }
-
-      var hasSelectedMatchingCable = cableSlots.some(function (cs) {
-        return cs.itemId === idealCableId;
+      // Only suggest cables whose physical endpoints match listed connectors.
+      // The catalog does not contain every real-world cable type.
+      var options = [];
+      if (hasXLROut && hasXLRIn) options.push({ id: "cable-xlr-xlr", name: "Balanced XLR Cable Pair" });
+      if (hasRCAOut && hasRCAIn) options.push({ id: "cable-rca-rca", name: "Dual RCA to Dual RCA Cable" });
+      if (hasRCAOut && hasTRSIn) options.push({ id: "cable-rca-trs", name: "Dual RCA to Dual 1/4\" TS Cable" });
+      var selected = options.find(function (c) {
+        return cableSlots.some(function (slot) { return slot.itemId === c.id; });
       });
-
-      if (hasSelectedMatchingCable) {
+      if (selected) {
         checks.push({
-          type: "success",
-          statusLevel: "verified",
+          type: "success", statusLevel: "workable",
           title: "Listed Audio Connection Match",
-          desc: "Listed connectors suggest " + idealCableName + " for " + controller.model + " and " + speakers.model + ". Verify exact wiring, levels, and input settings before purchasing.",
+          desc: "Listed connectors support " + selected.name + " between " + controller.model +
+            " and " + speakers.model + ". Verify wiring, levels, and manufacturer requirements.",
           fixCableId: null
         });
-      } else {
+      } else if (options.length) {
+        var suggestion = options[0];
         checks.push({
-          type: "warning",
-          statusLevel: "workable",
-          title: "Audio Cable Optimization Needed",
-          desc: controller.model + " outputs and " + speakers.model + " inputs perform best with a " + idealCableName + ". Your setup currently has another cable selected.",
-          fixCableId: idealCableId,
-          fixActionText: "Auto-select " + idealCableName
+          type: "warning", statusLevel: "workable",
+          title: "Audio Cable Needed",
+          desc: "The catalog lists " + suggestion.name + " as a possible connection between " +
+            controller.model + " and " + speakers.model +
+            ". Confirm exact wiring and levels before purchasing.",
+          fixCableId: suggestion.id, fixActionText: "Select " + suggestion.name
+        });
+        warnings++;
+      } else {
+        var miniOut = ctrlOutputs.some(function (o) { return o.indexOf("3.5mm") !== -1; });
+        var miniIn = spkInputs.some(function (i) { return i.indexOf("3.5mm") !== -1; });
+        var advice = miniOut && miniIn
+          ? "A compatible 3.5mm stereo cable may work, but none is in this planner's catalog."
+          : hasTRSOut && hasTRSIn
+            ? "A matching TRS cable pair may work, but none is in this planner's catalog."
+            : "No suitable cable is listed in this planner's catalog for these connectors.";
+        checks.push({
+          type: "warning", statusLevel: "workable",
+          title: "Connection Requires Separate Verification",
+          desc: advice + " Check the manufacturers' output and input specifications before buying.",
+          fixCableId: null
         });
         warnings++;
       }
@@ -1302,8 +1323,7 @@
         if (activeModalSlotId && itemId) {
           var targetSlot = currentRig.items.find(function (s) { return s.slotId === activeModalSlotId; });
           if (targetSlot) {
-            targetSlot.itemId = itemId;
-            targetSlot.category = activeModalCategory || targetSlot.category;
+            if (!replaceSlotItem(targetSlot, itemId)) return;
           } else {
             currentRig.items.push({
               slotId: activeModalSlotId,
@@ -1380,7 +1400,7 @@
         if (cableId) {
           var existingCableSlot = currentRig.items.find(function (s) { return s.category === "cables"; });
           if (existingCableSlot) {
-            existingCableSlot.itemId = cableId;
+            if (!replaceSlotItem(existingCableSlot, cableId)) return;
           } else {
             currentRig.items.push({
               slotId: "core-cable",
@@ -1399,7 +1419,7 @@
         var fixItemId = btn.getAttribute("data-item-id");
         var targetFixSlot = currentRig.items.find(function (s) { return s.slotId === fixSlotId; });
         if (targetFixSlot) {
-          targetFixSlot.itemId = fixItemId;
+          if (!replaceSlotItem(targetFixSlot, fixItemId)) return;
         } else {
           var fixItem = getItem(fixItemId);
           if (fixItem) {
