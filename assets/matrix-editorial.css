@@ -1,0 +1,23 @@
+/* Compatibility key: make status, uncertainty, and next action visible before filtering. */
+.matrix-status-key { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; margin:.85rem 0 1rem; padding:.85rem; border:1px solid rgba(139,92,246,.2); border-radius:12px; background:linear-gradient(120deg,rgba(124,58,237,.06),rgba(56,189,248,.035)); }
+.matrix-status-key>div { display:grid; grid-template-columns:max-content minmax(0,1fr); align-items:start; gap:.45rem; min-width:0; }
+.matrix-status-key>div>span:last-child { color:#a8adbd; font-size:.65rem; line-height:1.45; }
+.matrix-status-key .mat-badge { margin-top:.05rem; }
+.mat-badge--unlisted { background:rgba(139,92,246,.1); color:#d5c5ff; border:1px dashed rgba(192,168,255,.65); }
+.mat-badge--unlisted::before { content:"? "; font-weight:800; }
+.mat-badge--mapped::before { content:"↔ "; font-weight:800; }
+.mat-badge--unlock::before,.mat-badge--native::before { content:"✓ "; font-weight:800; }
+.mat-badge--paid::before { content:"$ "; font-weight:800; }
+.matrix-version-note { line-height:1.65; }
+.matrix-version-note .matrix-next-step { margin:.8rem 0 0; padding:.7rem .8rem; border-left:2px solid #55d4e9; border-radius:0 8px 8px 0; background:rgba(56,189,248,.055); color:#b5bac9; font-size:.75rem; }
+.matrix-version-note .matrix-next-step strong { color:#eeebf7; }
+.matrix-version-note .matrix-next-step a { color:#9ce5f1; font-weight:700; }
+.mat-badge[aria-label] { cursor:help; }
+@media(max-width:820px) {
+ .matrix-status-key { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:520px) {
+ .matrix-status-key { grid-template-columns:1fr; padding:.7rem; }
+ .matrix-status-key>div { grid-template-columns:minmax(92px,max-content) minmax(0,1fr); }
+ .matrix-version-note .matrix-next-step { padding:.62rem; }
+}
