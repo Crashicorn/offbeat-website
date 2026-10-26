@@ -3896,3 +3896,52 @@ h3.mini {
   .dj707-outputs { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .dj707-outputs span { justify-content:center; text-align:center; }
 }
+
+/* Headphone guide: a fit-first selector is a different task from simply ranking models. */
+.headphone-fit-panel { margin:1.35rem 0 1.75rem; padding:clamp(1rem,2.3vw,1.45rem); border:1px solid rgba(56,189,248,.24); border-radius:16px; background:radial-gradient(650px 260px at 100% 0,rgba(56,189,248,.075),transparent 75%),linear-gradient(145deg,rgba(124,58,237,.07),transparent 48%),#0c0e15; }
+.headphone-fit-kicker { display:block; margin-bottom:.45rem; color:#82d8ec; font-size:.63rem; font-weight:760; letter-spacing:.13em; }
+.headphone-fit-intro h2 { margin:0; color:#f3f1fa; font-size:clamp(1.3rem,2.1vw,1.75rem); }
+.headphone-fit-intro>p { max-width:68ch; margin:.45rem 0 1rem; color:#a3a8ba; font-size:.82rem; line-height:1.6; }
+.headphone-fit-layout { display:grid; grid-template-columns:minmax(225px,.72fr) minmax(0,1.28fr); gap:.85rem; align-items:stretch; }
+.headphone-fit-choices { display:grid; align-content:start; gap:.45rem; min-width:0; margin:0; padding:0; border:0; }
+.headphone-fit-choices legend { margin:0 0 .25rem; color:#dcd9e8; font-size:.75rem; font-weight:700; }
+.headphone-fit-choice { display:grid; grid-template-columns:18px minmax(0,1fr); align-items:start; gap:.6rem; min-height:62px; padding:.72rem .75rem; border:1px solid rgba(255,255,255,.09); border-radius:9px; background:rgba(255,255,255,.018); cursor:pointer; }
+.headphone-fit-choice:hover { border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.035); }
+.headphone-fit-choice.is-selected { border-color:rgba(56,189,248,.48); background:linear-gradient(110deg,rgba(56,189,248,.09),rgba(124,58,237,.055)); }
+.headphone-fit-choice input { width:16px; height:16px; margin:.1rem 0 0; accent-color:#5ecbe8; }
+.headphone-fit-choice span { display:grid; gap:.2rem; min-width:0; }
+.headphone-fit-choice strong { color:#e5e3ed; font-size:.75rem; line-height:1.35; }
+.headphone-fit-choice small { color:#969caf; font-size:.67rem; line-height:1.4; }
+.headphone-fit-choice:focus-within { outline:2px solid #83d9ed; outline-offset:2px; }
+.headphone-fit-results { min-width:0; }
+.headphone-fit-results [hidden] { display:none !important; }
+.headphone-fit-result { display:flex; flex-direction:column; min-height:100%; padding:1.1rem 1.15rem; border:1px solid rgba(147,137,183,.22); border-radius:12px; background:linear-gradient(155deg,rgba(255,255,255,.03),transparent 58%),#10111a; }
+.headphone-fit-result-meta { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.45rem; }
+.headphone-fit-result-meta span { color:#8ddcef; font-size:.62rem; font-weight:750; letter-spacing:.08em; }
+.headphone-fit-result-meta b { padding:.28rem .5rem; border:1px solid rgba(255,255,255,.09); border-radius:999px; color:#c4c6d2; font-size:.65rem; font-weight:620; font-variant-numeric:tabular-nums; }
+.headphone-fit-result h3 { margin:.75rem 0 .35rem; color:#f2eff9; font:650 1.3rem/1.25 var(--display); letter-spacing:-.025em; }
+.headphone-fit-result>p { margin:.2rem 0 .65rem; color:#aeb2c2; font-size:.81rem; line-height:1.62; }
+.headphone-fit-result .headphone-fit-tradeoff { margin-top:auto; padding-top:.5rem; border-top:1px solid rgba(255,255,255,.075); color:#a3a6b5; font-size:.72rem; }
+.headphone-fit-tradeoff strong { color:#d9d6e3; }
+.headphone-fit-result>a { display:inline-flex; align-items:center; gap:.35rem; align-self:flex-start; min-height:40px; margin-top:.55rem; color:#90dbee; font-size:.76rem; font-weight:700; text-decoration:none; }
+.headphone-fit-result>a:hover { text-decoration:underline; text-underline-offset:3px; }
+.headphone-fit-result>a:focus-visible { outline:2px solid #83d9ed; outline-offset:3px; border-radius:3px; }
+.headphone-fit-noscript { margin:.55rem 0 0; color:#9ba0b2; font-size:.7rem; }
+.headphone-spec-details { margin:.8rem 0 0; border-top:1px solid rgba(255,255,255,.09); }
+.headphone-spec-details summary { display:flex; align-items:center; gap:.55rem; min-height:44px; color:#c7b9f5; font-size:.75rem; font-weight:680; cursor:pointer; list-style:none; }
+.headphone-spec-details summary::-webkit-details-marker { display:none; }
+.headphone-spec-details summary::before { content:"+"; display:grid; place-items:center; width:1.3rem; height:1.3rem; border:1px solid rgba(139,92,246,.4); border-radius:5px; color:#c7b9f5; line-height:1; }
+.headphone-spec-details[open] summary::before { content:"−"; }
+.headphone-spec-details summary:focus-visible { outline:2px solid #83d9ed; outline-offset:3px; border-radius:3px; }
+.headphone-table-scroll { overflow-x:auto; overscroll-behavior-inline:contain; border:1px solid rgba(255,255,255,.08); border-radius:9px; }
+.headphone-table-scroll table { min-width:700px; margin:0; }
+.headphone-price-note { margin:.65rem 0 0; color:#8f95a8; font-size:.68rem; line-height:1.5; }
+#pick-hd-25,#pick-mdr-7506,#pick-hdj-x10 { scroll-margin-top:84px; }
+@media(max-width:760px) {
+  .headphone-fit-panel { margin:.9rem 0 1.3rem; padding:.9rem; border-radius:13px; }
+  .headphone-fit-layout { grid-template-columns:minmax(0,1fr); gap:.65rem; }
+  .headphone-fit-choices { grid-template-columns:minmax(0,1fr); }
+  .headphone-fit-choice { min-height:56px; padding:.65rem; }
+  .headphone-fit-result { min-height:0; padding:.9rem; }
+  .headphone-fit-result h3 { margin-top:.55rem; }
+}
