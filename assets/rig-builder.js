@@ -317,8 +317,8 @@
         checks.push({
           type: "success",
           statusLevel: "verified",
-          title: "Audio Signal Chain Verified",
-          desc: "Your selected " + idealCableName + " directly links " + controller.model + " outputs to " + speakers.model + " inputs with zero impedance mismatch.",
+          title: "Listed Audio Connection Match",
+          desc: "Listed connectors suggest " + idealCableName + " for " + controller.model + " and " + speakers.model + ". Verify exact wiring, levels, and input settings before purchasing.",
           fixCableId: null
         });
       } else {
@@ -359,16 +359,16 @@
         checks.push({
           type: "success",
           statusLevel: "verified",
-          title: "Standalone USB Performance Verified",
-          desc: controller.brand + " " + controller.model + " has internal processing and Wi-Fi streaming. You can perform laptop-free directly from USB drives.",
+          title: "Standalone Capability Listed",
+          desc: controller.brand + " " + controller.model + " is listed as standalone-capable. Confirm supported media, firmware, and streaming services for your intended use.",
           fixCableId: null
         });
       } else {
         checks.push({
           type: "success",
           statusLevel: "verified",
-          title: "Hardware Unlock & Driver Compatibility",
-          desc: controller.model + " connects via USB to " + laptop.model + " with plug-and-play CoreAudio/ASIO driver support.",
+          title: "Host Driver Compatibility Needs Verification",
+          desc: controller.model + " is listed for USB use with " + laptop.model + ". Confirm current OS, DJ software licensing, and manufacturer driver requirements.",
           fixCableId: null
         });
       }
@@ -520,7 +520,7 @@
               <div class="readiness-bar"><div class="readiness-fill" style="width: ${stats.compatibility.readiness}%"></div></div>
               <strong class="readiness-num">${stats.compatibility.readiness}%</strong>
             </div>
-            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "✓ 100% Fully Verified" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : "⚠️ " + stats.compatibility.warnings + " cable optimization"}</span>
+            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : "⚠️ " + stats.compatibility.warnings + " cable optimization"}</span>
           </div>
         </div>
 
@@ -578,7 +578,7 @@
           <div class="compat-header">
             <h4>⚡ Hardware &amp; Signal Compatibility Assistant</h4>
             <span class="compat-status-tag ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'tag--ok' : stats.compatibility.fatalErrors > 0 ? 'tag--err' : 'tag--warn'}">
-              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? '✓ Verified Compatible' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : '⚠️ Cable Optimization Needed'}
+              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'Preliminary Match' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : '⚠️ Cable Optimization Needed'}
             </span>
           </div>
           <div class="compat-items-grid">
@@ -588,7 +588,7 @@
                 <div class="compat-body">
                   <div class="compat-title-row">
                     <strong>${escapeHtml(c.title)}</strong>
-                    <span class="compat-level-badge level--${c.statusLevel}">${c.statusLevel === 'verified' ? 'Verified Match' : c.statusLevel === 'incompatible' ? 'Hardware Block' : 'Workable with Note'}</span>
+                    <span class="compat-level-badge level--${c.statusLevel}">${c.statusLevel === 'verified' ? 'Listed Match' : c.statusLevel === 'incompatible' ? 'Hardware Block' : 'Workable with Note'}</span>
                   </div>
                   <p>${escapeHtml(c.desc)}</p>
                   ${c.fixCableId ? `<button type="button" class="btn-text-action" data-action="auto-fix-cable" data-cable-id="${c.fixCableId}">${escapeHtml(c.fixActionText || 'Auto-select recommended cable →')}</button>` : ''}
@@ -813,7 +813,7 @@
               <div class="saved-rig-pill">
                 <button type="button" class="btn-load-rig" data-action="load-saved-rig" data-index="${index}">
                   <strong>${escapeHtml(r.name)}</strong>
-                  <span>$${r.totalCost || 0} (${r.date || 'Saved'})</span>
+                  <span>${r.totalCost || 0} (${escapeHtml(r.date || 'Saved')})</span>
                 </button>
                 <button type="button" class="btn-del-rig" data-action="delete-saved-rig" data-index="${index}" title="Delete rig">✕</button>
               </div>
@@ -1335,7 +1335,7 @@
         }
       } else if (action === "toggle-sound") {
         soundEnabled = !soundEnabled;
-        localStorage.setItem("offbeat.rig.sfx", soundEnabled ? "on" : "muted");
+        safeStorageSet("offbeat.rig.sfx", soundEnabled ? "on" : "muted");
         if (soundEnabled) playClickSfx("toggle");
         renderApp();
       } else if (action === "open-export-modal") {
@@ -1522,28 +1522,38 @@
 
   function getSavedRigs() {
     try {
-      return JSON.parse(localStorage.getItem("offbeat.rigs.saved")) || [];
-    } catch (e) {
-      return [];
-    }
+      var raw = safeStorageGet("offbeat.rigs.saved");
+      if (!raw || raw.length > 100000) return [];
+      var saved = JSON.parse(raw);
+      if (!Array.isArray(saved)) return [];
+      return saved.slice(0, 15).map(function (entry) {
+        var clean = sanitizeRigState(entry);
+        if (!clean) return null;
+        return {
+          name: clean.name, items: clean.items,
+          totalCost: calculateCustomRigValuation(clean.items),
+          date: typeof entry.date === "string" ? entry.date.slice(0, 32) : "Saved"
+        };
+      }).filter(Boolean);
+    } catch (e) { return []; }
   }
 
   function promptSaveRig() {
     var name = prompt("Name your setup:", currentRig.name);
     if (!name) return;
-    currentRig.name = name;
+    currentRig.name = name.slice(0, 80);
 
     var stats = calculateRigStats();
     var saved = getSavedRigs();
     saved.unshift({
-      name: name,
+      name: currentRig.name,
       items: JSON.parse(JSON.stringify(currentRig.items)),
       totalCost: stats.purchaseCost,
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     });
 
     if (saved.length > 15) saved = saved.slice(0, 15);
-    localStorage.setItem("offbeat.rigs.saved", JSON.stringify(saved));
+    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     saveActiveState();
     renderApp();
   }
@@ -1552,8 +1562,7 @@
     var saved = getSavedRigs();
     if (!saved[index]) return;
     var r = saved[index];
-    currentRig.name = r.name;
-    currentRig.items = r.items ? JSON.parse(JSON.stringify(r.items)) : convertPresetToItems(r);
+    if (!normalizeRigState(r)) return;
     playClickSfx("preset");
     saveActiveState();
     renderApp();
@@ -1562,7 +1571,7 @@
   function deleteSavedRig(index) {
     var saved = getSavedRigs();
     saved.splice(index, 1);
-    localStorage.setItem("offbeat.rigs.saved", JSON.stringify(saved));
+    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     renderApp();
   }
 
