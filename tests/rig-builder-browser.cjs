@@ -10,7 +10,9 @@ const base = process.env.RIG_BASE_URL || "http://127.0.0.1:8099";
 const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
 
 async function visit(browser, width, suffix = "", denyStorage = false) {
-  const page = await browser.newPage();
+  // Isolate browser storage between independent desktop/mobile journeys.
+  const context = await browser.createBrowserContext();
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (err) => errors.push(err.message));
   await page.setViewport({ width, height: 900, isMobile: width < 600, hasTouch: width < 600 });
@@ -34,7 +36,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
   assert.match(metrics.spend, /\$/, "remaining purchase cost must show a dollar amount");
   assert.ok(metrics.overflow <= 1, width + "px viewport overflows by " + metrics.overflow + "px");
   assert.deepEqual(errors, [], "browser JS errors at " + width + "px");
-  return { page, errors, metrics };
+  return { page, context, errors, metrics };
 }
 
 (async () => {
@@ -44,7 +46,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
   });
   try {
     for (const width of [1440, 390]) {
-      const { page, errors, metrics } = await visit(browser, width);
+      const { page, context, errors, metrics } = await visit(browser, width);
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
       assert.ok(Number.isFinite(before) && before > 0, "initial spend must be a real amount");
       await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
@@ -52,7 +54,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       const after = Number(afterText.replace(/[^\d.]/g, ""));
       assert.ok(after < before, "marking an owned controller must reduce remaining spend");
       assert.deepEqual(errors, [], "browser errors after owned-toggle");
-      await page.close();
+      await context.close();
       console.log("PASS: " + width + "px real catalog/render/owned-budget/no-overflow");
     }
 
@@ -72,12 +74,12 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     );
     assert.equal(injected, false, "untrusted shared rig must not create event-handler attributes");
     assert.deepEqual(hostile.errors, [], "hostile shared rig must not throw");
-    await hostile.page.close();
+    await hostile.context.close();
     console.log("PASS: malicious shared URL cannot inject event handlers");
 
     const denied = await visit(browser, 390, "", true);
     assert.deepEqual(denied.errors, [], "storage-denied browser must remain usable");
-    await denied.page.close();
+    await denied.context.close();
     console.log("PASS: storage-disabled mobile browser still initializes");
   } finally {
     await browser.close();
