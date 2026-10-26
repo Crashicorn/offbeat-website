@@ -118,16 +118,27 @@ test("first-controller chooser computes complete desk cost and hands owned gear 
 
   fireById(mount, "[data-bl-choose]", "hercules-inpulse-500");
   assert.match(mount.innerHTML, /<h3>Hercules DJControl Inpulse 500<\/h3>/);
-  assert.match(mount.innerHTML, /\$299/); // controller only: the other three parts are marked owned
+  assert.match(mount.innerHTML, /\$311/); // controller + cable; headphone and monitors are owned
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).itemId, "cable-rca-rca");
+  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).owned, false,
+    "changing decks requires the user to re-confirm cable compatibility");
   assert.ok(mount.innerHTML.includes("dual 1/4-inch outputs"));
-  const controller = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === "controller"; });
+  let controller = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === "controller"; });
   controller.checked = true;
   controller.fire("change");
-  assert.match(mount.innerHTML, /\$0/);
+  assert.match(mount.innerHTML, /\$12/); // cable still needs buying
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "controllers"; }).owned, true);
+
+  fireById(mount, "[data-bl-profile]", "budget");
+  assert.match(mount.innerHTML, /<h3>AlphaTheta \/ Pioneer DJ DDJ-FLX2<\/h3>/);
+  assert.match(mount.innerHTML, /\$214/);
+  payload = rigFrom(mount.innerHTML);
+  assert.equal(payload.i.find(function (item) { return item.category === "controllers"; }).owned, false,
+    "controller ownership resets when switching to another model");
+  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).owned, false,
+    "cable ownership resets when the output connectors change");
 });

@@ -44,9 +44,17 @@
   function money(value) { return "$" + Math.round(Number(value) || 0).toLocaleString("en-US"); }
   function find(id) { return current.catalog.items.find(function (item) { return item.id === id; }); }
   function activeChoice() { return choices.find(function (choice) { return choice.id === current.item; }) || choices[1]; }
+  function selectController(id) {
+    if (id !== current.item) {
+      current.controllerOwned = false;
+      // A cable that matched the previous output is not assumed to fit the new deck.
+      current.cableOwned = false;
+    }
+    current.item = id;
+  }
   function recommend(profile) {
     var matching = choices.find(function (choice) { return choice.profiles.indexOf(profile) !== -1; });
-    if (matching) current.item = matching.id;
+    if (matching) selectController(matching.id);
     current.profile = profile;
     render();
   }
@@ -131,7 +139,7 @@
     });
     mount.querySelectorAll("[data-bl-choose]").forEach(function (button) {
       button.addEventListener("click", function () {
-        current.item = button.getAttribute("data-bl-choose");
+        selectController(button.getAttribute("data-bl-choose"));
         var picked = choices.find(function (choice) { return choice.id === current.item; });
         if (picked && picked.profiles.length) current.profile = picked.profiles[0];
         render();
