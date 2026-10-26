@@ -119,3 +119,17 @@ test("blocked browser storage does not prevent in-memory editing or share URL", 
   assert.match(lastUrl(), /\?rig=/);
   assert.deepEqual(Array.from(api.getSavedRigs()), []);
 });
+
+test("share links encode base64 plus and restore correctly without local storage", () => {
+  const { api, memory, window, lastUrl } = harness(false);
+  const name = "m~?wKQPW[GTy"; // Produces a '+' in base64(JSON-as-URI-component).
+  assert.equal(api.normalizeRigState({ name, items: [slot()] }), true);
+  api.saveActiveState();
+  const url = lastUrl();
+  assert.match(url, /%2B/, "literal plus must be percent-encoded in query strings");
+  memory["offbeat.rig.active"] = ""; // Prove the shared URL works on a new device.
+  window.location.search = new URL(url, "https://offbeatinc.com").search;
+  assert.equal(api.normalizeRigState({ name: "Other", items: [slot()] }), true);
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, name);
+});
