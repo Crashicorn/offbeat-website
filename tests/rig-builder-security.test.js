@@ -42,7 +42,10 @@ function harness(storageDisabled) {
     saveActiveState: saveActiveState,
     getRig: function () { return currentRig; },
     getSavedRigs: getSavedRigs,
-    renderSavedRigsList: renderSavedRigsList
+    renderSavedRigsList: renderSavedRigsList,
+    replaceSlotItem: replaceSlotItem,
+    runDeepCompatibilityChecks: runDeepCompatibilityChecks,
+    calculateRigStats: calculateRigStats
   };
 ` + hook);
   vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
@@ -132,4 +135,53 @@ test("share links encode base64 plus and restore correctly without local storage
   assert.equal(api.normalizeRigState({ name: "Other", items: [slot()] }), true);
   api.parseUrlOrLocalState();
   assert.equal(api.getRig().name, name);
+});
+
+test("replacing an owned product resets the new purchase to not-owned", () => {
+  const { api } = harness(false);
+  const old = api.getRig().items[0];
+  old.owned = true;
+  assert.equal(api.replaceSlotItem(old, "sennheiser-hd25"), true);
+  assert.equal(old.itemId, "sennheiser-hd25");
+  assert.equal(old.category, "headphones");
+  assert.equal(old.owned, false);
+  assert.equal(api.replaceSlotItem(old, "not-in-catalog"), false);
+  assert.equal(old.itemId, "sennheiser-hd25");
+  assert.ok(api.calculateRigStats().purchaseCost >= 149);
+});
+
+test("RCA cable is not declared compatible with 3.5mm-only master output", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "flx2", category: "controllers", model: "DDJ-FLX2", price: 200,
+      master_outputs: ["3.5mm Aux (Unbalanced)"] },
+    { id: "dm40", category: "speakers", model: "DM-40D", price: 180,
+      inputs: ["RCA (Unbalanced)", "3.5mm Stereo Mini"] },
+    { id: "cable-rca-rca", category: "cables", price: 12 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "c", category: "controllers", itemId: "flx2", qty: 1 },
+    { slotId: "s", category: "speakers", itemId: "dm40", qty: 1 },
+    { slotId: "x", category: "cables", itemId: "cable-rca-rca", qty: 1 }
+  ] }), true);
+  const connection = api.runDeepCompatibilityChecks().checks[0];
+  assert.equal(connection.type, "warning");
+  assert.equal(connection.fixCableId, null);
+  assert.match(connection.desc, /3.5mm stereo cable/);
+});
+
+test("matching XLR output and input select XLR cable, never RCA fallback", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "flx10", category: "controllers", model: "DDJ-FLX10", price: 1600,
+      master_outputs: ["XLR (Balanced)", "RCA (Unbalanced)"] },
+    { id: "hs5", category: "speakers", model: "HS5", price: 400,
+      inputs: ["XLR3-31 (Balanced)"] },
+    { id: "cable-xlr-xlr", category: "cables", price: 28 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "c", category: "controllers", itemId: "flx10", qty: 1 },
+    { slotId: "s", category: "speakers", itemId: "hs5", qty: 1 }
+  ] }), true);
+  assert.equal(api.runDeepCompatibilityChecks().checks[0].fixCableId, "cable-xlr-xlr");
 });
