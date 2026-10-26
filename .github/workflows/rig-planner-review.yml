@@ -1,0 +1,38 @@
+name: Rig planner security regression (review only)
+
+# Untrusted candidate source runs without secrets or write privileges.
+# This is a review check, not a release approval or publisher.
+on:
+  push:
+    branches:
+      - fix/arena-rig-share-safety-20261026
+  pull_request:
+    branches:
+      - review/arena-rig-original-20261026
+    paths:
+      - assets/rig-builder.js
+      - tests/rig-builder-security.test.js
+      - .github/workflows/rig-planner-review.yml
+
+permissions:
+  contents: read
+
+jobs:
+  rig-planner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse planner and tests
+        run: |
+          node --check assets/rig-builder.js
+          node --check tests/rig-builder-security.test.js
+      - name: Execute committed regression suite
+        run: node --test tests/rig-builder-security.test.js
