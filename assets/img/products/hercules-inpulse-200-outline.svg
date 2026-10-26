@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" role="img" aria-labelledby="title desc">
+  <title id="title">Hercules DJControl Inpulse 200 feature schematic</title>
+  <desc id="desc">Offbeat line drawing of a compact two-deck controller with Beatmatch Guide indicators and performance pads. Illustration, not a product photograph.</desc>
+  <rect width="600" height="360" rx="22" fill="#0d0e16"/><path d="M50 50h500v250l-20 20H70l-20-20z" fill="#171823" stroke="#62677d" stroke-width="3"/>
+  <circle cx="150" cy="142" r="76" fill="#0a0b11" stroke="#7b6c3d" stroke-width="3"/><circle cx="150" cy="142" r="29" fill="#202130" stroke="#555b70" stroke-width="2"/>
+  <circle cx="450" cy="142" r="76" fill="#0a0b11" stroke="#7b6c3d" stroke-width="3"/><circle cx="450" cy="142" r="29" fill="#202130" stroke="#555b70" stroke-width="2"/>
+  <path d="M150 61l8 13h-16z" fill="#f59e0b"/><path d="M450 61l8 13h-16z" fill="#36d6b0"/>
+  <g fill="#20202c" stroke="#38bdf8" stroke-width="2"><rect x="78" y="245" width="29" height="22" rx="4"/><rect x="112" y="245" width="29" height="22" rx="4"/><rect x="146" y="245" width="29" height="22" rx="4"/><rect x="180" y="245" width="29" height="22" rx="4"/><rect x="391" y="245" width="29" height="22" rx="4"/><rect x="425" y="245" width="29" height="22" rx="4"/><rect x="459" y="245" width="29" height="22" rx="4"/><rect x="493" y="245" width="29" height="22" rx="4"/></g>
+  <rect x="260" y="70" width="80" height="218" rx="8" fill="#10111a" stroke="#484c60" stroke-width="2"/>
+  <text x="300" y="103" fill="#eef0f7" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle">DJCONTROL</text><text x="300" y="121" fill="#bba3ff" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle">INPULSE 200</text>
+  <text x="300" y="150" fill="#a8b0c4" font-family="Arial,sans-serif" font-size="8" letter-spacing="1" text-anchor="middle">BEATMATCH GUIDE</text>
+  <circle cx="286" cy="169" r="5" fill="#f59e0b"/><circle cx="300" cy="169" r="5" fill="#565b6e"/><circle cx="314" cy="169" r="5" fill="#36d6b0"/>
+  <path d="M281 205h38m-19-16v71" stroke="#71778c" stroke-width="4" stroke-linecap="round"/><circle cx="300" cy="224" r="6" fill="#38bdf8"/>
+  <text x="300" y="334" fill="#b4b9ca" font-family="Arial,sans-serif" font-size="11" letter-spacing="1.2" text-anchor="middle">OFFBEAT SCHEMATIC · NOT A PRODUCT PHOTO</text>
+</svg>
