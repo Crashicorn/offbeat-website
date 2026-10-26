@@ -339,10 +339,10 @@
     if (status === "unlock" || status === "pro-unlock") return "Included hardware unlock";
     if (status === "lite") return "Lite edition included";
     if (status === "native") return "Supported";
-    if (status === "mapped") return "MIDI mapping required";
-    if (status === "paid") return "Paid software required";
-    if (status === "unlisted") return "Not listed by manufacturer";
-    return "Not supported";
+    if (status === "mapped") return "Manual MIDI mapping required; not plug-and-play";
+    if (status === "paid") return "Separate paid software or upgrade required";
+    if (status === "unlisted") return "Unverified: no current support listing confirmed here";
+    return "Not supported in this matrix; verify before purchase";
   }
 
   function renderStatusBadge(status) {
@@ -352,8 +352,9 @@
     else if (status === "native") { cls = "native"; text = "Supported"; }
     else if (status === "mapped") { cls = "mapped"; text = "MIDI map"; }
     else if (status === "paid") { cls = "paid"; text = "Paid"; }
-    else if (status === "unlisted") { cls = "none"; text = "Not listed"; }
-    return '<span class="mat-badge mat-badge--' + cls + '" title="' + statusLabel(status) + '">' + text + '</span>';
+    else if (status === "unlisted") { cls = "unlisted"; text = "Unverified"; }
+    var label = statusLabel(status);
+    return '<span class="mat-badge mat-badge--' + cls + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' + text + '</span>';
   }
 
   function filterControllers() {
