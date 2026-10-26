@@ -267,6 +267,7 @@ code {
   width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--panel-2);
 }
 .hero-figure img.product-photo-img { object-fit: contain; padding: .9rem; aspect-ratio: 16 / 10; }
+.hero-figure img.product-schematic-img { object-fit: contain; padding: 1.1rem; aspect-ratio: 16 / 10; background: radial-gradient(ellipse at 50% 42%, rgba(88, 69, 158, .22), transparent 72%), #10101a; }
 .hero-figure figcaption {
   position: relative; z-index: 2;
   padding: .55rem .85rem; border-top: 1px solid var(--line);

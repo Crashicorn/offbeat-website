@@ -86,6 +86,40 @@ DUOS = [
     ("numark-mixtrack-pro-fx-vs-ddj-200.html", "Feature Comparison", ["numark-mixtrack-pro-fx", "pioneer-ddj-200"]),
 ]
 
+
+# (page, svg path, model display name) - review heroes become the actual
+# product drawing instead of a recycled editorial photo.
+HERO_SWAPS = [
+    ("ddj-flx2-review.html", "assets/img/products/pioneer-ddj-flx2.svg", "AlphaTheta DDJ-FLX2"),
+    ("ddj-grv6-review.html", "assets/img/products/alphatheta-ddj-grv6.svg", "AlphaTheta DDJ-GRV6"),
+    ("denon-prime-go-review.html", "assets/img/products/denon-prime-go.svg", "Denon DJ Prime GO"),
+    ("pioneer-ddj-flx10-review.html", "assets/img/products/pioneer-ddj-flx10.svg", "Pioneer DJ DDJ-FLX10"),
+    ("denon-sc6000-review.html", "assets/img/products/denon-sc6000.svg", "Denon DJ SC6000 Prime"),
+    ("pioneer-cdj-3000-review.html", "assets/img/products/pioneer-cdj-3000.svg", "Pioneer DJ CDJ-3000"),
+    ("rane-one-review.html", "assets/img/products/rane-one.svg", "RANE ONE"),
+    ("numark-scratch-review.html", "assets/img/products/numark-scratch.svg", "Numark Scratch"),
+]
+
+HERO_FIG_RE = re.compile(r'(<figure class="hero-figure">)(.*?)(</figure>)', re.S)
+
+
+def swap_hero(html, svg, model, log):
+    m = HERO_FIG_RE.search(html)
+    if not m:
+        log.append("WARN no hero-figure found")
+        return html
+    if svg in m.group(2):
+        log.append("hero already the product drawing")
+        return html
+    img = (
+        f'<img class="product-schematic-img" src="{svg}" '
+        f'alt="Offbeat technical illustration of the {model} top panel — a labelled drawing, not a product photograph" '
+        f'width="1280" height="800" loading="eager" decoding="async">'
+        f'<figcaption>Offbeat technical illustration of the {model} — a labelled drawing, not a product photograph.</figcaption>'
+    )
+    log.append(f"hero swapped to product drawing: {model}")
+    return html[: m.start()] + m.group(1) + img + m.group(3) + html[m.end():]
+
 HEADING_RE = re.compile(r"<(h[23])\b([^>]*)>(.*?)</\1>", re.S)
 TAG_RE = re.compile(r"<[^>]+>")
 
@@ -194,7 +228,7 @@ def add_duo(html, fragment, ids, log):
 def main():
     dry = "--dry-run" in sys.argv
     pages = set(SCRIPT_PAGES)
-    for entry in HEADING_TAGS + SLOTS + SLOT_DUOS + DUOS:
+    for entry in HEADING_TAGS + SLOTS + SLOT_DUOS + DUOS + HERO_SWAPS:
         pages.add(entry[0])
     changed = 0
     for page in sorted(pages):
@@ -202,7 +236,11 @@ def main():
             html = fh.read()
         log = []
         orig = html
-        html = add_script(html, log)
+        needs_script = page in SCRIPT_PAGES or any(
+            e[0] == page for e in HEADING_TAGS + SLOTS + SLOT_DUOS + DUOS
+        )
+        if needs_script:
+            html = add_script(html, log)
         for pg, frag, pid, mode in HEADING_TAGS:
             if pg == page:
                 html = tag_heading(html, frag, pid, mode, log)
@@ -215,6 +253,9 @@ def main():
         for pg, frag, ids in DUOS:
             if pg == page:
                 html = add_duo(html, frag, ids, log)
+        for pg, svg, model in HERO_SWAPS:
+            if pg == page:
+                html = swap_hero(html, svg, model, log)
         status = "CHANGED" if html != orig else "same   "
         if html != orig:
             changed += 1
