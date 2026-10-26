@@ -814,7 +814,7 @@
               <div class="saved-rig-pill">
                 <button type="button" class="btn-load-rig" data-action="load-saved-rig" data-index="${index}">
                   <strong>${escapeHtml(r.name)}</strong>
-                  <span>${r.totalCost || 0} (${escapeHtml(r.date || 'Saved')})</span>
+                  <span>$${r.totalCost || 0} (${escapeHtml(r.date || 'Saved')})</span>
                 </button>
                 <button type="button" class="btn-del-rig" data-action="delete-saved-rig" data-index="${index}" title="Delete rig">✕</button>
               </div>
@@ -1532,7 +1532,7 @@
         if (!clean) return null;
         return {
           name: clean.name, items: clean.items,
-          totalCost: calculateCustomRigValuation(clean.items),
+          totalCost: calculateCustomRigValuation(clean.items.filter(function (slot) { return !slot.owned; })),
           date: typeof entry.date === "string" ? entry.date.slice(0, 32) : "Saved"
         };
       }).filter(Boolean);
