@@ -188,7 +188,8 @@
       if (!item || item.category !== slot.category) return;
       var id = typeof slot.slotId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(slot.slotId)
         ? slot.slotId : "imported-" + index;
-      while (used[id]) id = "imported-" + index + "-" + items.length;
+      var suffix = 0;
+      while (used[id]) id = "imported-" + index + "-" + (++suffix);
       used[id] = true;
       items.push({
         slotId: id, category: item.category, itemId: item.id,
