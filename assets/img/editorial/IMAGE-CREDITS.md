@@ -8,7 +8,7 @@ photographs of every specific product discussed.
 | Local asset | Use | Credit / source | License |
 | --- | --- | --- | --- |
 | `pexels-mixer-knobs-744318.jpg` | Best DJ mixers; Best DJ mixers under $500 | Hendrik B, [Pexels photo 744318](https://www.pexels.com/photo/macro-shot-audio-equalizer-744318/) | [Pexels License](https://www.pexels.com/license/) |
-| `pexels-dj-console-portrait-20116408.jpg` | DJ equipment checklist | FOERDER ZONE, Pexels photo ID 20116408; [photographer profile](https://www.pexels.com/@foerder-zone-441814813/) | [Pexels License](https://www.pexels.com/license/) |
+| `pexels-dj-console-portrait-20116408.jpg` | How to become a DJ (hero) | FOERDER ZONE, Pexels photo ID 20116408; [photographer profile](https://www.pexels.com/@foerder-zone-441814813/) | [Pexels License](https://www.pexels.com/license/) |
 | `wikimedia-stylus-cartridge-detail.jpg` | Best turntable cartridges | Franz van Duns, [Wikimedia Commons original](https://commons.wikimedia.org/wiki/File:Groove_and_needle_in_close_embrace_from_beginning_to_end.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), attribution required; image resized to 1600 × 640 |
 
 SHA-256 (restored files):
