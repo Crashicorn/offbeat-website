@@ -267,6 +267,7 @@ code {
   width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--panel-2);
 }
 .hero-figure img.product-photo-img { object-fit: contain; padding: .9rem; aspect-ratio: 16 / 10; }
+.hero-figure img.product-schematic-img { object-fit: contain; padding: 1.1rem; aspect-ratio: 16 / 10; background: radial-gradient(ellipse at 50% 42%, rgba(88, 69, 158, .22), transparent 72%), #10101a; }
 .hero-figure figcaption {
   position: relative; z-index: 2;
   padding: .55rem .85rem; border-top: 1px solid var(--line);
@@ -897,6 +898,13 @@ footer { border-top: 1px solid var(--line); background: var(--ink-2); margin-top
   .ob-consent--pill .ob-consent-btn { width: auto; }
 }
 
+/* Rich pick sections (badge + intro + spec list + caveats) must not inherit
+   the two-column buy-row grid — flow content gets crushed into the
+   auto-sized button column (one word per line, overlapping text). */
+.top-pick-section:has(> ul) { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.top-pick-section:has(> ul) > .badge { justify-self: start; }
+.top-pick-section:has(> ul) > ul { margin: .25rem 0 .5rem; padding-left: 1.2rem; }
+.top-pick-section:has(> ul) > a { justify-self: start; }
 @media (max-width: 420px) {
   .stats-bar, .hub-hero-stat, .format-stat-strip, .spec-grid { grid-template-columns: minmax(0, 1fr); }
 }
@@ -1274,7 +1282,7 @@ table td strong { color: var(--text); }
   border: 1px solid var(--line); border-radius: var(--r-md);
   background: radial-gradient(120% 140% at 0% 0%, rgba(139, 92, 246, .08), transparent 55%), var(--ink-2);
 }
-.fig svg { display: block; width: 100%; height: auto; }
+.fig svg, .fig img { display: block; width: 100%; height: auto; }
 .fig figcaption {
   margin-top: .9rem; padding-top: .75rem; border-top: 1px solid var(--line);
   color: var(--muted); font-size: .8rem; line-height: 1.5;
@@ -3653,6 +3661,30 @@ h3.mini {
 .ob-product-visual--photo img { background: #f2f1ef; }
 .gear-product-card > .ob-product-visual figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .5rem; margin-top: .45rem; color: #6a6b74; font-size: .66rem; line-height: 1.35; text-align: left; }
 .ob-product-visual--schematic figcaption { color: #979bb0; }
+.ob-figure-rig-link { display: inline-block; margin-top: .3rem; color: #8bdcf4; font-weight: 700; text-decoration: none; }
+.ob-figure-rig-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.ob-figure-rig-link:focus-visible { outline: 2px solid #83d9ed; outline-offset: 2px; }
+/* Product media slots (quick-pick cards) and head-to-head comparison duos.
+   Figures are injected by assets/product-illustrations.js; empty slots
+   collapse so the layout is unchanged when JS or the catalog is absent. */
+.ofb-product-media { margin: .25rem 0 1rem; }
+.ofb-product-media:empty { display: none; }
+.ofb-product-media .ob-product-visual { display: block; float: none; width: min(100%, 400px); min-width: 0; margin: 0 auto; }
+.ofb-product-media .ob-product-visual img { width: 100%; height: auto; aspect-ratio: 8/5; object-fit: contain; }
+.ofb-product-media .product-duo { margin: 0; }
+.product-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.4rem 0; }
+.product-duo:empty, .product-duo .product-duo-slot:empty { display: none; }
+.product-duo .ob-product-visual { display: block; float: none; width: 100%; min-width: 0; margin: 0; }
+.product-duo .ob-product-visual img { width: 100%; height: auto; aspect-ratio: 8/5; object-fit: contain; }
+@media (max-width: 640px) { .product-duo { grid-template-columns: 1fr; } }
+/* Full-width figure under a heading (data-product-mode="banner") and
+   portrait-format drawings (mixers) get more vertical room. */
+.ob-product-visual--banner { display: block; float: none; width: min(100%, 480px); min-width: 0; margin: .4rem auto 1.2rem; }
+.ob-product-visual--banner img { width: 100%; height: auto; aspect-ratio: 8/5; object-fit: contain; }
+.ob-product-visual--tall img { aspect-ratio: 4/5; }
+.gear-product-card > .ob-product-visual--tall { max-width: 300px; justify-self: center; }
+.gear-product-card > .ob-product-visual--tall img { aspect-ratio: 4/5; }
+.ofb-product-media .ob-product-visual--tall img, .product-duo .ob-product-visual--tall img { aspect-ratio: 4/5; }
 .gear-product-card > .ob-product-visual figcaption a { color: #226a8b; font-weight: 650; text-decoration: underline; text-underline-offset: 2px; }
 .gear-product-card > .ob-product-visual figcaption a:hover { color: #17465c; }
 .gear-product-copy { grid-area: copy; min-width: 0; color: var(--text-2); line-height: 1.7; }

@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build the site index (search + library page) from the published HTML.
+"""WARNING — DO NOT RUN BLINDLY. The committed assets/search-index.json
+(147 entries, dual short/long keys, curated keyword fields and deep-link
+entries such as build-your-dj-setup.html?add=...) was produced by a newer
+generator than this file, which emits only 116 short-key entries. Running
+this script as-is silently degrades Spotlight Search. Reconcile the two
+formats before regenerating; until then, patch individual entries in
+assets/search-index.json by hand when a title or description changes.
+
+Build the site index (search + library page) from the published HTML.
 
 Extracts the human-facing title, meta description and section for every page,
 then writes:
