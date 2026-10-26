@@ -21,6 +21,7 @@
     headphones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 1 1 16 0v2"/><rect x="2.6" y="13.6" width="4.4" height="6.4" rx="1.6"/><rect x="17" y="13.6" width="4.4" height="6.4" rx="1.6"/></svg>',
     speaker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.6" width="13" height="18.8" rx="2"/><circle cx="12" cy="8.6" r="2"/><circle cx="12" cy="16" r="3.1"/></svg>',
     laptop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="10.4" rx="1.6"/><path d="M2.4 18.4h19.2"/></svg>',
+    mobile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.3" y="3" width="7.2" height="17.5" rx="1.6"/><path d="M6.2 17.7h1.4"/><rect x="13.5" y="5.4" width="7.2" height="13.5" rx="1.5"/><path d="M16.3 16.2h1.5"/></svg>',
     mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.6" width="6" height="10.4" rx="3"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0M12 18v3.4M8.6 21.4h6.8"/></svg>',
     stand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.4h16M6.6 4.4 12 12l5.4-7.6M12 12v8.2M8 20.6h8"/></svg>',
     usb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6.4" y="2.8" width="11.2" height="12.4" rx="2"/><path d="M10 18.4v2.8h4v-2.8M9.6 6.4h4.8"/></svg>',
@@ -71,7 +72,7 @@
 
   var ROLE_HINT = {
     controllers: "The deck everything plugs into",
-    laptops: "Runs your software, or no laptop at all",
+    laptops: "Runs a DJ app on a computer or supported mobile device",
     headphones: "How you hear the next track privately",
     speakers: "What the room hears",
     cables: "The part nobody remembers to buy",
@@ -82,7 +83,7 @@
 
   var EMPTY_HINT = {
     controllers: ["Choose a controller", "Start with the deck your software runs on"],
-    laptops: ["Add a laptop — or go standalone", "Controllers need a host; standalone decks do not"],
+    laptops: ["Add a host device — or go standalone", "Choose a computer, a compatible mobile app host, or standalone hardware"],
     headphones: ["Add headphones", "Closed-back cans with a cue output"],
     speakers: ["Add speakers", "Monitors for a room, PA for a party"],
     cables: ["Add the connecting cable", "Matched to your outputs and inputs"],
@@ -246,7 +247,7 @@
       if (!item) return;
       value += line.lineTotal;
       itemCount += line.qty;
-      if (slot.owned) { ownedValue += line.lineTotal; ownedCount += line.qty; }
+      if (slot.owned || isExistingHost(item)) { ownedValue += line.lineTotal; ownedCount += line.qty; }
       else { buyTotal += line.lineTotal; buyCount += line.qty; }
     });
 
@@ -258,7 +259,8 @@
     var storeSlots = slotsOf("storage").filter(function (s) { return s.itemId; });
 
     var controller = itemOf(controllerSlots[0]);
-    var host = itemOf(hostSlots[0]);
+    var hostSlot = hostSlots[0];
+    var host = itemOf(hostSlot);
     var speakers = speakerSlots.map(function (s) { return { slot: s, item: itemOf(s) }; });
     var headphones = itemOf(hpSlots[0]);
 
@@ -291,21 +293,40 @@
 
     /* 2. Host */
     if (controller && controller.standalone) {
-      checks.push({ key: "host", level: "ok", weight: 2, title: "No laptop needed",
-        note: controller.model + " runs its own operating system straight from USB." });
+      checks.push({ key: "host", level: "ok", weight: 2, title: "No external host needed",
+        note: controller.model + " runs its own playback environment from prepared media." });
     } else if (controller && !host) {
       blockers++;
-      checks.push({ key: "host", level: "bad", weight: 2, title: "This controller needs a host",
-        note: controller.model + " is a MIDI surface: it needs a laptop running " + ((controller.software_unlocks || [])[0] || "DJ software") + ".",
-        action: { kind: "pick-cat", cat: "laptops", label: "Add a laptop" } });
+      var hostRequirementNote = controller.mobile_support
+        ? "Use a computer with compatible DJ software, or a supported phone/tablet app: " + controller.mobile_support
+        : "Use a computer running " + ((controller.software_unlocks || [])[0] || "compatible DJ software") + ".";
+      checks.push({ key: "host", level: "bad", weight: 2, title: "This controller needs a software host",
+        note: controller.model + " is not standalone. " + hostRequirementNote,
+        action: { kind: "pick-cat", cat: "laptops", label: "Choose a host device" } });
     } else if (controller && host && host.id === "standalone-usb-only") {
       blockers++;
-      checks.push({ key: "host", level: "bad", weight: 2, title: "Wrong host for this controller",
-        note: controller.model + " has no internal computer, so \u201Cno laptop\u201D cannot work here.",
-        action: { kind: "swap-cat", cat: "laptops", itemId: "windows-dj-laptop", label: "Swap in a laptop" } });
+      var mobileOptionNote = controller.mobile_support
+        ? " A phone/tablet is another possible route only with its listed app support and a compatible device."
+        : "";
+      checks.push({ key: "host", level: "bad", weight: 2, title: "Standalone placeholder does not fit this controller",
+        note: controller.model + " is not a standalone deck. Choose a computer running compatible DJ software." + mobileOptionNote,
+        action: { kind: "pick-cat", cat: "laptops", slotId: hostSlot.slotId, label: "Choose a compatible host" } });
+    } else if (controller && host && host.host_type === "mobile") {
+      if (supportsMobileSoftware(controller, "any")) {
+        checks.push({ key: "host", level: "ok", weight: 2, title: "Mobile host: " + host.model,
+          note: controller.mobile_support + " This line only represents a compatible device you already own; app plans, adapters and power supplies are not included." });
+      } else {
+        blockers++;
+        checks.push({ key: "host", level: "bad", weight: 2, title: "Mobile support not verified for this controller",
+          note: "The selected phone/tablet is counted only as an already-owned device. Confirm a supported app and OS for " + controller.model + ", or choose a computer host.",
+          action: { kind: "pick-cat", cat: "laptops", slotId: hostSlot.slotId, label: "Choose a compatible host" } });
+      }
+    } else if (controller && host && host.host_type === "computer") {
+      checks.push({ key: "host", level: "ok", weight: 2, title: "Existing computer host",
+        note: "This $0 line assumes a compatible computer you already own. Confirm the DJ app, operating-system and connection requirements; paid software is not included." });
     } else if (host && controller) {
-      checks.push({ key: "host", level: "ok", weight: 2, title: "Host: " + host.model,
-        note: "USB into the controller; the deck handles audio output and cueing." });
+      checks.push({ key: "host", level: "ok", weight: 2, title: "Computer host: " + host.model,
+        note: "The computer runs the DJ app; audio comes through the controller's built-in interface." });
     }
 
     /* 3. Headphones */
@@ -414,13 +435,16 @@
     if (!controller) {
       wiring.push({ from: "host", to: "controller", status: "idle", label: "add a controller" });
     } else if (controller.standalone) {
-      wiring.push({ from: "host", to: "controller", status: "ok", label: "standalone · no laptop" });
+      wiring.push({ from: "host", to: "controller", status: "ok", label: "standalone · no external host" });
     } else if (!host) {
-      wiring.push({ from: "host", to: "controller", status: "bad", label: "no host" });
+      wiring.push({ from: "host", to: "controller", status: "bad", label: "choose a software host" });
     } else if (host.id === "standalone-usb-only") {
-      wiring.push({ from: "host", to: "controller", status: "bad", label: "needs a laptop" });
+      wiring.push({ from: "host", to: "controller", status: "bad", label: "not standalone" });
+    } else if (host.host_type === "mobile") {
+      wiring.push({ from: "host", to: "controller", status: controller.mobile_support ? "ok" : "bad",
+        label: controller.mobile_support ? "supported mobile app · verify setup" : "mobile support unverified" });
     } else {
-      wiring.push({ from: "host", to: "controller", status: "ok", label: "USB" });
+      wiring.push({ from: "host", to: "controller", status: "ok", label: "computer app host" });
     }
 
     speakers.forEach(function (entry, i) {
@@ -459,7 +483,12 @@
   function pickQuote(r) {
     if (!r.controller) return "Start with the deck. Everything else in the rig is chosen to fit it.";
     if (r.host && r.host.id === "standalone-usb-only" && !r.controller.standalone) {
-      return "These two cannot work together — a MIDI controller still needs a computer.";
+      return r.controller.mobile_support
+        ? "This controller is not standalone. Choose a computer host or its documented mobile-app path, with a compatible device and app."
+        : "This controller is not standalone. It needs a computer running compatible DJ software.";
+    }
+    if (r.host && r.host.host_type === "mobile" && !r.controller.mobile_support) {
+      return "This phone/tablet is not a verified host for the selected controller. Confirm the app and OS or use a computer.";
     }
     if (!r.speakers.length) return "Headphones-only is a valid practice rig. Add monitors when you want to hear the room.";
     if (r.buyTotal === 0) return "Everything here is already in your room. That is the best kind of rig.";
@@ -586,7 +615,7 @@
           '<button type="button" class="rs-path" data-rs="start-owned">' +
             '<span class="rs-path-top"><span class="rs-path-icon">' + icon("check") + "</span></span>" +
             "<h3>I already own most of it</h3>" +
-            "<p>Begin with headphones, laptop or speakers marked as owned so the shopping list only contains what is genuinely missing.</p>" +
+            "<p>Start with your controller, computer or supported phone/tablet host, headphones and speakers. Mark what you already own and the list shows only what is missing.</p>" +
             '<span class="rs-path-cta">Build around what I have →</span>' +
           "</button>" +
         "</div>" +
@@ -720,13 +749,15 @@
 
     /* Host */
     if (rig.host) {
-      nodes += nodeHtml("host", rig.host, { role: "Host", slot: slotsOf("laptops").filter(function (s) { return s.itemId; })[0], status: status.host, qty: rig.host.id === "standalone-usb-only" ? 0 : 1 });
+      nodes += nodeHtml("host", rig.host, { role: rig.host.host_type === "mobile" ? "Mobile app host" : "Computer host", slot: slotsOf("laptops").filter(function (s) { return s.itemId; })[0], status: status.host, qty: rig.host.id === "standalone-usb-only" ? 0 : 1 });
     } else if (rig.controller) {
       nodes += rig.controller.standalone
-        ? ghostNode("host", "No laptop needed", "Standalone decks", "laptops", false, true)
-        : ghostNode("host", "Add a laptop", "Runs your DJ software", "laptops");
+        ? ghostNode("host", "No external host needed", "Standalone playback", "laptops", false, true)
+        : rig.controller.mobile_support
+          ? ghostNode("host", "Add a host device", "Computer or supported phone / tablet", "laptops")
+          : ghostNode("host", "Add a computer", "Runs compatible DJ software", "laptops");
     } else {
-      nodes += ghostNode("host", "Add a laptop", "or go standalone", "laptops");
+      nodes += ghostNode("host", "Add a host device", "Computer, supported mobile, or standalone", "laptops");
     }
 
     /* Speakers: two positions on the map, extras handled in the list */
@@ -840,15 +871,16 @@
   function nodeHtml(pos, item, opts) {
     opts = opts || {};
     var p = NODE_POS[pos] || [50, 50];
-    var owned = opts.slot && opts.slot.owned;
+    var owned = opts.slot && (opts.slot.owned || isExistingHost(item));
     var qty = opts.qty || 1;
     var status = opts.status || "ok";
-    var priceLabel = owned ? "owned" : item.price === 0 ? "no cost" : money(item.price * (qty || 1));
+    var priceLabel = isExistingHost(item) ? "already owned" : owned ? "owned" : item.price === 0 ? "no cost" : money(item.price * (qty || 1));
+    var roleIcon = item.host_type === "mobile" ? "mobile" : (CAT_ICON[item.category] || "layers");
     return '<button type="button" class="rs-node rs-node--pos-' + pos + (opts.hero ? " rs-node--hero" : "") + (owned ? " rs-node--owned" : "") + '"' +
       ' style="--x:' + p[0] + "%;--y:" + p[1] + '%"' +
       ' data-rs="pick" data-pos="' + pos + '" data-slot="' + opts.slot.slotId + '" data-cat="' + opts.slot.category + '"' +
       ' aria-label="' + escapeHtml(opts.role + ": " + item.brand + " " + item.model + ". Click to swap") + '">' +
-      '<span class="rs-node-top"><span class="rs-node-role">' + icon(CAT_ICON[item.category] || "layers") + escapeHtml(opts.role) + "</span>" +
+      '<span class="rs-node-top"><span class="rs-node-role">' + icon(roleIcon) + escapeHtml(opts.role) + "</span>" +
         '<span class="rs-node-status rs-node-status--' + status + '" aria-hidden="true"></span></span>' +
       '<span class="rs-node-body">' +
         '<img class="rs-node-thumb" src="' + escapeHtml(item.image) + '" alt="" loading="lazy">' +
@@ -910,7 +942,7 @@
           '<span class="rs-check-note">' + escapeHtml(c.note || "") + "</span>" +
           (c.action ? '<button type="button" class="rs-check-action" data-rs="check-action" ' +
             'data-kind="' + c.action.kind + '" data-cat="' + (c.action.cat || "") + '" data-item="' + (c.action.itemId || "") + '" ' +
-            'data-qty="' + (c.action.qty || 1) + '">' + escapeHtml(c.action.label) + "</button>" : "") +
+            'data-slot="' + (c.action.slotId || "") + '" data-qty="' + (c.action.qty || 1) + '">' + escapeHtml(c.action.label) + "</button>" : "") +
         "</span></li>";
     }).join("");
 
@@ -984,7 +1016,7 @@
         }
         var item = line.item;
         var qty = line.qty;
-        var owned = line.slot.owned;
+        var owned = line.slot.owned || isExistingHost(item);
         return '<div class="rs-item' + (owned ? " rs-item--owned" : "") + '">' +
           '<img class="rs-item-img" src="' + escapeHtml(item.image) + '" alt="" loading="lazy">' +
           '<div class="rs-item-copy">' +
@@ -995,21 +1027,24 @@
               '<button type="button" class="rs-item-link" data-rs="pick" data-slot="' + line.slot.slotId + '" data-cat="' + cat + '">Swap</button>' +
               '<button type="button" class="rs-item-link" data-rs="details" data-item="' + escapeHtml(item.id) + '">Specs</button>' +
               (item.slug ? '<a class="rs-item-link" href="' + escapeHtml(item.slug) + '">Offbeat guide ↗</a>' : "") +
-              (lines.length > 1 || cat === "microphones" || cat === "stands" || cat === "storage" || cat === "cables"
+              (lines.length > 1 || cat === "microphones" || cat === "stands" || cat === "storage" || cat === "cables" || cat === "laptops"
                 ? '<button type="button" class="rs-item-link" style="color:#fca5a5" data-rs="remove" data-slot="' + line.slot.slotId + '">Remove</button>' : "") +
             "</div>" +
           "</div>" +
           '<div class="rs-item-side">' +
-            '<span class="rs-item-price' + (owned ? " rs-item-price--owned" : "") + '">' + (owned ? "Owned" : money(line.lineTotal)) +
-              "<small>" + (qty > 1 ? money(item.price) + " each" : "est. retail") + "</small></span>" +
+            '<span class="rs-item-price' + (owned || isExistingHost(item) ? " rs-item-price--owned" : "") + '">' +
+              (isExistingHost(item) ? "Already owned" : owned ? "Owned" : money(line.lineTotal)) +
+              "<small>" + (item.host_type === "mobile" ? "app, adapter & power costs not included" : item.host_type === "computer" ? "software & accessories not included" : qty > 1 ? money(item.price) + " each" : "est. retail") + "</small></span>" +
             '<div class="rs-item-controls">' +
-              '<span class="rs-qty">' +
-                '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="-1" data-fk="q-' + line.slot.slotId + '-1" aria-label="Decrease quantity"' + (qty <= 1 ? " disabled" : "") + ">−</button>" +
-                '<span aria-label="Quantity ' + qty + '">' + qty + "</span>" +
-                '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="1" data-fk="q-' + line.slot.slotId + '-2" aria-label="Increase quantity"' + (qty >= 4 ? " disabled" : "") + ">+</button>" +
-              "</span>" +
-              '<button type="button" class="rs-own-toggle' + (owned ? " is-on" : "") + '" data-rs="own" data-slot="' + line.slot.slotId + '" aria-pressed="' + (owned ? "true" : "false") + '" data-fk="own-' + line.slot.slotId + '">' +
-                (owned ? "Owned" : "Need to buy") + "</button>" +
+              (isExistingHost(item)
+                ? '<button type="button" class="rs-own-toggle is-on" disabled aria-pressed="true">Already owned</button>'
+                : '<span class="rs-qty">' +
+                    '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="-1" data-fk="q-' + line.slot.slotId + '-1" aria-label="Decrease quantity"' + (qty <= 1 ? " disabled" : "") + ">−</button>" +
+                    '<span aria-label="Quantity ' + qty + '">' + qty + "</span>" +
+                    '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="1" data-fk="q-' + line.slot.slotId + '-2" aria-label="Increase quantity"' + (qty >= 4 ? " disabled" : "") + ">+</button>" +
+                  "</span>" +
+                  '<button type="button" class="rs-own-toggle' + (owned ? " is-on" : "") + '" data-rs="own" data-slot="' + line.slot.slotId + '" aria-pressed="' + (owned ? "true" : "false") + '" data-fk="own-' + line.slot.slotId + '">' +
+                    (owned ? "Owned" : "Need to buy") + "</button>") +
             "</div>" +
           "</div>" +
         "</div>";
@@ -1051,7 +1086,7 @@
     var out = [];
     ROLE_ORDER.forEach(function (cat) {
       (r.groups[cat] || []).forEach(function (line) {
-        if (!line.item || line.slot.owned) return;
+        if (!line.item || line.slot.owned || isExistingHost(line.item)) return;
         out.push({ itemId: line.item.id, category: cat, qty: line.qty, lineTotal: line.lineTotal });
       });
     });
@@ -1064,7 +1099,7 @@
     ROLE_ORDER.forEach(function (cat) {
       (rig.groups[cat] || []).forEach(function (line) {
         if (!line.item) return;
-        (line.slot.owned ? ownedLines : needLines).push({ line: line, cat: cat });
+        (line.slot.owned || isExistingHost(line.item) ? ownedLines : needLines).push({ line: line, cat: cat });
       });
     });
 
@@ -1219,7 +1254,9 @@
       var tokens = q.split(/\s+/);
       all = all.filter(function (i) {
         var hay = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " +
-          (i.software_unlocks || []).join(" ") + " " + (i.master_outputs || []).join(" ") + " " + (i.inputs || []).join(" ")).toLowerCase();
+          (i.software_unlocks || []).join(" ") + " " + (i.software_support || []).join(" ") + " " +
+          (i.mobile_support || "") + " " + (i.mobile_app_support || []).join(" ") + " " +
+          (i.master_outputs || []).join(" ") + " " + (i.inputs || []).join(" ")).toLowerCase();
         return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
       });
     }
@@ -1251,9 +1288,10 @@
         '<img class="rs-option-img" src="' + escapeHtml(item.image) + '" alt="" loading="lazy">' +
         '<div class="rs-option-copy">' +
           '<div class="rs-option-top"><strong>' + escapeHtml(item.model) + "</strong>" +
-            '<span class="rs-option-price">' + money(item.price) + "</span></div>" +
+            '<span class="rs-option-price">' + escapeHtml(displayItemPrice(item)) + "</span></div>" +
           (item.pick ? '<span class="rs-node-flag" style="margin-top:.25rem;display:inline-block">Offbeat pick</span>' : "") +
           '<span class="rs-option-brand">' + escapeHtml(item.brand) + "</span>" +
+          (isExistingHost(item) ? '<span class="rs-option-brand">' + escapeHtml(item.image_alt || "Illustrative host icon; not a specific device") + "</span>" : "") +
           '<p class="rs-option-why">' + escapeHtml(item.tagline || item.ideal_for || "") + "</p>" +
           '<div class="rs-specs">' + specChips(item) + "</div>" +
           (compat ? '<span class="rs-compat rs-compat--' + compat.tone + '">' + icon(compat.tone === "ok" ? "check" : compat.tone === "warn" ? "warn" : "info") + escapeHtml(compat.text) + "</span>" : "") +
@@ -1272,6 +1310,9 @@
   function specChips(item) {
     var chips = [];
     if (item.channels) chips.push(item.channels + " channels");
+    if (item.mobile_support) chips.push("Selected mobile modes");
+    if (item.host_type === "mobile") chips.push("Already-owned phone / tablet");
+    if (item.host_type === "computer") chips.push("Already-owned computer");
     if (item.standalone) chips.push("Standalone");
     if (item.master_outputs) chips.push("Out: " + item.master_outputs.join(" / "));
     if (item.inputs) chips.push("In: " + item.inputs.join(" / "));
@@ -1281,6 +1322,32 @@
     if (item.impedance_ohm) chips.push(item.impedance_ohm + " Ω");
     if (item.headphone_jack) chips.push("Cue " + item.headphone_jack);
     return chips.slice(0, 4).map(function (c) { return '<span class="rs-spec">' + escapeHtml(c) + "</span>"; }).join("");
+  }
+
+  function hostRequirement(item) {
+    if (!item) return "Choose a host device";
+    if (item.host_type === "mobile") return "Existing compatible phone / tablet";
+    if (item.host_type === "computer") return "Existing compatible computer";
+    if (item.standalone) return "Standalone; no external app host";
+    if (item.mobile_support) return "Computer or supported mobile app";
+    return "Computer running DJ software";
+  }
+
+  function supportsMobileSoftware(item, software) {
+    if (!item || !item.mobile_support) return false;
+    var apps = item.mobile_app_support || [];
+    var requested = (software || "any").toLowerCase();
+    if (!apps.length) return requested === "any";
+    if (requested === "any") return true;
+    return apps.some(function (app) { return app.toLowerCase().indexOf(requested) !== -1; });
+  }
+
+  function isExistingHost(item) {
+    return Boolean(item && (item.host_type === "mobile" || item.host_type === "computer"));
+  }
+
+  function displayItemPrice(item) {
+    return isExistingHost(item) ? "Already owned" : money(item ? item.price : 0);
   }
 
   /* Would this item fit the rig as it stands right now? */
@@ -1294,8 +1361,15 @@
       if (item.standalone && host && host.id !== "standalone-usb-only") {
         return { tone: "ok", text: "Standalone: swap the " + host.model + " out and the rig gets " + money(host.price) + " cheaper." };
       }
+      if (host && host.host_type === "mobile") {
+        if (item.mobile_support) return { tone: "ok", text: "Mobile app path listed: " + item.mobile_support + " This assumes you already own a compatible device; a new device, app plan, adapters and power are not included." };
+        return { tone: "warn", text: "Mobile-host support is not verified for this controller here. Check its exact app and OS requirements before relying on a phone or tablet." };
+      }
       if (!item.standalone && (!host || host.id === "standalone-usb-only")) {
-        return { tone: "warn", text: "Needs a laptop running " + ((item.software_unlocks || [])[0] || "DJ software") + " — none in the rig yet." };
+        var needsHost = item.mobile_support
+          ? "Needs DJ software on a computer or supported mobile device. " + item.mobile_support
+          : "Needs a computer running " + ((item.software_unlocks || [])[0] || "DJ software") + ".";
+        return { tone: "warn", text: needsHost + " No host device is listed in this rig." };
       }
       if (spk) {
         var plan = cableFor(item, spk);
@@ -1313,11 +1387,23 @@
         : { tone: "warn", text: ctrl.model + " → " + item.model + " needs " + p.name + "." };
     }
     if (item.category === "laptops") {
+      if (item.host_type === "mobile") {
+        if (!ctrl) return { tone: "neutral", text: "Choose a controller to check mobile-app support." };
+        if (ctrl.standalone) return { tone: "neutral", text: ctrl.model + " runs standalone; an external mobile app host is not required." };
+        if (ctrl.mobile_support) return { tone: "ok", text: "Listed mobile path: " + ctrl.mobile_support + " Select only if you already own the compatible device; new device, app, adapter and power costs are not included." };
+        return { tone: "warn", text: "Mobile support is not verified for " + ctrl.model + " here. Confirm the exact app and OS before relying on it." };
+      }
+      if (item.host_type === "computer") {
+        if (!ctrl) return { tone: "neutral", text: "Choose a controller to check the software host." };
+        if (ctrl.standalone) return { tone: "neutral", text: ctrl.model + " runs standalone; a computer host is optional." };
+        return { tone: "ok", text: "This $0 option assumes you already own a compatible computer. Confirm the controller's app, operating-system and connection requirements; paid software is not included." };
+      }
       if (item.id === "standalone-usb-only" && ctrl && !ctrl.standalone) {
-        return { tone: "warn", text: ctrl.model + " has no internal computer — this only works with a standalone deck." };
+        var mobileHint = ctrl.mobile_support ? " A supported mobile app still needs a compatible phone or tablet; USB media alone will not play." : "";
+        return { tone: "warn", text: ctrl.model + " is not a standalone deck — choose a compatible software host instead." + mobileHint };
       }
       if (ctrl && ctrl.standalone) return { tone: "ok", text: "Not needed: " + ctrl.model + " runs standalone. Keeps the rig cheaper." };
-      return { tone: "neutral", text: "USB into the controller; audio still comes out of the deck." };
+      return { tone: "neutral", text: "Computer runs the DJ app; audio still comes out of the controller." };
     }
     if (item.category === "cables") {
       if (ctrl && spk) {
@@ -1342,13 +1428,16 @@
     var picked = items.filter(function (i) { return (d.picked || []).indexOf(i.id) !== -1; });
     if (picked.length < 2) return "";
     var rows = [
-      ["Price", function (i) { return money(i.price); }],
+      ["Price", function (i) { return displayItemPrice(i); }],
       ["Category", function (i) { return (catMeta(i.category) || {}).name || ""; }],
       ["Channels", function (i) { return i.channels ? i.channels + " decks" : "—"; }],
       ["Outputs", function (i) { return (i.master_outputs || []).join(", ") || "—"; }],
       ["Inputs", function (i) { return (i.inputs || []).join(", ") || "—"; }],
-      ["Software", function (i) { return (i.software_unlocks || []).join(", ") || "—"; }],
-      ["Standalone", function (i) { return i.standalone ? "Yes" : "Needs a laptop"; }],
+      ["Included software", function (i) { return (i.software_unlocks || []).join(", ") || "—"; }],
+      ["Other app support", function (i) { return (i.software_support || []).join(", ") || "—"; }],
+      ["Mobile modes", function (i) { return i.mobile_support || (i.host_type === "mobile" ? "Existing mobile device; app support varies" : "—"); }],
+      ["Host requirement", function (i) { return hostRequirement(i); }],
+      ["Price context", function (i) { return i.price_basis || "US retail estimate"; }],
       ["Best for", function (i) { return i.ideal_for || "—"; }]
     ];
     return '<div class="rs-drawer-body" style="flex:0 0 auto;max-height:42vh;padding-bottom:.6rem">' +
@@ -1366,14 +1455,17 @@
     if (!item) return "";
     var compat = compatFor(item);
     var specs = [
-      ["Price", money(item.price) + " est."],
+      ["Price", isExistingHost(item) ? "No new device purchase included; select only if already owned" : money(item.price) + " est."],
       ["Category", (catMeta(item.category) || {}).name || item.category],
       item.channels ? ["Channels", item.channels + " decks"] : null,
       item.master_outputs ? ["Master outputs", item.master_outputs.join(" · ")] : null,
       item.inputs ? ["Inputs", item.inputs.join(" · ")] : null,
       item.headphone_jack ? ["Headphone jack", item.headphone_jack] : null,
-      item.software_unlocks ? ["Software", item.software_unlocks.join(" · ")] : null,
-      item.standalone != null ? ["Laptop needed", item.standalone ? "No" : "Yes"] : null,
+      item.software_unlocks ? ["Included software", item.software_unlocks.join(" · ")] : null,
+      item.software_support ? ["Other app support", item.software_support.join(" · ")] : null,
+      item.mobile_support ? ["Mobile support", item.mobile_support] : null,
+      item.host_type ? ["Host type", item.host_type === "mobile" ? "Existing phone / tablet; already owned" : "Existing compatible computer; already owned"] : item.standalone != null ? ["Host requirement", hostRequirement(item)] : null,
+      item.price_basis ? ["Price context", item.price_basis] : null,
       item.driver_size ? ["Drivers", item.driver_size] : null,
       item.driver_mm ? ["Driver size", item.driver_mm + " mm"] : null,
       item.impedance_ohm ? ["Impedance", item.impedance_ohm + " Ω"] : null,
@@ -1384,15 +1476,15 @@
       .sort(function (a, b) { return Math.abs(a.price - item.price) - Math.abs(b.price - item.price); })
       .slice(0, 3).map(function (alt) {
         return '<button type="button" class="rs-acc" data-drawer-detail="' + escapeHtml(alt.id) + '">' +
-          escapeHtml(alt.model) + " <b>" + money(alt.price) + "</b></button>";
+          escapeHtml(alt.model) + " <b>" + escapeHtml(displayItemPrice(alt)) + "</b></button>";
       }).join("");
 
     return '<div class="rs-drawer-body"><div class="rs-detail">' +
       '<div class="rs-detail-hero">' +
-        '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.brand + " " + item.model) + '">' +
+        '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.image_alt || (item.brand + " " + item.model)) + '">' +
         "<div><strong style=\"font-family:var(--display);font-size:1.08rem;color:#fff;display:block\">" + escapeHtml(item.model) + "</strong>" +
           '<span class="rs-option-brand">' + escapeHtml(item.brand) + "</span>" +
-          '<div class="rs-detail-price">' + money(item.price) + "<span>est. US retail · Oct 2026</span></div></div>" +
+          '<div class="rs-detail-price">' + displayItemPrice(item) + "<span>" + (item.host_type === "mobile" ? "Already-owned phone/tablet only · app and accessories not included" : item.host_type === "computer" ? "Already-owned computer only · software and accessories not included" : "est. US retail · Oct 2026") + "</span></div></div>" +
       "</div>" +
       '<p class="rs-option-why" style="margin-top:.8rem">' + escapeHtml(item.tagline || "") + "</p>" +
       (compat ? '<span class="rs-compat rs-compat--' + compat.tone + '">' + icon(compat.tone === "ok" ? "check" : "warn") + escapeHtml(compat.text) + "</span>" : "") +
@@ -1405,7 +1497,9 @@
         '<button type="button" class="rs-btn rs-btn--quiet rs-btn--sm" data-drawer-back>Back to options</button>' +
       "</div>" +
       (alternatives ? '<p class="rs-detail-note" style="margin-top:1rem">Close alternatives in price</p><div class="rs-option-actions">' + alternatives + "</div>" : "") +
-      '<p class="rs-detail-note">Image is an Offbeat vector schematic, not a photograph of the product. ' +
+      '<p class="rs-detail-note">' + (isExistingHost(item)
+        ? escapeHtml(item.image_alt || "Illustrative icon; not a specific device.")
+        : "Image is an Offbeat vector schematic, not a photograph of the product.") + " " +
         escapeHtml(item.provenance || "Specs compiled from manufacturer documentation.") + "</p>" +
     "</div></div>";
   }
@@ -1628,7 +1722,8 @@
       sub: "Anything you mark here is left out of the shopping list.",
       multi: true,
       options: [
-        { val: "laptops", label: "A laptop", note: "Any modern Mac or Windows machine." },
+        { val: "laptops", label: "A computer", note: "A Mac or Windows machine you can run DJ software on." },
+        { val: "mobile-host", label: "A phone or tablet", note: "Only a compatible app/controller/OS combination can use it as a host; this means a device you already own." },
         { val: "headphones", label: "Headphones", note: "Closed-back ideally." },
         { val: "speakers", label: "Speakers", note: "Monitors or a PA." },
         { val: "controllers", label: "A controller", note: "You are upgrading, not starting." }
@@ -1638,11 +1733,11 @@
       key: "software", title: "Any software pull?",
       sub: "Controller bundles decide this more often than brand loyalty does.",
       options: [
-        { val: "any", label: "No preference", note: "Pick whatever the deck unlocks for free." },
-        { val: "rekordbox", label: "rekordbox", note: "Pioneer/AlphaTheta ecosystem, club-standard exports." },
-        { val: "serato", label: "Serato", note: "Widest hardware support, strong stems." },
-        { val: "traktor", label: "Traktor", note: "Native Instruments hardware, tight looping." },
-        { val: "engine", label: "Engine DJ", note: "Denon standalone, no laptop at all." }
+        { val: "any", label: "No preference", note: "Use a verified free tier where available; paid upgrades and subscriptions are separate." },
+        { val: "rekordbox", label: "rekordbox", note: "Pioneer/AlphaTheta ecosystem; confirm the exact desktop or mobile mode." },
+        { val: "serato", label: "Serato", note: "Check the exact controller and software tier before buying." },
+        { val: "traktor", label: "Traktor", note: "Native Instruments software; verify the controller, edition and license." },
+        { val: "engine", label: "Engine DJ", note: "Denon standalone systems; no external software host during playback." }
       ]
     }
   ];
@@ -1760,7 +1855,8 @@
     if (!prefers.length) prefers = controllers;
 
     var opts = { venue: venue, budget: budget, owns: owns, software: software };
-    var fitFor = { venue: venue, budget: budget, standalone: wantStandalone, club: wantClub };
+    var fitFor = { venue: venue, budget: budget, standalone: wantStandalone, club: wantClub,
+      mobileHost: owns.indexOf("mobile-host") !== -1, software: software };
     var kits = prefers.map(function (c) {
       return { controller: c, full: kitFor(c, opts), core: kitFor(c, extend(opts, { tier: "core" })), fit: controllerScore(c, fitFor) };
     });
@@ -1786,7 +1882,7 @@
     var reasons = (tier === "full" ? best.full.reasons : best.core.reasons).slice();
 
     if (tier === "core") {
-      reasons.unshift("At " + money(budget) + " the honest build is the deck, the cue headphones and the cable — no speakers yet. Borrow or hire a PA for the first parties and add monitors when you can.");
+      reasons.unshift("At " + money(budget) + " the honest lean build is the deck, compatible software host and cue headphones. It leaves out speakers and speaker cabling; borrow a PA for the first party and add monitors when the budget allows.");
     }
     if (tier === "over") {
       reasons.unshift("Even the leanest version of this rig lands around " + money(best.core.total) + ", which is over the " + money(budget) +
@@ -1801,9 +1897,12 @@
         " — it pushes this build to about " + money(better.full.total) + ", over the " + money(budget) +
         " ceiling. Worth saving for if clubs are the goal.");
     }
-    [["laptops", "laptop"], ["headphones", "headphones"], ["speakers", "speakers"], ["controllers", "decks"]].forEach(function (pair) {
+    [["laptops", "computer"], ["headphones", "headphones"], ["speakers", "speakers"], ["controllers", "decks"]].forEach(function (pair) {
       if (owns.indexOf(pair[0]) !== -1) reasons.push("You marked your " + pair[1] + " as owned, so it is not in the buying list.");
     });
+    if (owns.indexOf("mobile-host") !== -1 && wantStandalone) {
+      reasons.push("Your phone/tablet is already owned; the selected standalone system does not need it as a software host.");
+    }
 
     var total = items.reduce(function (n, s) {
       var it = byId(s.itemId);
@@ -1833,6 +1932,7 @@
     if (opts.standalone && c.standalone) s += 6;
     if (opts.standalone && !c.standalone) s -= 4;
     if (!opts.standalone && c.standalone) s -= 1;
+    if (opts.mobileHost && supportsMobileSoftware(c, opts.software)) s += 4;
     if (opts.club && c.channels === 4) s += 3;
     if (!opts.club && c.channels === 4) s += 1;
     if (/xlr/i.test((c.master_outputs || []).join(" "))) s += opts.club ? 2 : 1;
@@ -1849,14 +1949,14 @@
     var items = [];
     var reasons = [];
     var owns = opts.owns || [];
-    var core = opts.tier === "core";   /* deck + cue + cable only */
+    var core = opts.tier === "core";   /* lean kit: controller + host + cue; no speakers */
 
     /* Controller */
     if (owns.indexOf("controllers") === -1) {
       items.push(newSlot("controllers", controller.id, false));
       reasons.push("The " + controller.brand + " " + controller.model + " at " + money(controller.price) + (controller.standalone
-        ? " needs no laptop: it plays from USB, so the rig is one box fewer to carry."
-        : " unlocks " + (controller.software_unlocks || []).slice(0, 2).join(" and ") + " — no paid software to start."));
+        ? " needs no external software host: it plays from prepared media, so there is one less box to carry."
+        : " lists " + (controller.software_unlocks || []).slice(0, 2).join(" and ") + "; check the exact tier, license and compatible computer or mobile app path."));
     } else {
       items.push(newSlot("controllers", null, true));
       reasons.push("You already have decks, so the slot is left open for your exact model — swap it in and the cable check updates.");
@@ -1866,15 +1966,24 @@
     var host = null;
     if (!controller.standalone) {
       if (owns.indexOf("laptops") !== -1) {
-        host = { id: "owned-laptop", price: 0, model: "your laptop" };
+        host = byId("existing-computer-host");
+        items.push(newSlot("laptops", host.id, true));
+        reasons.push("Your existing computer is counted as owned; verify its app, OS and connection requirements. Paid software licenses are separate.");
+      } else if (owns.indexOf("mobile-host") !== -1 && supportsMobileSoftware(controller, opts.software)) {
+        host = byId("existing-mobile-app-device");
+        items.push(newSlot("laptops", host.id, true));
+        reasons.push("You marked a phone/tablet as owned, and " + controller.model + " lists " + controller.mobile_support + " This line adds no device purchase; paid app features, adapters and power may need a separate budget.");
       } else {
         var laptopId = opts.venue === "club" ? "macbook-air-m2" : "windows-dj-laptop";
         host = byId(laptopId);
         items.push(newSlot("laptops", laptopId, false));
-        reasons.push("A " + money(host.price) + " DJ-spec laptop is in the budget, because a controller is only a surface without one.");
+        reasons.push("A " + money(host.price) + " DJ computer is in the budget because a controller still needs a compatible app host.");
+        if (owns.indexOf("mobile-host") !== -1) {
+          reasons.push("The phone/tablet you marked as owned is not counted as a host here: this controller/software choice has no verified matching mobile mode in this catalog.");
+        }
       }
     } else {
-      reasons.push("No laptop in the build — standalone hardware also means no software licence and no OS update the night before a gig.");
+      reasons.push("No external software host in the build — standalone hardware has its own playback environment, but you still need prepared media.");
     }
 
     /* Headphones */
@@ -1959,15 +2068,22 @@
     if (!item) return;
     var slot = slotById(d.slotId);
     if (!slot) {
-      slot = newSlot(d.category || item.category, itemId, false);
+      slot = newSlot(d.category || item.category, itemId, isExistingHost(item));
       state.items.push(slot);
     } else {
+      var previousItem = itemOf(slot);
       slot.itemId = itemId;
       slot.category = item.category;
+      if (isExistingHost(item)) slot.owned = true;
+      else if (isExistingHost(previousItem)) slot.owned = false;
     }
     state.drawer = null;
     saveAndRender();
-    toast("Rig updated · " + item.model);
+    toast(item.host_type === "mobile"
+      ? "Mobile host added · assumes you already own a compatible phone or tablet"
+      : item.host_type === "computer"
+        ? "Computer host added · assumes you already own a compatible computer"
+        : "Rig updated · " + item.model);
   }
 
   function openDrawer(slotId, category, opts) {
@@ -1990,6 +2106,13 @@
   function toggleOwned(slotId) {
     var slot = slotById(slotId);
     if (!slot) return;
+    var item = itemOf(slot);
+    if (isExistingHost(item)) {
+      slot.owned = true;
+      saveAndRender();
+      toast("This host option only represents a compatible device you already own; software and accessory costs are not included.");
+      return;
+    }
     slot.owned = !slot.owned;
     saveAndRender();
     toast(slot.owned ? "Marked as owned — removed from the shopping list" : "Added back to the shopping list");
@@ -2028,11 +2151,8 @@
     }
     if (!controller.standalone && !slotsOf("laptops").filter(function (s) { return s.itemId && s.itemId !== "standalone-usb-only"; }).length) {
       var stray = slotsOf("laptops").filter(function (s) { return s.itemId === "standalone-usb-only"; })[0];
-      if (stray) { stray.itemId = "windows-dj-laptop"; added.push("a laptop"); }
-      else { state.items.push(newSlot("laptops", "windows-dj-laptop", false)); added.push("a laptop"); }
-    }
-    if (controller.standalone) {
-      slotsOf("laptops").forEach(function (s) { s.itemId = "standalone-usb-only"; });
+      if (stray) { stray.itemId = "windows-dj-laptop"; stray.owned = false; added.push("a compatible computer"); }
+      else { state.items.push(newSlot("laptops", "windows-dj-laptop", false)); added.push("a compatible computer"); }
     }
     if (!slotsOf("headphones").filter(function (s) { return s.itemId; }).length) {
       var hpSlot = slotsOf("headphones")[0] || newSlot("headphones", null, false);
@@ -2254,11 +2374,17 @@
       if (item) {
         var existing = slotsOf(item.category)[0];
         if (existing && existing.itemId) {
+          var previousItem = itemOf(existing);
           existing.itemId = item.id;
+          existing.category = item.category;
+          if (isExistingHost(item)) existing.owned = true;
+          else if (isExistingHost(previousItem)) existing.owned = false;
         } else if (existing) {
           existing.itemId = item.id;
+          existing.category = item.category;
+          if (isExistingHost(item)) existing.owned = true;
         } else {
-          state.items.push(newSlot(item.category, item.id, false));
+          state.items.push(newSlot(item.category, item.id, isExistingHost(item)));
         }
         state.view = "studio";
         if (!state.items.length) state.view = "studio";
@@ -2342,7 +2468,7 @@
       state.ribbon = {
         kind: "guide",
         title: "Built around what you own.",
-        body: "Headphones and laptop are marked as owned, so they never appear in the shopping list. Add your real models when you are ready."
+        body: "Your headphones and host device are marked as owned, so they stay off the shopping list. Add your real models when you are ready; a phone or tablet only counts as a host with documented app support."
       };
       saveAndRender();
     },
@@ -2417,8 +2543,11 @@
       var cat = el.getAttribute("data-cat");
       var itemId = el.getAttribute("data-item");
       var qty = parseInt(el.getAttribute("data-qty"), 10) || 1;
-      if (kind === "pick-cat") addSlotAndPick(cat);
-      else if (kind === "swap-cat") {
+      if (kind === "pick-cat") {
+        var slotId = el.getAttribute("data-slot");
+        if (slotId && slotById(slotId)) openDrawer(slotId, cat, { focusSearch: true });
+        else addSlotAndPick(cat);
+      } else if (kind === "swap-cat") {
         var slot = slotsOf(cat)[0];
         if (slot) { slot.itemId = itemId; saveAndRender(); toast("Added " + (byId(itemId) || {}).model); }
         else { state.items.push(newSlot(cat, itemId, false)); saveAndRender(); toast("Added to the rig"); }

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-labelledby="title desc">
+  <title id="title">Mobile device app host</title>
+  <desc id="desc">Illustrative schematic of a phone and tablet running a DJ app, not a specific device.</desc>
+  <defs>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21183c"/>
+      <stop offset="1" stop-color="#10131d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="200" rx="18" fill="#0b0c12"/>
+  <rect x="48" y="26" width="96" height="148" rx="14" fill="#1c1d27" stroke="#7162a3" stroke-width="2"/>
+  <rect x="56" y="41" width="80" height="113" rx="7" fill="url(#screen)"/>
+  <rect x="65" y="52" width="62" height="3" rx="2" fill="#aeb3c2" opacity=".55"/>
+  <path d="M65 83h5v-9h5v18h5V67h5v23h5V77h5v13h5V70h5v20h5V74h5v16h7" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="96" cy="164" r="3" fill="#777387"/>
+  <rect x="157" y="43" width="115" height="104" rx="13" fill="#1c1d27" stroke="#52627f" stroke-width="2"/>
+  <rect x="165" y="51" width="99" height="88" rx="7" fill="url(#screen)"/>
+  <path d="M176 78h12v-10h12v22h12V65h12v28h12V72h12v18h12" fill="none" stroke="url(#accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="215" cy="158" r="6" fill="#30313d" stroke="#777387"/>
+  <text x="160" y="190" fill="#9ea4b4" font-family="system-ui,sans-serif" font-size="9" letter-spacing="2" text-anchor="middle">ILLUSTRATIVE APP HOST</text>
+</svg>
