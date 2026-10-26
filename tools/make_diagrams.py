@@ -12,7 +12,7 @@ OUT = "assets/img/diagrams"
 C = {
     "ink": "#08080b", "panel": "#121218", "line": "rgba(255,255,255,.12)",
     "text": "#f4f1ec", "muted": "#9a968d", "dim": "#7c7970",
-    "flame": "#ff5a1f", "flame2": "#ff8a3d", "amber": "#ffc14d",
+    "flame": "#8b5cf6", "flame2": "#a78bfa", "amber": "#22d3ee",
     "blue": "#8cc4ff", "mint": "#63d9a8", "rose": "#ff7a7a",
 }
 FONT = 'font-family="Inter, system-ui, sans-serif"'
@@ -71,10 +71,10 @@ def track_structure():
     w, h = 720, 190
     parts = [
         ("Intro", 16, "#2a2a36", C["muted"]),
-        ("Build", 16, "#3a3325", C["amber"]),
-        ("Drop", 32, "#43251a", C["flame2"]),
+        ("Build", 16, "#0f2f3d", C["amber"]),
+        ("Drop", 32, "#2e2350", C["flame2"]),
         ("Breakdown", 16, "#24283a", C["blue"]),
-        ("Drop 2", 32, "#43251a", C["flame2"]),
+        ("Drop 2", 32, "#2e2350", C["flame2"]),
         ("Outro", 16, "#2a2a36", C["muted"]),
     ]
     total = sum(p[1] for p in parts)
@@ -157,13 +157,12 @@ def signal_chain():
 def budget_split():
     w, h = 720, 220
     rows = [
-        ("Controller", 55, C["flame"]),
-        ("Headphones", 15, C["blue"]),
-        ("Cables + adapter", 8, C["mint"]),
-        ("Stand / riser", 7, C["amber"]),
-        ("Music + software", 15, C["rose"]),
+        ("Controller", 62, C["flame"]),
+        ("Monitor speaker", 20, C["flame2"]),
+        ("Headphones", 14, C["blue"]),
+        ("Cables + adapters", 4, C["mint"]),
     ]
-    b = [f'<text x="0" y="18" fill="{C["muted"]}" font-size="12" letter-spacing="1.6" {FONT}>HOW A $400 FIRST RIG ACTUALLY DIVIDES</text>']
+    b = [f'<text x="0" y="18" fill="{C["muted"]}" font-size="12" letter-spacing="1.6" {FONT}>HOW A ~$440 FIRST RIG ACTUALLY DIVIDES</text>']
     x = 0
     width = w
     for name, pct, colour in rows:
@@ -176,12 +175,12 @@ def budget_split():
         y = 102 + i * 22
         b.append(f'<rect x="0" y="{y-8}" width="9" height="9" rx="2" fill="{colour}"/>')
         b.append(f'<text x="16" y="{y}" fill="{C["muted"]}" font-size="11" {FONT}>{name}</text>')
-        b.append(f'<text x="150" y="{y}" fill="{C["dim"]}" font-size="11" {FONT}>${400*pct/100:.0f}</text>')
+        b.append(f'<text x="150" y="{y}" fill="{C["dim"]}" font-size="11" {FONT}>${440*pct/100:.0f}</text>')
     b.append(f'<text x="420" y="102" fill="{C["dim"]}" font-size="11" {FONT}>The controller is most of the budget, but not all of it.</text>')
-    b.append(f'<text x="420" y="121" fill="{C["dim"]}" font-size="11" {FONT}>Cables, a stand and spare pads are what</text>')
-    b.append(f'<text x="420" y="140" fill="{C["dim"]}" font-size="11" {FONT}>people forget until the first gig.</text>')
-    b.append(f'<text x="420" y="172" fill="{C["mint"]}" font-size="11" {FONT}>Buy the controller used; buy headphones new.</text>')
-    return svg(w, h, "".join(b), "Diagram: budget split for a 400 dollar first DJ rig")
+    b.append(f'<text x="420" y="121" fill="{C["dim"]}" font-size="11" {FONT}>The monitor is the optional line — drop it</text>')
+    b.append(f'<text x="420" y="140" fill="{C["dim"]}" font-size="11" {FONT}>first if the total creeps over budget.</text>')
+    b.append(f'<text x="420" y="172" fill="{C["mint"]}" font-size="11" {FONT}>Headphones alone are enough to learn on.</text>')
+    return svg(w, h, "".join(b), "Diagram: budget split for a roughly 440 dollar first DJ rig")
 
 
 def phrase_grid():
@@ -194,7 +193,7 @@ def phrase_grid():
             strong = beat == 0
             b.append(
                 f'<rect x="{x}" y="44" width="38" height="38" rx="6" '
-                f'fill="{"rgba(255,90,31,.20)" if strong else "rgba(255,255,255,.04)"}" '
+                f'fill="{"rgba(139,92,246,.22)" if strong else "rgba(255,255,255,.04)"}" '
                 f'stroke="{C["flame"] if strong else C["line"]}"/>'
             )
             b.append(f'<text x="{x+19}" y="68" text-anchor="middle" fill="{C["flame2"] if strong else C["muted"]}" font-size="12" font-weight="600" {FONT}>{bar*4+beat+1}</text>')
