@@ -1,9 +1,9 @@
 {
   "meta": {
-    "version": "2026.1",
-    "updated": "October 2026",
+    "version": "2026.2",
+    "updated": "25 October 2026",
     "currency": "USD",
-    "disclosure": "Prices are approximate US retail estimates as of October 2026. Retailer links may generate affiliate referral commissions for Offbeat at no extra cost to you."
+    "disclosure": "Prices are approximate US retail estimates checked on 25 October 2026. Retailer links may generate affiliate referral commissions for Offbeat at no extra cost to you."
   },
   "categories": [
     {
@@ -32,9 +32,9 @@
     },
     {
       "id": "laptops",
-      "name": "Host Laptop / Platform",
+      "name": "Host Device / Platform",
       "icon": "💻",
-      "desc": "Laptops running DJ software or standalone Engine/rekordbox OS."
+      "desc": "A computer or supported mobile device running DJ software; standalone systems have their own playback environment."
     },
     {
       "id": "stands",
@@ -61,12 +61,12 @@
       "category": "controllers",
       "brand": "Pioneer DJ",
       "model": "DDJ-FLX4",
-      "price": 299,
+      "price": 329,
       "channels": 2,
       "software_unlocks": [
         "rekordbox",
         "Serato DJ Lite",
-        "djay Pro"
+        "Traktor Play"
       ],
       "master_outputs": [
         "RCA (Unbalanced)"
@@ -74,8 +74,8 @@
       "headphone_jack": "3.5mm (1/8\")",
       "standalone": false,
       "stems_support": true,
-      "ideal_for": "Beginner to intermediate home practice and small parties",
-      "tagline": "The gold standard 2-channel beginner controller with dual software unlock.",
+      "ideal_for": "Two-channel PC/Mac or selected mobile setups where RCA output and the software path fit.",
+      "tagline": "A current two-channel controller with USB-C, built-in audio and several distinct software paths. Check the exact app license, OS and output needs.",
       "image": "assets/img/products/pioneer-ddj-flx4.svg",
       "slug": "pioneer-ddj-flx4-review.html",
       "amazon_search": "Pioneer DJ DDJ-FLX4 2-Channel DJ Controller",
@@ -84,7 +84,7 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The default first controller for most people",
+      "pick": "Consider when its two-channel layout, RCA output and supported app/OS path match the setup.",
       "product_photo": {
         "src": "assets/img/products/photos/pioneer-ddj-flx4-commons.jpg",
         "alt": "Pioneer DJ DDJ-FLX4 photographed at the Taipei Media School booth",
@@ -93,7 +93,19 @@
         "license": "CC BY-SA 4.0",
         "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
         "modification": "Rotated 180° to correct orientation and resized to 1920 × 1080."
-      }
+      },
+      "price_basis": "Pioneer DJ Store US listing at $329, checked 2026-10-25; retailer prices and stock vary.",
+      "price_source": "https://pioneerdjstore.com/products/ddj-flx4",
+      "software_support": [
+        "Traktor Pro 4.4.0+ (plug-and-play; separate license)",
+        "djay (basic app available free on supported PC/Mac; djay Pro paid)"
+      ],
+      "mobile_support": "Selected rekordbox modes on iPhone/iPad and Android; app, OS, connection and power requirements vary.",
+      "mobile_app_support": [
+        "rekordbox for iOS",
+        "rekordbox for Android"
+      ],
+      "mobile_support_source": "https://www.pioneerdj.com/en/product/dj-controllers/ddj-flx4/"
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -594,6 +606,22 @@
       "visual_type": "Technical Vector Schematic"
     },
     {
+      "id": "existing-computer-host",
+      "category": "laptops",
+      "brand": "Existing device",
+      "model": "Compatible computer (already owned)",
+      "price": 0,
+      "host_type": "computer",
+      "ideal_for": "A computer you already own that meets the selected DJ app and controller requirements.",
+      "tagline": "Represents a compatible Mac or Windows computer already in your home. Confirm its OS, DJ app, performance and connection requirements; a new computer or paid software is not included.",
+      "image": "assets/img/products/windows-dj-laptop.svg",
+      "image_alt": "Illustrative laptop schematic; not a specific computer",
+      "image_type": "illustrative_vector",
+      "price_basis": "Use only for a compatible computer you already own; this is not a new-computer or software price.",
+      "provenance": "Original Offbeat interface illustration (2026)",
+      "license": "Original Offbeat vector artwork"
+    },
+    {
       "id": "windows-dj-laptop",
       "category": "laptops",
       "brand": "Dell / Lenovo",
@@ -612,6 +640,25 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic"
+    },
+    {
+      "id": "existing-mobile-app-device",
+      "category": "laptops",
+      "brand": "Existing mobile device",
+      "model": "Compatible phone / tablet (already owned)",
+      "price": 0,
+      "price_basis": "Use only for a compatible device you already own; a new device, app plan, adapters and power supply are not priced here.",
+      "os": "Supported iOS / iPadOS or Android version; varies by controller and app",
+      "audio_subsystem": "Use the controller audio interface or supported wireless mode",
+      "ports": "USB-C / Lightning / Bluetooth; exact connection and power vary",
+      "host_type": "mobile",
+      "ideal_for": "Controllers with manufacturer-documented mobile app support",
+      "tagline": "A phone or tablet can host DJ software only when the exact controller, app and OS are supported. Select this only if you already own a compatible device; check connection and power requirements.",
+      "image": "assets/img/products/mobile-dj-host.svg",
+      "image_alt": "Illustrative phone and tablet host icon; not a specific device",
+      "image_type": "illustrative_vector",
+      "provenance": "Original Offbeat interface illustration (2026)",
+      "license": "Original Offbeat vector artwork"
     },
     {
       "id": "standalone-usb-only",

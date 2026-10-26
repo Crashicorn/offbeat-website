@@ -12,24 +12,25 @@
       id: "flx4",
       name: "Pioneer DDJ-FLX4",
       brand: "Pioneer / AlphaTheta",
-      price: "$280–350",
+      price: "About $329 US list",
       tier: "mid",
       channels: "2-channel",
       format: "controller",
-      primary: "rekordbox & Serato DJ Lite",
+      primary: "rekordbox · Serato DJ Lite · Traktor Play · djay",
       rekordbox: "unlock", // unlock | paid | bundle | mapped | none
       serato: "lite", // pro-unlock | lite | paid | none
-      traktor: "mapped",
-      djay: "native",
+      traktor: "native",
+      traktorplay: "unlock",
+      djay: "paid",
       virtualdj: "native",
       engine: "none",
-      streaming: ["Tidal", "Beatport", "Beatsource", "SoundCloud"],
-      mobile: "iOS, iPadOS, Android, macOS, Windows",
-      stems: "Smart Fader & Serato/rekordbox pad stems",
-      outputs: "RCA Master, USB-C Audio",
-      mic: "1/4-inch with direct USB routing",
-      buyer: "Best first serious controller for all beginners.",
-      caveat: "2 channels only; Serato DJ Pro requires paid upgrade or subscription.",
+      streaming: ["Service support varies by app and region"],
+      mobile: "PC/Mac; selected rekordbox modes also support iOS/Android",
+      stems: "Smart Fader / Smart CFX; pad features vary by software",
+      outputs: "RCA Master (unbalanced), USB-C audio",
+      mic: "1/4-inch TRS; microphone routing depends on setup",
+      buyer: "New two-deck buyers comparing Pioneer-listed apps and Traktor Pro.",
+      caveat: "Two channels and RCA master only. Traktor Play is the free streamlined tier; Traktor Pro 4.4.0+ is separately supported. Pro is not bundled; mic routing may need setup.",
       guide: "pioneer-ddj-flx4-review.html"
     },
     {
@@ -332,7 +333,7 @@
     inpulse500: "hercules-inpulse-500", ranefour: "rane-four"
   };
   var state = { search: "", software: "all", channels: "all", tier: "all", compare: [], compareOpen: false };
-  var softwareLabels = { rekordbox: "rekordbox", serato: "Serato DJ", traktor: "Traktor Pro", djay: "djay Pro", virtualdj: "VirtualDJ", engine: "Engine DJ" };
+  var softwareLabels = { rekordbox: "rekordbox", serato: "Serato DJ", traktor: "Traktor Pro", traktorplay: "Traktor Play", djay: "djay Pro", virtualdj: "VirtualDJ", engine: "Engine DJ" };
 
   function statusLabel(status) {
     if (status === "unlock" || status === "pro-unlock") return "Included hardware unlock";
@@ -340,6 +341,7 @@
     if (status === "native") return "Supported";
     if (status === "mapped") return "MIDI mapping required";
     if (status === "paid") return "Paid software required";
+    if (status === "unlisted") return "Not listed by manufacturer";
     return "Not supported";
   }
 
@@ -350,6 +352,7 @@
     else if (status === "native") { cls = "native"; text = "Supported"; }
     else if (status === "mapped") { cls = "mapped"; text = "MIDI map"; }
     else if (status === "paid") { cls = "paid"; text = "Paid"; }
+    else if (status === "unlisted") { cls = "none"; text = "Not listed"; }
     return '<span class="mat-badge mat-badge--' + cls + '" title="' + statusLabel(status) + '">' + text + '</span>';
   }
 
@@ -365,7 +368,7 @@
       if (state.software !== "all") {
         var s = state.software;
         if (s === "standalone") { if (item.format !== "standalone") return false; }
-        else if (!item[s] || item[s] === "none") return false;
+        else if (!item[s] || item[s] === "none" || item[s] === "unlisted") return false;
       }
       if (state.channels === "2" && item.channels !== "2-channel") return false;
       if (state.channels === "4" && item.channels !== "4-channel") return false;
@@ -380,11 +383,12 @@
     if (selected.length < 2) return "";
     var rows = [
       ["Street price", function (c) { return c.price; }],
-      ["Deck layout", function (c) { return c.channels + (c.format === "standalone" ? " · standalone system" : " · laptop controller"); }],
+      ["Deck layout", function (c) { return c.channels + (c.format === "standalone" ? " · standalone system" : " · controller + compatible app"); }],
       ["Primary software", function (c) { return c.primary; }],
       ["rekordbox", function (c) { return statusLabel(c.rekordbox); }],
       ["Serato DJ", function (c) { return statusLabel(c.serato); }],
       ["Traktor Pro", function (c) { return statusLabel(c.traktor); }],
+      ["Traktor Play", function (c) { return statusLabel(c.traktorplay || "none"); }],
       ["djay Pro", function (c) { return statusLabel(c.djay); }],
       ["VirtualDJ", function (c) { return statusLabel(c.virtualdj); }],
       ["Engine DJ", function (c) { return statusLabel(c.engine); }],
@@ -415,7 +419,7 @@
     var list = filterControllers();
     state.compare = state.compare.filter(function (id) { return CONTROLLERS.some(function (c) { return c.id === id; }); });
     var html = '<div class="matrix-toolbar"><div class="matrix-search"><input type="search" placeholder="Search a controller, software, stem workflow or output…" data-mat-search value="' + esc(state.search) + '" aria-label="Search compatibility matrix"></div><div class="matrix-filters">';
-    html += '<select data-mat-soft aria-label="Filter by software"><option value="all"' + (state.software === "all" ? " selected" : "") + '>All Software Ecosystems</option><option value="rekordbox"' + (state.software === "rekordbox" ? " selected" : "") + '>rekordbox</option><option value="serato"' + (state.software === "serato" ? " selected" : "") + '>Serato DJ</option><option value="traktor"' + (state.software === "traktor" ? " selected" : "") + '>Traktor Pro</option><option value="djay"' + (state.software === "djay" ? " selected" : "") + '>djay Pro</option><option value="standalone"' + (state.software === "standalone" ? " selected" : "") + '>Standalone (No Laptop)</option></select>';
+    html += '<select data-mat-soft aria-label="Filter by software"><option value="all"' + (state.software === "all" ? " selected" : "") + '>All Software Ecosystems</option><option value="rekordbox"' + (state.software === "rekordbox" ? " selected" : "") + '>rekordbox</option><option value="serato"' + (state.software === "serato" ? " selected" : "") + '>Serato DJ</option><option value="traktor"' + (state.software === "traktor" ? " selected" : "") + '>Traktor Pro</option><option value="traktorplay"' + (state.software === "traktorplay" ? " selected" : "") + '>Traktor Play</option><option value="djay"' + (state.software === "djay" ? " selected" : "") + '>djay Pro</option><option value="standalone"' + (state.software === "standalone" ? " selected" : "") + '>Standalone (No Laptop)</option></select>';
     html += '<select data-mat-chan aria-label="Filter by channels"><option value="all"' + (state.channels === "all" ? " selected" : "") + '>All Channel Layouts</option><option value="2"' + (state.channels === "2" ? " selected" : "") + '>2-Channel Decks</option><option value="4"' + (state.channels === "4" ? " selected" : "") + '>4-Channel Decks</option></select>';
     html += '<select data-mat-tier aria-label="Filter by budget tier"><option value="all"' + (state.tier === "all" ? " selected" : "") + '>All Budget Tiers</option><option value="budget"' + (state.tier === "budget" ? " selected" : "") + '>Under $300 (Budget)</option><option value="mid"' + (state.tier === "mid" ? " selected" : "") + '>$300–$700 (Sweet Spot)</option><option value="pro"' + (state.tier === "pro" ? " selected" : "") + '>$700–$1,800 (Pro)</option><option value="flagship"' + (state.tier === "flagship" ? " selected" : "") + '>$2,000+ (Flagship)</option></select></div></div>';
     html += '<div class="matrix-count-row"><p class="matrix-count" aria-live="polite">Showing <strong>' + list.length + '</strong> of ' + CONTROLLERS.length + ' hardware options</p><p class="matrix-shortlist-count">' + state.compare.length + ' of 3 shortlisted</p></div>';
@@ -435,8 +439,8 @@
         var short = state.compare.indexOf(c.id) !== -1;
         html += '<article class="matrix-card" id="mat-' + esc(c.id) + '" data-product-id="' + esc(catalogId) + '">';
         html += '<div class="mat-head"><div class="matrix-media-slot"></div><div class="mat-identity"><span class="mat-brand">' + esc(c.brand) + ' · ' + esc(c.channels) + '</span><h3 class="mat-title">' + esc(c.name) + '</h3><p class="mat-primary">' + esc(c.primary) + '</p></div><span class="mat-price">' + esc(c.price) + '</span></div>';
-        html += '<div class="mat-quick-facts"><span>' + esc(c.format === "standalone" ? "Standalone · no laptop" : "Laptop required") + '</span><span>' + esc(c.outputs.split(",")[0]) + '</span></div>';
-        html += '<div class="mat-software-grid" aria-label="Core software compatibility"><div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div><div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div><div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div><div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div></div>';
+        html += '<div class="mat-quick-facts"><span>' + esc(c.format === "standalone" ? "Standalone · no laptop" : "Controller · compatible app required") + '</span><span>' + esc(c.outputs.split(",")[0]) + '</span></div>';
+        html += '<div class="mat-software-grid" aria-label="Core software compatibility"><div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div><div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div><div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div><div class="mat-soft-cell"><span>Traktor Play</span>' + renderStatusBadge(c.traktorplay || "none") + '</div><div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div></div>';
         html += '<details class="mat-more"><summary>Streaming, connections &amp; the fine print</summary><div class="mat-more-grid"><p><strong>Best for</strong>' + esc(c.buyer) + '</p><p><strong>Trade-off</strong>' + esc(c.caveat) + '</p><p><strong>Outputs</strong>' + esc(c.outputs) + '</p><p><strong>Microphone</strong>' + esc(c.mic) + '</p><p><strong>Streaming</strong>' + esc(c.streaming.join(", ")) + '</p><p><strong>Stems / performance</strong>' + esc(c.stems) + '</p><p><strong>VirtualDJ</strong>' + esc(statusLabel(c.virtualdj)) + '</p><p><strong>Engine DJ</strong>' + esc(statusLabel(c.engine)) + '</p><p><strong>Platforms</strong>' + esc(c.mobile) + '</p></div></details>';
         html += '<div class="mat-actions-row"><button type="button" class="mat-compare-toggle' + (short ? ' is-selected' : '') + '" data-mat-compare="' + esc(c.id) + '" aria-pressed="' + (short ? 'true' : 'false') + '">' + (short ? '✓ Added to compare' : '+ Add to compare') + '</button>' + (c.guide ? '<a class="mat-link" href="' + esc(c.guide) + '">Read guide</a>' : '') + '<a class="mat-plan-btn" href="build-your-dj-setup.html' + addToRig + '">' + (catalogId ? 'Add to Rig Studio' : 'Open Rig Studio') + '</a></div>';
         html += '</article>';
