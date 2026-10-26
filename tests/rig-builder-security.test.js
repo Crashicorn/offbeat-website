@@ -99,16 +99,17 @@ test("malicious URL is sanitized before entering the active rig", () => {
   assert.equal(api.getRig().items[0].slotId, "imported-0");
 });
 
-test("saved rigs ignore forged totals and escape hostile dates", () => {
+test("saved rigs ignore forged totals, exclude owned gear and escape hostile dates", () => {
   const { api, memory } = harness(false);
   memory["offbeat.rigs.saved"] = JSON.stringify([{
-    name: "Saved", items: [{ ...slot(), qty: 2 }],
+    name: "Saved", items: [{ ...slot(), qty: 2 }, { slotId: "owned-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true }],
     totalCost: '<img src=x onerror=alert(1)>',
     date: '<img src=x onerror=alert(1)>'
   }]);
   assert.equal(api.getSavedRigs()[0].totalCost, 598);
   const markup = api.renderSavedRigsList();
   assert.match(markup, /&lt;img/);
+  assert.match(markup, /\$598/);
   assert.doesNotMatch(markup, /\(<img/);
 });
 
