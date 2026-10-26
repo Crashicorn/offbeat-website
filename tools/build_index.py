@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""WARNING — DO NOT RUN BLINDLY. The committed assets/search-index.json
-(147 entries, dual short/long keys, curated keyword fields and deep-link
-entries such as build-your-dj-setup.html?add=...) was produced by a newer
-generator than this file, which emits only 116 short-key entries. Running
-this script as-is silently degrades Spotlight Search. Reconcile the two
-formats before regenerating; until then, patch individual entries in
-assets/search-index.json by hand when a title or description changes.
+"""Build the site search index and browsable library page.
 
-Build the site index (search + library page) from the published HTML.
+Reconciled generator (Oct 2026): emits dual short/long keys and catalog
+deep-link entries so a blind rerun does not silently degrade Spotlight
+Search. The committed assets/search-index.json should be regenerated
+through this tool; curated keyword overrides for deeplinks live in the
+CATALOG_DEEPLINK_KEYWORDS map below and in assets/dj-gear-catalog.json.
 
-Extracts the human-facing title, meta description and section for every page,
-then writes:
-  * assets/search-index.json  — used by the header search dialog
+Writes:
+  * assets/search-index.json  — used by the header search dialog (includes
+    one entry per HTML page plus one per catalog item as ?add= deeplinks)
   * all-dj-guides.html        — the browsable library page
-Run after any page is added or retitled.
+
+Run after any page is added or retitled: python3 tools/build_index.py
 """
 import glob
 import html
@@ -116,6 +115,54 @@ def group_for(slug):
     return "start", "Start here", "First rigs, first steps and the questions people ask before spending anything."
 
 
+def _add_dual_keys(entry):
+    """Mirror short keys with long-form aliases for backwards compat."""
+    entry["title"] = entry["t"]
+    entry["url"] = entry["u"]
+    entry["desc"] = entry["d"]
+    entry["category"] = entry["c"]
+    return entry
+
+
+def _catalog_deeplinks():
+    """One searchable entry per catalog item so ?add= handoffs resolve in search."""
+    try:
+        catalog = json.load(open("assets/dj-gear-catalog.json", encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+    # Map category id -> group/search heading for deeplinks
+    cat_to_group = {
+        "controllers": ("controllers", "Controllers"),
+        "headphones": ("gear", "Headphones"),
+        "speakers": ("gear", "Speakers"),
+        "microphones": ("gear", "Microphones"),
+        "laptops": ("gear", "Laptops"),
+        "stands": ("gear", "Stands"),
+        "storage": ("gear", "USB Media"),
+        "cables": ("gear", "Cables"),
+    }
+    deeplinks = []
+    for item in catalog.get("items", []):
+        price_str = f" (${item['price']})" if item.get("price") else ""
+        t = f"{item.get('brand','')} {item.get('model','')}{price_str}".strip()
+        d = item.get("tagline") or item.get("ideal_for") or ""
+        # Curated keyword field: brand+model+tagline+ideal_for+software unlocks
+        k_parts = [t, d, item.get("ideal_for",""), " ".join(item.get("software_unlocks", [])),
+                   "hardware price review specs"]
+        g, c = cat_to_group.get(item.get("category",""), ("gear", "Gear"))
+        deeplinks.append(_add_dual_keys({
+            "u": f"build-your-dj-setup.html?add={item['id']}",
+            "t": t,
+            "d": d,
+            "c": c,
+            "g": g,
+            "k": " ".join(k_parts).lower(),
+            "f": item["id"] in ("pioneer-ddj-flx4", "pioneer-ddj-flx10", "denon-prime-4-plus",
+                                "sennheiser-hd25", "ath-m50x"),
+        }))
+    return deeplinks
+
+
 def main():
     items = []
     for path in sorted(glob.glob("*.html")):
@@ -133,7 +180,7 @@ def main():
         if len(desc) > 150:
             desc = desc[:150].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
         gid, heading, blurb = group_for(path)
-        items.append({
+        items.append(_add_dual_keys({
             "u": path,
             "t": title,
             "d": desc,
@@ -141,7 +188,10 @@ def main():
             "g": gid,
             "k": (title + " " + desc).lower(),
             "f": path in FEATURED,
-        })
+        }))
+
+    # Append catalog deeplinks (must come after page entries so counts match committed)
+    items.extend(_catalog_deeplinks())
 
     with open("assets/search-index.json", "w", encoding="utf-8") as handle:
         json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))

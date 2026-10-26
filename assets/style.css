@@ -1054,6 +1054,8 @@ table td strong { color: var(--text); }
    page, map them onto the current components so nothing renders unstyled. */
 .full-width-section { width: 100%; }
 .comparison-table { font-variant-numeric: tabular-nums; }
+.comparison-table tr.over-budget-ref { opacity: .58; }
+.comparison-table tr.over-budget-ref td { color: var(--muted); font-size: .88em; }
 .hero-disclosure--compact { max-width: 46rem; }
 .buy-check { margin-top: 2.4rem; }
 .comparison-with-pick { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .6fr); gap: 1.2rem; align-items: start; }
