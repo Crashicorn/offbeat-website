@@ -217,7 +217,7 @@
     try {
       var encoded = btoa(encodeURIComponent(serialized));
       if (encoded.length > 8192) return;
-      window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encoded);
+      window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encodeURIComponent(encoded));
     } catch (e) {
       console.warn("Could not update rig share URL:", e);
     }
