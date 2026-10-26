@@ -131,10 +131,67 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }
+  // Browsers may deny storage (private browsing, CSP). The planner must
+  // stay usable in memory.
+  function safeGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+  function safeSet(key, value) { try { window.localStorage.setItem(key, value); return true; } catch (e) { return false; } }
+  function safeRemove(key) { try { window.localStorage.removeItem(key); } catch (e) { /* ignore */ } }
+  var SLOT_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+  function cleanSlotId(raw, fallback) {
+    return (typeof raw === "string" && SLOT_ID_RE.test(raw)) ? raw : fallback;
+  }
+  function cleanQty(raw) {
+    return (Number.isInteger(raw) && raw >= 1 && raw <= 4) ? raw : 1;
+  }
+  function validCategory(cat) {
+    return ROLE_ORDER.indexOf(cat) !== -1;
+  }
+  // Validate a raw slot-like object against the loaded catalog and known
+  // categories; drop anything that cannot map to a real item. `fallbackIdx`
+  // is used to mint a safe synthetic slotId when the supplied one is bad.
+  function sanitizeSlot(raw, fallbackIdx) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    if (typeof raw.category !== "string" || !validCategory(raw.category)) return null;
+    // itemId is optional for empty slots (e.g. 'Choose a controller') but
+    // when present must name a real catalog item in the same category.
+    if (raw.itemId != null && raw.itemId !== "") {
+      if (typeof raw.itemId !== "string") return null;
+      var it = byId(raw.itemId);
+      if (!it || it.category !== raw.category) return null;
+    }
+    var fallbackId = "s-" + raw.category + "-" + String(fallbackIdx).padStart(2, "0");
+    return {
+      slotId: cleanSlotId(raw.slotId, fallbackId),
+      category: raw.category,
+      itemId: (raw.itemId != null && raw.itemId !== "") ? String(raw.itemId) : null,
+      qty: cleanQty(raw.qty),
+      owned: raw.owned === true
+    };
+  }
+  function sanitizeItems(rawItems) {
+    if (!Array.isArray(rawItems) || !rawItems.length || rawItems.length > 24) return null;
+    var used = Object.create(null), out = [];
+    for (var i = 0; i < rawItems.length; i++) {
+      var clean = sanitizeSlot(rawItems[i], i);
+      if (!clean) continue;
+      var id = clean.slotId, n = 0;
+      while (used[id]) { n++; id = clean.slotId + "-" + n; }
+      if (id.length > 64) id = id.slice(0, 64);
+      used[id] = true;
+      clean.slotId = id;
+      out.push(clean);
+    }
+    return out.length ? out : null;
+  }
+  function cleanName(raw, fallback) {
+    return (typeof raw === "string" && raw.trim()) ? raw.trim().slice(0, 80) : fallback;
+  }
   function icon(name) {
     return '<span class="rs-icon" aria-hidden="true">' + (ICONS[name] || "") + "</span>";
   }
   function catIcon(cat) { return ICONS[CAT_ICON[cat]] || ICONS.layers; }
+  window.__setCatalogForTest = function(cat){ CATALOG = cat; };
+  window.__testHook = function() { return { BY_ID: byId, SANITIZE_SLOT: sanitizeSlot, SANITIZE_ITEMS: sanitizeItems, CLEAN_NAME: cleanName, CLEAN_SLOT_ID: cleanSlotId, CLEAN_QTY: cleanQty, VALID_CAT: validCategory, SLOT_ID_RE: SLOT_ID_RE, ENCODE: encodePayload, DECODE: decodePayload, SAFE_GET: safeGet, SAFE_SET: safeSet, CATALOG: CATALOG, ROLE_ORDER: ROLE_ORDER, STORAGE_KEY: STORAGE_KEY, SAVED_KEY: SAVED_KEY, LEGACY_KEY: LEGACY_KEY, LOAD_SAVED: loadSavedRigs }; };
   function byId(id) {
     if (!CATALOG) return null;
     for (var i = 0; i < CATALOG.items.length; i++) if (CATALOG.items[i].id === id) return CATALOG.items[i];
@@ -159,24 +216,46 @@
   }
 
   function save() {
+    var snapshot = JSON.stringify({
+      name: cleanName(state.name, "My setup"),
+      items: state.items,
+      view: state.view
+    });
+    if (snapshot.length > 16384) return;
+    safeSet(STORAGE_KEY, snapshot);
+    // Keep the share URL in sync (bounded).
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        name: state.name,
-        items: state.items,
-        view: state.view
-      }));
-    } catch (e) { /* storage may be blocked; the rig still works in memory */ }
+      var encoded = encodePayload({ n: cleanName(state.name, "My setup"), i: state.items });
+      if (encoded.length <= 8192) {
+        window.history.replaceState({ rig: { n: state.name, i: state.items } }, "", location.pathname + "?rig=" + encoded);
+      }
+    } catch (e) { /* URL update is best-effort */ }
   }
 
   function loadSavedRigs() {
+    var raw = safeGet(SAVED_KEY);
+    if (!raw || raw.length > 100000) return [];
     try {
-      var raw = JSON.parse(localStorage.getItem(SAVED_KEY));
-      if (Array.isArray(raw)) return raw;
-    } catch (e) { /* ignore */ }
-    return [];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      var out = [];
+      for (var i = 0; i < Math.min(parsed.length, 20); i++) {
+        var entry = parsed[i];
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+        var items = sanitizeItems(entry.items);
+        if (!items) continue;
+        out.push({
+          name: cleanName(entry.name, "My rig"),
+          items: items,
+          date: (typeof entry.date === "string" ? entry.date.slice(0, 32) : "Saved")
+        });
+      }
+      return out;
+    } catch (e) { return []; }
   }
   function writeSavedRigs(list) {
-    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, 20))); } catch (e) { /* ignore */ }
+    // Only persist sanitized entries; callers already sanitize, this is a belt.
+    safeSet(SAVED_KEY, JSON.stringify(list.slice(0, 20)));
   }
 
   /* ------------------------------------------ 3. Compatibility engine */
@@ -878,7 +957,7 @@
     var roleIcon = item.host_type === "mobile" ? "mobile" : (CAT_ICON[item.category] || "layers");
     return '<button type="button" class="rs-node rs-node--pos-' + pos + (opts.hero ? " rs-node--hero" : "") + (owned ? " rs-node--owned" : "") + '"' +
       ' style="--x:' + p[0] + "%;--y:" + p[1] + '%"' +
-      ' data-rs="pick" data-pos="' + pos + '" data-slot="' + opts.slot.slotId + '" data-cat="' + opts.slot.category + '"' +
+      ' data-rs="pick" data-pos="' + pos + '" data-slot="' + escapeHtml(opts.slot.slotId) + '" data-cat="' + escapeHtml(opts.slot.category) + '"' +
       ' aria-label="' + escapeHtml(opts.role + ": " + item.brand + " " + item.model + ". Click to swap") + '">' +
       '<span class="rs-node-top"><span class="rs-node-role">' + icon(roleIcon) + escapeHtml(opts.role) + "</span>" +
         '<span class="rs-node-status rs-node-status--' + status + '" aria-hidden="true"></span></span>' +
@@ -911,14 +990,14 @@
     var chips = order.map(function (cat) {
       var slots = slotsOf(cat).filter(function (s) { return s.itemId; });
       if (!slots.length) {
-        return '<button type="button" class="rs-acc rs-acc--empty" data-rs="add-slot" data-cat="' + cat + '">' +
+        return '<button type="button" class="rs-acc rs-acc--empty" data-rs="add-slot" data-cat="' + escapeHtml(cat) + '">' +
           icon("plus") + "Add " + (cat === "storage" ? "USB media" : cat === "microphones" ? "mic" : cat === "stands" ? "stand" : "cable") + "</button>";
       }
       var totalQty = slots.reduce(function (n, s) { return n + (s.qty || 1); }, 0);
       var anyOwned = slots.every(function (s) { return s.owned; });
       var price = slots.reduce(function (n, s) { var it = itemOf(s); return n + (it ? it.price * (s.qty || 1) : 0); }, 0);
       var label = slots.length > 1 ? slots.length + " lines" : itemOf(slots[0]).model;
-      return '<button type="button" class="rs-acc' + (anyOwned ? " rs-acc--owned" : "") + '" data-rs="pick" data-slot="' + slots[0].slotId + '" data-cat="' + cat + '">' +
+      return '<button type="button" class="rs-acc' + (anyOwned ? " rs-acc--owned" : "") + '" data-rs="pick" data-slot="' + escapeHtml(slots[0].slotId) + '" data-cat="' + cat + '">' +
         icon(CAT_ICON[cat]) + escapeHtml(label) + (totalQty > 1 ? " ×" + totalQty : "") +
         " <b>" + (anyOwned ? "owned" : money(price)) + "</b></button>";
     }).join("");
@@ -941,8 +1020,8 @@
         '<span class="rs-check-body"><span class="rs-check-title">' + escapeHtml(c.title) + "</span>" +
           '<span class="rs-check-note">' + escapeHtml(c.note || "") + "</span>" +
           (c.action ? '<button type="button" class="rs-check-action" data-rs="check-action" ' +
-            'data-kind="' + c.action.kind + '" data-cat="' + (c.action.cat || "") + '" data-item="' + (c.action.itemId || "") + '" ' +
-            'data-slot="' + (c.action.slotId || "") + '" data-qty="' + (c.action.qty || 1) + '">' + escapeHtml(c.action.label) + "</button>" : "") +
+            'data-kind="' + escapeHtml(c.action.kind) + '" data-cat="' + escapeHtml(c.action.cat || "") + '" data-item="' + escapeHtml(c.action.itemId || "") + '" ' +
+            'data-slot="' + escapeHtml(c.action.slotId || "") + '" data-qty="' + (c.action.qty || 1) + '">' + escapeHtml(c.action.label) + "</button>" : "") +
         "</span></li>";
     }).join("");
 
@@ -1011,7 +1090,7 @@
           return '<div class="rs-empty-slot">' +
             '<span class="rs-empty-icon">' + icon(CAT_ICON[cat] || "plus") + "</span>" +
             '<span class="rs-empty-copy"><strong>' + escapeHtml(hint[0]) + "</strong><span>" + escapeHtml(hint[1]) + "</span></span>" +
-            '<span><button type="button" class="rs-btn rs-btn--sm" data-rs="pick" data-slot="' + line.slot.slotId + '" data-cat="' + cat + '">Choose</button></span>' +
+            '<span><button type="button" class="rs-btn rs-btn--sm" data-rs="pick" data-slot="' + escapeHtml(line.slot.slotId) + '" data-cat="' + escapeHtml(cat) + '">Choose</button></span>' +
           "</div>";
         }
         var item = line.item;
@@ -1024,11 +1103,11 @@
               '<span class="rs-item-role">' + escapeHtml(ROLE_LABEL[cat] || cat) + "</span></div>" +
             '<p class="rs-item-why">' + escapeHtml(item.tagline || item.ideal_for || "") + "</p>" +
             '<div class="rs-item-links">' +
-              '<button type="button" class="rs-item-link" data-rs="pick" data-slot="' + line.slot.slotId + '" data-cat="' + cat + '">Swap</button>' +
+              '<button type="button" class="rs-item-link" data-rs="pick" data-slot="' + escapeHtml(line.slot.slotId) + '" data-cat="' + escapeHtml(cat) + '">Swap</button>' +
               '<button type="button" class="rs-item-link" data-rs="details" data-item="' + escapeHtml(item.id) + '">Specs</button>' +
               (item.slug ? '<a class="rs-item-link" href="' + escapeHtml(item.slug) + '">Offbeat guide ↗</a>' : "") +
               (lines.length > 1 || cat === "microphones" || cat === "stands" || cat === "storage" || cat === "cables" || cat === "laptops"
-                ? '<button type="button" class="rs-item-link" style="color:#fca5a5" data-rs="remove" data-slot="' + line.slot.slotId + '">Remove</button>' : "") +
+                ? '<button type="button" class="rs-item-link" style="color:#fca5a5" data-rs="remove" data-slot="' + escapeHtml(line.slot.slotId) + '">Remove</button>' : "") +
             "</div>" +
           "</div>" +
           '<div class="rs-item-side">' +
@@ -1039,11 +1118,11 @@
               (isExistingHost(item)
                 ? '<button type="button" class="rs-own-toggle is-on" disabled aria-pressed="true">Already owned</button>'
                 : '<span class="rs-qty">' +
-                    '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="-1" data-fk="q-' + line.slot.slotId + '-1" aria-label="Decrease quantity"' + (qty <= 1 ? " disabled" : "") + ">−</button>" +
+                    '<button type="button" data-rs="qty" data-slot="' + escapeHtml(line.slot.slotId) + '" data-step="-1" data-fk="q-' + escapeHtml(line.slot.slotId) + '-1" aria-label="Decrease quantity"' + (qty <= 1 ? " disabled" : "") + ">−</button>" +
                     '<span aria-label="Quantity ' + qty + '">' + qty + "</span>" +
-                    '<button type="button" data-rs="qty" data-slot="' + line.slot.slotId + '" data-step="1" data-fk="q-' + line.slot.slotId + '-2" aria-label="Increase quantity"' + (qty >= 4 ? " disabled" : "") + ">+</button>" +
+                    '<button type="button" data-rs="qty" data-slot="' + escapeHtml(line.slot.slotId) + '" data-step="1" data-fk="q-' + escapeHtml(line.slot.slotId) + '-2" aria-label="Increase quantity"' + (qty >= 4 ? " disabled" : "") + ">+</button>" +
                   "</span>" +
-                  '<button type="button" class="rs-own-toggle' + (owned ? " is-on" : "") + '" data-rs="own" data-slot="' + line.slot.slotId + '" aria-pressed="' + (owned ? "true" : "false") + '" data-fk="own-' + line.slot.slotId + '">' +
+                  '<button type="button" class="rs-own-toggle' + (owned ? " is-on" : "") + '" data-rs="own" data-slot="' + escapeHtml(line.slot.slotId) + '" aria-pressed="' + (owned ? "true" : "false") + '" data-fk="own-' + escapeHtml(line.slot.slotId) + '">' +
                     (owned ? "Owned" : "Need to buy") + "</button>") +
             "</div>" +
           "</div>" +
@@ -2219,7 +2298,7 @@
   }
 
   function doSave(name) {
-    var finalName = (name || state.name || "My rig").trim().slice(0, 60);
+    var finalName = cleanName(name || state.name, "My rig").slice(0, 60);
     state.name = finalName;
     var saved = loadSavedRigs();
     var existing = saved.findIndex(function (r) { return r.name === finalName; });
@@ -2240,13 +2319,13 @@
     var saved = loadSavedRigs();
     var r = saved[index];
     if (!r) return;
-    state.name = r.name;
-    state.items = (r.items || []).map(function (s) {
-      return { slotId: s.slotId || ("s-" + (s.category || "x") + "-" + Math.random().toString(36).slice(2, 7)), category: s.category, itemId: s.itemId, qty: s.qty || 1, owned: Boolean(s.owned) };
-    });
+    var items = sanitizeItems(r.items);
+    if (!items) { toast("That saved rig is no longer readable"); return; }
+    state.name = cleanName(r.name, "My rig");
+    state.items = items;
     state.view = "studio";
     saveAndRender();
-    toast("Opened “" + r.name + "”");
+    toast("Opened “" + state.name + "”");
     window.scrollTo({ top: root.offsetTop - 90, behavior: "smooth" });
   }
 
@@ -2356,17 +2435,20 @@
     var start = params.get("start");
 
     if (rigParam) {
-      try {
-        var parsed = decodePayload(rigParam);
-        var items = (parsed.i || parsed.items || []).map(function (s) {
-          return { slotId: s.slotId || ("s-" + (s.category || "x") + "-" + Math.random().toString(36).slice(2, 7)), category: s.category, itemId: s.itemId || s.id || null, qty: s.qty || 1, owned: Boolean(s.owned) };
-        }).filter(function (s) { return s.category; });
-        state.name = parsed.n || parsed.name || "Shared build";
-        state.items = items;
-        state.view = "studio";
-        state.ribbon = { kind: "shared" };
-        return true;
-      } catch (e) { /* fall through to stored state */ }
+      if (rigParam.length <= 8192) {
+        try {
+          var parsed = decodePayload(rigParam);
+          var rawItems = parsed.i || parsed.items;
+          var items = sanitizeItems(rawItems);
+          if (items) {
+            state.name = cleanName(parsed.n || parsed.name, "Shared build");
+            state.items = items;
+            state.view = "studio";
+            state.ribbon = { kind: "shared" };
+            return true;
+          }
+        } catch (e) { /* fall through to stored state */ }
+      }
     }
 
     if (add) {
@@ -2422,31 +2504,46 @@
       return true;
     }
 
-    var stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    var stored = safeGet(STORAGE_KEY);
+    if (stored && stored.length <= 16384) {
       try {
         var data = JSON.parse(stored);
         if (data && Array.isArray(data.items)) {
-          state.items = data.items;
-          state.name = data.name || "My setup";
-          state.view = data.view === "studio" || data.items.length ? "studio" : "start";
-          return true;
+          var items = sanitizeItems(data.items);
+          if (items) {
+            state.items = items;
+            state.name = cleanName(data.name, "My setup");
+            state.view = data.view === "studio" || items.length ? "studio" : "start";
+            return true;
+          }
         }
       } catch (e) { /* ignore corrupt storage */ }
     }
 
-    /* Migrate the old builder's saved rig if it exists */
-    var legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy) {
+    /* Migrate the old builder's saved rig if one exists (one-time). */
+    var legacy = safeGet(LEGACY_KEY);
+    if (legacy && legacy.length <= 16384) {
       try {
         var old = JSON.parse(legacy);
-        if (old && (old.items || old.slots)) {
-          state.items = old.items ? old.items.map(function (s) {
-            return { slotId: s.slotId || ("s-" + s.category + "-" + Math.random().toString(36).slice(2, 7)), category: s.category, itemId: s.itemId, qty: s.qty || 1, owned: Boolean(s.owned) };
-          }) : [];
-          state.name = old.name || "My setup";
-          state.view = "studio";
-          return true;
+        if (old && typeof old === "object" && !Array.isArray(old)) {
+          var legacyItems = null;
+          if (Array.isArray(old.items)) {
+            legacyItems = sanitizeItems(old.items);
+          } else if (old.slots && typeof old.slots === "object" && !Array.isArray(old.slots)) {
+            var cats = Object.keys(old.slots);
+            if (cats.length <= 24) {
+              var mapped = cats.map(function (cat, idx) {
+                return { slotId: "s-" + cat + "-" + String(idx).padStart(2, "0"), category: cat, itemId: old.slots[cat], qty: 1, owned: Boolean(old.owned && old.owned[cat]) };
+              });
+              legacyItems = sanitizeItems(mapped);
+            }
+          }
+          if (legacyItems) {
+            state.items = legacyItems;
+            state.name = cleanName(old.name, "My setup");
+            state.view = "studio";
+            return true;
+          }
         }
       } catch (e) { /* ignore */ }
     }
