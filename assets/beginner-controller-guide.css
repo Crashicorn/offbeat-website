@@ -1,0 +1,121 @@
+/* A small decision-led buying experience, deliberately different from the
+   repeated editorial comparison-table pattern. Scoped to this page module. */
+.beginner-lab {
+  --bl-ink: #100e1a;
+  --bl-panel: #171421;
+  --bl-edge: rgba(177, 156, 255, .2);
+  --bl-text: #f7f4ff;
+  --bl-muted: #aaa5bb;
+  --bl-violet: #b49aff;
+  --bl-cyan: #70e5ee;
+  margin: 1.6rem 0 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid rgba(164, 137, 255, .3);
+  border-radius: 24px;
+  background:
+    radial-gradient(75% 75% at 6% 0%, rgba(120, 76, 232, .2), transparent 66%),
+    radial-gradient(54% 60% at 100% 8%, rgba(37, 189, 211, .1), transparent 72%),
+    linear-gradient(140deg, #100e19, #0d0c13 74%);
+  color: var(--bl-text);
+  box-shadow: 0 24px 70px -52px #020106;
+}
+.beginner-lab * { box-sizing: border-box; }
+.beginner-lab-head { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
+.beginner-lab-kicker { display: inline-flex; align-items: center; gap: .45rem; color: var(--bl-cyan); font-size: .72rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.beginner-lab-kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 16px currentColor; }
+.beginner-lab h2 { max-width: 20ch; margin: .55rem 0 .5rem; color: #fff; font-size: clamp(1.55rem, 3.4vw, 2.35rem); letter-spacing: -.035em; line-height: 1.08; }
+.beginner-lab-head p { max-width: 62ch; margin: 0; color: var(--bl-muted); line-height: 1.6; }
+.beginner-lab-edition { flex: none; padding: .48rem .7rem; border: 1px solid var(--bl-edge); border-radius: 999px; color: #d7ceef; font-size: .72rem; white-space: nowrap; }
+.beginner-lab-profile-label { margin: 1.35rem 0 .65rem; color: #d8d1e9; font-size: .82rem; font-weight: 700; }
+.beginner-lab-profiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; }
+.beginner-lab-profile {
+  min-height: 76px; padding: .8rem .9rem; border: 1px solid rgba(255,255,255,.11); border-radius: 13px;
+  background: rgba(255,255,255,.035); color: #e4dfed; text-align: left; font: inherit; cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.beginner-lab-profile:hover { transform: translateY(-1px); border-color: rgba(180,154,255,.55); }
+.beginner-lab-profile[aria-pressed="true"] { border-color: rgba(112,229,238,.7); background: linear-gradient(135deg, rgba(111,75,190,.28), rgba(26,157,174,.12)); box-shadow: inset 0 0 0 1px rgba(112,229,238,.12); color: #fff; }
+.beginner-lab-profile strong, .beginner-lab-profile span { display: block; }
+.beginner-lab-profile strong { font-size: .85rem; }
+.beginner-lab-profile span { margin-top: .28rem; color: var(--bl-muted); font-size: .74rem; line-height: 1.4; }
+.beginner-lab-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(275px, .75fr); gap: .85rem; margin-top: .9rem; align-items: stretch; }
+.beginner-lab-match, .beginner-lab-cost { min-width: 0; border: 1px solid var(--bl-edge); border-radius: 17px; background: rgba(23,20,33,.83); overflow: hidden; }
+.beginner-lab-match { display: grid; grid-template-columns: minmax(150px, .72fr) minmax(0, 1fr); }
+.beginner-lab-product-art { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 265px; padding: 1.1rem; background: radial-gradient(90% 80% at 50% 42%, rgba(131,92,222,.18), transparent 74%), #11101a; border-right: 1px solid rgba(255,255,255,.07); }
+.beginner-lab-product-art img { width: 100%; max-width: 310px; max-height: 190px; margin: auto; object-fit: contain; filter: drop-shadow(0 20px 22px rgba(0,0,0,.3)); }
+.beginner-lab-product-art figcaption { margin-top: .55rem; color: #827c91; font-size: .65rem; text-align: center; }
+.beginner-lab-match-copy { padding: clamp(1rem, 2vw, 1.5rem); display: flex; flex-direction: column; align-items: flex-start; }
+.beginner-lab-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .31rem .58rem; border-radius: 999px; background: rgba(112,229,238,.1); color: var(--bl-cyan); font-size: .68rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.beginner-lab-match h3 { margin: .7rem 0 .35rem; color: #fff; font-size: clamp(1.25rem,2vw,1.75rem); letter-spacing: -.025em; line-height: 1.14; }
+.beginner-lab-price { color: #d6c7ff; font-size: .83rem; font-weight: 700; }
+.beginner-lab-match-copy > p { margin: .7rem 0 0; color: #bdb7ca; font-size: .86rem; line-height: 1.55; }
+.beginner-lab-reasons { display: flex; flex-wrap: wrap; gap: .35rem; margin: .85rem 0 0; padding: 0; list-style: none; }
+.beginner-lab-reasons li { padding: .34rem .52rem; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; color: #d5cfdf; font-size: .68rem; }
+.beginner-lab-smallprint { margin: .65rem 0 0 !important; color: #91899f !important; font-size: .72rem !important; }
+.beginner-lab-link { display: inline-flex; align-items: center; gap: .4rem; margin-top: auto; padding-top: 1rem; color: var(--bl-cyan); font-size: .82rem; font-weight: 750; text-decoration: none; }
+.beginner-lab-link:hover { color: #fff; text-decoration: underline; }
+.beginner-lab-cost { padding: 1.15rem; display: flex; flex-direction: column; }
+.beginner-lab-cost-head { display: flex; align-items: start; justify-content: space-between; gap: .6rem; }
+.beginner-lab-cost h3 { margin: 0; font-size: 1rem; color: #fff; }
+.beginner-lab-cost-head span { color: var(--bl-muted); font-size: .65rem; text-align: right; }
+.beginner-lab-line-items { display: grid; gap: .55rem; margin: .95rem 0; }
+.beginner-lab-line { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; padding-bottom: .48rem; border-bottom: 1px solid rgba(255,255,255,.075); font-size: .78rem; }
+.beginner-lab-line span { color: #c4becd; }
+.beginner-lab-line b { color: #f2eff8; font-variant-numeric: tabular-nums; }
+.beginner-lab-owned { display: grid; gap: .45rem; margin: 0; padding: .7rem; border: 1px solid rgba(255,255,255,.09); border-radius: 11px; background: rgba(255,255,255,.025); }
+.beginner-lab-owned legend { padding: 0 .3rem; color: #c9c2d5; font-size: .69rem; font-weight: 700; }
+.beginner-lab-check { display: flex; align-items: center; gap: .5rem; color: #d4cedd; font-size: .74rem; cursor: pointer; }
+.beginner-lab-check input { width: 16px; height: 16px; accent-color: #a78bfa; }
+.beginner-lab-total { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin-top: auto; padding: .9rem 0 .4rem; }
+.beginner-lab-total span { color: #c6bfd3; font-size: .78rem; }
+.beginner-lab-total strong { color: #fff; font-size: 1.55rem; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.beginner-lab-disclaimer { margin: .3rem 0 .85rem; color: #938ca0; font-size: .66rem; line-height: 1.5; }
+.beginner-lab-build { display: flex; justify-content: center; width: 100%; padding: .72rem .9rem; border: 1px solid rgba(151,119,255,.6); border-radius: 10px; background: linear-gradient(110deg,#8756e8,#6042b9 68%,#247f91); color: white; font-size: .8rem; font-weight: 750; text-decoration: none; box-shadow: 0 10px 25px -18px #9f7aea; }
+.beginner-lab-build:hover { color: #fff; filter: brightness(1.1); transform: translateY(-1px); }
+.beginner-lab-alternatives { margin-top: 1.25rem; }
+.beginner-lab-alternatives-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .6rem; }
+.beginner-lab-alternatives h3 { margin: 0; color: #f4f0fa; font-size: .92rem; }
+.beginner-lab-alternatives-head p { margin: 0; color: var(--bl-muted); font-size: .72rem; }
+.beginner-lab-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .6rem; }
+.beginner-lab-option { display: flex; flex-direction: column; min-width: 0; padding: .9rem; border: 1px solid rgba(255,255,255,.1); border-radius: 13px; background: rgba(255,255,255,.025); transition: border-color .16s ease, background .16s ease; }
+.beginner-lab-option.is-selected { border-color: rgba(180,154,255,.64); background: linear-gradient(140deg,rgba(126,88,208,.14),rgba(255,255,255,.025)); }
+.beginner-lab-option-top { display: flex; align-items: start; justify-content: space-between; gap: .5rem; }
+.beginner-lab-option h4 { margin: 0; color: #fff; font-size: .86rem; line-height: 1.28; }
+.beginner-lab-option-price { flex: none; color: #d2c2ff; font-size: .75rem; font-weight: 750; }
+.beginner-lab-fit { display: inline-flex; align-self: flex-start; margin: .55rem 0 .35rem; padding: .22rem .42rem; border-radius: 999px; background: rgba(255,255,255,.06); color: #c8c1d5; font-size: .63rem; font-weight: 700; }
+.beginner-lab-option p { margin: .2rem 0 .45rem; color: #ada7ba; font-size: .72rem; line-height: 1.48; }
+.beginner-lab-option .beginner-lab-tradeoff { padding-top: .45rem; border-top: 1px solid rgba(255,255,255,.07); color: #c4bdcf; }
+.beginner-lab-option button { margin-top: auto; padding: .5rem .55rem 0; border: 0; background: transparent; color: var(--bl-cyan); font: inherit; font-size: .72rem; font-weight: 750; text-align: left; cursor: pointer; }
+.beginner-lab-note { display: grid; grid-template-columns: auto 1fr; gap: .6rem; margin-top: .75rem; padding: .72rem .8rem; border-radius: 11px; background: rgba(53,178,190,.08); color: #c7c1d2; font-size: .71rem; line-height: 1.5; }
+.beginner-lab-note b { color: #79e6ed; }
+.beginner-lab-note p { margin: 0; }
+.beginner-lab [hidden] { display: none !important; }
+.beginner-lab button:focus-visible, .beginner-lab a:focus-visible, .beginner-lab input:focus-visible { outline: 2px solid #70e5ee; outline-offset: 3px; }
+@media (max-width: 900px) {
+  .beginner-lab-profiles { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .beginner-lab-grid { grid-template-columns: 1fr; }
+  .beginner-lab-cost { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1rem; }
+  .beginner-lab-cost-head, .beginner-lab-total, .beginner-lab-disclaimer, .beginner-lab-build { grid-column: 1 / -1; }
+  .beginner-lab-line-items { align-content: start; }
+  .beginner-lab-owned { align-self: start; }
+}
+@media (max-width: 620px) {
+  .beginner-lab { margin: 1rem -0.2rem 1.4rem; padding: 1rem; border-radius: 18px; }
+  .beginner-lab-head { align-items: start; }
+  .beginner-lab-edition { display: none; }
+  .beginner-lab-profiles { gap: .45rem; }
+  .beginner-lab-profile { min-height: 88px; padding: .7rem; }
+  .beginner-lab-profile strong { font-size: .77rem; }
+  .beginner-lab-profile span { font-size: .68rem; }
+  .beginner-lab-match { grid-template-columns: 1fr; }
+  .beginner-lab-product-art { min-height: 150px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .beginner-lab-product-art img { max-height: 130px; }
+  .beginner-lab-cost { display: flex; }
+  .beginner-lab-alternatives-head { display: block; }
+  .beginner-lab-alternatives-head p { margin-top: .3rem; }
+  .beginner-lab-cards { grid-template-columns: 1fr; }
+  .beginner-lab-option { display: grid; grid-template-columns: 1fr auto; column-gap: .5rem; }
+  .beginner-lab-option-top, .beginner-lab-fit, .beginner-lab-option p, .beginner-lab-option button { grid-column: 1 / -1; }
+  .beginner-lab-option-price { align-self: center; }
+}
+@media (prefers-reduced-motion: reduce) { .beginner-lab *, .beginner-lab *::before, .beginner-lab *::after { transition-duration: .01ms !important; } }

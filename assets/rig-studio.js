@@ -773,18 +773,18 @@
         '<span class="rs-chip rs-chip--money" data-cost-chip>' + icon("cart") + "To buy <b>" + money(rig.buyTotal) + "</b></span>" +
       "</div>" +
       '<div class="rs-bar-actions">' +
+        '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="start-over">' + icon("restart") + "New rig</button>" +
         '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="save">' + icon("save") + "Save</button>" +
         '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="share">' + icon("share") + "Share</button>" +
         '<button type="button" class="rs-btn rs-btn--sm" data-rs="scroll-shop">' + icon("cart") + "Shopping list</button>" +
         '<div class="rs-menu-wrap"><button type="button" class="rs-btn rs-btn--quiet rs-btn--sm" data-rs="menu" aria-expanded="' + (state.menuOpen ? "true" : "false") + '" aria-haspopup="true" aria-label="More rig actions">' + icon("more") + "</button>" +
           '<div class="rs-menu"' + (state.menuOpen ? "" : " hidden") + ">" +
             '<button type="button" data-rs="compare">' + icon("compare") + "Compare two builds</button>" +
-            '<button type="button" data-rs="quiz-open">' + icon("route") + "Guided setup again</button>" +
+            '<button type="button" data-rs="quiz-open">' + icon("route") + "Guided setup for this rig</button>" +
             '<button type="button" data-rs="download-shopping">' + icon("down") + "Download shopping list</button>" +
             '<button type="button" data-rs="print">' + icon("print") + "Print the list</button>" +
             "<hr>" +
             '<button type="button" data-rs="toggle-sound">' + icon("volume") + (soundOn ? "Click sounds: on" : "Click sounds: off") + "</button>" +
-            '<button type="button" data-rs="start-over">' + icon("restart") + "Start a different rig</button>" +
           "</div></div>" +
       "</div>" +
     "</div>";
