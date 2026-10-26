@@ -8,7 +8,16 @@
 
   var CATALOG = null;
   var audioCtx = null;
-  var soundEnabled = localStorage.getItem("offbeat.rig.sfx") !== "muted";
+  var soundEnabled = safeStorageGet("offbeat.rig.sfx") !== "muted";
+
+  // Browsers may deny storage access; the planner must still work in memory.
+  function safeStorageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function safeStorageSet(key, value) {
+    try { window.localStorage.setItem(key, value); return true; }
+    catch (e) { return false; }
+  }
 
   // Active Rig State (Supports modular items, quantities, and owned gear)
   var currentRig = {
@@ -139,61 +148,77 @@
 
     // 3. Base64 encoded rig state param (e.g. ?rig=...)
     var rigParam = params.get("rig");
-    if (rigParam) {
+    if (rigParam && rigParam.length <= 8192) {
       try {
-        var parsed = JSON.parse(decodeURIComponent(atob(rigParam)));
-        if (parsed && (parsed.items || parsed.slots)) {
-          normalizeRigState(parsed);
-          return;
-        }
+        if (normalizeRigState(JSON.parse(decodeURIComponent(atob(rigParam))))) return;
       } catch (e) {
         console.warn("Invalid rig URL param:", e);
       }
     }
 
-    // 4. LocalStorage active state
-    var local = localStorage.getItem("offbeat.rig.active");
-    if (local) {
-      try {
-        var saved = JSON.parse(local);
-        if (saved && (saved.items || saved.slots)) {
-          normalizeRigState(saved);
-        }
-      } catch (e) {
-        console.warn("Invalid local rig state:", e);
-      }
+    // 4. Local state is optional and untrusted, just like shared URLs.
+    var local = safeStorageGet("offbeat.rig.active");
+    if (local && local.length <= 16384) {
+      try { normalizeRigState(JSON.parse(local)); }
+      catch (e) { console.warn("Invalid local rig state:", e); }
     }
+  }
+
+  // Shared URLs and saved rigs are untrusted. Never render raw slot identifiers.
+  function sanitizeRigState(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+    var raw;
+    if (Array.isArray(data.items)) {
+      raw = data.items;
+    } else if (data.slots && typeof data.slots === "object" && !Array.isArray(data.slots)) {
+      var cats = Object.keys(data.slots);
+      if (cats.length > 24) return null;
+      raw = cats.map(function (cat) {
+        return { slotId: "core-" + cat, category: cat, itemId: data.slots[cat],
+          qty: 1, owned: Boolean(data.owned && data.owned[cat]) };
+      });
+    } else return null;
+    if (!raw.length || raw.length > 24) return null;
+
+    var used = Object.create(null), items = [];
+    raw.forEach(function (slot, index) {
+      if (!slot || typeof slot !== "object" || Array.isArray(slot)) return;
+      if (typeof slot.itemId !== "string" || typeof slot.category !== "string") return;
+      var item = getItem(slot.itemId);
+      if (!item || item.category !== slot.category) return;
+      var id = typeof slot.slotId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(slot.slotId)
+        ? slot.slotId : "imported-" + index;
+      while (used[id]) id = "imported-" + index + "-" + items.length;
+      used[id] = true;
+      items.push({
+        slotId: id, category: item.category, itemId: item.id,
+        qty: Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1,
+        owned: slot.owned === true
+      });
+    });
+    if (!items.length) return null;
+    return {
+      name: typeof data.name === "string" ? data.name.slice(0, 80) : "My Custom DJ Rig",
+      items: items
+    };
   }
 
   function normalizeRigState(data) {
-    if (data.items && Array.isArray(data.items)) {
-      currentRig = data;
-    } else if (data.slots) {
-      currentRig.name = data.name || "My Custom DJ Rig";
-      currentRig.items = [];
-      Object.keys(data.slots).forEach(function (cat) {
-        var id = data.slots[cat];
-        if (id) {
-          currentRig.items.push({
-            slotId: "core-" + cat,
-            category: cat,
-            itemId: id,
-            qty: 1,
-            owned: Boolean(data.owned && data.owned[cat])
-          });
-        }
-      });
-    }
+    var clean = sanitizeRigState(data);
+    if (!clean) return false;
+    currentRig = clean;
+    return true;
   }
 
   function saveActiveState() {
+    var serialized = JSON.stringify(currentRig);
+    safeStorageSet("offbeat.rig.active", serialized);
     try {
-      localStorage.setItem("offbeat.rig.active", JSON.stringify(currentRig));
-      var encoded = btoa(encodeURIComponent(JSON.stringify(currentRig)));
-      var newUrl = window.location.pathname + "?rig=" + encoded;
-      window.history.replaceState({ rig: currentRig }, "", newUrl);
+      var encoded = btoa(encodeURIComponent(serialized));
+      if (encoded.length > 8192) return;
+      window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encoded);
     } catch (e) {
-      console.warn("Could not save rig state:", e);
+      console.warn("Could not update rig share URL:", e);
     }
   }
 
