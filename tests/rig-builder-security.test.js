@@ -47,7 +47,8 @@ function harness(storageDisabled) {
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
     calculateRigStats: calculateRigStats,
     presetPriceBadge: presetPriceBadge,
-    recommendNextUpgrade: recommendNextUpgrade
+    recommendNextUpgrade: recommendNextUpgrade,
+    renderModularTableRow: renderModularTableRow
   };
 ` + hook);
   vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
@@ -495,4 +496,45 @@ test("incomplete or multi-device rigs do not show optional shopping upsells", ()
     { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
   ] }), true);
   assert.equal(api.recommendNextUpgrade(), null, "multi-controller routing must be reviewed before upselling");
+});
+
+test("mobile wedding preset requires independent microphone input and cable review", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const preset = catalog.presets.find(p => p.id === "mobile-pro");
+  assert.ok(preset, "mobile wedding preset must exist");
+  const items = Object.entries(preset.slots).map(([category, itemId], i) => ({
+    slotId: "preset-" + i, category, itemId, qty: 1, owned: false
+  }));
+  assert.equal(api.normalizeRigState({ items }), true);
+  const withMic = api.runDeepCompatibilityChecks();
+  assert.equal(withMic.requiresManualReview, true);
+  assert.ok(withMic.readiness <= 50);
+  assert.ok(withMic.checks.some(c => c.title === "Microphone Input and Cable Need Verification" &&
+    /XLR speaker output or cable does not prove/.test(c.desc)));
+  assert.equal(api.recommendNextUpgrade(withMic), null,
+    "optional upsells must not supersede an unverified microphone signal path");
+  assert.equal(api.normalizeRigState({ items: items.filter(s => s.category !== "microphones") }), true);
+  const withoutMic = api.runDeepCompatibilityChecks();
+  assert.equal(withoutMic.requiresManualReview, false);
+  assert.ok(!withoutMic.checks.some(c => /Microphone Input/.test(c.title)));
+});
+
+test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const standalone = { slotId: "host", category: "laptops",
+    itemId: "standalone-usb-only", qty: 1, owned: false };
+  const row = api.renderModularTableRow(standalone);
+  assert.match(row, /No laptop purchase/);
+  assert.match(row, /Setup mode — no hardware purchase/);
+  assert.doesNotMatch(row, /amazon\.com|sweetwater\.com|reverb\.com/);
+  const realItem = api.renderModularTableRow({
+    slotId: "ctrl", category: "controllers", itemId: "denon-prime-4-plus",
+    qty: 1, owned: false
+  });
+  assert.match(realItem, /amazon\.com/);
+  assert.match(realItem, /sweetwater\.com/);
 });
