@@ -302,7 +302,12 @@
     // devices, but the connection engine evaluates only the first of each.
     // Never mark a multi-device rig green based on a single-device check.
     ["controllers", "speakers", "laptops", "headphones"].forEach(function (category) {
-      var count = currentRig.items.filter(function (s) { return s.category === category; }).length;
+      // Quantity steppers can represent multiple physical devices in ONE slot.
+      // Count units, not just distinct slots, or two identical controllers/
+      // speaker sets can incorrectly inherit a green single-device verdict.
+      var count = currentRig.items.reduce(function (total, slot) {
+        return total + (slot.category === category ? slot.qty || 1 : 0);
+      }, 0);
       if (count < 2) return;
       requiresManualReview = true;
       warnings++;
