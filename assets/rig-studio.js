@@ -974,6 +974,7 @@
       renderMap(rig) +
       '<aside class="rs-side">' +
         renderReadiness(rig) +
+        renderConnections(rig) +
         renderBudget(rig) +
         renderUpgrade(rig) +
       "</aside>" +
@@ -1243,6 +1244,83 @@
             icon("route") + "Guided setup</button>" +
         "</div>"
       "</div></section>";
+  }
+
+  /* ------------------------------------------------ connection plan panel
+     The signal map answers "what is plugged into what". This panel answers the
+     buying question underneath it: how many physical connections the rig has,
+     which lead carries each one, whether that lead is a verified product, a
+     planning allowance or already in a box, and how many purchases that means. */
+  function renderConnections(rig) {
+    if (!rig.controller || !rig.cablePlan.length) return "";
+    var toBuy = 0, inBox = 0, unknown = 0;
+    rig.cablePlan.forEach(function (entry) {
+      if (entry.plan.kind === "unknown") unknown++;
+      if (entry.covered > 0) inBox += entry.covered;
+      toBuy += entry.needed || 0;
+    });
+
+    var rows = rig.cablePlan.map(function (entry) {
+      var plan = entry.plan;
+      var boxes = entry.slot.qty || 1;
+      var unitsPerBox = speakerUnitsOf(entry.speaker);
+      var cabs = unitsPerBox * boxes;
+      var cabinetText = cabs === 1 ? "1 cabinet" : cabs + " cabinets";
+      var feedText = entry.feeds === 1 ? "1 signal feed" : entry.feeds + " signal feeds";
+      var outputLabel = plan.output ? plan.output.label || endpointLabel(plan.output.connector) : "output";
+      var socketLabel = plan.socket ? endpointLabel(plan.socket.connector) + " input" : "input";
+      var lead, costClass, cost;
+      if (plan.kind === "included") {
+        lead = plan.name;
+        costClass = "inbox";
+        cost = "In the box";
+      } else if (plan.kind === "allowance") {
+        lead = plan.name;
+        costClass = "allowance";
+        cost = money(((byId(plan.itemId) || {}).price || 0) * entry.needed) + " allowance";
+      } else if (plan.kind === "product") {
+        lead = plan.name;
+        costClass = entry.available >= entry.needed ? "owned" : "buy";
+        cost = entry.available >= entry.needed ? "On the list" : money(((byId(plan.itemId) || {}).price || 0) * entry.needed);
+      } else {
+        lead = "No verified lead in the catalogue";
+        costClass = "unknown";
+        cost = "Confirm the jacks";
+      }
+      var action = "";
+      if (plan.kind !== "unknown" && plan.itemId && entry.available < entry.needed && plan.kind !== "included") {
+        action = '<button type="button" class="rs-connect-fix" data-rs="check-action" data-kind="add-cable" data-cat="cables" ' +
+          'data-item="' + escapeHtml(plan.itemId) + '" data-qty="' + (entry.needed - entry.available) + '">' +
+          "Add " + money(((byId(plan.itemId) || {}).price || 0) * (entry.needed - entry.available)) + "</button>";
+      }
+      return '<li class="rs-connect-row rs-connect-row--' + costClass + '">' +
+        '<div class="rs-connect-what"><span class="rs-connect-model">' + escapeHtml(entry.speaker.model) + "</span>" +
+          '<span class="rs-connect-meta">' + escapeHtml(cabinetText + " · " + feedText + " · " + socketLabel) + "</span></div>" +
+        '<div class="rs-connect-from"><span class="rs-connect-meta">from</span><strong>' + escapeHtml(rig.controller.model) + "</strong>" +
+          '<span class="rs-connect-meta">' + escapeHtml(outputLabel) + "</span></div>" +
+        '<div class="rs-connect-lead"><span class="rs-connect-meta">' + escapeHtml(plan.label) + "</span>" + escapeHtml(lead) +
+          '<span class="rs-connect-meta">' + escapeHtml(plan.note || "") + "</span></div>" +
+        '<div class="rs-connect-cost"><span class="rs-connect-price">' + escapeHtml(cost) + "</span>" + action + "</div>" +
+      "</li>";
+    }).join("");
+
+    var summaryBits = [];
+    summaryBits.push(rig.totalRunsNeeded === 0
+      ? (inBox ? "Nothing to buy: " + inBox + " lead" + (inBox === 1 ? "" : "s") + " in a box" : "No cable purchase needed")
+      : toBuy + " lead purchase" + (toBuy === 1 ? "" : "s"));
+    if (inBox) summaryBits.push(inBox + " already supplied");
+    if (unknown) summaryBits.push(unknown + " to confirm");
+
+    return '<section class="rs-panel rs-connect" id="rs-connect">' +
+      '<div class="rs-panel-head"><div><h2>' + icon("cable") + "Connection plan</h2>" +
+        '<p class="rs-panel-sub">Every speaker path, the lead it takes, and whether that lead is a product, an allowance or already in the box.</p></div>' +
+        '<span class="rs-connect-summary">' + escapeHtml(summaryBits.join(" · ")) + "</span></div>" +
+      '<ul class="rs-connect-list">' + rows + "</ul>" +
+      '<p class="rs-connect-note">A lead listed as an allowance has a budget price but no recommended SKU: confirm the plugs at both ends. ' +
+        "A lead in the box is never charged again, and marking a lead as owned keeps it in the rig without pricing it. " +
+        '<a href="how-to-connect-dj-controller-to-speakers.html">Open the connection guide</a> or ' +
+        '<a href="best-dj-monitor-speakers.html#speaker-planner">plan a speaker purchase</a>.</p>' +
+    "</section>";
   }
 
   function renderBudget(rig) {

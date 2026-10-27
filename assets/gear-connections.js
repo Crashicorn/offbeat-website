@@ -101,9 +101,10 @@ function routeScore(output, socket, cable, socketIsNative) {
   if (output.role === "master") score += 2;
   if (!output.balanced) score -= 1;
   if (!cable.balanced) score -= 1;
-  /* An unbalanced source into a balanced XLR input needs a rarer adapter than
-     the same signal into a 1/4-inch jack, so prefer the jack when both fit. */
-  if (!cable.balanced && socket.connector === "xlr") score -= 3;
+  /* An XLR plug is the balanced format. Sending an unbalanced signal down XLR
+     plugs is the unusual case, so prefer a 1/4-inch or combo jack when the
+     signal is unbalanced and both would fit. */
+  if (!cable.balanced && cable.b === "xlr") score -= 3;
   return score;
 }
 
@@ -217,8 +218,17 @@ function connectionPlan(catalog, controller, speaker, qty) {
     : shape.feeds === 1
       ? "This one cabinet is a single feed, so it plays in mono."
       : "Each cabinet is powered on its own, so both need a feed: one dual lead reaches " + shape.feeds + " cabinets with one plug each.";
+  /* A box can include leads that are the wrong shape for this output. Say so,
+     otherwise the buyer cannot tell a spare from a substitute. */
+  var boxLabels = (speaker.included_cables || []).map(function (inc) {
+    return inc.label || (endpointLabel(inc.from) + " to " + endpointLabel(inc.to));
+  });
+  var boxNote = (!plan.alsoIncluded && boxLabels.length)
+    ? " The box's " + boxLabels.join(" and ") + " cannot connect this output, so it does not replace this lead."
+    : "";
   plan.note = feedSentence +
     (plan.alsoIncluded ? " " + plan.coveredFeeds + " of " + shape.feeds + " feeds already come with " + plan.includedLabel + "." : "") +
+    boxNote +
     (plan.kind === "allowance" ? " Offbeat has no verified product for this socket pair, so it is a priced allowance." : "") +
     (!plan.balanced && chosen.socket.balanced
       ? " The lead is unbalanced; it fits a balanced input without making the signal balanced."

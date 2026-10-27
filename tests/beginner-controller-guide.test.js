@@ -8,6 +8,11 @@ const vm = require("node:vm");
 const path = require("node:path");
 
 const source = fs.readFileSync(path.join(__dirname, "../assets/beginner-controller-guide.js"), "utf8");
+/* The guide no longer hard-codes its cable rule: it asks the shared model in
+   assets/gear-connections.js, exactly like the published page does. The vm
+   harness has to load that file first, or it is testing a page with a missing
+   dependency and every assertion below fails as "catalog could not load". */
+const engineSource = fs.readFileSync(path.join(__dirname, "../assets/gear-connections.js"), "utf8");
 const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
 
 function attr(tag, name) {
@@ -77,6 +82,8 @@ function harness() {
     unescape: unescape, encodeURIComponent: encodeURIComponent, decodeURIComponent: decodeURIComponent,
     String: String, Number: Number, JSON: JSON, Array: Array, Math: Math,
   });
+  vm.runInContext("var window = this;", context);
+  vm.runInContext(engineSource, context);
   vm.runInContext(source, context);
   return new Promise(function (resolve) { setImmediate(function () { resolve(mount); }); });
 }
@@ -99,40 +106,51 @@ test("first-controller chooser computes complete desk cost and hands owned gear 
   fireById(mount, "[data-bl-profile]", "budget");
   assert.match(mount.innerHTML, /<h3>AlphaTheta \/ Pioneer DJ DDJ-FLX2<\/h3>/);
   assert.match(mount.innerHTML, /data-bl-profile="budget" aria-pressed="true"/);
-  assert.match(mount.innerHTML, /\$412/); // $199 + $49 + $149 + $15 compatible-cable allowance
+  /* N2/N3: the FLX2 has a 3.5 mm master and the DM-40D pair ships with a
+     3.5 mm to dual RCA lead, so this route buys no cable at all:
+     $199 + $49 + $149 = $397. There is no $15 allowance to keep and no
+     simultaneous "missing cable" claim. */
+  assert.match(mount.innerHTML, /\$397/);
+  assert.match(mount.innerHTML, /included with the pair/);
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
-  const flx2Cable = slotOf(payload, "cables");
-  assert.ok(ALLOWANCE, "the catalog carries an explicit 3.5 mm cable allowance");
-  assert.equal(ALLOWANCE.estimate_only, true, "the allowance is planning data, not a verified product");
-  assert.equal(ALLOWANCE.no_retailer_link, true, "the allowance must never be routed to a retailer or affiliate link");
-  assert.equal(flx2Cable.itemId, "cable-aux-rca-allowance",
-    "the $15 FLX2 allowance travels as a real, priced line so Rig Studio cannot lose it");
-  assert.equal(flx2Cable.itemId === "cable-rca-rca", false,
-    "no verified dual-RCA SKU is claimed to fit the FLX2 3.5 mm output");
+  assert.equal(slotOf(payload, "cables"), undefined,
+    "an in-box lead must not travel as a cable purchase the buyer does not need");
+  const pricedAllowances = catalog.items.filter(function (item) { return item.estimate_only; });
+  assert.ok(pricedAllowances.length, "the catalog still carries priced allowances for socket pairs with no verified lead");
+  pricedAllowances.forEach(function (item) {
+    assert.equal(item.category, "cables");
+    assert.equal(item.no_retailer_link, true, "an allowance must never be routed to a retailer or affiliate link");
+  });
 
   const hp = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === "headphones"; });
   hp.checked = true;
   hp.fire("change");
-  assert.match(mount.innerHTML, /\$363/);
+  assert.match(mount.innerHTML, /\$348/);
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "headphones"; }).owned, true);
 
-  ["speakers", "cable"].forEach(function (category) {
-    const control = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === category; });
-    control.checked = true;
-    control.fire("change");
-  });
+  /* With the lead in the box there is no cable to own, so the page must not
+     invent a checkbox for one. */
+  assert.equal(mount.lastControls["[data-bl-owned]"].some(function (node) {
+    return node.getAttribute("data-bl-owned") === "cable";
+  }), false, "no cable ownership control is offered when no cable is bought");
+
+  const speakersControl = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === "speakers"; });
+  speakersControl.checked = true;
+  speakersControl.fire("change");
   assert.match(mount.innerHTML, /\$199/);
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "speakers"; }).owned, true);
-  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).owned, true);
+  assert.equal(slotOf(payload, "cables"), undefined);
 
+  /* The Inpulse 500 has RCA master outputs, so the desk pair needs a real dual
+     RCA lead again: $299 + $12 with headphones and monitors owned. */
   fireById(mount, "[data-bl-choose]", "hercules-inpulse-500");
   assert.match(mount.innerHTML, /<h3>Hercules DJControl Inpulse 500<\/h3>/);
-  assert.match(mount.innerHTML, /\$311/); // controller + cable; headphone and monitors are owned
+  assert.match(mount.innerHTML, /\$311/);
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).itemId, "cable-rca-rca");
@@ -149,12 +167,12 @@ test("first-controller chooser computes complete desk cost and hands owned gear 
 
   fireById(mount, "[data-bl-profile]", "budget");
   assert.match(mount.innerHTML, /<h3>AlphaTheta \/ Pioneer DJ DDJ-FLX2<\/h3>/);
-  assert.match(mount.innerHTML, /\$214/);
+  assert.match(mount.innerHTML, /\$199/);
   payload = rigFrom(mount.innerHTML);
   assert.equal(payload.i.find(function (item) { return item.category === "controllers"; }).owned, false,
     "controller ownership resets when switching to another model");
-  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).owned, false,
-    "cable ownership resets when the output connectors change");
+  assert.equal(slotOf(payload, "cables"), undefined,
+    "the RCA lead bought for the previous deck does not follow the FLX2 home");
 });
 
 /* Rig Studio charges exactly the slots it receives: owned lines cost nothing,
@@ -177,33 +195,32 @@ function toggle(mount, key) {
 
 test("the guide total always equals what Rig Studio will charge for the handed-off rig", async function () {
   const mount = await harness();
-  [["balanced", "pioneer-ddj-flx4"], ["budget", "pioneer-ddj-flx2"], ["guided", "hercules-inpulse-500"]].forEach(function () {
-    /* profile switch below drives the model; keep this list declarative */
-  });
 
   /* FLX4 default: 329 + 49 + 149 + 12 */
   assert.equal(allowanceTotal(mount.innerHTML), 539);
   assert.equal(rigCharge(rigFrom(mount.innerHTML)), 539);
   assert.equal(slotOf(rigFrom(mount.innerHTML), "cables").itemId, "cable-rca-rca");
 
-  /* FLX2: 199 + 49 + 149 + 15 allowance — the number the browser review lost. */
+  /* FLX2: 199 + 49 + 149 = 397 with no cable line at all — the DM-40D box
+     lead covers this output. The old $412 charged a $15 allowance the
+     corrected configuration cannot use (N3). */
   fireById(mount, "[data-bl-profile]", "budget");
-  assert.equal(allowanceTotal(mount.innerHTML), 412);
-  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 412, "Rig Studio would charge the same $412");
+  assert.equal(allowanceTotal(mount.innerHTML), 397);
+  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 397, "Rig Studio would charge the same $397");
+  assert.equal(slotOf(rigFrom(mount.innerHTML), "cables"), undefined,
+    "nothing is charged for a lead that ships in the monitor box");
 
-  /* Own the controller: 49 + 149 + 15 = 213 in both places. */
+  /* Own the controller: 49 + 149 = 198 in both places. */
   toggle(mount, "controller");
-  assert.equal(allowanceTotal(mount.innerHTML), 213);
-  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 213);
+  assert.equal(allowanceTotal(mount.innerHTML), 198);
+  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 198);
   assert.equal(slotOf(rigFrom(mount.innerHTML), "controllers").owned, true);
 
-  /* Own the cable too: the allowance leaves the bill, not the rig. */
-  toggle(mount, "cable");
-  assert.equal(allowanceTotal(mount.innerHTML), 198);
-  const ownedCablePayload = rigFrom(mount.innerHTML);
-  assert.equal(rigCharge(ownedCablePayload), 198);
-  assert.equal(slotOf(ownedCablePayload, "cables").owned, true,
-    "the owned allowance stays in the payload so Rig Studio can see what was skipped");
+  /* No cable to own: the guide offers no cable checkbox, so there is no
+     allowance line to mark as owned either. */
+  assert.equal(mount.lastControls["[data-bl-owned]"].some(function (node) {
+    return node.getAttribute("data-bl-owned") === "cable";
+  }), false, "no cable ownership control exists while the lead ships in the box");
 
   /* Owning monitors as well: only headphones remain. */
   toggle(mount, "speakers");

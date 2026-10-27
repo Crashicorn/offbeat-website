@@ -1,20 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 360" width="100%" height="100%">
-  <!-- Left Speaker -->
-  <rect x="40" y="50" width="145" height="260" rx="10" fill="#111" stroke="#facc15" stroke-width="2"/>
-  <circle cx="112" cy="110" r="18" fill="#1c1c1c" stroke="#333"/>
-  <!-- Iconic Yellow Kevlar Woofer -->
-  <circle cx="112" cy="205" r="46" fill="#eab308" stroke="#ca8a04" stroke-width="3"/>
-  <circle cx="112" cy="205" r="16" fill="#000"/>
-  <!-- Front Slot Bass Port -->
-  <rect x="72" y="272" width="80" height="12" rx="3" fill="#000" stroke="#333"/>
+  <!-- Offbeat technical illustration, not a product photograph.
+       KRK Classic 5 is a two-cabinet pack: each cabinet is powered and each
+       carries its own XLR, 1/4-inch TRS and RCA input. Yellow woven-aramid
+       cone identifies the Classic line; the ROKIT G4 is a different cabinet. -->
+  <title>KRK Classic 5 monitor pack, two powered cabinets</title>
 
-  <!-- Right Speaker -->
-  <rect x="215" y="50" width="145" height="260" rx="10" fill="#111" stroke="#facc15" stroke-width="2"/>
-  <circle cx="287" cy="110" r="18" fill="#1c1c1c" stroke="#333"/>
-  <circle cx="287" cy="205" r="46" fill="#eab308" stroke="#ca8a04" stroke-width="3"/>
-  <circle cx="287" cy="205" r="16" fill="#000"/>
-  <rect x="247" y="272" width="80" height="12" rx="3" fill="#000" stroke="#333"/>
+  <!-- Left cabinet -->
+  <g>
+    <rect x="42" y="52" width="148" height="262" rx="12" fill="#12111c" stroke="rgba(250,204,21,0.3)" stroke-width="2"/>
+    <!-- 1-inch textile soft-dome tweeter -->
+    <circle cx="116" cy="112" r="21" fill="#0b0b10" stroke="#33333f" stroke-width="2"/>
+    <circle cx="116" cy="112" r="12" fill="#2b2b36" stroke="#4b4b5a" stroke-width="1.5"/>
+    <circle cx="116" cy="112" r="4" fill="#0b0b10"/>
+    <!-- 5-inch yellow woven-aramid woofer -->
+    <circle cx="116" cy="212" r="47" fill="#facc15" stroke="#a16207" stroke-width="3"/>
+    <circle cx="116" cy="212" r="36" fill="none" stroke="rgba(161,98,7,0.45)" stroke-width="2"/>
+    <circle cx="116" cy="212" r="25" fill="none" stroke="rgba(161,98,7,0.35)" stroke-width="1.5"/>
+    <circle cx="116" cy="212" r="15" fill="#1c1917"/>
+    <circle cx="116" cy="212" r="5" fill="#facc15"/>
+    <!-- Front bass-port slot -->
+    <rect x="76" y="268" width="80" height="10" rx="4" fill="#07070b" stroke="#33333f" stroke-width="1.5"/>
+    <!-- Rear-panel inputs mirrored on the drawing plate: XLR, TRS, RCA -->
+    <rect x="76" y="288" width="80" height="16" rx="4" fill="#0b0b10" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <circle cx="96" cy="296" r="5" fill="#101018" stroke="#8b5cf6" stroke-width="1.5"/>
+    <circle cx="116" cy="296" r="4" fill="#101018" stroke="#38bdf8" stroke-width="1.5"/>
+    <circle cx="136" cy="296" r="3" fill="#101018" stroke="#facc15" stroke-width="1.5"/>
+  </g>
 
-  <text x="200" y="32" fill="#fff" font-size="13" font-family="sans-serif" font-weight="bold" text-anchor="middle">KRK Classic 5 (Pair)</text>
-  <text x="200" y="338" fill="#facc15" font-size="10" font-family="sans-serif" text-anchor="middle">Iconic Yellow Kevlar Driver · Punchy Transients</text>
+  <!-- Right cabinet -->
+  <g>
+    <rect x="210" y="52" width="148" height="262" rx="12" fill="#12111c" stroke="rgba(250,204,21,0.3)" stroke-width="2"/>
+    <circle cx="284" cy="112" r="21" fill="#0b0b10" stroke="#33333f" stroke-width="2"/>
+    <circle cx="284" cy="112" r="12" fill="#2b2b36" stroke="#4b4b5a" stroke-width="1.5"/>
+    <circle cx="284" cy="112" r="4" fill="#0b0b10"/>
+    <circle cx="284" cy="212" r="47" fill="#facc15" stroke="#a16207" stroke-width="3"/>
+    <circle cx="284" cy="212" r="36" fill="none" stroke="rgba(161,98,7,0.45)" stroke-width="2"/>
+    <circle cx="284" cy="212" r="25" fill="none" stroke="rgba(161,98,7,0.35)" stroke-width="1.5"/>
+    <circle cx="284" cy="212" r="15" fill="#1c1917"/>
+    <circle cx="284" cy="212" r="5" fill="#facc15"/>
+    <rect x="244" y="268" width="80" height="10" rx="4" fill="#07070b" stroke="#33333f" stroke-width="1.5"/>
+    <rect x="244" y="288" width="80" height="16" rx="4" fill="#0b0b10" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+    <circle cx="264" cy="296" r="5" fill="#101018" stroke="#8b5cf6" stroke-width="1.5"/>
+    <circle cx="284" cy="296" r="4" fill="#101018" stroke="#38bdf8" stroke-width="1.5"/>
+    <circle cx="304" cy="296" r="3" fill="#101018" stroke="#facc15" stroke-width="1.5"/>
+  </g>
+
+  <text x="200" y="34" fill="#fff" font-size="13" font-family="sans-serif" font-weight="bold" text-anchor="middle">KRK Classic 5 (Pair, Monitor Pack)</text>
+  <text x="200" y="340" fill="#facc15" font-size="10" font-family="sans-serif" text-anchor="middle">Two Powered Cabinets &#183; XLR / TRS / RCA In &#183; 50 W Bi-Amp</text>
 </svg>
