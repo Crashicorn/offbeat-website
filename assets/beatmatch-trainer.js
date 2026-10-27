@@ -759,17 +759,22 @@
     });
   }
 
-  // Keyboard controls
+  // Keyboard shortcuts are active only while the practice stage is focused.
+  // Never hijack page navigation, native buttons, links, or range controls.
   document.addEventListener("keydown", function (e) {
-    if (e.target.matches("input, textarea, select, [contenteditable]")) return;
+    if (!root.contains(e.target) || e.altKey || e.ctrlKey || e.metaKey) return;
+    var interactive = "button, a, input, textarea, select, summary, [role='button'], [contenteditable]";
+    if (e.target.matches(interactive) ||
+        (e.target.closest && e.target.closest(interactive))) return;
 
     if (e.code === "Space") {
       e.preventDefault();
+      if (e.repeat) return;
       if (state.running) stop("manual");
       else start();
     } else if (e.code === "KeyC") {
       e.preventDefault();
-      if (el.cueBtn) el.cueBtn.click();
+      if (!e.repeat && el.cueBtn) el.cueBtn.click();
     } else if (e.code === "ArrowLeft") {
       e.preventDefault();
       startNudge(-1);
@@ -782,6 +787,15 @@
     } else if (e.code === "ArrowDown") {
       e.preventDefault();
       setPitch(state.pitch - 0.1);
+    } else if (e.code === "Digit1" || e.code === "Digit2") {
+      e.preventDefault();
+      if (!e.repeat) {
+        var solo = e.code === "Digit1" ? el.soloABtn : el.soloBBtn;
+        if (solo) solo.click();
+      }
+    } else if (e.code === "KeyR" && el.scorecard && !el.scorecard.hidden) {
+      e.preventDefault();
+      if (!e.repeat) start();
     }
   });
 
