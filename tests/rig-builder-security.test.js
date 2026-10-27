@@ -45,7 +45,8 @@ function harness(storageDisabled) {
     renderSavedRigsList: renderSavedRigsList,
     replaceSlotItem: replaceSlotItem,
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
-    calculateRigStats: calculateRigStats
+    calculateRigStats: calculateRigStats,
+    presetPriceBadge: presetPriceBadge
   };
 ` + hook);
   vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
@@ -386,4 +387,29 @@ test("a controller without headphones or speakers is not declared ready", () => 
   ] }), true);
   const listening = api.runDeepCompatibilityChecks();
   assert.equal(listening.fatalErrors, 0, "headphones-only practice remains supported");
+});
+
+test("default rig does not assume a buyer already owns the $999 laptop", () => {
+  const { api } = harness(false);
+  const host = api.getRig().items.find(s => s.category === "laptops");
+  assert.equal(host.itemId, "macbook-air-m2");
+  assert.equal(host.owned, false, "unverified ownership must not lower the shopping budget");
+});
+
+test("all four preset badges equal full current catalog totals", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const expected = {
+    "bedroom-starter": 1637,
+    "club-ready": 3230,
+    "mobile-pro": 3052,
+    "traktor-techno": 1780
+  };
+  assert.equal(catalog.presets.length, Object.keys(expected).length);
+  for (const preset of catalog.presets) {
+    const badge = "Est. $" + expected[preset.id].toLocaleString("en-US") + " total";
+    assert.equal(api.presetPriceBadge(preset), badge, preset.id + " computed badge");
+    assert.equal(preset.badge, badge, preset.id + " catalog badge");
+  }
 });

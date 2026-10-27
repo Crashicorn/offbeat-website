@@ -752,7 +752,7 @@
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "$509 Complete",
+      "badge": "Est. $1,637 total",
       "desc": "The quintessential beginner DJ bundle: 2-channel smart controller, studio-grade closed-back headphones, desktop monitors, and essential RCA cabling.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
@@ -766,7 +766,7 @@
     {
       "id": "club-ready",
       "name": "The Club-Ready Rig",
-      "badge": "$2,231 Pro",
+      "badge": "Est. $3,230 total",
       "desc": "Club-standard 4-channel controller with jog displays, industry-standard HD 25 headphones, bi-amped Yamaha 5-inch monitors, balanced XLR cabling, and USB 3.2 flash drive for CDJ export.",
       "slots": {
         "controllers": "pioneer-ddj-flx10",
@@ -781,7 +781,7 @@
     {
       "id": "mobile-pro",
       "name": "The Mobile & Wedding Pro",
-      "badge": "$3,281 Complete Event Setup",
+      "badge": "Est. $3,052 total",
       "desc": "Standalone 4-channel console with 10-inch touchscreen (no laptop required), 15-inch 1300W JBL PA speaker, Shure SM58 vocal mic, headphones, and balanced cables.",
       "slots": {
         "controllers": "denon-prime-4-plus",
@@ -796,7 +796,7 @@
     {
       "id": "traktor-techno",
       "name": "The Traktor Techno Specialist",
-      "badge": "$914 Minimalist",
+      "badge": "Est. $1,780 total",
       "desc": "Precision Traktor Kontrol S2 MK3 controller, Sony MDR-7506 reference monitoring, punchy KRK Classic 5 monitors, RCA-to-TRS cables, and laptop riser.",
       "slots": {
         "controllers": "traktor-kontrol-s2-mk3",

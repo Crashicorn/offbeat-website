@@ -26,7 +26,7 @@
       { slotId: "core-ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false },
       { slotId: "core-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
       { slotId: "core-spk", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
-      { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: true },
+      { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: false },
       { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false },
       { slotId: "core-cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
     ]
@@ -588,7 +588,7 @@
           <span class="preset-label">Quick Start Rigs:</span>
           ${CATALOG.presets.map(function (p) {
             return `<button type="button" class="rig-preset-pill" data-preset-id="${p.id}">
-              <strong>${escapeHtml(p.name)}</strong> <span class="preset-badge">${escapeHtml(p.badge)}</span>
+              <strong>${escapeHtml(p.name)}</strong> <span class="preset-badge">${escapeHtml(presetPriceBadge(p))}</span>
             </button>`;
           }).join("")}
         </div>
@@ -1311,6 +1311,12 @@
       selA.addEventListener("change", updateCompare);
       selB.addEventListener("change", updateCompare);
     }
+  }
+
+  // Price each preset from its actual catalog slots. Static marketing badges
+  // previously understated complete shopping totals by hundreds of dollars.
+  function presetPriceBadge(preset) {
+    return "Est. $" + calculateCustomRigValuation(convertPresetToItems(preset)).toLocaleString("en-US") + " total";
   }
 
   function convertPresetToItems(preset) {

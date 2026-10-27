@@ -50,6 +50,10 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
       const initialAlerts = await page.$eval(".compat-items-grid", el => el.textContent);
       assert.doesNotMatch(initialAlerts, /Headphone Connector Adapter Needed|Headphone Jack Adapter Advisory/);
+      // First-time buyers must not be assigned an imaginary owned laptop.
+      assert.equal(metrics.spend, "$1,637", "default includes the full $999 laptop");
+      const initialOwned = await page.$eval(".metric-val--owned", el => el.textContent.trim());
+      assert.match(initialOwned, /\\$0$/, "default ownership deduction must be zero");
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
       assert.ok(Number.isFinite(before) && before > 0, "initial spend must be a real amount");
       await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
@@ -57,6 +61,22 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       const after = Number(afterText.replace(/[^\d.]/g, ""));
       assert.ok(after < before, "marking an owned controller must reduce remaining spend");
       assert.deepEqual(errors, [], "browser errors after owned-toggle");
+
+      // Every preset button must quote the same full total displayed after
+      // selecting it, including host laptop, speakers, cables and accessories.
+      const expectedPresets = [
+        ["bedroom-starter", "$1,637"],
+        ["club-ready", "$3,230"],
+        ["mobile-pro", "$3,052"],
+        ["traktor-techno", "$1,780"]
+      ];
+      for (const [id, expectedPrice] of expectedPresets) {
+        const badge = await page.$eval('[data-preset-id="' + id + '"] .preset-badge', el => el.textContent.trim());
+        assert.equal(badge, "Est. " + expectedPrice + " total", id + " badge");
+        await page.click('[data-preset-id="' + id + '"]');
+        const actualSpend = await page.$eval(".metric-val--spend", el => el.textContent.trim());
+        assert.equal(actualSpend, expectedPrice, id + " purchase cost must match advertised total");
+      }
       await context.close();
       console.log("PASS: " + width + "px real catalog/render/owned-budget/no-overflow");
     }
