@@ -36,15 +36,21 @@
   ];
   var current = { profile: "balanced", item: "pioneer-ddj-flx4", controllerOwned: false, headphonesOwned: false, speakersOwned: false, cableOwned: false, catalog: null };
 
-  /* The FLX2 has a 3.5 mm master output, so no verified cable in the catalog is
-     guaranteed to fit every speaker. Rather than invent a SKU, the planner
-     carries an explicit catalog *allowance*: a real line item with a price, an
-     ownership flag and no retailer link. Rig Studio resolves it by id, so the
-     money cannot disappear on handoff. */
-  var CABLE_ALLOWANCE_ID = "cable-aux-rca-allowance";
-  var CABLE_ALLOWANCE_FALLBACK = 15;
-  var CABLE_ALLOWANCE_LABEL = "3.5 mm → RCA cable allowance";
-
+  /* The cable line is not hard-coded here any more. The guide asks the shared
+     connection model (assets/gear-connections.js) what the chosen controller
+     needs to reach the DM-40D pair: a verified product, a planning allowance,
+     or nothing at all because the lead is already in the box. That keeps the
+     guide, the speaker pages and Rig Studio on one answer. */
+  function gear() {
+    var api = typeof window !== "undefined" && window.OffbeatGear;
+    if (!api) throw new Error("assets/gear-connections.js did not load");
+    return api;
+  }
+  function cablePlan() {
+    var controller = find(current.item), speakers = find("pioneer-dm40d");
+    if (!controller || !speakers || !current.catalog) return null;
+    return gear().connectionPlan(current.catalog, controller, speakers, 1);
+  }
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
@@ -67,25 +73,35 @@
     current.profile = profile;
     render();
   }
-  function cableItem() {
-    if (activeChoice().id === "pioneer-ddj-flx2") return find(CABLE_ALLOWANCE_ID) || { id: CABLE_ALLOWANCE_ID, price: CABLE_ALLOWANCE_FALLBACK, estimate_only: true };
-    return find("cable-rca-rca");
+  function cableBuyable(plan) {
+    return Boolean(plan && plan.kind !== "included" && plan.itemId && plan.units > 0);
   }
-  function cableLabel() {
-    return activeChoice().id === "pioneer-ddj-flx2" ? CABLE_ALLOWANCE_LABEL : "Dual RCA cable";
+  function cableRowLabel(plan) {
+    if (!plan) return "Speaker cable";
+    if (plan.kind === "included") return "Speaker cable";
+    if (plan.kind === "product") return plan.name;
+    if (plan.kind === "allowance") return plan.label + " cable allowance";
+    return "Cable \u2014 confirm the jacks";
+  }
+  function cablePrice(plan) {
+    if (!cableBuyable(plan)) return 0;
+    var item = find(plan.itemId);
+    return item ? Number(item.price) * plan.units : 0;
   }
   function hrefForRig() {
     var choice = activeChoice();
     var controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d");
     if (!controller || !headphones || !speakers) return "build-your-dj-setup.html";
-    var cable = cableItem();
-    var cableId = cable ? cable.id : null;
+    var plan = cablePlan();
     var slots = [
       { slotId: "guide-controller", category: "controllers", itemId: controller.id, qty: 1, owned: current.controllerOwned },
       { slotId: "guide-headphones", category: "headphones", itemId: headphones.id, qty: 1, owned: current.headphonesOwned },
-      { slotId: "guide-speakers", category: "speakers", itemId: speakers.id, qty: 1, owned: current.speakersOwned },
-      { slotId: "guide-cable", category: "cables", itemId: cableId, qty: 1, owned: current.cableOwned }
+      { slotId: "guide-speakers", category: "speakers", itemId: speakers.id, qty: 1, owned: current.speakersOwned }
     ];
+    /* A lead that ships in the box is not a line item, so it is not carried. */
+    if (cableBuyable(plan)) {
+      slots.push({ slotId: "guide-cable", category: "cables", itemId: plan.itemId, qty: plan.units, owned: current.cableOwned });
+    }
     /* g marks a guide hand-off, so Rig Studio can greet it as "opened from the
        guide" instead of pretending the visitor followed someone else's link. */
     var payload = { n: "First setup · " + controller.model, i: slots, g: "guide" };
@@ -96,16 +112,43 @@
   }
   function costModel() {
     var choice = activeChoice(), controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d");
-    var cable = cableItem();
-    var cablePrice = cable ? Number(cable.price) : 12;
+    var plan = cablePlan();
+    var buyable = cableBuyable(plan);
     var rows = [
-      { label: (controller && controller.model) || "Controller", value: controller ? Number(controller.price) : 0, included: !current.controllerOwned },
-      { label: "Closed-back headphones · ATH-M20x", value: headphones ? Number(headphones.price) : 49, included: !current.headphonesOwned },
-      { label: "Powered desktop monitors · pair", value: speakers ? Number(speakers.price) : 149, included: !current.speakersOwned },
-      { label: cableLabel(), value: current.cableOwned ? 0 : cablePrice, included: !current.cableOwned, estimate: Boolean(cable && cable.estimate_only) }
+      { label: (controller && controller.model) || "Controller", value: controller ? Number(controller.price) : 0, buying: !current.controllerOwned },
+      { label: "Closed-back headphones \u00b7 ATH-M20x", value: headphones ? Number(headphones.price) : 49, buying: !current.headphonesOwned },
+      { label: "Powered desktop monitors \u00b7 pair", value: speakers ? Number(speakers.price) : 149, buying: !current.speakersOwned },
+      {
+        label: cableRowLabel(plan),
+        value: buyable ? cablePrice(plan) : 0,
+        buying: buyable ? !current.cableOwned : true,
+        estimate: Boolean(plan && plan.kind === "allowance"),
+        note: plan && plan.kind === "included" ? "included with the pair" : (plan ? plan.label : ""),
+        buyable: buyable
+      }
     ];
-    return { rows: rows, total: rows.reduce(function (sum, row) { return sum + (row.included ? row.value : 0); }, 0) };
+    return { rows: rows, plan: plan, total: rows.reduce(function (sum, row) { return sum + (row.buying ? row.value : 0); }, 0) };
   }
+  /* One sentence that states the cable truth for the selected controller,
+     rather than a blanket "allowance" the rig does not actually charge. */
+  function cableDisclaimer(plan) {
+    var base = "Includes the controller, ATH-M20x headphones and the DM-40D monitor pair. " +
+      "Assumes you have a compatible host device; excludes tax, software upgrades and a PA.";
+    if (!plan) return base + " Confirm the cable connectors before ordering.";
+    if (plan.kind === "included") {
+      return base + " No cable purchase: the DM-40D pair ships with " + plan.includedLabel + ", which fits this controller's " +
+        gear().endpointLabel(plan.output && plan.output.connector) + " output.";
+    }
+    if (plan.kind === "allowance") {
+      return base + " The cable line is a $" + cablePrice(plan) + " planning allowance for " + plan.label +
+        ", not a recommended product: confirm the connector at both ends.";
+    }
+    if (plan.kind === "product") {
+      return base + " The cable line is " + plan.name + " (" + money(cablePrice(plan)) + "), one purchase for the pair: " + plan.label + ".";
+    }
+    return base + " Confirm the cable connectors before ordering.";
+  }
+
   function render() {
     if (!current.catalog) return;
     var choice = activeChoice(), item = find(choice.id);
@@ -125,9 +168,13 @@
         '<button type="button" data-bl-choose="' + esc(option.id) + '" aria-pressed="' + (selected ? "true" : "false") + '">' + (selected ? "Selected for your setup" : "Compare this one →") + '</button></article>';
     }).join("");
     var rowHtml = costs.rows.map(function (row) {
-      return '<div class="beginner-lab-line"><span>' + esc(row.label) +
+      var note = row.note ? ' <span class="beginner-lab-line-note">' + esc(row.note) + '</span>' : "";
+      var value = row.value === 0 && !row.buying ? "Already have it"
+        : row.value === 0 ? "$0"
+        : row.buying ? money(row.value) : "Already have it";
+      return '<div class="beginner-lab-line"><span>' + esc(row.label) + note +
         (row.estimate ? ' <span class="beginner-lab-estimate-tag" title="Budget estimate, not a verified product listing">estimate</span>' : "") +
-        '</span><b>' + (row.included ? money(row.value) : "Already have it") + '</b></div>';
+        '</span><b>' + value + '</b></div>';
     }).join("");
     var productImage = item.image ? '<img src="' + esc(item.image) + '" alt="Illustrated equipment schematic for ' + esc(item.brand + " " + item.model) + '" loading="lazy" decoding="async">' : "";
     var profileCopy = {
@@ -146,8 +193,11 @@
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="controller" ' + (current.controllerOwned ? "checked" : "") + '> This controller</label>' +
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="headphones" ' + (current.headphonesOwned ? "checked" : "") + '> Headphones</label>' +
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="speakers" ' + (current.speakersOwned ? "checked" : "") + '> Monitor pair</label>' +
-      '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="cable" ' + (current.cableOwned ? "checked" : "") + '> A suitable speaker cable</label></fieldset>' +
-      '<div class="beginner-lab-total"><span>Estimated new spend</span><strong data-bl-total aria-live="polite">' + money(costs.total) + '</strong></div><p class="beginner-lab-disclaimer">Includes controller, ATH-M20x headphones, DM-40D monitor pair and a speaker cable allowance. Assumes you have a compatible host device; excludes tax, software upgrades and a PA. The FLX2 line is a <b>$15 allowance for a 3.5 mm → RCA lead</b>, not a recommended product: confirm the connector at both ends. Catalog prices are estimates, not live retailer quotes.</p>' +
+      (costs.rows[3].buyable
+        ? '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="cable" ' + (current.cableOwned ? "checked" : "") + '> A suitable speaker cable</label>'
+        : '<p class="beginner-lab-check-note">No cable to buy: the DM-40D pair ships with a 3.5 mm stereo mini-plug to dual RCA lead, which is exactly what the ' + esc(item.model) + ' needs.</p>') +
+      '</fieldset>' +
+      '<div class="beginner-lab-total"><span>Estimated new spend</span><strong data-bl-total aria-live="polite">' + money(costs.total) + '</strong></div><p class="beginner-lab-disclaimer">' + esc(cableDisclaimer(costs.plan)) + ' Catalog prices are estimates, not live retailer quotes.</p>' +
       '<a class="beginner-lab-build" data-bl-build href="' + esc(hrefForRig()) + '">Open this setup in Rig Studio →</a>' +
       '<p class="beginner-lab-handoff">Every line above travels with you, including the cable allowance and what you already own. Rig Studio totals should match this estimate.</p></aside></div>' +
       '<section class="beginner-lab-alternatives" aria-labelledby="beginner-lab-alt-title"><div class="beginner-lab-alternatives-head"><h3 id="beginner-lab-alt-title">Compare the other ways in</h3><p>Each one is a good fit for a different reason—and has a real trade-off.</p></div><div class="beginner-lab-cards">' + alternatives + '</div></section>' +
