@@ -486,7 +486,11 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The default bedroom monitor pair"
+      "pick": "The default bedroom monitor pair",
+      "speaker_units": 2,
+      "box_label": "pair",
+      "cable_runs_per_box": 1,
+      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
     },
     {
       "id": "pioneer-dm50d",
@@ -511,7 +515,11 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "speaker_units": 2,
+      "box_label": "pair",
+      "cable_runs_per_box": 1,
+      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
     },
     {
       "id": "krk-rokit-5-g4",
@@ -535,7 +543,11 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "speaker_units": 2,
+      "box_label": "pair",
+      "cable_runs_per_box": 1,
+      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
     },
     {
       "id": "yamaha-hs5",
@@ -559,7 +571,11 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "speaker_units": 2,
+      "box_label": "pair",
+      "cable_runs_per_box": 1,
+      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
     },
     {
       "id": "jbl-eon-715",
@@ -583,7 +599,11 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "speaker_units": 1,
+      "box_label": "single speaker",
+      "cable_runs_per_box": 1,
+      "pack_note": "Sold as a single speaker cabinet: one purchase is one cabinet and needs its own cable run."
     },
     {
       "id": "macbook-air-m2",
@@ -760,6 +780,25 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic"
+    },
+    {
+      "id": "cable-aux-rca-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "3.5 mm stereo mini-jack to dual RCA cable (allowance)",
+      "price": 15,
+      "estimate_only": true,
+      "price_basis": "Planning allowance of $15 for a 3.5 mm stereo mini-jack to dual RCA cable, checked 2026-10-25. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "Offbeat does not recommend a single retailer SKU for this lead: the correct cable depends on whether your speakers take dual RCA, a 3.5 mm input or a combo jack. Budget about $15 and confirm the connector at both ends.",
+      "connector_a": "3.5 mm stereo mini-jack (male)",
+      "connector_b": "2x RCA (male) — confirm your speaker input before buying",
+      "ideal_for": "Controllers with a 3.5 mm master output, such as the DDJ-FLX2, feeding powered speakers",
+      "tagline": "A budget allowance for the adapter lead a 3.5 mm/aux master output needs. Connector ends must be confirmed — no specific product is recommended.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "no_retailer_link": true,
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
     },
     {
       "id": "laptop-stand-pyle",

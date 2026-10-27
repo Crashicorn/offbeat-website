@@ -40,9 +40,9 @@
 .beginner-lab-profile span { margin-top: .28rem; color: var(--bl-muted); font-size: .74rem; line-height: 1.4; }
 .beginner-lab-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(275px, .75fr); gap: .85rem; margin-top: .9rem; align-items: stretch; }
 .beginner-lab-match, .beginner-lab-cost { min-width: 0; border: 1px solid var(--bl-edge); border-radius: 17px; background: rgba(23,20,33,.83); overflow: hidden; }
-.beginner-lab-match { display: grid; grid-template-columns: minmax(150px, .72fr) minmax(0, 1fr); }
-.beginner-lab-product-art { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 265px; padding: 1.1rem; background: radial-gradient(90% 80% at 50% 42%, rgba(131,92,222,.18), transparent 74%), #11101a; border-right: 1px solid rgba(255,255,255,.07); }
-.beginner-lab-product-art img { width: 100%; max-width: 310px; max-height: 190px; margin: auto; object-fit: contain; filter: drop-shadow(0 20px 22px rgba(0,0,0,.3)); }
+.beginner-lab-match { display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); }
+.beginner-lab-product-art { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 265px; padding: 1rem; background: radial-gradient(90% 80% at 50% 42%, rgba(131,92,222,.18), transparent 74%), #11101a; border-right: 1px solid rgba(255,255,255,.07); }
+.beginner-lab-product-art img { display: block; width: 100%; max-width: 100%; height: auto; max-height: 210px; margin: auto; object-fit: contain; filter: drop-shadow(0 20px 22px rgba(0,0,0,.3)); }
 .beginner-lab-product-art figcaption { margin-top: .55rem; color: #827c91; font-size: .65rem; text-align: center; }
 .beginner-lab-match-copy { padding: clamp(1rem, 2vw, 1.5rem); display: flex; flex-direction: column; align-items: flex-start; }
 .beginner-lab-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .31rem .58rem; border-radius: 999px; background: rgba(112,229,238,.1); color: var(--bl-cyan); font-size: .68rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
@@ -66,6 +66,8 @@
 .beginner-lab-owned legend { padding: 0 .3rem; color: #c9c2d5; font-size: .69rem; font-weight: 700; }
 .beginner-lab-check { display: flex; align-items: center; gap: .5rem; color: #d4cedd; font-size: .74rem; cursor: pointer; }
 .beginner-lab-check input { width: 16px; height: 16px; accent-color: #a78bfa; }
+.beginner-lab-estimate-tag { display: inline-block; margin-left: .25rem; padding: .1rem .34rem; border: 1px dashed rgba(180,154,255,.6); border-radius: 999px; color: #cfc2f4; font-size: .58rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.beginner-lab-handoff { margin: .55rem 0 0; color: #918ca2; font-size: .64rem; line-height: 1.45; text-align: center; }
 .beginner-lab-total { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; margin-top: auto; padding: .9rem 0 .4rem; }
 .beginner-lab-total span { color: #c6bfd3; font-size: .78rem; }
 .beginner-lab-total strong { color: #fff; font-size: 1.55rem; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
@@ -109,7 +111,7 @@
   .beginner-lab-profile span { font-size: .68rem; }
   .beginner-lab-match { grid-template-columns: 1fr; }
   .beginner-lab-product-art { min-height: 150px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.07); }
-  .beginner-lab-product-art img { max-height: 130px; }
+  .beginner-lab-product-art img { max-width: 260px; max-height: 130px; }
   .beginner-lab-cost { display: flex; }
   .beginner-lab-alternatives-head { display: block; }
   .beginner-lab-alternatives-head p { margin-top: .3rem; }

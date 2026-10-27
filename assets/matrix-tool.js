@@ -402,15 +402,25 @@
     ];
     var html = '<section class="matrix-compare-panel" aria-labelledby="matrix-compare-title" id="matrix-compare-panel">';
     html += '<div class="matrix-compare-heading"><div><p class="matrix-eyebrow">Shortlist comparison</p><h2 id="matrix-compare-title">Check the trade-offs side by side</h2><p>Software support is not all the same: an included unlock, a free Lite edition and a third-party MIDI map are different things.</p></div><button type="button" class="matrix-compare-close" data-compare-close>Hide comparison</button></div>';
-    html += '<p class="matrix-table-hint">On a phone, swipe the comparison table horizontally to see each controller.</p><div class="matrix-compare-scroll" tabindex="0" role="region" aria-label="Scrollable side-by-side controller comparison">';
+    html += '<p class="matrix-table-hint">Swipe the table sideways to see each controller. The decision column and the column headings stay pinned, so you always know which controller a value belongs to.</p>';
+    html += '<ol class="matrix-compare-legend" aria-label="Comparison columns, in order">' +
+      selected.map(function (c, i) { return '<li><span class="matrix-compare-legend-n">' + (i + 1) + '</span>' + esc(c.name) + '</li>'; }).join("") +
+      '</ol>';
+    html += '<div class="matrix-compare-scroll" tabindex="0" role="region" aria-label="Scrollable side-by-side controller comparison">';
     html += '<table class="matrix-compare-table"><caption class="sr-only">Side-by-side compatibility and trade-off comparison</caption><thead><tr><th scope="col">Decision point</th>';
-    selected.forEach(function (c) { html += '<th scope="col">' + esc(c.name) + '</th>'; });
+    selected.forEach(function (c) { html += '<th scope="col" data-compare-product="' + esc(c.name) + '">' + esc(c.name) + '</th>'; });
     html += '</tr></thead><tbody>';
-    rows.forEach(function (row) { html += '<tr><th scope="row">' + esc(row[0]) + '</th>'; selected.forEach(function (c) { html += '<td>' + esc(row[1](c)) + '</td>'; }); html += '</tr>'; });
+    /* Every cell names its controller: on a phone, once a column scrolls past
+       the edge, the cell still says which product the value belongs to. */
+    rows.forEach(function (row) { html += '<tr><th scope="row">' + esc(row[0]) + '</th>'; selected.forEach(function (c) { html += '<td data-compare-product="' + esc(c.name) + '">' + esc(row[1](c)) + '</td>'; }); html += '</tr>'; });
     html += '<tr><th scope="row">Next step</th>';
     selected.forEach(function (c) {
       var addToRig = catalogIds[c.id] ? '?add=' + encodeURIComponent(catalogIds[c.id]) : '';
-      html += '<td class="matrix-compare-links">' + (c.guide ? '<a href="' + esc(c.guide) + '">Read guide</a>' : '') + '<a href="build-your-dj-setup.html' + addToRig + '">Open Rig Studio</a></td>';
+      /* The cell stays a table cell: grid belongs to the child wrapper so the
+         links keep the product's column instead of stacking under column one. */
+      html += '<td class="matrix-compare-cell" data-compare-product="' + esc(c.name) + '"><div class="matrix-compare-links">' +
+        (c.guide ? '<a href="' + esc(c.guide) + '" aria-label="Read the ' + esc(c.name) + ' guide">Read guide</a>' : '') +
+        '<a href="build-your-dj-setup.html' + addToRig + '" aria-label="Open ' + esc(c.name) + ' in Rig Studio">Open Rig Studio</a></div></td>';
     });
     html += '</tr></tbody></table></div></section>';
     return html;
