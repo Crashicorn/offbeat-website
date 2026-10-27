@@ -133,6 +133,31 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await multi.context.close();
     console.log("PASS: multi-controller shared rig warns that additional routing is unverified");
 
+    // A quantity stepper can add a second physical controller within one
+    // slot. The compatibility verdict must still require manual routing review.
+    const quantityRig = {
+      name: "Two controllers in one slot",
+      items: [
+        { slotId: "ctrl", category: "controllers", itemId: "denon-prime-4-plus", qty: 2, owned: false },
+        { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false }
+      ]
+    };
+    const quantityQuery = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(quantityRig)), "binary").toString("base64")
+    );
+    const quantity = await visit(browser, 390, quantityQuery);
+    const quantityState = await quantity.page.evaluate(() => ({
+      tag: document.querySelector(".compat-status-tag")?.textContent || "",
+      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+    }));
+    assert.match(quantityState.tag, /Manual Routing Review Required/);
+    assert.match(quantityState.alerts, /Multiple controllers Need Manual Verification/);
+    assert.ok(quantityState.readiness <= 50);
+    assert.deepEqual(quantity.errors, []);
+    await quantity.context.close();
+    console.log("PASS: two controllers via one quantity stepper require routing review");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
