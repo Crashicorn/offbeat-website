@@ -103,7 +103,7 @@ function visibleCount(page) {
         waitUntil: "load"
       });
       await page.waitForSelector("#matrix-root .matrix-card", { timeout: 10000 });
-      const matrixLinks = await page.$eval(".matrix-card", cards => cards.map(card => {
+      const matrixLinks = await page.$$eval(".matrix-card", cards => cards.map(card => {
         const link = card.querySelector(".mat-plan-btn");
         const url = new URL(link.href);
         return {
