@@ -46,7 +46,8 @@ function harness(storageDisabled) {
     replaceSlotItem: replaceSlotItem,
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
     calculateRigStats: calculateRigStats,
-    presetPriceBadge: presetPriceBadge
+    presetPriceBadge: presetPriceBadge,
+    recommendNextUpgrade: recommendNextUpgrade
   };
 ` + hook);
   vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
@@ -412,4 +413,86 @@ test("all four preset badges equal full current catalog totals", () => {
     assert.equal(api.presetPriceBadge(preset), badge, preset.id + " computed badge");
     assert.equal(preset.badge, badge, preset.id + " catalog badge");
   }
+});
+
+
+test("RCA-only four-channel controllers never receive a fabricated balanced-monitor upsell", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "rca-four", category: "controllers", brand: "Example", model: "RCA Four",
+      price: 600, channels: 4, standalone: false, master_outputs: ["RCA (Unbalanced)"] },
+    { id: "xlr-four", category: "controllers", brand: "Example", model: "XLR Four",
+      price: 900, channels: 4, standalone: false, master_outputs: ["XLR (Balanced)"] },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "speakers", category: "speakers", price: 150, inputs: ["RCA (Unbalanced)"] },
+    { id: "host", category: "laptops", price: 999 },
+    { id: "laptop-stand-pyle", category: "stands", brand: "Pyle", model: "Laptop Stand", price: 29 },
+    { id: "yamaha-hs5", category: "speakers", brand: "Yamaha", model: "HS5 Pair", price: 398 }
+  ], categories: [], presets: [] });
+  const items = [
+    { slotId: "ctrl", category: "controllers", itemId: "rca-four", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 },
+    { slotId: "sp", category: "speakers", itemId: "speakers", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "host", qty: 1 },
+    { slotId: "stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1 }
+  ];
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.recommendNextUpgrade(), null, "RCA-only four-channel deck must not suggest balanced monitors");
+  items[0].itemId = "xlr-four";
+  assert.equal(api.normalizeRigState({ items }), true);
+  const upgrade = api.recommendNextUpgrade();
+  assert.equal(upgrade.targetId, "yamaha-hs5");
+  assert.match(upgrade.desc, /required pair quantity, cabling/);
+});
+
+test("optional USB-media upsell requires a standalone player and absent storage", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "usb-controller", category: "controllers", brand: "Example", model: "Laptop Controller",
+      price: 299, standalone: false },
+    { id: "standalone", category: "controllers", brand: "Example", model: "Standalone",
+      price: 999, standalone: true },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "host", category: "laptops", price: 999 },
+    { id: "stand", category: "stands", price: 29 },
+    { id: "usb-sandisk-extreme", category: "storage", brand: "SanDisk", model: "Extreme", price: 28 }
+  ], categories: [], presets: [] });
+  const items = [
+    { slotId: "ctrl", category: "controllers", itemId: "usb-controller", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "host", qty: 1 },
+    { slotId: "stand", category: "stands", itemId: "stand", qty: 1 }
+  ];
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.recommendNextUpgrade(), null, "computer-dependent deck cannot load a DJ set from USB");
+  items[0].itemId = "standalone";
+  assert.equal(api.normalizeRigState({ items }), true);
+  const upgrade = api.recommendNextUpgrade();
+  assert.equal(upgrade.targetId, "usb-sandisk-extreme");
+  assert.doesNotMatch(upgrade.desc, /zero lag|guarantee/i);
+  items.push({ slotId: "media", category: "storage", itemId: "usb-sandisk-extreme", qty: 1 });
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.recommendNextUpgrade(), null, "existing storage must not be upsold again");
+});
+
+test("incomplete or multi-device rigs do not show optional shopping upsells", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "usb-controller", category: "controllers", brand: "Example", model: "USB",
+      price: 299, standalone: false },
+    { id: "standalone", category: "controllers", brand: "Example", model: "Standalone",
+      price: 999, standalone: true },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "usb-sandisk-extreme", category: "storage", brand: "SanDisk", model: "Extreme", price: 28 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "usb-controller", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
+  ] }), true);
+  assert.equal(api.recommendNextUpgrade(), null, "missing host is more important than optional gear");
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 2 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
+  ] }), true);
+  assert.equal(api.recommendNextUpgrade(), null, "multi-controller routing must be reviewed before upselling");
 });

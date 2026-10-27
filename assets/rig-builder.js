@@ -267,7 +267,7 @@
     });
 
     var compatibility = runDeepCompatibilityChecks();
-    var nextUpgrade = recommendNextUpgrade();
+    var nextUpgrade = recommendNextUpgrade(compatibility);
 
     return {
       totalValue: totalValue,
@@ -506,53 +506,77 @@
   }
 
   /* ------------------------------------------- Smart Upgrade Path Advisor */
-  function recommendNextUpgrade() {
+  function recommendNextUpgrade(compatibility) {
+    // An upsell must never distract from an incomplete or manually unverified
+    // rig. Compatibility checks are authoritative for the current selection.
+    var verdict = compatibility || runDeepCompatibilityChecks();
+    if (verdict.fatalErrors > 0 || verdict.requiresManualReview) return null;
+
     var controllerSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
     var headphonesSlot = currentRig.items.find(function (s) { return s.category === "headphones"; });
     var speakersSlot = currentRig.items.find(function (s) { return s.category === "speakers"; });
+    var laptopSlot = currentRig.items.find(function (s) { return s.category === "laptops"; });
     var standSlot = currentRig.items.find(function (s) { return s.category === "stands"; });
+    var storageSlot = currentRig.items.find(function (s) { return s.category === "storage"; });
 
     var controller = controllerSlot ? getSlotItem(controllerSlot) : null;
     var headphones = headphonesSlot ? getSlotItem(headphonesSlot) : null;
     var speakers = speakersSlot ? getSlotItem(speakersSlot) : null;
+    if (!controller) return null;
 
-    if (headphones && headphones.price < 100 && controller && controller.price >= 299) {
+    function offer(itemId, role, description, targetSlotId) {
+      var target = getItem(itemId);
+      if (!target || currentRig.items.some(function (slot) { return slot.itemId === itemId; })) return null;
       return {
-        role: "Headphones Upgrade",
-        targetName: "Sennheiser HD 25 ($149)",
-        desc: "Upgrading from entry headphones to industry-standard HD 25s provides maximum club booth acoustic isolation and rotating one-ear monitoring.",
-        targetId: "sennheiser-hd25",
-        targetSlotId: headphonesSlot.slotId
+        role: role,
+        targetName: target.brand + " " + target.model + " (Est. $" + target.price.toLocaleString("en-US") + ")",
+        desc: description,
+        targetId: itemId,
+        targetSlotId: targetSlotId
       };
     }
 
-    if (controller && controller.channels === 4 && speakers && speakers.price < 200) {
-      return {
-        role: "Studio Monitor Upgrade",
-        targetName: "Yamaha HS5 ($398 Pair)",
-        desc: "Your 4-channel controller has balanced outputs. Upgrading to bi-amped 5-inch Yamaha monitors delivers transparent frequency response for advanced mixing.",
-        targetId: "yamaha-hs5",
-        targetSlotId: speakersSlot.slotId
-      };
+    if (headphones && headphones.price < 100 && controller.price >= 299) {
+      var headphonesUpgrade = offer("sennheiser-hd25", "Headphones Upgrade",
+        "Consider closed-back DJ headphones with replaceable parts and isolation suited to your venue. Check fit and current price before buying.",
+        headphonesSlot.slotId);
+      if (headphonesUpgrade) return headphonesUpgrade;
     }
 
-    if (!standSlot && controller && !controller.standalone) {
-      return {
-        role: "Ergonomic Upgrade",
-        targetName: "Pyle Pro Laptop Stand ($29)",
-        desc: "Elevating your laptop directly above your controller platters saves table footprint and prevents neck strain during long practice sets.",
-        targetId: "laptop-stand-pyle",
-        targetSlotId: "core-stand"
-      };
+    if (controller.channels === 4 && speakers && speakers.price < 200) {
+      // Four mixer channels do NOT imply balanced master outputs. In
+      // particular, RCA-only controllers must not be upsold an XLR monitor
+      // pair on the unsupported claim that their outputs are balanced.
+      var outputs = controller.master_outputs || [];
+      var balanced = outputs.some(function (output) {
+        return /\bXLR\b/i.test(output) ||
+          (/\bTRS\b/i.test(output) && /balanced/i.test(output));
+      });
+      if (balanced) {
+        var monitorsUpgrade = offer("yamaha-hs5", "Studio Monitor Upgrade",
+          "This controller lists a balanced output. Compare the monitor inputs, required pair quantity, cabling, room size and live prices before upgrading.",
+          speakersSlot.slotId);
+        if (monitorsUpgrade) return monitorsUpgrade;
+      }
     }
 
-    return {
-      role: "Club Readiness",
-      targetName: "SanDisk Extreme PRO USB 3.2 ($28)",
-      desc: "Fast solid-state flash memory ensures instant waveform loading and zero lag when exporting rekordbox playlists to club CDJ-3000s.",
-      targetId: "usb-sandisk-extreme",
-      targetSlotId: "core-storage"
-    };
+    if (!standSlot && laptopSlot && !controller.standalone) {
+      var standUpgrade = offer("laptop-stand-pyle", "Optional Laptop Stand",
+        "A laptop stand may improve visibility and desk space. Check your laptop size and booth clearance before purchasing.",
+        "core-stand");
+      if (standUpgrade) return standUpgrade;
+    }
+
+    // USB media is only a relevant optional purchase for a standalone player.
+    // Never claim that a laptop-dependent controller can load DJ sets from USB,
+    // or that a particular flash drive guarantees zero-lag playback.
+    if (controller.standalone && !storageSlot) {
+      return offer("usb-sandisk-extreme", "Optional Performance Media",
+        "Check your standalone player's supported USB formats, library export requirements and current drive compatibility before purchasing.",
+        "core-storage");
+    }
+
+    return null;
   }
 
   /* ---------------------------------------------------------------- Render */
