@@ -13,6 +13,8 @@ on:
       - main
     paths:
       - assets/rig-builder.js
+      - assets/beatmatch-trainer.js
+      - tests/beatmatch-cue.test.js
       - tests/rig-builder-security.test.js
       - tests/rig-builder-browser.cjs
       - tests/arena-library-browser.cjs
@@ -46,6 +48,8 @@ jobs:
       - name: Parse planner and tests
         run: |
           node --check assets/rig-builder.js
+          node --check assets/beatmatch-trainer.js
+          node --check tests/beatmatch-cue.test.js
           node --check assets/matrix-tool.js
           node --check assets/site.js
           node --check assets/quick-search.js
@@ -58,7 +62,7 @@ jobs:
           python3 tests/check_site_structure.py
           python3 -m py_compile tools/build_index.py
       - name: Execute committed regression suite
-        run: node --test tests/rig-builder-security.test.js
+        run: node --test tests/rig-builder-security.test.js tests/beatmatch-cue.test.js
       - name: Browser-check real planner at desktop and mobile sizes
         shell: bash
         run: |
