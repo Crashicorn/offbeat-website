@@ -85,6 +85,34 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await missingController.context.close();
     console.log("PASS: accessory-only shared rig visibly blocked as incomplete");
 
+    // A second controller is counted in the budget but cannot silently inherit
+    // the first controller's host and cable compatibility verdict.
+    const twoControllers = {
+      name: "Multi-controller routing needs review",
+      items: [
+        { slotId: "first", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+        { slotId: "second", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false },
+        { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
+        { slotId: "sp", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
+        { slotId: "cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
+      ]
+    };
+    const multiQuery = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(twoControllers)), "binary").toString("base64")
+    );
+    const multi = await visit(browser, 390, multiQuery);
+    const multiState = await multi.page.evaluate(() => ({
+      tag: document.querySelector(".compat-status-tag")?.textContent || "",
+      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+    }));
+    assert.match(multiState.tag, /Manual Routing Review Required/);
+    assert.match(multiState.alerts, /Multiple controllers Need Manual Verification/);
+    assert.ok(multiState.readiness <= 50);
+    assert.deepEqual(multi.errors, []);
+    await multi.context.close();
+    console.log("PASS: multi-controller shared rig warns that additional routing is unverified");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
