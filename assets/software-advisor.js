@@ -147,6 +147,9 @@
     var reasons = [];
     var notes = [];
     var checks = [];
+    var gaps = [];
+    var fillers = [];
+    var perModel = [];
     var unlock = hw.unlocks ? hw.unlocks[platform.id] : null;
 
     /* Hardware we know exists but whose Serato tier this page has not verified
@@ -157,34 +160,106 @@
       unlock = "unknown";
     }
 
-    /* -- can it run on this machine at all? -- */
+    /* -- can it run on this machine at all? (a genuine incompatibility) -- */
     if (answers.os && platform.os.indexOf(answers.os) === -1) {
       blockers.push("There is no " + OS_LABEL[answers.os] + " version.");
     }
     if (!blockers.length && answers.mode === "mobile" && platform.modes.indexOf("mobile") === -1) {
       blockers.push("It is a desktop program — there is no phone or tablet version.");
     }
-    if (!blockers.length && answers.mode === "standalone" && platform.modes.indexOf("standalone") === -1) {
-      blockers.push("Standalone players run their own software, so a laptop program cannot be installed on them.");
-    }
     if (!blockers.length && answers.mode === "controller" && platform.modes.indexOf("controller") === -1) {
       blockers.push("It does not take a hardware controller.");
     }
 
-    /* -- hardware from another ecosystem -- */
-    if (answers.hardware === "denon" && platform.id !== "engine") {
-      blockers.push("Denon Prime hardware runs Engine OS on the device itself; it is not a controller for " + platform.name + ".");
-    }
-    if (platform.id === "engine" && answers.hardware !== "denon" && answers.hardware !== "unsure") {
-      blockers.push("Engine DJ prepares media for Engine OS players. Without Denon or Numark Engine hardware there is nothing for it to prepare.");
-    }
-    if (answers.hardware === "traktor" && platform.id === "serato") {
-      checks.push("Serato support for Traktor Kontrol hardware is per model — confirm yours on Serato's hardware list.");
+    /* -- how it sits in standalone mode: the player runs its own system -- */
+    if (!blockers.length && answers.mode === "standalone") {
+      if (platform.id === "engine") {
+        if (hw.engineFamily) {
+          reasons.push("Your " + hw.label + " runs Engine OS itself, and Engine DJ is the free preparation tool built for exactly that: it organises, analyses and exports the music the player plays.");
+        } else if (hw.pioneer || answers.hardware === "traktor") {
+          blockers.push("Your " + hw.label + " is prepared by its own platform — Engine DJ prepares Engine OS players, so there would be nothing for it to do here.");
+        } else {
+          perModel.push("It depends which player it is: Engine OS players (Denon DJ, Numark Mixstream) are prepared by the free Engine DJ app; Pioneer CDJ/XDJ players take rekordbox-format media.");
+        }
+      } else if (platform.id === "rekordbox" && hw.pioneer) {
+        reasons.push("rekordbox is the prep side of the Pioneer standalones and club CDJs — the sticks it exports are what they read.");
+      } else if (platform.id === "rekordbox" && !hw.engineFamily && !hw.rekImport) {
+        perModel.push("Which player it is decides: Pioneer CDJ/XDJ players take rekordbox-format sticks; Engine OS players take Engine format, and the PRIME 4/4+ additionally reads rekordbox drives natively.");
+      } else if (platform.id !== "rekordbox") {
+        var playerLine = hw.engineFamily ? " — your " + hw.label + " runs Engine OS itself" : "";
+        var pairing = "";
+        if (platform.id === "virtualdj" && hw.engineFamily && hw.unlocks && hw.unlocks.virtualdj) {
+          pairing = " With a computer it also works as a controller with Virtual DJ (licence required) — that is the laptop route, not this one.";
+        }
+        blockers.push("It is a laptop program and cannot be installed on a standalone player" + playerLine + "." + pairing);
+      }
     }
 
-    /* -- streaming: a dependency, never a licence -- */
-    if (answers.music !== "local" && platform.streaming.length === 0) {
-      blockers.push("It has no streaming integration at all — it plays only files you own.");
+    /* -- Engine DJ's role whenever it is not the standalone itself -- */
+    if (!blockers.length && platform.id === "engine" && answers.mode !== "standalone") {
+      if (hw.engineFamily) {
+        reasons.push("Engine DJ is the free prep side of your " + hw.label + ": the player runs Engine OS, and the app organises, analyses and exports the music it plays.");
+      } else if (hw.pioneer || answers.hardware === "traktor") {
+        blockers.push("Your " + hw.label + " is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.");
+      } else if (answers.hardware === "none" || answers.hardware === "unsure" || answers.hardware === "other") {
+        perModel.push("Engine DJ only matters if you go Denon DJ or Numark Mixstream — both Engine OS: it is then the free prep tool. On any other route it has no role.");
+      }
+    }
+
+    /* -- rekordbox against Engine OS players: import, prep or per-model -- */
+    if (!blockers.length && platform.id === "rekordbox" && hw.engineFamily) {
+      if (hw.rekImport) {
+        gaps.push("rekordbox prepares its own USB format, and the " + hw.label + " reads those drives natively (music, playlists and hot cues) — so it can prepare the library; the player itself runs Engine OS, and the performance side is Serato DJ Pro or Virtual DJ.");
+        fillers.push("For the player's native format, the free Engine DJ app is what the " + hw.label + " is built around.");
+      } else {
+        perModel.push("rekordbox's Hardware Unlock list is Pioneer DJ gear, and Engine format is this player's native media — whether the two meet at all is per-model; the PRIME 4/4+ reads rekordbox drives, the GO line is not documented as doing so.");
+      }
+    }
+
+    /* -- Engine OS players as controllers: the verified facts, per the model --
+     * The false verdict this page used to give was "Denon is not a controller
+     * for X". The truth is per model: the PRIME 4/4+ is verified (Serato
+     * unlocks DJ Pro; Denon lists Virtual DJ), and the GO/GO+ is verified for
+     * Virtual DJ Pro; everything else is a check — never an automatic
+     * "incompatible", never an unverified "supported". */
+    if (!blockers.length && hw.engineFamily &&
+        platform.id !== "engine" && platform.id !== "rekordbox" &&
+        !(platform.id === "virtualdj" && hw.unlocks && hw.unlocks.virtualdj) &&
+        !(platform.id === "serato" && hw.unlocks && hw.unlocks.serato && hw.unlocks.serato !== "unknown")) {
+      if (platform.id === "traktor") {
+        perModel.push("Traktor's compatibility list is per model and does not verify this Engine OS unit here — check Traktor's controller list before expecting support.");
+      } else if (platform.id === "djay") {
+        perModel.push("djay's hardware support is per model — confirm your exact unit on djay's list before relying on it.");
+      } else if (platform.id === "virtualdj") {
+        perModel.push("Virtual DJ's support is listed per model: the PRIME 4/4+ and the GO/GO+ are verified here, other Engine OS players are not — check Virtual DJ's compatibility list.");
+      } else {
+        perModel.push("Mixxx depends on community mappings, so whether your exact unit works — and how complete the mapping is — has to be checked first.");
+      }
+    }
+
+    /* -- Serato tiers that depend on the exact model -- */
+    if (!blockers.length && platform.id === "serato" && unlock === "unknown") {
+      if (hw.engineFamily) {
+        perModel.push("This Engine OS player is not on this page's verified Serato list — the PRIME 4/4+ is, and it unlocks DJ Pro while connected. If yours is, Serato's list names Lite or Pro, which decides $0 or $299.");
+      } else {
+        perModel.push("Serato's controller list decides the tier per model — Lite ($0), Pro ($299), or nothing at all.");
+      }
+    }
+
+    /* -- Traktor on its own hardware: bundled terms are per model -- */
+    if (!blockers.length && platform.id === "traktor" && unlock === "unknown") {
+      perModel.push("Traktor's licence and bundle terms are per model on the Kontrol line — check the box or the retailer listing before paying.");
+    }
+
+    /* -- streaming: a capability with two honest outcomes, never a licence -- */
+    if (!blockers.length && answers.mode !== "standalone" &&
+        answers.music !== "local" && platform.streaming.length === 0) {
+      if (answers.music === "both") {
+        gaps.push("It plays only files you own — no streaming integration — so it covers your local music but not the streamed half.");
+        fillers.push(DATA.streamingGapFill);
+      } else {
+        blockers.push("It has no streaming integration at all — it plays only files you own, and most of your music is streamed, so it cannot carry your sessions.");
+      }
     }
 
     /* -- capabilities the visitor asked for -- */
@@ -197,7 +272,10 @@
       if (!cap) return;
       if (need === "recording") recordingRequested = true;
       if (cap.plan === null) {
-        blockers.push(cap.note);
+        /* A gap, not a verdict: the platform can still be the right app, with
+           a companion covering the missing job. */
+        gaps.push(cap.note);
+        if (DATA.gapFill && DATA.gapFill[need]) fillers.push(DATA.gapFill[need]);
         return;
       }
       if (cap.plan === "none") {
@@ -268,30 +346,27 @@
 
     if (decidingNote) notes.unshift(decidingNote);
 
-    if (blockers.length) {
-      return {
-        platform: platform,
-        verdict: "blocked",
-        plan: null,
-        cost: { total: 0, label: "", basis: "" },
-        blockers: blockers,
-        reasons: [],
-        notes: notes,
-        checks: checks,
-        score: 0
-      };
-    }
-
     var plan = planOf(platform, requiredId) || platform.plans[0];
 
-    /* A free download that needs a paid tier the moment hardware appears is not
-       free. Saying so first is the point of this tool. */
-    if (platform.id === "virtualdj" && plan.kind === "free" && answers.hardware && answers.hardware !== "none" && answers.hardware !== "unsure") {
-      plan = planOf(platform, "home");
-      reasons.push("The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.");
+    /* A free download that needs a paid tier the moment hardware appears is
+       not free. Saying so first is the point of this tool. The GO/GO+ line is
+       documented at Pro specifically; the PRIME 4/4+ at Home. */
+    var cost;
+    if (platform.id === "virtualdj" && answers.hardware && answers.hardware !== "none" && answers.hardware !== "unsure") {
+      var vTier = hw.unlocks ? hw.unlocks.virtualdj : null;
+      var vTarget = vTier === "pro" ? "pro" : "home";
+      if (planRank(platform, vTarget) > planRank(platform, plan.id)) {
+        plan = planOf(platform, vTarget);
+      }
+      if (vTier === "pro") {
+        reasons.push("Denon documents Virtual DJ support for the PRIME GO and GO+ with a Pro licence, so Pro — not Home — is the tier for this unit.");
+      } else if (vTier === "home") {
+        reasons.push("Denon lists the PRIME 4/4+ as compatible with Virtual DJ; with a controller attached the free edition stops applying, so Home is the entry tier that allows it.");
+      } else {
+        reasons.push("The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.");
+      }
     }
-
-    var cost = threeYearCost(plan);
+    cost = threeYearCost(plan);
 
     /* FLX10/FLX6-class hardware unlocks the Pro licence itself while it is
        connected (Serato's own hardware page), so Pro-tier needs carry no
@@ -307,7 +382,28 @@
       }
     }
 
-    var verdict = cost.total === 0 ? "fits" : "costs";
+    /* ------------------------------- verdict: five outcomes, one order --
+     * blocked — cannot genuinely run or serve a role here.
+     * check   — depends on the exact model or tier, not verified on this page.
+     * partial — fits, but leaves a named gap a companion tool covers.
+     * costs   — fits, with a licence fee.
+     * fits    — fits, no licence fee.
+     * A blocked platform always loses; an unverified "check" must never be
+     * shown as a fit, and an unverified clash must never be shown as
+     * "incompatible".
+     */
+    var verdict;
+    if (blockers.length) {
+      verdict = "blocked";
+    } else if (perModel.length) {
+      verdict = "check";
+    } else if (gaps.length) {
+      verdict = "partial";
+    } else if (cost.total > 0) {
+      verdict = "costs";
+    } else {
+      verdict = "fits";
+    }
 
     if (unlock === "hu" && platform.id === "rekordbox") {
       reasons.push(plan.kind === "free"
@@ -323,13 +419,12 @@
         notes.unshift("Your " + hw.label + " unlocks Serato DJ Lite, not " + plan.label + ". Reaching " + plan.label + " is the cost this choice hides: " + money(cost.total) + " over three years.");
       }
     }
-    if (unlock === "unknown" && platform.id === "serato") {
-      checks.push("Whether your controller unlocks Lite or Pro decides the price — check Serato's hardware list.");
-    }
     if (unlock === "play" && platform.id === "traktor") {
       reasons.push("Your " + hw.label + " is plug-and-play with Traktor, and some retail bundles include a Traktor Play licence — check the box before paying.");
     }
-    if (platform.id === "mixxx" && answers.hardware && answers.hardware !== "none" && answers.hardware !== "unsure") {
+    /* On the Engine OS lines the per-model line already says it, so this
+       check lands only where no platform has verified the mapping yet. */
+    if (platform.id === "mixxx" && answers.hardware && answers.hardware !== "none" && answers.hardware !== "unsure" && !perModel.length) {
       checks.push("Whether a community mapping exists for your controller, and how complete it is.");
     }
     if (unlock === "os" && platform.id === "engine") {
@@ -381,6 +476,7 @@
       }
     }
 
+    /* Affinity only ranks inside a group — it never crosses verdicts. */
     var affinity = (SCENE_AFFINITY[answers.scene] || {})[platform.id] || 0;
     var score = affinity + (unlock && unlock !== "unknown" ? 2 : 0);
 
@@ -397,17 +493,21 @@
       verdict: verdict,
       plan: plan,
       cost: cost,
-      blockers: [],
+      unlock: unlock,
+      blockers: blockers,
       reasons: reasons.slice(0, 3),
       notes: notes.slice(0, 4),
       checks: checks,
+      perModel: perModel,
+      gaps: gaps,
+      fillers: fillers,
       score: score
     };
   }
 
   function evaluateAll() {
     var hw = DATA.hardware[answers.hardware] || { label: "", unlocks: {} };
-    var order = { fits: 0, costs: 1, blocked: 2 };
+    var order = { fits: 0, costs: 1, partial: 2, check: 3, blocked: 4 };
     return DATA.platforms.map(function (platform) {
       return evaluate(platform, hw);
     }).sort(function (a, b) {
@@ -421,6 +521,8 @@
   var VERDICT = {
     fits: { title: "Fits what you described", tone: "fits" },
     costs: { title: "Works, but you would be paying", tone: "costs" },
+    partial: { title: "Fits, with a named gap", tone: "partial" },
+    check: { title: "Depends on the exact model or tier", tone: "check" },
     blocked: { title: "Does not fit", tone: "blocked" }
   };
 
@@ -474,30 +576,36 @@
 
   function renderCard(result) {
     var platform = result.platform;
-    var badge = result.verdict === "blocked"
-      ? "Ruled out"
-      : (result.cost.total === 0 ? "No licence cost" : money(result.cost.total) + " / 3 yrs");
+    var badge;
+    if (result.verdict === "blocked") badge = "Doesn't fit";
+    else if (result.verdict === "check") badge = "Depends on your model";
+    else badge = result.cost.total === 0 ? "No licence cost" : money(result.cost.total) + " / 3 yrs";
 
     var next = ['<a href="' + esc(platform.review) + '">Read the ' + esc(platform.name) + ' review</a>'];
     next.push('<a href="controller-software-compatibility-matrix.html">Check controller compatibility</a>');
-    if (result.verdict !== "blocked") next.push('<a href="build-your-dj-setup.html">Price the whole rig in Rig Studio</a>');
+    if (result.verdict !== "blocked" && result.verdict !== "check") next.push('<a href="build-your-dj-setup.html">Price the whole rig in Rig Studio</a>');
 
     return '<article class="swa-card swa-card--' + VERDICT[result.verdict].tone + '">' +
       '<header class="swa-card-head"><h4>' + esc(platform.name) + "</h4>" +
       '<span class="swa-badge">' + esc(badge) + "</span></header>" +
       '<p class="swa-maker">' + esc(platform.maker) + "</p>" +
       (result.verdict !== "blocked" ? '<p class="swa-price">' + esc(priceLine(result)) + "</p>" : "") +
-      (result.verdict !== "blocked" && !result.cost.total && platform.freeNote &&
+      (result.verdict !== "blocked" && result.verdict !== "check" && !result.cost.total && platform.freeNote &&
         result.reasons.indexOf(platform.freeNote) === -1
         ? '<p class="swa-free"><b>What the free tier covers:</b> ' + esc(platform.freeNote) + "</p>"
         : "") +
       list(result.reasons, "swa-why", "Why it fits") +
       list(result.blockers, "swa-blockers", result.blockers.length ? "Why it does not fit" : "") +
       list(result.notes, "swa-notes", "Before you pay") +
+      list(result.perModel, "swa-permodel", result.perModel.length ? "It depends on the exact model" : "") +
+      list(result.gaps, "swa-gaps", result.gaps.length ? "Where it doesn't fit" : "") +
+      list(result.fillers, "swa-fillers", result.fillers.length ? "What fills the gap" : "") +
       list(result.checks, "swa-checks", "Confirm on the vendor's site") +
-      (result.checks.some(function (line) { return line.indexOf(platform.verify) === 0; })
-        ? ""
-        : '<p class="swa-verify"><b>Unverified here:</b> ' + esc(platform.verify) + "</p>") +
+      (!result.perModel.length &&
+        !result.checks.some(function (line) { return line.indexOf(platform.verify) === 0; }) &&
+        !["hu", "lite", "pro", "play"].indexOf(result.unlock || "") !== -1
+        ? '<p class="swa-verify"><b>Unverified here:</b> ' + esc(platform.verify) + "</p>"
+        : "") +
       '<nav class="swa-next" aria-label="Next steps for ' + esc(platform.name) + '">' + next.join("") + "</nav>" +
       "</article>";
   }
@@ -514,15 +622,22 @@
     var results = evaluateAll();
     var fits = results.filter(function (r) { return r.verdict === "fits"; });
     var costs = results.filter(function (r) { return r.verdict === "costs"; });
+    var partial = results.filter(function (r) { return r.verdict === "partial"; });
+    var check = results.filter(function (r) { return r.verdict === "check"; });
     var blocked = results.filter(function (r) { return r.verdict === "blocked"; });
 
-    statusEl.textContent = fits.length + (fits.length === 1 ? " platform fits" : " platforms fit") +
-      " what you described · " + costs.length + " would need paying · " + blocked.length +
-      (blocked.length === 1 ? " does not fit" : " do not fit") +
+    var summary = [
+      fits.length + (fits.length === 1 ? " platform fits" : " platforms fit") + " what you described"
+    ];
+    if (partial.length) summary.push(partial.length + (partial.length === 1 ? " fits with a named gap" : " fit with named gaps"));
+    if (check.length) summary.push(check.length + (check.length === 1 ? " depends on the exact model" : " depend on the exact model"));
+    if (costs.length) summary.push(costs.length + (costs.length === 1 ? " would need paying" : " would need paying"));
+    if (blocked.length) summary.push(blocked.length + (blocked.length === 1 ? " does not fit" : " do not fit"));
+    statusEl.textContent = summary.join(" · ") +
       " · " + answeredCount() + " of " + DATA.questions.length + " questions answered.";
 
     var html = "";
-    ["fits", "costs", "blocked"].forEach(function (key) {
+    ["fits", "costs", "partial", "check", "blocked"].forEach(function (key) {
       var group = results.filter(function (r) { return r.verdict === key; });
       if (!group.length) return;
       html += '<section class="swa-group swa-group--' + VERDICT[key].tone + '">' +
@@ -530,7 +645,9 @@
         '<div class="swa-cards">' + group.map(renderCard).join("") + "</div></section>";
     });
 
-    var comparable = results.filter(function (r) { return r.verdict !== "blocked"; });
+    var comparable = results.filter(function (r) {
+      return r.verdict === "fits" || r.verdict === "costs" || r.verdict === "partial";
+    });
     if (comparable.length) {
       html += '<div class="swa-table-wrap" tabindex="0" role="region" aria-label="Three-year licence cost, scrolls sideways on narrow screens">' +
         '<table class="swa-table"><caption>Three years of the licence your answers need</caption>' +
@@ -541,6 +658,10 @@
         }).join("") + "</tbody></table></div>" +
         '<p class="swa-foot">List prices in USD, read from the vendors on ' + esc(DATA.verified) +
         ". Streaming subscriptions, hardware and tax are excluded. Buy-once licences are compared against the same 36 months.</p>";
+      if (check.length) {
+        html += '<p class="swa-foot">The ' + check.length + (check.length === 1 ? " platform" : " platforms") +
+          ' in "Depends on the exact model" are left out of the table: their tier is decided by the vendor\'s list for your unit, not by the question above.</p>';
+      }
     }
 
     if (answers.music !== "local") {
@@ -550,8 +671,11 @@
 
     html += '<details class="swa-method"><summary>How these results were worked out</summary>' +
       "<p>Every platform is checked against your answers: whether it runs on your computer or device, whether it works with your hardware, " +
-      "whether it can do what you asked for, and which licence tier that requires. Platforms are grouped by that outcome, then ordered by how well " +
-      "they match your goal and — where they tie — by three-year cost.</p>" +
+      "whether it can do what you asked for, and which licence tier that requires. The outcome is one of five: " +
+      "<b>fits</b> (no licence fee), <b>works but you would be paying</b> (a licence fee applies), " +
+      "<b>fits with a named gap</b> (it covers most of what you asked, and the page names what a companion tool does about the rest), " +
+      "<b>depends on the exact model or tier</b> (this page has verified the platform but not your unit, so the card says what to confirm instead of guessing), " +
+      "and <b>does not fit</b> (no version for your system, no role for your setup). Platform names, tiers and prices come from the vendors' own pages; a platform this page has not verified for your hardware is never shown as a fit and is never shown as incompatible.</p>" +
       "<p>Hardware Unlock is treated as what it is: a per-feature unlock. On the controllers rekordbox lists, it runs Performance mode " +
       "— and, on the FLX2, FLX4, FLX6 and FLX10, recording and mix sharing — but it does not cover stems, DVS or video, which stay paid-plan features. " +
       "Serato works the other way: the FLX10 and FLX6 unlock DJ Pro itself, while the FLX2 and FLX4 unlock Lite. That distinction is where most unexpected software bills come from.</p>" +
