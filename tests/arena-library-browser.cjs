@@ -7,6 +7,7 @@ const base = process.env.RIG_BASE_URL || "http://127.0.0.1:8099";
 const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
 const paths = [
   "index.html", "all-dj-guides.html", "beginner-dj-hub.html",
+  "controller-software-compatibility-matrix.html",
   "dj-controllers-hub.html", "dj-software-hub.html", "dj-gear-hub.html",
   "dj-skills-performance-hub.html", "best-dj-controllers-2026.html",
   "best-dj-headphones-2026.html", "editorial-standards.html",
@@ -96,9 +97,49 @@ function visibleCount(page) {
         await page.click(".nav-toggle");
         assert.equal(await page.$eval(".nav-toggle", el => el.getAttribute("aria-expanded")), "false");
       }
-      assert.deepEqual(errors, [], "library/search/navigation browser errors at " + width + "px");
+      // Buyer-journey integrity: the matrix must never deep-link an unrelated
+      // FLX4 when the selected controller is absent from the planner catalog.
+      await page.goto(base + "/controller-software-compatibility-matrix.html", {
+        waitUntil: "load"
+      });
+      await page.waitForSelector("#matrix-root .matrix-card", { timeout: 10000 });
+      const matrixLinks = await page.$eval(".matrix-card", cards => cards.map(card => {
+        const link = card.querySelector(".mat-plan-btn");
+        const url = new URL(link.href);
+        return {
+          id: card.id,
+          add: url.searchParams.get("add"),
+          pathname: url.pathname,
+          label: link.textContent.trim()
+        };
+      }));
+      const catalogIds = new Set(await page.evaluate(async () =>
+        (await (await fetch("assets/dj-gear-catalog.json")).json()).items.map(item => item.id)
+      ));
+      assert.equal(matrixLinks.length, 13, "matrix must expose all 13 controller choices");
+      for (const link of matrixLinks) {
+        assert.ok(link.pathname.endsWith("/build-your-dj-setup.html"),
+          link.id + " must navigate to the planner");
+        if (link.add) {
+          assert.ok(catalogIds.has(link.add),
+            link.id + " must select a real catalog item");
+        } else {
+          assert.match(link.label, /select gear manually/i,
+            link.id + " must disclose no model preselection");
+        }
+      }
+      const byId = new Map(matrixLinks.map(link => [link.id, link]));
+      assert.equal(byId.get("mat-flx4").add, "pioneer-ddj-flx4");
+      assert.equal(byId.get("mat-prime4plus").add, "denon-prime-4-plus");
+      for (const unlisted of ["flx6gt", "mixtrackpro", "traktors3",
+                              "traktors4", "raneone", "xdjaz", "reloopmixon8"]) {
+        assert.equal(byId.get("mat-" + unlisted).add, null,
+          unlisted + " must not silently select an unrelated controller");
+      }
+      assert.deepEqual(errors, [], "matrix/library/search/navigation browser errors at " + width + "px");
+
       await context.close();
-      console.log("PASS: " + width + "px 12-page journeys, library reset, search, nav, overflow");
+      console.log("PASS: " + width + "px 13-page journeys, matrix links, library reset, search, nav, overflow");
     }
   } finally {
     await browser.close();
