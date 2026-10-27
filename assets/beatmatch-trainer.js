@@ -532,7 +532,12 @@
     if (el.start) el.start.disabled = true;
     if (el.stop) el.stop.disabled = false;
     if (el.scorecard) el.scorecard.hidden = true;
-    if (el.stage) el.stage.classList.add("is-running");
+    if (el.stage) {
+      el.stage.classList.add("is-running");
+      // Place keyboard focus on the explicitly labelled practice stage after
+      // START, so C/Space/arrow shortcuts work without stealing page shortcuts.
+      if (typeof el.stage.focus === "function") el.stage.focus({ preventScroll: true });
+    }
 
     state.raf = window.requestAnimationFrame(frame);
   }
