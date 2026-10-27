@@ -60,23 +60,35 @@ function visibleCount(page) {
       await page.keyboard.press("Backspace");
       assert.equal(await visibleCount(page), total, "clearing filter must restore full library");
 
-      // Search category is applied before top-12 result cap, not after.
+      // The enriched Spotlight index includes curated hardware deep links.
+      // Only ONE search dialog should open; category selection precedes cap.
+      if (width < 600) {
+        await page.click(".nav-toggle");
+      }
       await page.click("[data-search-open]");
-      await page.waitForSelector('.search-chip[data-group="controllers"]', { timeout: 10000 });
-      await page.type("[data-search-input]", "dj");
-      await page.click('.search-chip[data-group="controllers"]');
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])", { timeout: 10000 });
+      assert.equal(await page.$eval("#site-search", el => el.hidden), true,
+        "legacy search overlay must remain closed");
+      await page.type("#quick-search-input", "dj");
+      await page.click('.qs-pill[data-qs-filter="DJ Hardware"]');
       const index = await page.evaluate(async () =>
         (await (await fetch("assets/search-index.json")).json())
       );
+      assert.ok(index.some(item => item.u.includes("?add=")),
+        "curated hardware deep links must remain in the search index");
       const expected = Math.min(12, index.filter(item =>
-        item.g === "controllers" &&
-        (item.t + " " + item.d + " " + item.k).toLowerCase().includes("dj")
+        item.category === "DJ Hardware" &&
+        (item.title + " " + item.desc + " " + item.category).toLowerCase().includes("dj")
       ).length);
-      assert.ok(expected > 0, "curated controller index must have DJ matches");
-      const results = await page.$$eval("[data-search-results] li", els => els.length);
-      assert.equal(results, expected, "search must not lose matching category results after global cap");
+      assert.ok(expected > 0, "curated hardware index must have DJ matches");
+      const results = await page.$$eval("#qs-results-list .qs-result-item", els => els.length);
+      assert.equal(results, expected, "Spotlight category must show all matching top results");
       await page.keyboard.press("Escape");
-      assert.equal(await page.$eval("#site-search", el => el.hidden), true, "Escape closes search");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
+        "Escape closes Spotlight search");
+      if (width < 600) {
+        await page.click(".nav-toggle");
+      }
 
       if (width < 600) {
         await page.click(".nav-toggle");
