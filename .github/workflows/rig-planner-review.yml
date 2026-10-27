@@ -1,4 +1,4 @@
-name: Rig planner security regression (review only)
+name: Arena relaunch qualification (review only)
 
 # Untrusted candidate source runs without secrets or write privileges.
 # This is a review check, not a release approval or publisher.
@@ -15,6 +15,11 @@ on:
       - assets/rig-builder.js
       - tests/rig-builder-security.test.js
       - tests/rig-builder-browser.cjs
+      - tests/arena-library-browser.cjs
+      - assets/site.js
+      - all-dj-guides.html
+      - assets/search-index.json
+      - tools/build_index.py
       - .github/workflows/rig-planner-review.yml
       - tools/check_site.py
       - tests/check_site_structure.py
@@ -25,7 +30,7 @@ permissions:
 jobs:
   rig-planner:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - name: Check out exact candidate
         uses: actions/checkout@v4
@@ -40,10 +45,13 @@ jobs:
           node --check assets/rig-builder.js
           node --check tests/rig-builder-security.test.js
           node --check tests/rig-builder-browser.cjs
+          node --check tests/arena-library-browser.cjs
       - name: Validate all site pages, links, media, structure and metadata
         run: |
           python3 tools/check_site.py
           python3 tests/check_site_structure.py
+          python3 tools/build_index.py
+          git diff --exit-code -- all-dj-guides.html assets/search-index.json
       - name: Execute committed regression suite
         run: node --test tests/rig-builder-security.test.js
       - name: Browser-check real planner at desktop and mobile sizes
@@ -61,3 +69,4 @@ jobs:
             sleep 0.25
           done
           CHROME_BIN="$CHROME_BIN" node tests/rig-builder-browser.cjs
+          CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs
