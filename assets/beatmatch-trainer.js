@@ -348,8 +348,12 @@
     scheduler();
 
     var now = timestamp || window.performance.now();
-    var delta = state.lastFrame ? now - state.lastFrame : 16;
+    // A backgrounded/throttled tab must not earn seconds of unobserved
+    // beatmatching credit from one delayed animation frame.
+    var elapsed = state.lastFrame ? now - state.lastFrame : 0;
+    var delta = elapsed > 0 && elapsed <= 200 ? elapsed : 0;
     state.lastFrame = now;
+    if (delta === 0) state.currentStreakMs = 0;
 
     var diff = phaseMs();
     var absDiff = Math.abs(diff);
@@ -610,6 +614,10 @@
     if (document.hidden) {
       state.isDraggingPlatter = false;
       endNudge();
+      // Suspend a timed drill when the listener leaves the page. Web Audio
+      // may keep playing while requestAnimationFrame is throttled; neither
+      // silent time nor a stale audio queue should count as practice.
+      if (state.running) stop("manual");
     }
   });
 
