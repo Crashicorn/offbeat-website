@@ -296,6 +296,25 @@
     var checks = [];
     var fatalErrors = 0;
     var warnings = 0;
+    var requiresManualReview = false;
+
+    // The shopping list supports multiple controllers, speakers and other core
+    // devices, but the connection engine evaluates only the first of each.
+    // Never mark a multi-device rig green based on a single-device check.
+    ["controllers", "speakers", "laptops", "headphones"].forEach(function (category) {
+      var count = currentRig.items.filter(function (s) { return s.category === category; }).length;
+      if (count < 2) return;
+      requiresManualReview = true;
+      warnings++;
+      checks.push({
+        type: "warning", statusLevel: "workable",
+        title: "Multiple " + category + " Need Manual Verification",
+        desc: "This rig contains " + count + " " + category + ". The shopping total includes all selected gear, " +
+          "but automated connector, host and cue checks cover only the first item in each category. " +
+          "Verify every additional device's signal path, software and power requirements before purchasing.",
+        fixCableId: null
+      });
+    });
 
     // A rig with no controller/decks/mixer is not a playable DJ setup.
     // Accessories alone must never produce a green preliminary match.
@@ -457,12 +476,14 @@
     if (!laptop && (!controller || !controller.standalone)) readiness -= 15;
     if (fatalErrors > 0) readiness = Math.min(readiness, 40);
     else if (warnings > 0) readiness = Math.max(readiness - warnings * 10, 60);
+    if (requiresManualReview) readiness = Math.min(readiness, 50);
 
     return {
       readiness: Math.max(readiness, 10),
       checks: checks,
       fatalErrors: fatalErrors,
-      warnings: warnings
+      warnings: warnings,
+      requiresManualReview: requiresManualReview
     };
   }
 
@@ -577,7 +598,7 @@
               <div class="readiness-bar"><div class="readiness-fill" style="width: ${stats.compatibility.readiness}%"></div></div>
               <strong class="readiness-num">${stats.compatibility.readiness}%</strong>
             </div>
-            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : "⚠️ " + stats.compatibility.warnings + " cable optimization"}</span>
+            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : stats.compatibility.requiresManualReview ? "⚠️ Multi-device routing needs review" : "⚠️ " + stats.compatibility.warnings + " connection advisory"}</span>
           </div>
         </div>
 
@@ -635,7 +656,7 @@
           <div class="compat-header">
             <h4>⚡ Hardware &amp; Signal Compatibility Assistant</h4>
             <span class="compat-status-tag ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'tag--ok' : stats.compatibility.fatalErrors > 0 ? 'tag--err' : 'tag--warn'}">
-              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'Preliminary Match' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : '⚠️ Cable Optimization Needed'}
+              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? 'Preliminary Match' : stats.compatibility.fatalErrors > 0 ? '❌ Incompatible Configuration' : stats.compatibility.requiresManualReview ? '⚠️ Manual Routing Review Required' : '⚠️ Connection Verification Needed'}
             </span>
           </div>
           <div class="compat-items-grid">
