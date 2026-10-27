@@ -82,12 +82,23 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     assert.ok(!/one dual RCA run/i.test(hs5.pack_note || ""), "the HS5 note must not claim a dual RCA run");
     assert.ok(/no RCA input/i.test(hs5.pack_note || ""), "the HS5 note should say there is no RCA input");
 
+    /* A: the DM-40D box's passive 3.5 mm-to-dual-RCA converter is a conductor,
+       not a one-way adapter: the FLX4's RCA master can use it in reverse, so
+       this path buys no cable at all. */
     await open(rigUrl(server.base, [
       slot("ctl", "controllers", "pioneer-ddj-flx4"),
       slot("spk", "speakers", "pioneer-dm40d"),
       slot("cab", "cables", "cable-rca-rca")
     ]));
-    assert.strictEqual((await page.cost()).buyTotal, 329 + 149 + 12, "the DM-40D rig starts on the dual RCA lead");
+    let boxConn = (await page.connections())[0];
+    assert.strictEqual(boxConn.kind, "included", `FLX4 → DM-40D must use the lead in the box, got ${boxConn.kind}`);
+    assert.strictEqual(boxConn.label, "RCA → 3.5 mm", `the reversed orientation should be named plainly, got ${boxConn.label}`);
+    assert.strictEqual(boxConn.reversedLead, true, "the plan should admit the box lead is being used the other way round");
+    assert.strictEqual((await page.cost()).buyTotal, 329 + 149,
+      "no cable is charged when the retail box already contains a lead that fits");
+    const redundantLine = (await page.cableLines());
+    assert.deepStrictEqual(redundantLine, [],
+      `a $12 lead the box already provides must not be kept as a purchase: ${JSON.stringify(redundantLine)}`);
 
     /* Swap the speakers for HS5s through the real drawer. The $12 dual RCA
        cannot reach an HS5, so it must leave the bill and the right lead arrive. */
@@ -172,14 +183,14 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     await page.pickInDrawer("pioneer-ddj-flx4");
     const flx4 = await page.cost();
     const flx4Lines = await page.cableLines();
-    assert.strictEqual(flx4.buyTotal, 539, `the corrected FLX4 rig must be $539, got $${flx4.buyTotal}`);
-    assert.ok(!flx4Lines.some((l) => l.itemId === "cable-aux-rca-allowance"),
-      `the 3.5 mm allowance must leave an RCA-output deck: ${JSON.stringify(flx4Lines)}`);
-    assert.ok(flx4Lines.some((l) => l.itemId === "cable-rca-rca" && l.charged),
-      `the FLX4 rig buys the dual RCA lead: ${JSON.stringify(flx4Lines)}`);
+    assert.strictEqual(flx4.buyTotal, 329 + 49 + 149,
+      `the corrected FLX4 rig is $527 because the DM-40D box lead covers it, got $${flx4.buyTotal}`);
+    assert.deepStrictEqual(flx4Lines, [],
+      `the stale 3.5 mm allowance must leave, and nothing replaces it: ${JSON.stringify(flx4Lines)}`);
     const shopText = await page.window.__rigStudio.shoppingText();
-    assert.ok(/ESTIMATED TOTAL: \$539/.test(shopText), "the printed list agrees with the bill");
+    assert.ok(/ESTIMATED TOTAL: \$527/.test(shopText), `the printed list agrees with the bill: ${shopText}`);
     assert.ok(!/allowance/.test(shopText), "no allowance survives the swap");
+    assert.ok(!/dual RCA/i.test(shopText), "no RCA lead is charged when the box supplies one");
 
     /* And back: FLX2 → the lead in the box again, no stale dual RCA. */
     await page.openSlotDrawer("ctl", "controllers");
@@ -224,6 +235,88 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     const spareLine = ownedBack.find((l) => l.itemId === "cable-rca-rca");
     assert.strictEqual(spareLine.spare, true, "an owned lead the rig cannot use is marked as a spare");
     assert.strictEqual((await page.cost()).buyTotal, 199 + 149, "the spare is not charged again");
+
+    /* ------------------------------------------------- A/B  output budget --
+     * A stereo master socket is one destination. Two DM-40D pairs on a FLX4
+     * cannot both be fed by it, so the second line must stay visibly
+     * unresolved and must not add a phantom $12 lead to the bill. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx4"),
+      slot("pair1", "speakers", "pioneer-dm40d"),
+      slot("pair2", "speakers", "pioneer-dm40d")
+    ]));
+    const pairPlans = await page.connections();
+    assert.strictEqual(pairPlans.length, 2, "two speaker lines are planned separately");
+    assert.strictEqual(pairPlans[0].kind, "included", "the first pair uses the box lead and owns the RCA output");
+    assert.strictEqual(pairPlans[1].kind, "unresolved", `the second pair has no free output, got ${pairPlans[1].kind}`);
+    assert.strictEqual(pairPlans[1].conflict, true, "the unresolved line is flagged for the UI");
+    assert.strictEqual(pairPlans[1].units, 0, "an unresolved line must not price a cable it cannot use");
+    assert.strictEqual((await page.cost()).buyTotal, 329 + 149 + 149,
+      "two pairs cost two pairs and no phantom cable");
+    assert.deepStrictEqual(await page.cableLines(), [],
+      `no cable line is invented for the second pair: ${JSON.stringify(await page.cableLines())}`);
+    const unresolvedChecks = await page.checks();
+    const unresolvedCable = unresolvedChecks.find((c) => c.key === "cables");
+    assert.strictEqual(unresolvedCable.level, "bad", "an unfeedable speaker line blocks readiness");
+    assert.match(unresolvedCable.title, /Routing unresolved/i, `the check should name the gap: ${unresolvedCable.title}`);
+    assert.match(unresolvedCable.note, /splitter/i, "the explanation names the missing hardware honestly");
+    assert.ok(!/in stock|buy the .*splitter/i.test(unresolvedCable.note),
+      "the fix is described, never sold as an unverified product");
+    assert.match(unresolvedCable.note, /headphone socket is for cueing, not a second master/i,
+      "the cue socket must never be offered as the second master");
+    const unresolvedOutput = unresolvedChecks.find((c) => c.key === "output");
+    assert.strictEqual(unresolvedOutput.level, "warn", "the output check reflects the unfeedable line");
+    assert.match(unresolvedOutput.title, /without a verified feed/i, `unexpected output title: ${unresolvedOutput.title}`);
+    /* The panel has to show both rows and offer a route out of the dead end. */
+    const panelRows = page.queryAll(".rs-connect-row");
+    assert.strictEqual(panelRows.length, 2, "the connection panel lists both speaker lines");
+    assert.ok(/Routing unresolved/.test(panelRows[1].textContent), "the panel marks the unresolved line");
+    assert.ok(page.queryAll(".rs-connect-fix--swap").length >= 1, "the panel offers a speaker swap for the dead end");
+
+    /* The quantity stepper is the same physics: one box slot set to 2 is two
+       pairs and two feeds, so it cannot quietly behave better than two slots. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx4"),
+      slot("pair", "speakers", "pioneer-dm40d", { qty: 2 })
+    ]));
+    const steppedPair = (await page.connections())[0];
+    assert.strictEqual(steppedPair.cabinets, 4, "two boxes are four cabinets");
+    assert.strictEqual(steppedPair.feeds, 2, "two boxes are two stereo feeds");
+    assert.strictEqual(steppedPair.kind, "unresolved", "one RCA master cannot feed two pairs");
+    assert.strictEqual(steppedPair.conflict, true, "the stepper result is flagged like the second slot");
+    assert.strictEqual((await page.cost()).buyTotal, 329 + 149 * 2, "the bill is two pairs and no cable");
+    assert.deepStrictEqual(await page.cableLines(), [], "no lead is priced for the second pair");
+
+    /* A deck with two real master outputs can feed two pairs: FLX10 resolves
+       both lines on XLR and RCA respectively, with no invented hardware. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx10"),
+      slot("pair1", "speakers", "yamaha-hs5"),
+      slot("pair2", "speakers", "yamaha-hs5")
+    ]));
+    const twoLines = await page.connections();
+    assert.strictEqual(twoLines.length, 2);
+    assert.deepStrictEqual(twoLines.map((l) => l.kind), ["product", "product"],
+      `both FLX10 lines resolve: ${JSON.stringify(twoLines.map((l) => [l.kind, l.label]))}`);
+    assert.deepStrictEqual(twoLines.map((l) => l.output), ["xlr", "rca"],
+      `each line takes a different master output: ${JSON.stringify(twoLines.map((l) => l.output))}`);
+    assert.strictEqual((await page.checks()).find((c) => c.key === "cables").level, "ok");
+    const twoLineBill = (await page.cost()).buyTotal;
+    assert.strictEqual(twoLineBill, 1599 + 398 + 398 + 28 + 15,
+      `both leads are real purchases, got $${twoLineBill}`);
+
+    /* Ownership must not smuggle a second pair past the output budget: marking
+       a pair owned still leaves the second line unfeedable. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx4"),
+      slot("pair1", "speakers", "pioneer-dm40d", { owned: true }),
+      slot("pair2", "speakers", "pioneer-dm40d")
+    ]));
+    const ownedPairPlans = await page.connections();
+    assert.strictEqual(ownedPairPlans[1].kind, "unresolved",
+      "owning the first pair does not create a second output");
+    assert.strictEqual((await page.cost()).buyTotal, 329 + 149,
+      "only the second pair is charged, and no cable is invented for it");
 
     /* ------------------------------------------------------- guide handoff --
      * The beginner guide and the studio guide must hand over a rig whose bill

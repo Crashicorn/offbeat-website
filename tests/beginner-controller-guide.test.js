@@ -96,12 +96,17 @@ function fireById(mount, selector, id, event) {
 test("first-controller chooser computes complete desk cost and hands owned gear into Rig Studio", async function () {
   const mount = await harness();
   assert.match(mount.innerHTML, /Pioneer DJ DDJ-FLX4/);
-  assert.match(mount.innerHTML, /\$539/); // $329 deck + $49 cans + $149 monitor pair + $12 RCA cable
+  /* $329 deck + $49 cans + $149 monitor pair, and no cable: the DM-40D box lead
+     is a passive converter that feeds the FLX4's RCA master in reverse. */
+  assert.match(mount.innerHTML, /\$527/);
+  assert.match(mount.innerHTML, /in the box · used the other way round/);
+  assert.match(mount.innerHTML, /the lead is passive, so it works either way round/);
   let payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "controllers"; }).itemId, "pioneer-ddj-flx4");
   assert.match(payload.n, /DDJ-FLX4/);
-  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).itemId, "cable-rca-rca");
+  assert.equal(slotOf(payload, "cables"), undefined,
+    "the hand-off carries no cable purchase the box already satisfies");
 
   fireById(mount, "[data-bl-profile]", "budget");
   assert.match(mount.innerHTML, /<h3>AlphaTheta \/ Pioneer DJ DDJ-FLX2<\/h3>/);
@@ -146,24 +151,26 @@ test("first-controller chooser computes complete desk cost and hands owned gear 
   assert.equal(payload.i.find(function (item) { return item.category === "speakers"; }).owned, true);
   assert.equal(slotOf(payload, "cables"), undefined);
 
-  /* The Inpulse 500 has RCA master outputs, so the desk pair needs a real dual
-     RCA lead again: $299 + $12 with headphones and monitors owned. */
+  /* The Inpulse 500 also has RCA master outputs, and the DM-40D box lead
+     reaches its RCA sockets too, so a deck swap still buys no cable here:
+     $299 with headphones and monitors owned. What must change is the deck
+     itself - and every other line is re-checked rather than inherited. */
   fireById(mount, "[data-bl-choose]", "hercules-inpulse-500");
   assert.match(mount.innerHTML, /<h3>Hercules DJControl Inpulse 500<\/h3>/);
-  assert.match(mount.innerHTML, /\$311/);
+  assert.match(mount.innerHTML, /\$299/);
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
-  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).itemId, "cable-rca-rca");
-  assert.equal(payload.i.find(function (item) { return item.category === "cables"; }).owned, false,
-    "changing decks requires the user to re-confirm cable compatibility");
+  assert.equal(slotOf(payload, "cables"), undefined,
+    "the box lead still covers an RCA-output deck, so no cable is charged");
   assert.ok(mount.innerHTML.includes("dual 1/4-inch outputs"));
   let controller = mount.lastControls["[data-bl-owned]"].find(function (node) { return node.getAttribute("data-bl-owned") === "controller"; });
   controller.checked = true;
   controller.fire("change");
-  assert.match(mount.innerHTML, /\$12/); // cable still needs buying
   payload = rigFrom(mount.innerHTML);
   assertCatalogValid(payload);
   assert.equal(payload.i.find(function (item) { return item.category === "controllers"; }).owned, true);
+  assert.equal(allowanceTotal(mount.innerHTML), 0,
+    "with the deck, headphones and monitors owned there is nothing left to buy");
 
   fireById(mount, "[data-bl-profile]", "budget");
   assert.match(mount.innerHTML, /<h3>AlphaTheta \/ Pioneer DJ DDJ-FLX2<\/h3>/);
@@ -196,10 +203,13 @@ function toggle(mount, key) {
 test("the guide total always equals what Rig Studio will charge for the handed-off rig", async function () {
   const mount = await harness();
 
-  /* FLX4 default: 329 + 49 + 149 + 12 */
-  assert.equal(allowanceTotal(mount.innerHTML), 539);
-  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 539);
-  assert.equal(slotOf(rigFrom(mount.innerHTML), "cables").itemId, "cable-rca-rca");
+  /* FLX4 default: 329 + 49 + 149 = 527 and no cable. The DM-40D box contains a
+     passive 3.5 mm-to-dual-RCA converter, and the FLX4's RCA master can use it
+     the other way round, so charging $12 here was a double-charge. */
+  assert.equal(allowanceTotal(mount.innerHTML), 527);
+  assert.equal(rigCharge(rigFrom(mount.innerHTML)), 527);
+  assert.equal(slotOf(rigFrom(mount.innerHTML), "cables"), undefined,
+    "the FLX4 route needs no cable purchase either: the box lead is reversible");
 
   /* FLX2: 199 + 49 + 149 = 397 with no cable line at all — the DM-40D box
      lead covers this output. The old $412 charged a $15 allowance the
@@ -227,16 +237,16 @@ test("the guide total always equals what Rig Studio will charge for the handed-o
   assert.equal(allowanceTotal(mount.innerHTML), 49);
   assert.equal(rigCharge(rigFrom(mount.innerHTML)), 49);
 
-  /* Back to the FLX4: a dual-RCA cable is required again and the allowance leaves. */
-  /* Monitors stay owned; the FLX4 controller and its RCA cable must be bought:
-     329 + 49 + 12 = 390, with no $15 allowance left behind. */
+  /* Back to the FLX4 with monitors owned: only the controller and headphones
+     are bought, 329 + 49 = 378, and still no cable - the box lead covers the
+     RCA master as well as the 3.5 mm one. */
   fireById(mount, "[data-bl-choose]", "pioneer-ddj-flx4");
-  assert.equal(allowanceTotal(mount.innerHTML), 390);
+  assert.equal(allowanceTotal(mount.innerHTML), 378);
   const flx4Payload = rigFrom(mount.innerHTML);
-  assert.equal(rigCharge(flx4Payload), 390);
+  assert.equal(rigCharge(flx4Payload), 378);
   assert.equal(slotOf(flx4Payload, "speakers").owned, true, "unrelated ownership survives a controller change");
-  assert.equal(slotOf(flx4Payload, "cables").itemId, "cable-rca-rca");
-  assert.equal(slotOf(flx4Payload, "cables").owned, false, "a cable that fitted the old output is not assumed to fit");
+  assert.equal(slotOf(flx4Payload, "cables"), undefined,
+    "no cable line appears for a dealer that ships inside the monitor box");
   assert.equal(slotOf(flx4Payload, "controllers").owned, false, "controller ownership resets with the model");
 
   /* The hand-off is labelled as a guide import, so Rig Studio can greet it correctly. */

@@ -66,21 +66,29 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     assert.ok(planner() && planner().textContent.trim().length > 0, "the planner renders a plan on load");
     assert.strictEqual(options().length, 2, "the desk route shows a primary speaker and one alternative");
     assert.match(primary().textContent, /DM-40D/, "the desk route's primary is the DM-40D");
-    assert.match(page.text("[data-speaker-plan]"), /Gold-Plated Dual RCA to Dual RCA/, "the planner names the actual lead");
-    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 161,
-      "DM-40D pair ($149) + $12 verified lead = $161");
+    /* A: the DM-40D box's passive 3.5 mm-to-dual-RCA converter is reversible, so
+       an RCA master needs no extra lead. The planner must say so and charge $0. */
+    assert.match(page.text("[data-speaker-plan]"), /3\.5 mm stereo mini-plug to dual RCA converter cable/,
+      "the planner names the lead that actually ships in the box");
+    assert.match(page.text("[data-speaker-plan]"), /In the box/, "the in-box lead is not sold back to the buyer");
+    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 149,
+      "DM-40D pair only: the box lead covers the FLX4's RCA master");
 
     /* Signal path names the socket the plan actually uses, not every socket the
        cabinet happens to own; the full input list stays available in the title. */
     const signalPath = page.document.querySelector(".speaker-plan-option.is-primary .speaker-plan-facts li b").textContent.replace(/\s+/g, " ").trim();
-    assert.strictEqual(signalPath, "RCA (unbalanced) master \u2192 RCA",
-      `the signal path should describe the RCA run only, got "${signalPath}"`);
+    assert.strictEqual(signalPath, "RCA (unbalanced) master \u2192 3.5 mm",
+      `the signal path should describe the socket actually used, got "${signalPath}"`);
     const pathTitle = page.document.querySelector(".speaker-plan-option.is-primary .speaker-plan-facts li b").getAttribute("title");
     assert.match(pathTitle, /RCA \/ 3\.5 mm/, "the title still lists every input on the cabinet");
 
-    /* The box lead cannot substitute for the purchased lead — buyers need that. */
-    assert.match(page.text("[data-speaker-plan]"), /does not replace this lead/,
-      "the plan admits the included 3.5 mm lead cannot feed an RCA output");
+    /* When the box lead genuinely cannot help, the plan has to say so. The
+       KRK Classic 5 pack ships XLR leads and an RCA master cannot use them. */
+    await setRadio("speaker-use", "production");
+    const classic = page.queryAll("[data-speaker-plan] .speaker-plan-option")[1];
+    assert.match(classic.textContent, /does not replace this lead/,
+      "the plan admits the Classic 5 pack's XLR leads cannot feed an RCA output");
+    await setRadio("speaker-use", "desk");
 
     /* Deck swap: the FLX2 has a 3.5 mm master, so the DM-40D box lead covers it. */
     await setRadio("speaker-deck", "pioneer-ddj-flx2");
@@ -90,12 +98,15 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     assert.ok(!/Verified lead|Planning allowance/.test(page.text("[data-speaker-plan] .speaker-plan-option.is-primary")),
       "a covered path shows neither a purchase nor an allowance");
 
-    /* Back to the FLX4: the $12 lead has to come back with it. */
+    /* Back to the FLX4: still no purchase, but the plan must describe the
+       reversed orientation rather than silently claiming the same path. */
     await setRadio("speaker-deck", "pioneer-ddj-flx4");
-    assert.match(page.text("[data-speaker-plan]"), /Gold-Plated Dual RCA to Dual RCA/,
-      "swapping back to the FLX4 restores the RCA lead, not a stale 3.5 mm allowance");
-    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 161,
-      "the restored plan still totals $161");
+    const backPath = page.document.querySelector(".speaker-plan-option.is-primary .speaker-plan-facts li b").textContent.replace(/\s+/g, " ").trim();
+    assert.strictEqual(backPath, "RCA (unbalanced) master \u2192 3.5 mm",
+      `the FLX4 plan should show the RCA master into the 3.5 mm input, got "${backPath}"`);
+    assert.match(page.text("[data-speaker-plan]"), /either way round/, "the reversed passive lead is explained, not hidden");
+    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 149,
+      "no stale cable charge survives the deck swap");
 
     /* Production route: HS5 needs a dual RCA → dual 1/4" TS lead. */
     await setRadio("speaker-use", "production");
@@ -126,8 +137,11 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     assert.strictEqual(rigCost.buyTotal, plannerTotal + controllerPrice,
       `the planner's $${plannerTotal} plus the controller ($${controllerPrice}) must equal the Rig Studio bill ($${rigCost.buyTotal})`);
     const rigShopping = (await rigPage.shopping()).map((line) => line.itemId).sort();
-    assert.deepStrictEqual(rigShopping, ["cable-rca-rca", "pioneer-ddj-flx4", "pioneer-dm40d"].sort(),
-      "the handover carries the deck, the speaker and exactly one lead");
+    assert.deepStrictEqual(rigShopping, ["pioneer-ddj-flx4", "pioneer-dm40d"].sort(),
+      "the handover carries the deck and the speaker, and no cable the box already supplies");
+    const rigPanel = rigPage.queryAll(".rs-connect-row");
+    assert.strictEqual(rigPanel.length, 1, "Rig Studio shows one connection row for the handed-off path");
+    assert.match(rigPanel[0].textContent, /In the box/, "the handed-off rig credits the lead in the box");
     rigPage.close();
 
     /* "I already own these" is a real buying journey: keep the guide price for
@@ -141,22 +155,61 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     assert.match(page.text("[data-speaker-plan]"), /You already own these speakers/, "the plan says the pair is owned");
     assert.strictEqual(page.text(".speaker-plan-option.is-primary .speaker-plan-price"), "Owned",
       "the owned pair is not priced again");
-    assert.match(page.text(".speaker-plan-option.is-primary .speaker-plan-total"), /Lead only/, "the total is lead-only");
-    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 12,
-      "owning the pair leaves only the $12 lead");
+    assert.match(page.text("[data-speaker-plan]"), /only prices the lead/, "the headline switches to the lead");
     const ownedHref = page.document.querySelector(".speaker-plan-option.is-primary .speaker-plan-cta").getAttribute("href");
     const ownedRig = await openPage(new URL(ownedHref, server.base + "/").href);
     const ownedCost = await ownedRig.cost();
-    assert.strictEqual(ownedCost.buyTotal, 12 + controllerPrice,
-      `the hand-off bills the controller and the lead only, got $${ownedCost.buyTotal}`);
+    assert.strictEqual(ownedCost.buyTotal, controllerPrice,
+      `the hand-off bills the controller only, because the lead ships in the already-owned box, got $${ownedCost.buyTotal}`);
     assert.strictEqual(ownedCost.ownedTotal, Number(byId["pioneer-dm40d"].price),
       "the speaker the visitor already owns is carried over as owned, not dropped or charged");
     ownedRig.close();
     ownedBox.checked = false;
     ownedBox.dispatchEvent(new page.window.Event("change", { bubbles: true }));
     await wait(250);
-    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 161,
-      "unchecking ownership restores the full speakers + lead price");
+    assert.strictEqual(money(page.text(".speaker-plan-option.is-primary .speaker-plan-total")), 149,
+      "unchecking ownership restores the speakers price");
+
+    /* Every deck × route combination has to keep the same promise: the number
+       on the card is the number Rig Studio charges once the controller is
+       added. Two decks that stand in for "another deck with RCA/XLR out" carry
+       no controller slot, so their hand-off is speakers + lead only. */
+    const sweep = [
+      { deck: "pioneer-ddj-flx2", controller: "pioneer-ddj-flx2" },
+      { deck: "pioneer-ddj-flx4", controller: "pioneer-ddj-flx4" },
+      { deck: "output-xlr", controller: null }
+    ];
+    for (const combo of sweep) {
+      for (const use of ["desk", "production", "room"]) {
+        await setRadio("speaker-use", use);
+        await setRadio("speaker-deck", combo.deck);
+        const card = page.document.querySelector(".speaker-plan-option.is-primary");
+        assert.ok(card, `a plan renders for ${combo.deck} + ${use}`);
+        const total = money(card.querySelector(".speaker-plan-total").textContent);
+        const handoff = card.querySelector(".speaker-plan-cta").getAttribute("href");
+        const sweepRig = await openPage(new URL(handoff, server.base + "/").href);
+        const sweepCost = await sweepRig.cost();
+        const expected = total + (combo.controller ? Number(byId[combo.controller].price) : 0);
+        assert.strictEqual(sweepCost.buyTotal, expected,
+          `${combo.deck} + ${use}: planner $${total} must match the rig bill ($${sweepCost.buyTotal} vs $${expected})`);
+        /* One speaker line in the hand-off means exactly one connection row,
+           and any cable line may only exist if the plan says it is bought. */
+        const panelRows = sweepRig.queryAll(".rs-connect-row").length;
+        assert.strictEqual(panelRows, 1, `${combo.deck} + ${use}: one speaker line, one connection row`);
+        const plan = (await sweepRig.connections())[0];
+        const boughtLines = (await sweepRig.cableLines()).filter((line) => line.charged && !line.spare);
+        if (plan.kind === "included" || plan.kind === "unresolved") {
+          assert.strictEqual(boughtLines.length, 0,
+            `${combo.deck} + ${use}: a ${plan.kind} path must not carry a cable purchase: ${JSON.stringify(boughtLines)}`);
+        } else {
+          assert.strictEqual(boughtLines.length, 1,
+            `${combo.deck} + ${use}: a priced path carries exactly one lead line`);
+        }
+        sweepRig.close();
+      }
+    }
+    await setRadio("speaker-use", "desk");
+    await setRadio("speaker-deck", "pioneer-ddj-flx4");
 
     assert.deepStrictEqual(page.consoleErrors, [], `speaker planner console errors: ${page.consoleErrors.join(" | ")}`);
 
@@ -165,27 +218,41 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     page = await open(server.base + "/build-your-dj-setup.html?preset=bedroom-starter");
     const rows = () => page.queryAll(".rs-connect-row");
     assert.strictEqual(rows().length, 1, "one speaker path renders one connection row");
-    assert.strictEqual(rows().length, (await page.cableLines()).length,
-      "the panel shows the same number of paths as the shopping list");
+    /* The panel is one row per speaker line, not per cable purchase: a line can
+       be covered by the box or unresolved and still deserve a row. */
+    assert.strictEqual(rows().length, (await page.connections()).length,
+      "the panel shows one row per speaker line");
+    assert.strictEqual(rows().length, 1, "bedroom-starter has one speaker line");
     const rowText = rows()[0].textContent.replace(/\s+/g, " ");
     assert.match(rowText, /2 cabinets/, "the row distinguishes cabinets from signal feeds");
     assert.match(rowText, /1 signal feed/, "a master/slave pair is one feed");
-    assert.match(rowText, /RCA \u2192 RCA/, "the row names the connector pair");
-    assert.match(rowText, /Gold-Plated Dual RCA to Dual RCA/, "the row names the catalogue lead");
-    assert.match(rowText, /On the list/, "an auto-added lead is not silently charged twice");
+    /* Defect A in the panel: the FLX4 + DM-40D line is covered by the retail
+       box, so the row says so and no cable is charged. */
+    assert.match(rowText, /RCA \u2192 3.5 mm/, "the row names the connector pair actually used");
+    assert.match(rowText, /3.5 mm stereo mini-plug to dual RCA converter cable/, "the row names the box lead");
+    assert.match(rowText, /In the box/, "the panel credits the lead that ships with the speakers");
+    assert.strictEqual((await page.cableLines()).length, 0, "no cable purchase is invented for a covered line");
+    assert.strictEqual(page.queryAll(".rs-connect-fix").length, 0, "a covered line offers nothing to buy");
 
-    /* Removing the lead must leave the panel honest: it prices the gap and
-       offers the exact fix, and taking the fix restores one line, not two. */
+    /* Removing a *needed* lead must leave the panel honest: it prices the gap
+       and offers the exact fix, and taking the fix restores one line, not two.
+       FLX4 + HS5 is a genuine purchase ($15 dual RCA to dual 1/4-inch TS). */
+    page = await open(server.base + "/build-your-dj-setup.html?rig=" + encode({
+      n: "Cable fix",
+      i: [slot("ctl", "controllers", "pioneer-ddj-flx4"), slot("spk", "speakers", "yamaha-hs5")]
+    }));
+    assert.match(rows()[0].textContent, /Dual RCA to Dual 1\/4" TS/, "the row names the verified lead");
+    assert.match(rows()[0].textContent, /On the list/, "an auto-added lead is not silently charged twice");
     const state = await page.state();
-    const cableSlot = state.items.find((item) => item.category === "cables" && item.itemId === "cable-rca-rca");
-    assert.ok(cableSlot, "the preset carries the RCA lead as a real slot");
+    const cableSlot = state.items.find((item) => item.category === "cables" && item.itemId === "cable-rca-trs");
+    assert.ok(cableSlot, "the rig carries the 1/4-inch lead as a real slot");
     const totalWithLead = (await page.cost()).buyTotal;
     await page.click(`[data-rs="remove"][data-slot="${cableSlot.slotId}"]`);
     assert.strictEqual(rows().length, 1, "removing the lead does not remove the speaker path");
-    assert.match(rows()[0].textContent, /\$12/, "the row shows the price of the missing lead");
+    assert.match(rows()[0].textContent, /\$15/, "the row shows the price of the missing lead");
     const fix = page.query(".rs-connect-fix");
     assert.ok(fix, "the panel offers a fix button for the missing lead");
-    assert.strictEqual(fix.textContent.trim(), "Add $12", "the fix names the exact amount");
+    assert.strictEqual(fix.textContent.trim(), "Add $15", "the fix names the exact amount");
     assert.ok((await page.cost()).buyTotal < totalWithLead, "the bill drops while the lead is missing");
     await page.click(".rs-connect-fix");
     assert.match(rows()[0].textContent, /On the list/, "the fix puts the lead back on the list");
@@ -199,18 +266,35 @@ const money = (value) => Number(String(value).replace(/[^0-9.]/g, ""));
     assert.match(clubRow, /2 signal feeds/, "independently powered cabinets each need a feed");
     assert.match(clubRow, /XLR \u2192 XLR/, "the XLR master uses the XLR lead");
 
+    /* Speakers with no deck yet: say what is missing instead of pretending the
+       jacks are unknown. The row still shows cabinets and the feed count. */
+    page = await open(server.base + "/build-your-dj-setup.html?rig=" + encode({
+      n: "Speakers first",
+      i: [slot("spk", "speakers", "pioneer-dm40d")]
+    }));
+    const lonely = rows()[0].textContent.replace(/\s+/g, " ");
+    assert.match(lonely, /2 cabinets/, "the speaker-only row still counts cabinets");
+    assert.match(lonely, /Add the deck and this row will name the lead it needs/, "the row names the real gap");
+    assert.match(lonely, /No deck yet/, "no cable is priced before there is a deck");
+    assert.strictEqual(page.query(".rs-connect-fix").textContent.trim(), "Choose a deck", "the row offers the deck picker");
+    assert.match(page.query(".rs-connect-summary").textContent, /Waiting on a deck/, "the summary counts the waiting line");
+    assert.strictEqual((await page.cableLines()).length, 0, "nothing is added to the shopping list yet");
+    assert.deepStrictEqual(page.consoleErrors, [], `speaker-only console errors: ${page.consoleErrors.join(" | ")}`);
+
     /* N3 again, through the panel: a swap must not leave a stale allowance. */
     page = await open(server.base + "/build-your-dj-setup.html?rig=" + encode({
       n: "Swap check",
       i: [slot("ctl", "controllers", "pioneer-ddj-flx2"), slot("spk", "speakers", "pioneer-dm40d")]
     }));
     const beforeSwap = rows()[0].textContent.replace(/\s+/g, " ");
-    assert.match(beforeSwap, /No cable purchase|3\.5 mm/, "FLX2 + DM-40D starts from the box lead");
+    assert.match(beforeSwap, /3\.5 mm/, "FLX2 + DM-40D starts from the box lead");
     await page.openSlotDrawer("ctl", "controllers");
     await page.pickInDrawer("pioneer-ddj-flx4");
     const afterSwap = rows()[0].textContent.replace(/\s+/g, " ");
-    assert.match(afterSwap, /RCA \u2192 RCA/, "the FLX4 swap switches the panel to the RCA lead");
-    assert.ok(!/3\.5 mm to 1\/4|allowance/i.test(afterSwap), `no stale 3.5 mm allowance survives the swap: ${afterSwap}`);
+    assert.match(afterSwap, /RCA \u2192 3\.5 mm/, "the FLX4 swap re-derives the path from its RCA master");
+    assert.ok(!/allowance/i.test(afterSwap), `no stale allowance survives the swap: ${afterSwap}`);
+    assert.strictEqual((await page.cost()).buyTotal, 329 + 149,
+      "the swap does not resurrect the $12 cable the box already supplies");
     assert.deepStrictEqual(page.consoleErrors, [], `connection panel console errors: ${page.consoleErrors.join(" | ")}`);
 
     /* --------------------------------------- N4 comparison touch targets ----
