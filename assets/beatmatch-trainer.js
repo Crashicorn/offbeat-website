@@ -346,13 +346,19 @@
   /* ---------------------------------------------------------------- Loop */
   function frame(timestamp) {
     if (!state.running) return;
+    var priorAudioTime = state.lastAudio;
     scheduler();
 
     var now = timestamp || window.performance.now();
+    // A suspended/stalled Web Audio clock is not audible practice. Animation
+    // frames can continue while autoplay or device suspension prevents sound;
+    // never award a perfect beatmatch for two frozen, silent decks.
+    var audioAdvanced = state.ctx && state.ctx.state !== "suspended" &&
+      state.lastAudio > priorAudioTime;
     // A backgrounded/throttled tab must not earn seconds of unobserved
     // beatmatching credit from one delayed animation frame.
     var elapsed = state.lastFrame ? now - state.lastFrame : 0;
-    var delta = elapsed > 0 && elapsed <= 200 ? elapsed : 0;
+    var delta = audioAdvanced && elapsed > 0 && elapsed <= 200 ? elapsed : 0;
     state.lastFrame = now;
     if (delta === 0) state.currentStreakMs = 0;
 
