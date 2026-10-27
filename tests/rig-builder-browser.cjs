@@ -47,6 +47,9 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
   try {
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
+      // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
+      const initialAlerts = await page.$eval(".compat-items-grid", el => el.textContent);
+      assert.doesNotMatch(initialAlerts, /Headphone Connector Adapter Needed|Headphone Jack Adapter Advisory/);
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
       assert.ok(Number.isFinite(before) && before > 0, "initial spend must be a real amount");
       await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
@@ -57,6 +60,30 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       await context.close();
       console.log("PASS: " + width + "px real catalog/render/owned-budget/no-overflow");
     }
+
+    // Accessories-only shared rigs must never show a green "Preliminary Match".
+    const noController = {
+      name: "Accessory-only rig",
+      items: [
+        { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
+        { slotId: "sp", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
+        { slotId: "host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: true }
+      ]
+    };
+    const noControllerQuery = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(noController)), "binary").toString("base64")
+    );
+    const missingController = await visit(browser, 390, noControllerQuery);
+    const missingState = await missingController.page.evaluate(() => ({
+      tag: document.querySelector(".compat-status-tag")?.textContent || "",
+      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+    }));
+    assert.match(missingState.tag, /Incompatible Configuration/);
+    assert.match(missingState.alerts, /DJ Controller or Mixer Required/);
+    assert.ok(missingState.readiness <= 40);
+    await missingController.context.close();
+    console.log("PASS: accessory-only shared rig visibly blocked as incomplete");
 
     const payload = {
       name: '<img src=x onerror="alert(1)">',
