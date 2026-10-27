@@ -433,13 +433,21 @@
           "inpulse500": "hercules-inpulse-500",
           "ranefour": "rane-four"
         };
-        var targetCatId = catalogMap[c.id] || "pioneer-ddj-flx4";
+        // Never substitute an unrelated controller when this model is absent from the rig catalog.
+        var targetCatId = catalogMap[c.id];
 
         html += '<div class="mat-actions-row">';
         if (c.guide) {
           html += '<a class="mat-link" href="' + esc(c.guide) + '">Read Guide →</a>';
         }
-        html += '<a class="mat-plan-btn" href="build-your-dj-setup.html?add=' + targetCatId + '">Plan in Rig Architect 🎛️</a>';
+        if (targetCatId) {
+          html += '<a class="mat-plan-btn" href="build-your-dj-setup.html?add=' +
+            encodeURIComponent(targetCatId) + '">Plan with ' + esc(c.name) + ' →</a>';
+        } else {
+          html += '<a class="mat-plan-btn" href="build-your-dj-setup.html" ' +
+            'title="This model is not in the rig catalog; select available gear manually">' +
+            'Explore Rig Architect (select gear manually) →</a>';
+        }
         html += '</div>';
 
         html += '</div>';
