@@ -209,3 +209,58 @@ test("a laptop-dependent controller with no computer is not declared playable", 
   const standalone = api.runDeepCompatibilityChecks();
   assert.equal(standalone.fatalErrors, 0);
 });
+
+
+test("accessory-only rigs cannot claim a playable preliminary match", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "headphones", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "speakers", category: "speakers", price: 199, inputs: ["RCA"] },
+    { id: "laptop", category: "laptops", price: 999 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "hp", category: "headphones", itemId: "headphones", qty: 1 },
+    { slotId: "spk", category: "speakers", itemId: "speakers", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "laptop", qty: 1 }
+  ] }), true);
+  const result = api.runDeepCompatibilityChecks();
+  assert.equal(result.fatalErrors, 1);
+  assert.ok(result.readiness <= 40);
+  assert.ok(result.checks.some(check => check.type === "error" && /Controller or Mixer Required/.test(check.title)));
+});
+
+test("included headphone plugs and adapters do not trigger unnecessary purchases", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "flx4", category: "controllers", price: 299, model: "FLX4",
+      standalone: false, headphone_jack: '3.5mm (1/8")' },
+    { id: "hd25", category: "headphones", price: 149,
+      jack_type: '3.5mm with screw-on 1/4" adapter included' },
+    { id: "host", category: "laptops", price: 999 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "flx4", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hd25", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "host", qty: 1 }
+  ] }), true);
+  assert.ok(!api.runDeepCompatibilityChecks().checks.some(c => /Headphone.*Adapter/.test(c.title)));
+});
+
+test("a genuine headphone plug mismatch warns without an unverified auto-add", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "mini-controller", category: "controllers", price: 299,
+      standalone: true, headphone_jack: "3.5mm" },
+    { id: "quarter-only", category: "headphones", price: 149,
+      jack_type: '1/4" plug only' }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "mini-controller", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "quarter-only", qty: 1 }
+  ] }), true);
+  const result = api.runDeepCompatibilityChecks();
+  const advisory = result.checks.find(c => /Headphone Connector Adapter Needed/.test(c.title));
+  assert.equal(advisory.type, "warning");
+  assert.equal(advisory.fixCableId, null);
+  assert.match(advisory.desc, /1\/4-inch female to 3.5mm male/);
+});
