@@ -22,9 +22,17 @@ function makeTrainer(options = {}) {
   };
   const scoreDrift = { textContent: "" };
   const scorecard = { hidden: true };
+  const platterListeners = {};
+  const platter = {
+    style: {},
+    captured: null,
+    addEventListener(type, handler) { platterListeners[type] = handler; },
+    setPointerCapture(id) { this.captured = id; }
+  };
   const root = {
     querySelector(selector) {
       if (selector === "[data-cue]") return cue;
+      if (selector === "[data-platter-b]") return platter;
       if (selector === "[data-difficulty]") return { value: options.difficulty || "steady" };
       if (selector === "[data-pitch]") return { min: "-8", max: "8", value: "0", addEventListener() {} };
       if (selector === "[data-score-drift]") return scoreDrift;
@@ -53,7 +61,7 @@ function makeTrainer(options = {}) {
   };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
-  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document, scoreDrift, scorecard };
+  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document, scoreDrift, scorecard, platter, platterListeners };
 }
 
 function setRunningState(probe, elapsed) {
@@ -333,4 +341,51 @@ test("START plays Deck A beat zero immediately and reserves it against duplicate
   assert.equal(audio.starts.filter(when => when === 0.12).length, initialStarts,
     "first animation frame must not schedule a second beat zero");
   assert.equal(probe.state.scheduledA, 0);
+});
+
+test("mobile finger swipe nudges Deck B and release outside the platter restores tempo", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.01);
+  assert.equal(probe.platter.style.touchAction, "none", "touch scroll must not cancel jog drag");
+  probe.platterListeners.pointerdown({ pointerId: 7, pointerType: "touch", clientY: 160 });
+  assert.equal(probe.platter.captured, 7, "capture keeps finger release observable");
+  probe.platterListeners.pointermove({ pointerId: 7, pointerType: "touch", clientY: 120 });
+  assert.equal(probe.state.nudge, 1, "upward swipe pushes Deck B forward");
+  assert.equal(probe.currentBpmB(), 135.6, "swipe changes the actual audio tempo");
+  probe.platterListeners.pointermove({ pointerId: 8, pointerType: "touch", clientY: 200 });
+  assert.equal(probe.state.nudge, 1, "second finger cannot hijack active jog");
+  probe.windowListeners.pointerup({ pointerId: 7, pointerType: "touch" });
+  assert.equal(probe.state.isDraggingPlatter, false);
+  assert.equal(probe.state.nudge, 0, "release outside the platter stops nudging");
+  assert.equal(probe.currentBpmB(), 120, "deck returns to pitch-fader tempo");
+});
+
+test("downward finger swipe, cancellation and lost capture cannot leave Deck B nudging", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.01);
+  probe.platterListeners.pointerdown({ pointerId: 11, pointerType: "touch", clientY: 80 });
+  probe.platterListeners.pointermove({ pointerId: 11, pointerType: "touch", clientY: 120 });
+  assert.equal(probe.state.nudge, -1, "downward swipe slows Deck B");
+  probe.platterListeners.pointercancel({ pointerId: 11 });
+  assert.equal(probe.state.nudge, 0, "touch cancellation releases jog");
+  probe.platterListeners.pointerdown({ pointerId: 12, pointerType: "touch", clientY: 80 });
+  probe.platterListeners.pointermove({ pointerId: 12, pointerType: "touch", clientY: 120 });
+  probe.platterListeners.lostpointercapture({ pointerId: 12 });
+  assert.equal(probe.state.nudge, 0, "lost capture releases jog");
+  assert.equal(probe.state.dragPointerId, null);
+});
+
+test("mouse jog drag still works, rejects right-click and ignores idle swipes", () => {
+  const probe = makeTrainer();
+  const down = { pointerId: 3, pointerType: "mouse", button: 0, clientY: 160 };
+  probe.platterListeners.pointerdown(down);
+  assert.equal(probe.state.isDraggingPlatter, false, "idle jog should not latch");
+  setRunningState(probe, 0.01);
+  probe.platterListeners.pointerdown({ ...down, button: 2 });
+  assert.equal(probe.state.isDraggingPlatter, false, "right click is not a jog gesture");
+  probe.platterListeners.pointerdown(down);
+  probe.platterListeners.pointermove({ pointerId: 3, pointerType: "mouse", clientY: 120 });
+  assert.equal(probe.state.nudge, 1, "mouse drag still pushes the platter");
+  probe.platterListeners.pointerup({ pointerId: 3 });
+  assert.equal(probe.state.nudge, 0);
 });
