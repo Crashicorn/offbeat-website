@@ -89,7 +89,14 @@
     }
     slots.push({ slotId: "plan-speakers", category: "speakers", itemId: speakerItem.id, qty: 1, owned: Boolean(speakersOwned) });
     if (plan.kind !== "included" && plan.itemId && plan.units > 0) {
-      slots.push({ slotId: "plan-cable", category: "cables", itemId: plan.itemId, qty: plan.units, owned: false });
+      /* When the visitor's deck is not a catalogue model, Rig Studio has no
+         output to reconcile against, so the lead they were just told to buy is
+         carried as a manual line: deleting it would silently change the total
+         they were shown. */
+      slots.push({
+        slotId: "plan-cable", category: "cables", itemId: plan.itemId,
+        qty: plan.units, owned: false, manual: !deck.deck.itemId
+      });
     }
     return "build-your-dj-setup.html?rig=" + encodeURIComponent(encode({ n: "Speaker plan", i: slots, g: "guide" }));
   }

@@ -284,8 +284,8 @@
   function feedShape(item, qty) { return gearApi().feedShape(item, qty); }
   function cableUnitsFor(feeds, channelsPerFeed, cable) { return gearApi().cableUnitsFor(feeds, channelsPerFeed, cable); }
   function isEstimateItem(item) { return gearApi().isEstimateItem(item); }
-  function connectionPlan(controller, speaker, qty) {
-    return gearApi().connectionPlan(CATALOG, controller, speaker, qty);
+  function connectionPlan(controller, speaker, qty, options) {
+    return gearApi().connectionPlan(CATALOG, controller, speaker, qty, options);
   }
 
   /* Base64 that survives a query string (+ and / would be mangled). */
@@ -324,11 +324,26 @@
 
      Retired lines are remembered, so switching FLX2 → FLX4 → FLX2 restores
      the same $15 allowance instead of forgetting what the rig had. */
-  function rigCableNeeds() {
+  /* Plan every speaker line in cart order, reserving one output socket per
+     line. Shared by the reconciliation pass and the rendered rig so the
+     shopping list and the connection panel can never disagree. */
+  function planSpeakerLines() {
     var controller = itemOf(slotsOf("controllers").filter(function (s) { return s.itemId; })[0]);
+    var usedOutputs = {};
+    return slotsOf("speakers").filter(function (s) { return s.itemId; }).map(function (slot) {
+      var item = itemOf(slot);
+      var plan = connectionPlan(controller, item, slot.qty || 1, { usedOutputs: usedOutputs });
+      if (plan.output && plan.kind !== "unresolved") {
+        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+      }
+      return { slot: slot, speaker: item, plan: plan, conflict: plan.kind === "unresolved" };
+    });
+  }
+
+  function rigCableNeeds() {
     var needs = {};
-    slotsOf("speakers").filter(function (s) { return s.itemId; }).forEach(function (slot) {
-      var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1);
+    planSpeakerLines().forEach(function (entry) {
+      var plan = entry.plan;
       if (plan.itemId && plan.units > 0) needs[plan.itemId] = (needs[plan.itemId] || 0) + plan.units;
     });
     return needs;
@@ -440,11 +455,16 @@
        The plan answers three separate questions the old model blurred:
        how many cabinets there are, how many signals must reach them, and
        which of those leads (if any) still has to be bought. */
-    var cablePlan = speakers.map(function (entry) {
-      var plan = connectionPlan(controller, entry.item, entry.slot.qty || 1);
+    /* A stereo master socket is one destination. Speaker lines are planned in
+       cart order against the sockets still free, so a second pair cannot be
+       handed a cable the deck has no output to drive. `unresolved` carries the
+       honest gap instead of a price. */
+    var cablePlan = planSpeakerLines().map(function (line) {
+      var plan = line.plan;
       return {
-        slot: entry.slot, speaker: entry.item, plan: plan,
+        slot: line.slot, speaker: line.speaker, plan: plan,
         needed: plan.units, feeds: plan.feeds, covered: plan.coveredFeeds,
+        conflict: line.conflict,
         available: plan.itemId && plan.units > 0 ? cableRunsAvailable(plan.itemId) : 0
       };
     });
@@ -537,7 +557,14 @@
       } else {
         feedNote = "One cabinet per box: " + physicalSpeakers + " in total.";
       }
-      if (physicalSpeakers >= 2) {
+      var unresolvedLines = cablePlan.filter(function (p) { return p.conflict; });
+      if (unresolvedLines.length) {
+        warnings++;
+        checks.push({ key: "output", level: "warn", weight: 2,
+          title: "Output: " + physicalSpeakers + " cabinets, " + unresolvedLines.length + " line without a verified feed",
+          note: outputNote + " \u2014 " + unresolvedLines[0].plan.note,
+          action: { kind: "pick-cat", cat: "speakers", slotId: unresolvedLines[0].slot.slotId, label: "Swap this speaker line" } });
+      } else if (physicalSpeakers >= 2) {
         checks.push({ key: "output", level: "ok", weight: 2,
           title: "Output: stereo, " + physicalSpeakers + " cabinets",
           note: outputNote + " \u2014 " + feedNote });
@@ -585,7 +612,14 @@
         : "";
       var unknownCable = ((cablePlan.filter(function (p) { return p.plan.kind === "unknown"; })[0] || {}).plan || {});
 
-      if (unknownPlan) {
+      var unresolvedPlan = cablePlan.filter(function (p) { return p.conflict; })[0];
+      if (unresolvedPlan) {
+        blockers++;
+        checks.push({ key: "cables", level: "bad", weight: 2,
+          title: "Routing unresolved: " + unresolvedPlan.speaker.model + " has no free output",
+          note: unresolvedPlan.plan.note,
+          action: { kind: "pick-cat", cat: "speakers", slotId: unresolvedPlan.slot.slotId, label: "Review the speaker lines" } });
+      } else if (unknownPlan) {
         warnings++;
         checks.push({ key: "cables", level: "warn", weight: 2, title: "Cable needs checking",
           note: controller.model + " and " + unknownPlan.speaker.model + " do not share a socket type in our catalogue. " +
@@ -684,15 +718,17 @@
       if (!plan) return;
       var status = "ok";
       if (!controller) status = "idle";
-      else if (plan.plan.kind === "unknown") status = "warn";
+      else if (plan.plan.kind === "unresolved" || plan.plan.kind === "unknown") status = "bad";
       else if (plan.plan.kind === "included" || plan.available >= plan.needed) status = "ok";
       else if (plan.available > 0) status = "warn";
       else status = "bad";
       var label = !controller
         ? "add a controller"
-        : plan.plan.kind === "included"
-          ? "included \u00b7 " + plan.plan.short
-          : plan.plan.label + (plan.needed > 1 ? " \u00d7 " + plan.needed : "");
+        : plan.plan.kind === "unresolved"
+          ? "no free output"
+          : plan.plan.kind === "included"
+            ? "included \u00b7 " + plan.plan.short
+            : plan.plan.label + (plan.needed > 1 ? " \u00d7 " + plan.needed : "");
       wiring.push({
         from: "controller", to: "speaker" + i, status: status,
         label: label, kind: plan.plan.kind
@@ -715,6 +751,7 @@
       speakerUnits: speakerUnits, physicalSpeakers: physicalSpeakers,
       cablePlan: cablePlan, totalRunsNeeded: totalRunsNeeded, includedFeeds: includedFeeds,
       controllerOutputs: controller ? gearApi().controllerOutputs(controller) : [],
+      masterOutputCount: controller ? gearApi().controllerOutputs(controller).filter(function (o) { return o.role !== "booth"; }).length : 0,
       checks: checks, wiring: wiring, readiness: readiness, status: status,
       blockers: blockers, warnings: warnings, upgrade: recommendUpgrade(), quote: quote
     };
@@ -732,6 +769,12 @@
       return "This phone/tablet is not a verified host for the selected controller. Confirm the app and OS or use a computer.";
     }
     if (!r.speakers.length) return "Headphones-only is a valid practice rig. Add monitors when you want to hear the room.";
+    var unresolvedLines = (r.cablePlan || []).filter(function (p) { return p.conflict; });
+    if (unresolvedLines.length) {
+      return (r.masterOutputCount || 0) > 1
+        ? "One speaker line has no free output left. Check which output each line is using before adding another pair."
+        : "This deck has one master output, so it can feed one speaker line. A second pair needs a splitter or a deck with two outputs.";
+    }
     if (r.buyTotal === 0) return "Everything here is already in your room. That is the best kind of rig.";
     if (r.buyTotal < 300) return "That is a small list — and the fastest way to start mixing this week.";
     if (r.buyTotal > 2500) return "Big build. Buy the deck first, run it for a month, then add the rest.";
@@ -1252,10 +1295,15 @@
      which lead carries each one, whether that lead is a verified product, a
      planning allowance or already in a box, and how many purchases that means. */
   function renderConnections(rig) {
-    if (!rig.controller || !rig.cablePlan.length) return "";
-    var toBuy = 0, inBox = 0, unknown = 0;
+    /* With speakers but no deck there is no signal to trace yet, and saying so
+       is more useful than hiding the panel exactly when the buyer is deciding
+       what to plug in. */
+    if (!rig.cablePlan.length || (!rig.controller && !rig.speakers.length)) return "";
+    var deckless = !rig.controller;
+    var toBuy = 0, inBox = 0, unknown = 0, unresolved = 0;
     rig.cablePlan.forEach(function (entry) {
-      if (entry.plan.kind === "unknown") unknown++;
+      if (entry.conflict) unresolved++;
+      else if (entry.plan.kind === "unknown") unknown++;
       if (entry.covered > 0) inBox += entry.covered;
       toBuy += entry.needed || 0;
     });
@@ -1270,7 +1318,15 @@
       var outputLabel = plan.output ? plan.output.label || endpointLabel(plan.output.connector) : "output";
       var socketLabel = plan.socket ? endpointLabel(plan.socket.connector) + " input" : "input";
       var lead, costClass, cost;
-      if (plan.kind === "included") {
+      if (deckless) {
+        lead = "Add the deck and this row will name the lead it needs";
+        costClass = "unknown";
+        cost = "No deck yet";
+      } else if (plan.kind === "unresolved") {
+        lead = "No lead can solve this: the deck has no free output for it";
+        costClass = "unresolved";
+        cost = "Routing unresolved";
+      } else if (plan.kind === "included") {
         lead = plan.name;
         costClass = "inbox";
         cost = "In the box";
@@ -1288,7 +1344,12 @@
         cost = "Confirm the jacks";
       }
       var action = "";
-      if (plan.kind !== "unknown" && plan.itemId && entry.available < entry.needed && plan.kind !== "included") {
+      if (deckless) {
+        action = '<button type="button" class="rs-connect-fix rs-connect-fix--swap" data-rs="check-action" data-kind="pick-cat" data-cat="controllers">Choose a deck</button>';
+      } else if (plan.kind === "unresolved") {
+        action = '<button type="button" class="rs-connect-fix rs-connect-fix--swap" data-rs="pick" data-slot="' +
+          escapeHtml(entry.slot.slotId) + '" data-cat="speakers">Change speakers</button>';
+      } else if (plan.kind !== "unknown" && plan.itemId && entry.available < entry.needed && plan.kind !== "included") {
         action = '<button type="button" class="rs-connect-fix" data-rs="check-action" data-kind="add-cable" data-cat="cables" ' +
           'data-item="' + escapeHtml(plan.itemId) + '" data-qty="' + (entry.needed - entry.available) + '">' +
           "Add " + money(((byId(plan.itemId) || {}).price || 0) * (entry.needed - entry.available)) + "</button>";
@@ -1296,20 +1357,23 @@
       return '<li class="rs-connect-row rs-connect-row--' + costClass + '">' +
         '<div class="rs-connect-what"><span class="rs-connect-model">' + escapeHtml(entry.speaker.model) + "</span>" +
           '<span class="rs-connect-meta">' + escapeHtml(cabinetText + " · " + feedText + " · " + socketLabel) + "</span></div>" +
-        '<div class="rs-connect-from"><span class="rs-connect-meta">from</span><strong>' + escapeHtml(rig.controller.model) + "</strong>" +
+        '<div class="rs-connect-from"><span class="rs-connect-meta">from</span><strong>' +
+          escapeHtml(rig.controller ? rig.controller.model : "no deck selected yet") + "</strong>" +
           '<span class="rs-connect-meta">' + escapeHtml(outputLabel) + "</span></div>" +
-        '<div class="rs-connect-lead"><span class="rs-connect-meta">' + escapeHtml(plan.label) + "</span>" + escapeHtml(lead) +
+        '<div class="rs-connect-lead"><span class="rs-connect-meta">' + escapeHtml(deckless ? "path to confirm" : plan.label) + "</span>" + escapeHtml(lead) +
           '<span class="rs-connect-meta">' + escapeHtml(plan.note || "") + "</span></div>" +
         '<div class="rs-connect-cost"><span class="rs-connect-price">' + escapeHtml(cost) + "</span>" + action + "</div>" +
       "</li>";
     }).join("");
 
     var summaryBits = [];
-    summaryBits.push(rig.totalRunsNeeded === 0
+    if (deckless) summaryBits.push("Waiting on a deck");
+    else summaryBits.push(rig.totalRunsNeeded === 0
       ? (inBox ? "Nothing to buy: " + inBox + " lead" + (inBox === 1 ? "" : "s") + " in a box" : "No cable purchase needed")
       : toBuy + " lead purchase" + (toBuy === 1 ? "" : "s"));
     if (inBox) summaryBits.push(inBox + " already supplied");
     if (unknown) summaryBits.push(unknown + " to confirm");
+    if (unresolved) summaryBits.push(unresolved + " line" + (unresolved === 1 ? "" : "s") + " without a verified output");
 
     return '<section class="rs-panel rs-connect" id="rs-connect">' +
       '<div class="rs-panel-head"><div><h2>' + icon("cable") + "Connection plan</h2>" +
@@ -2641,10 +2705,16 @@
       speakers = [spkSlot];
       added.push("speakers");
     }
-    /* Cables for every speaker path, counted the way the plan counts them. */
+    /* Cables for every speaker path, counted the way the plan counts them and
+       allocated against the deck's real outputs. A line the deck cannot feed is
+       left unresolved on purpose: buying a cable for it would be a lie. */
+    var usedOutputs = {};
     speakers.forEach(function (slot) {
-      var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1);
-      if (plan.kind === "included" || !plan.itemId || plan.units <= 0) return;
+      var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1, { usedOutputs: usedOutputs });
+      if (plan.output && plan.kind !== "unresolved") {
+        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+      }
+      if (plan.kind === "included" || plan.kind === "unresolved" || !plan.itemId || plan.units <= 0) return;
       var existing = slotsOf("cables").filter(function (s) { return s.itemId === plan.itemId; })[0];
       if (existing) existing.qty = Math.max(existing.qty || 1, plan.units);
       else { var cslot = newSlot("cables", plan.itemId, false); cslot.qty = plan.units; state.items.push(cslot); added.push("a cable"); }
@@ -3268,6 +3338,9 @@
             feeds: p.feeds, covered: p.covered, cabinets: p.plan.cabinets,
             kind: p.plan.kind, itemId: p.plan.itemId, label: p.plan.label,
             name: p.plan.name, balanced: p.plan.balanced,
+            reversedLead: Boolean(p.plan.reversedLead),
+            conflict: Boolean(p.conflict),
+            outputsNeeded: p.plan.outputsNeeded || 1,
             output: p.plan.output ? p.plan.output.connector : null,
             socket: p.plan.socket ? p.plan.socket.connector : null
           };
