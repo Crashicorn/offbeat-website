@@ -299,6 +299,10 @@
   })();
 
   /* ---------- 6. Search ---------- */
+  // The Arena Spotlight search owns the same header triggers and shortcuts.
+  // Never mount a second legacy dialog on pages that load quick-search.js:
+  // dual overlays trap focus and produce competing Escape/keyboard handlers.
+  if (document.querySelector('script[src$="assets/quick-search.js"]')) return;
   var overlay = document.getElementById("site-search");
   var openers = document.querySelectorAll("[data-search-open]");
   if (!overlay || !openers.length) return;
