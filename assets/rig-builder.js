@@ -328,6 +328,19 @@
       fatalErrors++;
     }
 
+    // A controller without headphones or speakers has no selected listening
+    // path. A high readiness score would encourage an incomplete purchase.
+    if (controller && !headphones && !speakers) {
+      checks.push({
+        type: "error", statusLevel: "incompatible",
+        title: "Headphones or Speakers Required",
+        desc: "This rig has no selected listening or cue output device. Add DJ headphones or speakers " +
+          "before treating it as a playable setup; confirm the controller's audio outputs.",
+        fixCableId: null
+      });
+      fatalErrors++;
+    }
+
     // 1. Audio Signal Cable Matching (3-Way Verification)
     if (controller && speakers) {
       var ctrlOutputs = controller.master_outputs || [];
