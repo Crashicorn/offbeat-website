@@ -28,7 +28,7 @@ function makeTrainer() {
       if (selector === "[data-score-drift]") return scoreDrift;
       if (selector === "[data-scorecard]") return scorecard;
       return null;
-    }, },
+    },
     querySelectorAll() { return []; }
   };
   const document = {
