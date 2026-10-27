@@ -225,6 +225,33 @@ test("starting while an idle nudge control was held begins at neutral tempo", ()
   assert.equal(probe.currentBpmB(), probe.state.bpmB);
 });
 
+test("suspended or frozen Web Audio cannot earn a perfect silent drill", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.001);
+  Object.assign(probe.state, {
+    mode: "drill", endsAt: 46000,
+    posA: 8, posB: 8, scheduledA: 8, scheduledB: 10,
+    nudge: 0, lastAudio: 0, lastFrame: 1000,
+    totalMs: 0, lockedMs: 0, currentStreakMs: 100, offsets: []
+  });
+  probe.state.ctx.state = "suspended";
+  probe.frame(1016);
+  assert.equal(probe.state.totalMs, 0, "a suspended audio device is not audible practice");
+  assert.equal(probe.state.lockedMs, 0);
+  assert.equal(probe.state.currentStreakMs, 0);
+  assert.equal(probe.state.offsets.length, 0, "no silent drift samples");
+
+  probe.state.ctx.state = "running";
+  probe.state.lastAudio = probe.state.ctx.currentTime;
+  probe.frame(1032);
+  assert.equal(probe.state.totalMs, 0, "an unmoving audio clock is not audible practice");
+  assert.equal(probe.state.lockedMs, 0);
+
+  probe.state.ctx.currentTime += 0.016;
+  probe.frame(1048);
+  assert.equal(probe.state.totalMs, 16, "observed frames count after the audio clock resumes");
+});
+
 test("a stalled animation frame never credits unseen seconds as locked practice", () => {
   const probe = makeTrainer();
   setRunningState(probe, 0.001);
