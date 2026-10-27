@@ -538,3 +538,19 @@ test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
   assert.match(realItem, /amazon\.com/);
   assert.match(realItem, /sweetwater\.com/);
 });
+
+test("KRK Classic 5 catalog entry never blends ROKIT G4 connectors or DSP", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  const classic = catalog.items.find(item => item.id === "krk-rokit-5-g4");
+  assert.ok(classic, "preserve legacy item ID for existing shared rigs");
+  assert.equal(classic.model, "Classic 5 (Pair)");
+  assert.match(classic.driver_size, /glass-aramid/i);
+  assert.match(classic.sound_modes, /analog/i);
+  assert.doesNotMatch(classic.sound_modes, /DSP/i);
+  assert.deepEqual(classic.inputs, [
+    "XLR (Balanced)", '1/4" TRS (Balanced)', "RCA (Unbalanced)"
+  ]);
+  assert.match(classic.spec_source, /^https:\/\/www\.krkmusic\.com\/products\/classic-5-/);
+  assert.match(classic.amazon_search, /Classic 5/);
+  assert.doesNotMatch(classic.model, /ROKIT|G4/i);
+});
