@@ -314,3 +314,21 @@ test("easy and steady initial offsets also stay within their intended playable r
     }
   }
 });
+
+
+test("START plays Deck A beat zero immediately and reserves it against duplicate scheduling", () => {
+  const probe = makeTrainer();
+  const audio = setRunningState(probe, 0.12);
+  probe.stop("manual");
+  probe.start();
+
+  assert.equal(probe.state.beatA, 0, "master begins on beat zero");
+  assert.equal(probe.state.scheduledA, 0, "first beat is reserved in lookahead state");
+  const initialStarts = audio.starts.filter(when => when === 0.12).length;
+  assert.ok(initialStarts >= 2, "kick and bass oscillator start at the actual START time");
+
+  probe.frame(1016); // First animation frame, with no audio-time progression.
+  assert.equal(audio.starts.filter(when => when === 0.12).length, initialStarts,
+    "first animation frame must not schedule a second beat zero");
+  assert.equal(probe.state.scheduledA, 0);
+});
