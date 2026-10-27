@@ -507,6 +507,21 @@
       state.raf = null;
     }
 
+    // The lookahead scheduler may have queued audio beyond this frame.
+    // Disconnect BOTH old output channels before the next session: merely
+    // muting them would let stale beats reappear on an immediate restart.
+    if (state.ctx && audio.master) {
+      ["A", "B"].forEach(function (deck) {
+        var oldChannel = audio["chan" + deck];
+        if (!oldChannel) return;
+        var freshChannel = state.ctx.createGain();
+        freshChannel.connect(audio["panner" + deck] || audio.master);
+        audio["chan" + deck] = freshChannel;
+        oldChannel.disconnect();
+      });
+      applyAudioRouting();
+    }
+
     if (el.start) el.start.disabled = false;
     if (el.stop) el.stop.disabled = true;
     if (el.stage) el.stage.classList.remove("is-running");
