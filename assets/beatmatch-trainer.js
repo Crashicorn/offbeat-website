@@ -353,7 +353,10 @@
 
     var diff = phaseMs();
     var absDiff = Math.abs(diff);
-    var bpmDiff = state.bpmA - state.bpmB;
+    // Score and coach the tempo the listener ACTUALLY hears while nudging.
+    // Using the pitch-fader BPM alone could award a false lock even while
+    // Deck B is temporarily running 12-13% faster/slower under a held nudge.
+    var bpmDiff = state.bpmA - currentBpmB();
     var absBpmDiff = Math.abs(bpmDiff);
 
     state.locked = absDiff <= LOCK_THRESHOLD_MS && absBpmDiff <= 0.25;
@@ -426,7 +429,7 @@
     } else if (absBpmDiff > 0.4) {
       // Step 1: Fix Tempo First
       el.coachBanner.className = "coach-banner coach--tempo";
-      var faster = state.bpmB > state.bpmA;
+      var faster = currentBpmB() > state.bpmA;
       if (el.coachTitle) el.coachTitle.textContent = "STEP 1: MATCH TEMPO (PITCH FADER)";
       if (el.coachMsg) {
         el.coachMsg.textContent = faster
@@ -502,6 +505,9 @@
   function stop(reason) {
     if (!state.running) return;
     state.running = false;
+    // Never carry a held nudge or unfinished platter drag into the next drill.
+    state.nudge = 0;
+    state.isDraggingPlatter = false;
     if (state.raf) {
       window.cancelAnimationFrame(state.raf);
       state.raf = null;
@@ -588,12 +594,29 @@
     state.nudge = 0;
   }
 
+  // A mouse release outside the button, touch cancellation, focus loss or
+  // backgrounding must not leave Deck B permanently accelerated/decelerated.
+  window.addEventListener("mouseup", endNudge);
+  window.addEventListener("touchend", endNudge);
+  window.addEventListener("touchcancel", endNudge);
+  window.addEventListener("blur", function () {
+    state.isDraggingPlatter = false;
+    endNudge();
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      state.isDraggingPlatter = false;
+      endNudge();
+    }
+  });
+
   if (el.nudgeBack) {
     el.nudgeBack.addEventListener("mousedown", function () { startNudge(-1); });
     el.nudgeBack.addEventListener("mouseup", endNudge);
     el.nudgeBack.addEventListener("mouseleave", endNudge);
     el.nudgeBack.addEventListener("touchstart", function (e) { e.preventDefault(); startNudge(-1); }, { passive: false });
     el.nudgeBack.addEventListener("touchend", endNudge);
+    el.nudgeBack.addEventListener("touchcancel", endNudge);
   }
 
   if (el.nudgeFwd) {
@@ -602,6 +625,7 @@
     el.nudgeFwd.addEventListener("mouseleave", endNudge);
     el.nudgeFwd.addEventListener("touchstart", function (e) { e.preventDefault(); startNudge(1); }, { passive: false });
     el.nudgeFwd.addEventListener("touchend", endNudge);
+    el.nudgeFwd.addEventListener("touchcancel", endNudge);
   }
 
   // A CUE press starts Deck B from beat 1 at the *actual* press time.
