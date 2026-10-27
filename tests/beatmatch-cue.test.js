@@ -12,9 +12,10 @@ function makeTrainer() {
   const source = fs.readFileSync(path.join(__dirname, "../assets/beatmatch-trainer.js"), "utf8");
   assert.match(source, /\}\)\(\);\s*$/, "Expected trainer IIFE");
   const instrumented = source.replace(/\}\)\(\);\s*$/,
-    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio, start: start, stop: stop };})();");
+    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio, start: start, stop: stop, frame: frame, currentBpmB: currentBpmB };})();");
   const cueListeners = {};
   const documentListeners = {};
+  const windowListeners = {};
   const cue = {
     addEventListener(type, handler) { cueListeners[type] = handler; },
     click() { cueListeners.click(); }
@@ -33,13 +34,14 @@ function makeTrainer() {
     window: {
       performance: { now() { return 1000; } },
       requestAnimationFrame() { return 1; },
-      cancelAnimationFrame() {}
+      cancelAnimationFrame() {},
+      addEventListener(type, handler) { windowListeners[type] = handler; }
     },
     console, Math
   };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
-  return { ...context.__trainerProbe, cue, documentListeners };
+  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document };
 }
 
 function setRunningState(probe, elapsed) {
@@ -136,4 +138,57 @@ test("STOP disconnects both queued audio paths; immediate restart cannot replay 
   assert.equal(probe.state.running, true, "new session can start immediately");
   assert.equal(oldA.disconnected, true, "old A cannot reappear after restart");
   assert.equal(oldB.disconnected, true, "old B cannot reappear after restart");
+});
+
+test("held nudge cannot earn a false locked score while audible Deck B tempo differs", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.001);
+  Object.assign(probe.state, {
+    posA: 8, posB: 8, scheduledA: 8, scheduledB: 10,
+    nudge: 1, lastAudio: 0, lastFrame: 1000, totalMs: 0, lockedMs: 0
+  });
+  assert.equal(probe.currentBpmB(), 135.6, "held push makes Deck B audibly faster");
+  probe.frame(1016);
+  assert.ok(Math.abs(probe.phaseMs()) < 18, "instantaneous phase is nearly aligned");
+  assert.equal(probe.state.locked, false, "tempo mismatch must prevent lock");
+  assert.equal(probe.state.lockedMs, 0, "no false locked time credited");
+  assert.equal(probe.state.totalMs, 16);
+});
+
+test("release outside controls, focus loss and backgrounding clear held nudge", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.01);
+  const arrow = code => ({
+    code, target: { matches() { return false; } }, preventDefault() {}
+  });
+  probe.documentListeners.keydown(arrow("ArrowRight"));
+  assert.equal(probe.state.nudge, 1);
+  probe.windowListeners.mouseup();
+  assert.equal(probe.state.nudge, 0, "global mouseup releases button held outside");
+
+  probe.documentListeners.keydown(arrow("ArrowLeft"));
+  assert.equal(probe.state.nudge, -1);
+  probe.windowListeners.blur();
+  assert.equal(probe.state.nudge, 0, "lost focus releases held keyboard nudge");
+
+  probe.documentListeners.keydown(arrow("ArrowRight"));
+  probe.document.hidden = true;
+  probe.documentListeners.visibilitychange();
+  assert.equal(probe.state.nudge, 0, "backgrounding releases held nudge");
+
+  probe.documentListeners.keydown(arrow("ArrowRight"));
+  probe.windowListeners.touchcancel();
+  assert.equal(probe.state.nudge, 0, "touch cancellation releases held nudge");
+});
+
+test("STOP resets held nudge before immediate restart", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  probe.state.nudge = -1;
+  probe.state.isDraggingPlatter = true;
+  probe.stop("manual");
+  assert.equal(probe.state.nudge, 0);
+  assert.equal(probe.state.isDraggingPlatter, false);
+  probe.start();
+  assert.equal(probe.state.nudge, 0);
 });
