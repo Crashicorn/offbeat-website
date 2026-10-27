@@ -112,25 +112,41 @@
   function parseUrlOrLocalState() {
     var params = new URLSearchParams(window.location.search);
 
-    // 1. Deep link to add a specific gear item (e.g. ?add=pioneer-ddj-flx10)
+    // 1. Guide-to-planner deep links must preserve the visitor's current rig.
+    // Previously ?add= silently started from the default preset, discarding
+    // saved equipment, quantities, and ownership selections.
     var addParam = params.get("add");
     if (addParam) {
       var targetItem = getItem(addParam);
       if (targetItem) {
-        var existingSlot = currentRig.items.find(function (s) { return s.category === targetItem.category; });
+        var savedRig = safeStorageGet("offbeat.rig.active");
+        if (savedRig && savedRig.length <= 16384) {
+          try { normalizeRigState(JSON.parse(savedRig)); }
+          catch (e) { console.warn("Invalid local rig state:", e); }
+        }
+
+        // Additional accessories are additive. A guide's cable/USB/mic link
+        // must not replace an unrelated accessory already in the shopping list.
+        var additive = ["cables", "storage", "microphones", "stands"].indexOf(targetItem.category) !== -1;
+        var alreadySelected = currentRig.items.some(function (s) { return s.itemId === targetItem.id; });
+        var existingSlot = additive ? null : currentRig.items.find(function (s) {
+          return s.category === targetItem.category;
+        });
         if (existingSlot) {
-          existingSlot.itemId = targetItem.id;
+          // Replacing an owned or multi-quantity controller cannot inherit
+          // the old product's purchase/quantity assumptions.
+          replaceSlotItem(existingSlot, targetItem.id);
+          if (existingSlot.itemId === targetItem.id) existingSlot.qty = 1;
           existingSlot.owned = false;
-        } else {
+        } else if (!alreadySelected) {
           currentRig.items.push({
-            slotId: "extra-" + Date.now(),
+            slotId: "guide-" + targetItem.category + "-" + Date.now(),
             category: targetItem.category,
             itemId: targetItem.id,
             qty: 1,
             owned: false
           });
         }
-        currentRig.name = "Custom Setup with " + targetItem.brand + " " + targetItem.model;
         saveActiveState();
         return;
       }
