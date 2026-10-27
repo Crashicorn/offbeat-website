@@ -304,6 +304,7 @@
     var speakersSlot = currentRig.items.find(function (s) { return s.category === "speakers"; });
     var laptopSlot = currentRig.items.find(function (s) { return s.category === "laptops"; });
     var cableSlots = currentRig.items.filter(function (s) { return s.category === "cables"; });
+    var microphoneSlots = currentRig.items.filter(function (s) { return s.category === "microphones"; });
 
     var controller = controllerSlot ? getSlotItem(controllerSlot) : null;
     var headphones = headphonesSlot ? getSlotItem(headphonesSlot) : null;
@@ -337,6 +338,27 @@
         fixCableId: null
       });
     });
+
+    // The catalog lists vocal microphones but has no verified microphone-input
+    // specifications for controllers or mixers. An XLR master OUTPUT and an
+    // XLR speaker cable do not establish a usable microphone INPUT path.
+    // Never present a wedding/MC rig as ready on that unsupported inference.
+    if (microphoneSlots.length) {
+      var microphoneCount = microphoneSlots.reduce(function (count, slot) {
+        return count + (slot.qty || 1);
+      }, 0);
+      requiresManualReview = true;
+      warnings++;
+      checks.push({
+        type: "warning", statusLevel: "workable",
+        title: "Microphone Input and Cable Need Verification",
+        desc: "This rig includes " + microphoneCount + " vocal microphone(s), but the catalog does not verify " +
+          "microphone inputs, mic preamp gain, or required microphone cables for the selected controller/mixer. " +
+          "An XLR speaker output or cable does not prove that a microphone can be connected. " +
+          "Confirm each mic input, cable, gain and any power requirements before purchasing.",
+        fixCableId: null
+      });
+    }
 
     // A rig with no controller/decks/mixer is not a playable DJ setup.
     // Accessories alone must never produce a green preliminary match.
@@ -657,7 +679,7 @@
               <div class="readiness-bar"><div class="readiness-fill" style="width: ${stats.compatibility.readiness}%"></div></div>
               <strong class="readiness-num">${stats.compatibility.readiness}%</strong>
             </div>
-            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : stats.compatibility.requiresManualReview ? "⚠️ Multi-device routing needs review" : "⚠️ " + stats.compatibility.warnings + " connection advisory"}</span>
+            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : stats.compatibility.requiresManualReview ? "⚠️ Signal routing needs review" : "⚠️ " + stats.compatibility.warnings + " connection advisory"}</span>
           </div>
         </div>
 
@@ -872,6 +894,7 @@
     }
 
     var linePrice = item.price * qty;
+    var isPlatformPlaceholder = item.id === "standalone-usb-only";
     var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
@@ -903,7 +926,7 @@
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}">
-            ${isOwned ? '🟢 I Own This' : '🔵 Need to Buy'}
+            ${isPlatformPlaceholder ? 'No laptop purchase' : (isOwned ? '🟢 I Own This' : '🔵 Need to Buy')}
           </button>
         </td>
         <td class="cell-price">
@@ -915,9 +938,11 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
+            ${isPlatformPlaceholder ? '<span class="owned-sub">Setup mode — no hardware purchase</span>' : `
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
+            `}
             <button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>
           </div>
         </td>
