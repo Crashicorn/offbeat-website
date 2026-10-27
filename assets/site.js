@@ -383,18 +383,20 @@
     if (!index) return;
     var terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     active = -1;
-    var list = terms.length
+    // Apply the category to the complete ranked set BEFORE limiting results.
+    // Otherwise a category can falsely show zero matches when its results
+    // fall outside the global top twelve.
+    var ranked = terms.length
       ? index
           .map(function (item) { return { item: item, s: score(item, terms) }; })
           .filter(function (r) { return r.s > 0; })
           .sort(function (a, b) { return b.s - a.s; })
-          .slice(0, 12)
           .map(function (r) { return r.item; })
-      : index.filter(function (item) { return item.f; }).slice(0, 8);
+      : index.filter(function (item) { return item.f; });
     if (groupFilter !== "all") {
-      list = list.filter(function (item) { return item.g === groupFilter; });
+      ranked = ranked.filter(function (item) { return item.g === groupFilter; });
     }
-
+    var list = ranked.slice(0, terms.length ? 12 : 8);
     if (status) {
       status.textContent = terms.length || groupFilter !== "all"
         ? (list.length ? list.length + (list.length === 1 ? " result" : " results") : "No guides matched that search")
