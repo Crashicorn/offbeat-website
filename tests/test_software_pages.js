@@ -24,10 +24,10 @@ const RETRACTED = [
     "VirtualDJ is not free with a controller, and is not free for home use once hardware is attached"],
   [/free for home, non-commercial use\./i, "the old VirtualDJ wording implied controller use was free"],
   [/\bdoes not support FLAC\b/i, "rekordbox supports FLAC"],
-  [/rekordbox[^.]{0,60}\bfree\b((?:(?!\bnot\b)[^.]){0,40})\b(?:with|includes?|covers?)\b((?:(?!\bnot\b)[^.]){0,20})\b(recording|stems|DVS|video)\b/i,
-    "rekordbox Hardware Unlock never covers recording, stems, DVS or video"],
-  [/(?:hardware )?unlock[s]?\s+(?:includes?|covers?|gives?)\b((?:(?!\bnot\b)[^.]){0,20})\b(recording|stems|DVS|video)/i,
-    "the unlock is per feature and stops at performance"]
+  [/rekordbox[^.]{0,60}\bfree\b((?:(?!\bnot\b)[^.]){0,40})\b(?:with|includes?|covers?)\b((?:(?!\bnot\b)[^.]){0,20})\b(stems|DVS|video)\b/i,
+    "rekordbox Hardware Unlock never covers stems, DVS or video"],
+  [/(?:hardware )?unlock[s]?\s+(?:includes?|covers?|gives?)\b((?:(?!\bnot\b)[^.]){0,20})\b(stems|DVS|video)/i,
+    "on the listed FLX controllers the unlock covers Performance mode, recording and mix sharing — but not stems, DVS or video"]
 ];
 
 const PAGES = [
@@ -48,7 +48,7 @@ const PAGES = [
   },
   {
     file: "rekordbox-vs-serato.html",
-    must: [/\$12\/mo or \$120\/yr/, /\$36\/mo or \$360\/yr/, /Hardware Unlock/i, /no perpetual/i]
+    must: [/\$12\/mo or \$120\/yr/, /\$36\/mo or \$360\/yr/, /Hardware Unlock/i, /no perpetual/i, /recording and mix sharing/i]
   },
   {
     file: "serato-vs-rekordbox-vs-traktor.html",

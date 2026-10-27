@@ -76,6 +76,10 @@ function byName(list, name) {
     assert.strictEqual(planOf("serato", "pro").buyOnce, 299, "Serato DJ Pro is $299 once");
     assert.strictEqual(planOf("serato", "pro").monthly, 11.99, "Serato DJ Pro is $11.99/mo");
     assert.strictEqual(planOf("serato", "suite").buyOnce, 499, "Serato DJ Suite is $499 once");
+    assert.strictEqual(planOf("serato", "ios").buyOnce, 149, "Serato DJ for iOS is a $149 iOS-only licence");
+    assert.strictEqual(data.hardware.flx10.unlocks.serato, "pro", "FLX10/FLX6 unlock Serato DJ Pro");
+    assert.strictEqual(data.hardware.flx2.unlocks.serato, "lite", "FLX2 unlocks Serato DJ Lite");
+    assert.strictEqual(data.hardware.flx4.unlocks.serato, "lite", "FLX4 unlocks Serato DJ Lite");
     assert.strictEqual(planOf("traktor", "play").buyOnce, 49, "Traktor Play is $49");
     assert.strictEqual(planOf("traktor", "pro").buyOnce, 149, "Traktor Pro 4 is $149");
     assert.strictEqual(planOf("djay", "pro").yearly, 49.99, "djay Pro is $49.99/yr");
@@ -129,13 +133,13 @@ function byName(list, name) {
     }), { expectRig: false });
     list = cards(record);
 
-    /* The single most expensive mistake in this category: assuming the free
-       tier includes recording. */
+    /* Recording is on rekordbox's Hardware Unlock list for the FLX series (v7
+       FAQ), so an FLX4 owner who records stays on the Free plan. */
     const rbRec = byName(list, "rekordbox");
-    assert.strictEqual(rbRec.group, "costs", "recording is not a Free-plan feature");
-    assert.match(rbRec.price, /Core/, "rekordbox needs Core for recording: " + rbRec.price);
-    assert.ok(rbRec.notes.some((line) => /\$120\/yr/.test(line)),
-      "the price of Core must be stated: " + JSON.stringify(rbRec.notes));
+    assert.strictEqual(rbRec.group, "fits", "an FLX4 is on the Hardware Unlock list, which includes recording on the Free plan");
+    assert.match(rbRec.badge, /No licence cost/i, "the badge must say no licence cost: " + rbRec.badge);
+    assert.ok(rbRec.why.some((line) => /recording/i.test(line)),
+      "the reason must name recording: " + JSON.stringify(rbRec.why));
 
     const seratoRec = byName(list, "Serato DJ");
     assert.match(seratoRec.price, /\$299 once/, "Serato Pro is a perpetual $299: " + seratoRec.price);
@@ -146,13 +150,69 @@ function byName(list, name) {
       "and the cheaper Play edition must still be mentioned: " + JSON.stringify(traktorRec.notes));
 
     const rows = record.queryAll(".swa-table tbody tr").map((row) => row.textContent.replace(/\s+/g, " ").trim());
-    assert.ok(rows.some((row) => /rekordbox/.test(row) && /\$360/.test(row)),
-      "three years of rekordbox Core is $360 in the table: " + JSON.stringify(rows));
+    assert.ok(rows.some((row) => /rekordbox/.test(row) && /No licence fee/.test(row)),
+      "rekordbox is free for an FLX4 owner who records, and says so in the table: " + JSON.stringify(rows));
     assert.ok(rows.some((row) => /Serato/.test(row) && /\$299/.test(row)),
       "Serato is priced as a one-off $299 in the table: " + JSON.stringify(rows));
     assert.ok(rows.some((row) => /VirtualDJ/.test(row) && /\$597/.test(row)),
       "VirtualDJ Pro resolves to $597 over three years, not a monthly rate: " + JSON.stringify(rows));
     record.close();
+
+    /* Same need, no unlock hardware: recording is a paid Core feature again. */
+    const laptopRec = await openPage(server.base + PAGE + qs({
+      mode: "laptop", hardware: "none", os: "windows", music: "local", budget: "free", need: "recording"
+    }), { expectRig: false });
+    const rbLap = byName(cards(laptopRec), "rekordbox");
+    assert.strictEqual(rbLap.group, "costs", "without unlock hardware, recording is a paid Core feature");
+    assert.match(rbLap.price, /Core/, "rekordbox names Core: " + rbLap.price);
+    assert.ok(rbLap.notes.some((line) => /Without unlock hardware, that means Core/.test(line)),
+      "and the card says what it means without the gear: " + JSON.stringify(rbLap.notes));
+    laptopRec.close();
+
+    /* FLX10/FLX6 (issue #1): the hardware unlocks Serato DJ Pro itself, so a
+       Pro-tier need like recording carries no licence cost. */
+    const flx10Rec = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "flx10", os: "windows", music: "local", budget: "free", need: "recording"
+    }), { expectRig: false });
+    const flx10List = cards(flx10Rec);
+    const serato10 = byName(flx10List, "Serato DJ");
+    assert.strictEqual(serato10.group, "fits", "an FLX10 unlocks Serato DJ Pro while connected, so recording needs no purchase");
+    assert.match(serato10.badge, /No licence cost/i, serato10.badge);
+    assert.ok(serato10.why.some((line) => /unlocks Serato DJ Pro/.test(line)),
+      "and the reason says so: " + JSON.stringify(serato10.why));
+    const rb10 = byName(flx10List, "rekordbox");
+    assert.strictEqual(rb10.group, "fits", "an FLX10 is on the Hardware Unlock list, so rekordbox recording is free too");
+    assert.match(rb10.badge, /No licence cost/i, rb10.badge);
+    flx10Rec.close();
+
+    /* DVS stays a separate expansion even for Pro-unlock gear: the fix must not
+       overcorrect into "everything is free". */
+    const flx10Dvs = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "flx10", os: "windows", music: "local", budget: "once", need: "dvs"
+    }), { expectRig: false });
+    const serato10Dvs = byName(cards(flx10Dvs), "Serato DJ");
+    assert.strictEqual(serato10Dvs.group, "costs", "DVS is a separate expansion, not covered by the Pro unlock");
+    assert.match(serato10Dvs.price, /Suite/, "Serato names Suite: " + serato10Dvs.price);
+    assert.match(serato10Dvs.price, /\$499/, "and the Suite price is visible: " + serato10Dvs.price);
+    assert.ok(serato10Dvs.notes.some((line) => /unlocks Serato DJ Pro/.test(line)),
+      "while still naming the Pro unlock: " + JSON.stringify(serato10Dvs.notes));
+    flx10Dvs.close();
+
+    /* FLX2 unlocks Lite, not Pro: recording still costs the Pro licence, while
+       rekordbox gets it free from the same unlock list. */
+    const flx2Rec = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "flx2", os: "windows", music: "local", budget: "free", need: "recording"
+    }), { expectRig: false });
+    const flx2List = cards(flx2Rec);
+    const serato2 = byName(flx2List, "Serato DJ");
+    assert.strictEqual(serato2.group, "costs", "an FLX2 unlocks Lite only, so recording still needs a licence");
+    assert.match(serato2.price, /\$299 once/, serato2.price);
+    assert.ok(serato2.notes.some((line) => /unlocks Serato DJ Lite, not DJ Pro/.test(line)),
+      "the Lite-only unlock is called out: " + JSON.stringify(serato2.notes));
+    const rb2 = byName(flx2List, "rekordbox");
+    assert.strictEqual(rb2.group, "fits", "an FLX2 is on the Hardware Unlock list, so rekordbox recording is free there");
+    assert.match(rb2.badge, /No licence cost/i, rb2.badge);
+    flx2Rec.close();
 
     /* ------------------------------------- FLX4 owner choosing Serato ----- */
     const seratoGap = await openPage(server.base + PAGE + qs({
@@ -179,14 +239,22 @@ function byName(list, name) {
     seratoGap.close();
 
     /* --------------------------------------------- phone with streaming --- */
+    /* Issue #2: Serato DJ for iOS is its own ladder (free / $149 / Suite). An
+       iPad reader with no paid need gets the free tier offered, with the $149
+       licence and its iOS-only scope surfaced rather than a forced $499 Suite. */
     const ipad = await openPage(server.base + PAGE + qs({
       mode: "mobile", hardware: "none", os: "ios", music: "streaming", budget: "free", scene: "home"
     }), { expectRig: false });
     list = cards(ipad);
     assert.strictEqual(byName(list, "djay").group, "fits", "djay's free app is the zero-cost tablet answer");
     const mobileSerato = byName(list, "Serato DJ");
-    assert.match(mobileSerato.price, /Suite/, "Serato's mobile app is a Suite entitlement: " + mobileSerato.price);
-    assert.match(mobileSerato.price, /\$499/, "and is priced at $499: " + mobileSerato.price);
+    assert.strictEqual(mobileSerato.group, "fits", "the free iOS tier is offered when nothing paid is requested");
+    assert.match(mobileSerato.badge, /No licence cost/i, mobileSerato.badge);
+    assert.match(mobileSerato.price, /Serato DJ for iOS — free/i, "the free iOS app is named, not DJ Lite or Suite: " + mobileSerato.price);
+    assert.ok(mobileSerato.notes.some((line) => /\$149/.test(line)),
+      "the $149 iOS licence is surfaced, not hidden: " + JSON.stringify(mobileSerato.notes));
+    assert.ok(mobileSerato.notes.some((line) => /iPhone and iPad only/.test(line)),
+      "and its iOS-only scope is stated: " + JSON.stringify(mobileSerato.notes));
     ["Traktor", "VirtualDJ", "Mixxx", "Engine DJ"].forEach((name) => {
       assert.strictEqual(byName(list, name).group, "blocked", name + " is not a phone or tablet app");
     });
@@ -194,6 +262,21 @@ function byName(list, name) {
     assert.match(globalNote, /Streaming is not a licence/i, "streaming is framed as a separate dependency");
     assert.match(globalNote, /cannot be recorded/i, "and the recording restriction is stated up front");
     ipad.close();
+
+    /* Recording on the iPad is the paid step — and the true three-year cost is
+       the $149 iOS licence, not a $499 Suite (issue #2). */
+    const ipadRec = await openPage(server.base + PAGE + qs({
+      mode: "mobile", hardware: "none", os: "ios", music: "local", budget: "free", need: "recording"
+    }), { expectRig: false });
+    const ipadRecSerato = byName(cards(ipadRec), "Serato DJ");
+    assert.strictEqual(ipadRecSerato.group, "costs", "recording is the paid step in the iOS app");
+    assert.match(ipadRecSerato.price, /DJ for iOS — \$149 once/i, "the true three-year cost is the $149 licence, not a $499 Suite: " + ipadRecSerato.price);
+    assert.match(ipadRecSerato.badge, /\$149/, ipadRecSerato.badge);
+    assert.ok(ipadRecSerato.notes.some((line) => /does not unlock desktop DJ Pro/.test(line)),
+      "and the licence's iOS-only scope is stated: " + JSON.stringify(ipadRecSerato.notes));
+    assert.ok(!ipadRecSerato.why.some((line) => /\$299/.test(line)),
+      "the card must not pitch the desktop Pro price on an iOS recommendation: " + JSON.stringify(ipadRecSerato.why));
+    ipadRec.close();
 
     /* ------------------------------------------------------ Linux laptop -- */
     const linux = await openPage(server.base + PAGE + qs({

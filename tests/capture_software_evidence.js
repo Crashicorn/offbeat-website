@@ -24,6 +24,18 @@ const CASES = [
     query: "sw_mode=controller&sw_hardware=flx4&sw_os=macos&sw_music=local&sw_budget=free&sw_need=recording"
   },
   {
+    title: "DDJ-FLX10 owner who wants to record mixes",
+    query: "sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording"
+  },
+  {
+    title: "DDJ-FLX2 owner who wants to record mixes",
+    query: "sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording"
+  },
+  {
+    title: "DDJ-FLX10 owner who wants the DVS expansion",
+    query: "sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs"
+  },
+  {
     title: "No hardware, laptop only, wants something genuinely free",
     query: "sw_mode=laptop&sw_hardware=none&sw_os=macos&sw_music=local&sw_budget=free"
   },
@@ -34,6 +46,10 @@ const CASES = [
   {
     title: "iPad and a streaming subscription",
     query: "sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=streaming&sw_budget=free"
+  },
+  {
+    title: "iPad owner who wants to record the mix on the tablet",
+    query: "sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=local&sw_budget=free&sw_need=recording"
   },
   {
     title: "Denon standalone player, no laptop in the booth",

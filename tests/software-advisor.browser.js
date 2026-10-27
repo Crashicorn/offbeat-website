@@ -212,7 +212,7 @@ async function auditLayout(page, label) {
       desktop.click('.swa-group--fits .swa-next a')
     ]);
     assert.ok(desktop.url().endsWith(href), "the review link navigates: " + desktop.url());
-    await desktop.goBack({ waitUntil: "networkidle2" });
+    await desktop.goBack({ waitUntil: "domcontentloaded" });
     await sleep(300);
 
     /* Deep link, then reset. */
@@ -306,8 +306,10 @@ async function auditLayout(page, label) {
       assert.ok(rekordbox.why.some((line) => /Hardware Unlock list/.test(line)),
         "and it says why in hardware terms: " + JSON.stringify(rekordbox.why));
       assert.ok(rekordbox.why.some((line) => /CDJs/.test(line)), "club prep is named as the reason");
-      assert.deepStrictEqual(names(answer.costs).sort(), ["Traktor", "VirtualDJ"],
-        "the platforms with no free route are still priced, not hidden");
+      assert.deepStrictEqual(names(answer.fits), ["Mixxx", "Serato DJ", "djay", "rekordbox"],
+        "a club-prep setup still gets every free performance route, rekordbox among them");
+      assert.deepStrictEqual(names(answer.costs), ["Traktor", "VirtualDJ"],
+        "the platforms that charge once hardware is attached are priced, not hidden");
     });
 
     await check("standalone Engine hardware", "sw_mode=standalone&sw_hardware=denon&sw_os=macos&sw_music=local&sw_budget=free", (answer) => {
@@ -326,8 +328,11 @@ async function auditLayout(page, label) {
     }
 
     await check("streaming on a tablet", "sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=streaming&sw_budget=free", (answer) => {
-      assert.deepStrictEqual(names(answer.fits), ["djay", "rekordbox"], "the free mobile apps are named");
-      assert.deepStrictEqual(names(answer.costs), ["Serato DJ"], "and Serato's iOS licence is priced rather than hidden");
+      assert.deepStrictEqual(names(answer.fits), ["Serato DJ", "djay", "rekordbox"].sort(),
+        "the free mobile apps are named, and Serato's free iOS tier is one of them: " + names(answer.fits));
+      const serato = answer.fits.find((card) => card.name === "Serato DJ");
+      assert.strictEqual(serato.badge, "No licence cost",
+        "an iPad reader with no paid need gets the free tier, not a forced price: " + serato.badge);
       assert.ok(answer.streamingNote, "streaming is called out as a separate subscription");
     });
 
@@ -344,10 +349,38 @@ async function auditLayout(page, label) {
       assert.match(rekordbox.badge, /360/, "rekordbox prices a year at a time: " + rekordbox.badge);
     });
 
-    await check("optional vs mandatory payment", "sw_mode=controller&sw_hardware=flx4&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
-      assert.deepStrictEqual(names(answer.fits), ["Mixxx"], "recording is what turns a free unlock into a paid plan");
-      const rekordbox = answer.costs.find((card) => card.name === "rekordbox");
-      assert.match(rekordbox.badge, /360/, "and rekordbox's cost is stated, not discovered later");
+    await check("recording on FLX4 unlock gear", "sw_mode=controller&sw_hardware=flx4&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
+      assert.deepStrictEqual(names(answer.fits), ["Mixxx", "rekordbox"].sort(),
+        "an FLX4 is on the Hardware Unlock list — recording is free there — and Mixxx is free regardless: " + names(answer.fits));
+      const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
+      assert.strictEqual(rekordbox.badge, "No licence cost",
+        "the free route is offered, not discovered later");
+      assert.ok(rekordbox.why.some((line) => /recording/i.test(line)),
+        "and it names the unlock that earns the recording: " + JSON.stringify(rekordbox.why));
+      const serato = answer.costs.find((card) => card.name === "Serato DJ");
+      assert.match(serato.badge, /299/,
+        "but an FLX4 unlocks Serato Lite only, so Serato recording still costs the Pro licence: " + serato.badge);
+    });
+
+    await check("FLX10 recording needs no purchase", "sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
+      const serato = answer.fits.find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "an FLX10 unlocks Serato DJ Pro itself, so Serato fits free here: " + names(answer.fits));
+      assert.strictEqual(serato.badge, "No licence cost",
+        "no $299 licence is asked of an FLX10 owner: " + serato.badge);
+      assert.ok(serato.why.some((line) => /unlocks Serato DJ Pro/.test(line)),
+        "and the Pro unlock is named: " + JSON.stringify(serato.why));
+      const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
+      assert.strictEqual(rekordbox.badge, "No licence cost",
+        "rekordbox recording is free on the same hardware");
+    });
+
+    await check("FLX2 unlocks Serato Lite, not Pro", "sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
+      const serato = answer.costs.find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "an FLX2 unlocks Lite only, so recording still needs a Pro licence: " + names(answer.costs));
+      assert.match(serato.badge, /299/, "the Pro licence price is stated: " + serato.badge);
+      const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
+      assert.strictEqual(rekordbox.badge, "No licence cost",
+        "while rekordbox recording is free on the same hardware");
     });
 
     await check("unknown hardware, unknown goal", "sw_mode=unsure&sw_hardware=unsure&sw_os=windows&sw_music=both&sw_budget=unsure", (answer) => {
@@ -360,10 +393,12 @@ async function auditLayout(page, label) {
     await check("hardware already owned vs proposed", "sw_mode=controller&sw_hardware=flx4&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
       assert.ok(names(answer.fits).includes("Serato DJ"), "an owned FLX4 unlocks Serato Lite at no cost");
     });
-    await check("a controller that is not on Serato's list", "sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
-      const serato = answer.fits.concat(answer.costs).find((card) => card.name === "Serato DJ");
-      assert.ok(serato.checked.some((line) => /unlocks Lite or Pro/.test(line)),
-        "an unverified controller produces a check, not a promise: " + JSON.stringify(serato.checked));
+    await check("a controller on Serato's Lite list", "sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
+      const serato = answer.fits.find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "an FLX2 unlocks Serato DJ Lite, so it lands in the free group: " + names(answer.fits));
+      assert.strictEqual(serato.badge, "No licence cost", serato.badge);
+      assert.ok(serato.why.some((line) => /unlocks Serato DJ Lite/.test(line)),
+        "and the Lite unlock is named: " + JSON.stringify(serato.why));
     });
 
     await reveal(cases, "[data-swa-results]").catch(() => {});
@@ -374,7 +409,7 @@ async function auditLayout(page, label) {
     assert.deepStrictEqual(cases.__errors, [], "use-case console errors: " + cases.__errors.join(" | "));
     assert.deepStrictEqual(cases.__failed, [], "use-case failed requests: " + cases.__failed.join(" | "));
     await cases.close();
-    console.log("\nTen use cases in Chromium:");
+    console.log("\nFifteen use cases in Chromium:");
     console.log(seen.join("\n"));
 
     console.log("Browser: 7 questions, real clicks, keyboard radio control, deep link, reset, navigation, 44px targets, single-column phone layout, no sideways scroll, no console errors.");

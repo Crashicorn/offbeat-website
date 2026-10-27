@@ -4,9 +4,11 @@
  * 27 October 2026. Sources:
  *   rekordbox plans ....... https://rekordbox.com/en/plan/
  *   rekordbox unlocks ..... https://rekordbox.com/en/support/hardware-unlock/
+ *   rekordbox HU FAQ ...... https://rekordbox.com/en/support/faq/v7/
  *   Serato Lite ........... https://serato.com/dj/lite
  *   Serato pricing ........ https://serato.com/dj/pro/pricing
  *   Serato hardware ....... https://serato.com/dj/hardware
+ *   Serato iOS pricing .... https://serato.com/dj/for-ios/pricing
  *   Traktor Pro 4 ......... https://www.native-instruments.com/products/traktor-pro
  *   Traktor Play .......... https://www.native-instruments.com/products/traktor-play
  *   djay Pro .............. https://www.algoriddim.com/press_releases/448
@@ -142,13 +144,13 @@
       },
       flx2: {
         label: "DDJ-FLX2",
-        unlocks: { rekordbox: "hu", traktor: "play" },
-        note: "On rekordbox's Hardware Unlock list and plug-and-play with Traktor Play. Check Serato's own list before assuming Lite."
+        unlocks: { rekordbox: "hu", serato: "lite", traktor: "play" },
+        note: "On rekordbox's Hardware Unlock list, unlocks Serato DJ Lite for free (Serato DJ Pro is a paid upgrade), and plug-and-play with Traktor Play."
       },
       flx10: {
         label: "DDJ-FLX10 / FLX6",
-        unlocks: { rekordbox: "hu", serato: "unknown" },
-        note: "On rekordbox's Hardware Unlock list. Serato's per-model licence tier for this unit has not been verified here."
+        unlocks: { rekordbox: "hu", serato: "pro" },
+        note: "On rekordbox's Hardware Unlock list and unlocks Serato DJ Pro for free while it is connected; the Serato DVS expansion stays a separate purchase."
       },
       denon: {
         label: "Denon DJ / Engine hardware",
@@ -186,10 +188,10 @@
           { id: "professional", label: "Professional", kind: "subscription", monthly: 36, yearly: 360 }
         ],
         perpetual: false,
-        freeNote: "Library management, analysis, cue points and USB export, plus Performance mode while Hardware Unlock gear is connected.",
+        freeNote: "Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.",
         caps: {
           cdj: { plan: "free", note: "Exporting rekordbox-format USB sticks is free; the format is what club CDJs read." },
-          recording: { plan: "core", note: "Recording and mix sharing are listed on Core and above, not on the Free plan." },
+          recording: { plan: "free", note: "Recording and mix sharing come with eligible Hardware Unlock gear on the Free plan, per rekordbox's v7 FAQ.", hardwareDependent: true, check: "Whether your device is on rekordbox's Hardware Unlock list — the DDJ-FLX2, FLX4, FLX6 and FLX10 are." },
           stems: { plan: "core", note: "Stem playback is a paid-plan feature." },
           dvs: { plan: "core", note: "DVS needs a paid plan as well as a device on rekordbox's Hardware Unlock DVS list.", check: "Your device in the DVS column of rekordbox's Hardware Unlock list." },
           fourdecks: { plan: "free", note: "Performance mode gives you the decks, but on the Free plan only while unlock gear is connected.", hardwareDependent: true },
@@ -222,19 +224,20 @@
         plans: [
           { id: "lite", label: "DJ Lite", kind: "lite", monthly: 0, yearly: 0 },
           { id: "pro", label: "DJ Pro", kind: "perpetual", monthly: 11.99, yearly: 143.88, buyOnce: 299 },
-          { id: "suite", label: "DJ Suite", kind: "perpetual", monthly: 14.99, yearly: 179.88, buyOnce: 499 }
+          { id: "suite", label: "DJ Suite", kind: "perpetual", monthly: 14.99, yearly: 179.88, buyOnce: 499 },
+          { id: "ios", label: "DJ for iOS", kind: "perpetual", buyOnce: 149 }
         ],
         perpetual: true,
-        freeNote: "DJ Lite is a real free tier with 50+ supported controllers, Stems and streaming — no licence key.",
+        freeNote: "Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.",
         caps: {
           cdj: { plan: null, note: "Serato is a performance environment: it does not write rekordbox-format sticks for club CDJs." },
-          recording: { plan: "pro", note: "Recording a mix needs a Pro or Suite licence." },
+          recording: { plan: "pro", note: "Recording a mix needs a Pro or Suite licence unless the hardware unlocks Pro, as the DDJ-FLX10 and FLX6 do." },
           stems: { plan: "lite", note: "Stems is included in DJ Lite, which is unusual at this price." },
           dvs: { plan: "suite", note: "DVS is a Suite feature, not part of Lite or Pro.", check: "Whether the hardware you own provides DVS without the Suite expansion." },
-          fourdecks: { plan: "pro", note: "Lite runs two decks; four need DJ Pro." },
+          fourdecks: { plan: "pro", note: "Lite runs two decks; four need DJ Pro unless the hardware unlocks Pro, as the DDJ-FLX10 and FLX6 do." },
           video: { plan: "suite", note: "Video is a Suite feature." }
         },
-        mobile: { plan: "suite", note: "Serato DJ for iOS is part of DJ Suite, not DJ Pro and not the free app.", check: "The current Serato DJ for iOS feature limits on your device." },
+        mobile: { plan: "lite", note: "Serato DJ for iOS is a separate app: a free feature-limited tier, a $149 iOS-only licence, or a DJ Suite that also adds desktop DJ Pro.", check: "The current Serato DJ for iOS feature limits on your device, and how your controller behaves with it." },
         streaming: ["Apple Music", "Spotify", "TIDAL", "SoundCloud", "Beatport"],
         streamingNote: "Streamed tracks cannot be recorded, and Apple Music streaming tracks cannot be used with Stems.",
         strengths: [
@@ -243,9 +246,9 @@
           "The reference platform for scratch and open-format work."
         ],
         watchOuts: [
-          "Most entry controllers unlock Lite, not Pro: the $299 or $11.99/mo step is the one people miss.",
+          "Most entry controllers unlock Lite, not Pro: the $299 or $11.99/mo step is the one people miss — the DDJ-FLX10 and FLX6 are the exception.",
           "DVS lives in Suite, not Pro.",
-          "Serato DJ for iOS is part of Suite, not a separate cheap app."
+          "Serato DJ for iOS is its own ladder: free (limited), a $149 iOS-only licence, or DJ Suite — and the $149 licence does not unlock desktop DJ Pro."
         ],
         verify: "Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list."
       },

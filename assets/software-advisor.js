@@ -222,8 +222,8 @@
       if (cap.check) checks.push(cap.check);
     });
 
-    /* A phone or tablet has its own licensing answer: Serato's mobile app is a
-       Suite entitlement, while djay and rekordbox ship free apps with limits. */
+    /* A phone or tablet has its own licensing answer: djay and rekordbox ship
+       free apps with limits, and Serato's iOS app has a separate ladder. */
     if (!blockers.length && answers.mode === "mobile" && platform.mobile) {
       var mobilePlan = planOf(platform, platform.mobile.plan);
       if (mobilePlan && planRank(platform, mobilePlan.id) > planRank(platform, requiredId)) {
@@ -231,6 +231,39 @@
         if (platform.mobile.note) notes.unshift(platform.mobile.note);
       }
       if (platform.mobile.check) checks.push(platform.mobile.check);
+    }
+
+    /* Serato on iPhone or iPad prices itself from Serato's iOS table, not from
+       the desktop tiers: a free feature-limited tier, a $149 iOS-only licence,
+       or a DJ Suite. The $149 licence adds recording and DVS on the device but
+       does not unlock desktop DJ Pro. */
+    if (!blockers.length && platform.id === "serato" && answers.os === "ios") {
+      decidingNote = "";
+      var iosNeeds = answers.needs || [];
+      var paidIOS = iosNeeds.indexOf("recording") !== -1 ||
+        iosNeeds.indexOf("dvs") !== -1 ||
+        iosNeeds.indexOf("fourdecks") !== -1;
+      requiredId = paidIOS ? "ios" : "lite";
+      if (reasons.length === 0) {
+        reasons.push(paidIOS
+          ? "Serato DJ for iOS keeps recording and DVS as paid features, so the $149 licence is the tier that gives you what you asked for."
+          : "Serato DJ for iOS has a free tier on iPhone and iPad, so the app works on the tablet before anything is paid for.");
+      }
+      if (paidIOS) {
+        notes.push("On iPhone and iPad the $149 Serato DJ for iOS licence adds the paid features — recording and DVS are among them.");
+      } else {
+        notes.push("Serato DJ for iOS runs free with basic stems, FX and sync; recording, DVS and advanced stems are the paid step.");
+      }
+      notes.push("The $149 iOS licence is for iPhone and iPad only — it does not unlock desktop DJ Pro. A DJ Suite ($14.99/mo or $499) is what adds the desktop app.");
+      if (hw.unlocks && hw.unlocks.serato) {
+        checks.push("How your " + hw.label + " works with Serato DJ for iOS — Serato's per-model pages list the hardware behaviour and can point to DJ Suite for full functionality.");
+      }
+      if (iosNeeds.indexOf("fourdecks") !== -1) {
+        checks.push("How many decks the current Serato DJ for iOS offers — Serato lists two decks on its free tier.");
+      }
+      if (iosNeeds.indexOf("video") !== -1) {
+        notes.push("Video output is not on Serato's iOS feature list — it is a desktop expansion available through DJ Suite.");
+      }
     }
 
     if (decidingNote) notes.unshift(decidingNote);
@@ -259,11 +292,28 @@
     }
 
     var cost = threeYearCost(plan);
+
+    /* FLX10/FLX6-class hardware unlocks the Pro licence itself while it is
+       connected (Serato's own hardware page), so Pro-tier needs carry no
+       licence cost. DVS and video remain separate Suite additions. */
+    if (unlock === "pro" && platform.id === "serato") {
+      if (plan.id === "pro" && cost.total > 0) {
+        cost = { total: 0, label: "no licence", basis: "free" };
+        reasons.push("Your " + hw.label + " unlocks Serato DJ Pro while it is connected, so Pro features such as recording and four decks come with it — no licence to buy.");
+      } else if (plan.id === "lite") {
+        reasons.push("Your " + hw.label + " unlocks Serato DJ Pro while it is connected, so the Pro tier is already covered at no cost.");
+      } else if (plan.id === "suite") {
+        notes.unshift("Your " + hw.label + " unlocks Serato DJ Pro, but DVS and video are separate additions: " + plan.label + " is still the price for those.");
+      }
+    }
+
     var verdict = cost.total === 0 ? "fits" : "costs";
 
     if (unlock === "hu" && platform.id === "rekordbox") {
       reasons.push(plan.kind === "free"
-        ? "Your " + hw.label + " is on rekordbox's Hardware Unlock list, so Performance mode runs on the Free plan."
+        ? "Your " + hw.label + " is on rekordbox's Hardware Unlock list, so "
+          + (recordingRequested ? "Performance mode, recording and mix sharing run" : "Performance mode runs")
+          + " on the Free plan."
         : "Your " + hw.label + " unlocks Performance mode on the Free plan, but " + plan.label + " is still needed for what you asked for.");
     }
     if (unlock === "lite" && platform.id === "serato") {
@@ -403,6 +453,9 @@
 
   function priceLine(result) {
     var plan = result.plan;
+    if (result.platform.id === "serato" && plan.id === "lite" && answers.os === "ios") {
+      return "Serato DJ for iOS — free (feature limited)";
+    }
     if (plan.kind === "free" || plan.kind === "lite") return plan.label + " — no licence fee";
     var parts = [];
     if (plan.buyOnce) parts.push(money(plan.buyOnce) + " once");
@@ -499,8 +552,9 @@
       "<p>Every platform is checked against your answers: whether it runs on your computer or device, whether it works with your hardware, " +
       "whether it can do what you asked for, and which licence tier that requires. Platforms are grouped by that outcome, then ordered by how well " +
       "they match your goal and — where they tie — by three-year cost.</p>" +
-      "<p>Hardware Unlock is treated as what it is: a per-feature unlock. Listed gear runs Performance mode on the Free plan, but it never covers " +
-      "recording, stems or video, which are paid-plan features. That distinction is where most unexpected software bills come from.</p>" +
+      "<p>Hardware Unlock is treated as what it is: a per-feature unlock. On the controllers rekordbox lists, it runs Performance mode " +
+      "— and, on the FLX2, FLX4, FLX6 and FLX10, recording and mix sharing — but it does not cover stems, DVS or video, which stay paid-plan features. " +
+      "Serato works the other way: the FLX10 and FLX6 unlock DJ Pro itself, while the FLX2 and FLX4 unlock Lite. That distinction is where most unexpected software bills come from.</p>" +
       "<p>Prices come from the vendors' own pages on " + esc(DATA.verified) + ". Offbeat earns from some retailer links, but no ranking or verdict here " +
       "depends on that, and the most useful answer is often the one that stops a purchase.</p></details>";
 
