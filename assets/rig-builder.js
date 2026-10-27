@@ -394,6 +394,19 @@
           fixCableId: null
         });
       }
+    } else if (controller && !laptop && !controller.standalone) {
+      // A laptop-dependent controller without any host cannot play a set.
+      // Do not present a green "preliminary match" to someone buying this rig.
+      checks.push({
+        type: "error",
+        statusLevel: "incompatible",
+        title: "Host Computer Required",
+        desc: controller.brand + " " + controller.model +
+          " is not listed as standalone. Add a compatible computer and DJ software " +
+          "before treating this as a playable setup; verify current OS and driver support.",
+        fixCableId: null
+      });
+      fatalErrors++;
     }
 
     // 3. Headphone Cue Jack Check
