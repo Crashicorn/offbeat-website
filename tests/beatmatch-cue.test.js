@@ -192,3 +192,15 @@ test("STOP resets held nudge before immediate restart", () => {
   probe.start();
   assert.equal(probe.state.nudge, 0);
 });
+
+test("starting while an idle nudge control was held begins at neutral tempo", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  probe.stop("manual");
+  probe.state.nudge = 1; // A button may still be pressed while stopped.
+  probe.state.isDraggingPlatter = true;
+  probe.start();
+  assert.equal(probe.state.nudge, 0);
+  assert.equal(probe.state.isDraggingPlatter, false);
+  assert.equal(probe.currentBpmB(), probe.state.bpmB);
+});
