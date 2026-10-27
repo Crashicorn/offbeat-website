@@ -133,11 +133,12 @@
           return s.category === targetItem.category;
         });
         if (existingSlot) {
-          // Replacing an owned or multi-quantity controller cannot inherit
-          // the old product's purchase/quantity assumptions.
-          replaceSlotItem(existingSlot, targetItem.id);
-          if (existingSlot.itemId === targetItem.id) existingSlot.qty = 1;
-          existingSlot.owned = false;
+          // An identical guide link must preserve owned/quantity state. Only
+          // an actual product swap resets the old product's assumptions.
+          if (existingSlot.itemId !== targetItem.id) {
+            replaceSlotItem(existingSlot, targetItem.id);
+            existingSlot.qty = 1;
+          }
         } else if (!alreadySelected) {
           currentRig.items.push({
             slotId: "guide-" + targetItem.category + "-" + Date.now(),
