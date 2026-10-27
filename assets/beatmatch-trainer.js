@@ -472,11 +472,21 @@
     if (ctx.state === "suspended") ctx.resume();
 
     var diffSetting = el.difficulty ? el.difficulty.value : "steady";
-    var maxDrift = diffSetting === "easy" ? 0.04 : diffSetting === "hard" ? 0.12 : 0.07;
-    var tempoError = (Math.random() * (maxDrift * 2) - maxDrift);
-    if (Math.abs(tempoError) < 0.02) tempoError = tempoError < 0 ? -0.025 : 0.025;
+    // Generate the REQUIRED pitch correction, not an unconstrained BPM error.
+    // Hard mode previously generated up to 12% tempo error with an 8% fader,
+    // making some drills mathematically impossible to beatmatch.
+    var pitchLimit = el.pitch
+      ? Math.min(8, Math.abs(Number(el.pitch.min)), Math.abs(Number(el.pitch.max)))
+      : 8;
+    var minCorrection = diffSetting === "hard" ? Math.min(6.5, pitchLimit) : Math.min(2, pitchLimit);
+    var maxCorrection = diffSetting === "easy" ? Math.min(4, pitchLimit)
+      : diffSetting === "hard" ? pitchLimit : Math.min(7, pitchLimit);
+    var requiredCorrection = minCorrection + Math.random() * (maxCorrection - minCorrection);
+    if (Math.random() < 0.5) requiredCorrection = -requiredCorrection;
 
-    state.baseBpm = state.bpmA * (1 - tempoError);
+    // BPM_B * (1 + requiredCorrection / 100) === BPM_A, so every
+    // generated exercise is solvable with the actual visible pitch fader.
+    state.baseBpm = state.bpmA / (1 + requiredCorrection / 100);
     state.pitch = 0;
     state.bpmB = state.baseBpm;
     // Controls can be pressed while stopped; a new drill always starts neutral.
