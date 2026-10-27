@@ -102,7 +102,8 @@
     rotA: 0,
     rotB: 0,
     isDraggingPlatter: false,
-    dragStartY: 0
+    dragStartY: 0,
+    dragPointerId: null
   };
 
   var audio = {
@@ -536,6 +537,7 @@
     // Never carry a held nudge or unfinished platter drag into the next drill.
     state.nudge = 0;
     state.isDraggingPlatter = false;
+    state.dragPointerId = null;
     if (state.raf) {
       window.cancelAnimationFrame(state.raf);
       state.raf = null;
@@ -629,11 +631,13 @@
   window.addEventListener("touchcancel", endNudge);
   window.addEventListener("blur", function () {
     state.isDraggingPlatter = false;
+    state.dragPointerId = null;
     endNudge();
   });
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       state.isDraggingPlatter = false;
+      state.dragPointerId = null;
       endNudge();
       // Suspend a timed drill when the listener leaves the page. Web Audio
       // may keep playing while requestAnimationFrame is throttled; neither
@@ -781,24 +785,40 @@
     }
   });
 
-  // Platter drag interaction
+  // Pointer events cover touch, pen and mouse. The old mouse-only platter
+  // silently ignored finger swipes on phones despite promising swipe nudges.
   if (el.platterB) {
-    el.platterB.addEventListener("mousedown", function (e) {
+    // Without this, touch scrolling cancels the gesture before it can nudge.
+    el.platterB.style.touchAction = "none";
+
+    function finishPlatterDrag(e) {
+      if (!state.isDraggingPlatter || e.pointerId !== state.dragPointerId) return;
+      state.isDraggingPlatter = false;
+      state.dragPointerId = null;
+      endNudge();
+    }
+
+    el.platterB.addEventListener("pointerdown", function (e) {
+      if (!state.running || state.isDraggingPlatter ||
+          (e.pointerType === "mouse" && e.button !== 0)) return;
       state.isDraggingPlatter = true;
+      state.dragPointerId = e.pointerId;
       state.dragStartY = e.clientY;
+      // Capture release outside the platter and keep the gesture coherent.
+      if (typeof el.platterB.setPointerCapture === "function") {
+        try { el.platterB.setPointerCapture(e.pointerId); }
+        catch (_) { /* Detached or synthetic pointer: window release still works. */ }
+      }
     });
-    window.addEventListener("mousemove", function (e) {
-      if (!state.isDraggingPlatter) return;
+    el.platterB.addEventListener("pointermove", function (e) {
+      if (!state.isDraggingPlatter || e.pointerId !== state.dragPointerId) return;
       var dy = state.dragStartY - e.clientY;
-      if (Math.abs(dy) > 5) {
-        state.nudge = dy > 0 ? 1 : -1;
-      }
+      state.nudge = Math.abs(dy) > 5 ? (dy > 0 ? 1 : -1) : 0;
     });
-    window.addEventListener("mouseup", function () {
-      if (state.isDraggingPlatter) {
-        state.isDraggingPlatter = false;
-        endNudge();
-      }
-    });
+    el.platterB.addEventListener("pointerup", finishPlatterDrag);
+    el.platterB.addEventListener("pointercancel", finishPlatterDrag);
+    el.platterB.addEventListener("lostpointercapture", finishPlatterDrag);
+    window.addEventListener("pointerup", finishPlatterDrag);
+    window.addEventListener("pointercancel", finishPlatterDrag);
   }
 })();
