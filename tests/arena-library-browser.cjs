@@ -11,7 +11,7 @@ const paths = [
   "dj-controllers-hub.html", "dj-software-hub.html", "dj-gear-hub.html",
   "dj-skills-performance-hub.html", "best-dj-controllers-2026.html",
   "best-dj-headphones-2026.html", "editorial-standards.html",
-  "disclosure.html", "contact.html"
+  "disclosure.html", "contact.html", "beatmatch-trainer.html"
 ];
 function visibleCount(page) {
   return page.$$eval(".library-item:not([hidden])", els => els.length);
@@ -136,10 +136,24 @@ function visibleCount(page) {
         assert.equal(byId.get("mat-" + unlisted).add, null,
           unlisted + " must not silently select an unrelated controller");
       }
-      assert.deepEqual(errors, [], "matrix/library/search/navigation browser errors at " + width + "px");
+      // Real Chromium must be able to start, CUE by button and keyboard,
+      // and stop the trainer without throwing. Exact phase behavior is
+      // separately asserted by the deterministic beatmatch-cue Node tests.
+      await page.goto(base + "/beatmatch-trainer.html", { waitUntil: "load" });
+      await page.click("[data-start]");
+      assert.equal(await page.$eval(".teacher-stage",
+        el => el.classList.contains("is-running")), true,
+        "trainer must start from a visitor click");
+      await page.click("[data-cue]");
+      await page.keyboard.press("c");
+      await page.click("[data-stop]");
+      assert.equal(await page.$eval(".teacher-stage",
+        el => el.classList.contains("is-running")), false,
+        "trainer must stop after CUE interaction");
+      assert.deepEqual(errors, [], "buyer/search/trainer browser errors at " + width + "px");
 
       await context.close();
-      console.log("PASS: " + width + "px 13-page journeys, matrix links, library reset, search, nav, overflow");
+      console.log("PASS: " + width + "px 14-page journeys, matrix, library, search, trainer CUE, nav, overflow");
     }
   } finally {
     await browser.close();
