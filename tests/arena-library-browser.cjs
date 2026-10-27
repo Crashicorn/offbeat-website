@@ -70,17 +70,17 @@ function visibleCount(page) {
       assert.equal(await page.$eval("#site-search", el => el.hidden), true,
         "legacy search overlay must remain closed");
       await page.type("#quick-search-input", "dj");
-      await page.click('.qs-pill[data-qs-filter="DJ Hardware"]');
+      await page.click('.qs-pill[data-qs-filter="controllers"]');
       const index = await page.evaluate(async () =>
         (await (await fetch("assets/search-index.json")).json())
       );
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
       const expected = Math.min(12, index.filter(item =>
-        item.category === "DJ Hardware" &&
+        item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category).toLowerCase().includes("dj")
       ).length);
-      assert.ok(expected > 0, "curated hardware index must have DJ matches");
+      assert.ok(expected > 0, "curated controller index must have DJ matches");
       const results = await page.$$eval("#qs-results-list .qs-result-item", els => els.length);
       assert.equal(results, expected, "Spotlight category must show all matching top results");
       await page.keyboard.press("Escape");
