@@ -195,13 +195,13 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     );
     const cableFix = await visit(browser, 390, cableFixQuery);
     const spendBeforeCable = await cableFix.page.$eval(".metric-val--spend", el =>
-      Number(el.textContent.replace(/[^\\d.]/g, "")));
+      Number(el.textContent.replace(/[^\d.]/g, "")));
     const fixSelector = '[data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
     assert.ok(await cableFix.page.$(fixSelector), "XLR suggestion must be available");
     await cableFix.page.click(fixSelector);
     const cableFixResult = await cableFix.page.evaluate(() => ({
       state: JSON.parse(localStorage.getItem("offbeat.rig.active")),
-      spend: Number((document.querySelector(".metric-val--spend")?.textContent || "").replace(/[^\\d.]/g, "")),
+      spend: Number((document.querySelector(".metric-val--spend")?.textContent || "").replace(/[^\d.]/g, "")),
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     const originalCable = cableFixResult.state.items.find(s => s.itemId === "cable-rca-rca");
