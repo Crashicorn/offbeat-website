@@ -294,6 +294,40 @@ test("additional controllers cannot inherit a green single-controller compatibil
     "all controllers must remain in the purchase valuation");
 });
 
+test("quantity steppers count physical core devices, not only slots", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "deck", category: "controllers", model: "Standalone Deck", price: 900, standalone: true },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "cable", category: "cables", price: 12 }
+  ], categories: [], presets: [] });
+  const rig = [
+    { slotId: "deck", category: "controllers", itemId: "deck", qty: 2, owned: false },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1, owned: false },
+    { slotId: "cable", category: "cables", itemId: "cable", qty: 4, owned: false }
+  ];
+  assert.equal(api.normalizeRigState({ items: rig }), true);
+  const doubledController = api.runDeepCompatibilityChecks();
+  assert.equal(doubledController.requiresManualReview, true);
+  assert.ok(doubledController.readiness <= 50);
+  assert.ok(doubledController.checks.some(c => /Multiple controllers Need Manual Verification/.test(c.title)));
+  assert.equal(api.calculateRigStats().totalValue, 1997,
+    "the budget must include two actual controllers and four accessory cables");
+
+  rig[0].qty = 1;
+  rig[1].qty = 2;
+  assert.equal(api.normalizeRigState({ items: rig }), true);
+  const doubledHeadphones = api.runDeepCompatibilityChecks();
+  assert.equal(doubledHeadphones.requiresManualReview, true);
+  assert.ok(doubledHeadphones.checks.some(c => /Multiple headphones Need Manual Verification/.test(c.title)));
+
+  rig[1].qty = 1;
+  assert.equal(api.normalizeRigState({ items: rig }), true);
+  const accessoriesOnly = api.runDeepCompatibilityChecks();
+  assert.equal(accessoriesOnly.requiresManualReview, false,
+    "four accessory cables alone must not trigger multi-core routing warnings");
+});
+
 test("a single controller is not penalized for multiple accessory cables", () => {
   const { api } = harness(false);
   api.setCatalog({ items: [
