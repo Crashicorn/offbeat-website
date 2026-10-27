@@ -472,6 +472,9 @@
     state.baseBpm = state.bpmA * (1 - tempoError);
     state.pitch = 0;
     state.bpmB = state.baseBpm;
+    // Controls can be pressed while stopped; a new drill always starts neutral.
+    state.nudge = 0;
+    state.isDraggingPlatter = false;
     state.posA = 0;
     state.posB = Math.random() * 0.8 + 0.1; // Random downbeat offset
     state.beatA = 0;
