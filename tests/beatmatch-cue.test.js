@@ -29,8 +29,15 @@ function makeTrainer(options = {}) {
     addEventListener(type, handler) { platterListeners[type] = handler; },
     setPointerCapture(id) { this.captured = id; }
   };
+  const stage = {
+    focusCalls: 0,
+    classList: { add() {}, remove() {} },
+    focus() { this.focusCalls++; }
+  };
   const root = {
+    contains(target) { return target && target.insideTrainer !== false; },
     querySelector(selector) {
+      if (selector === "[data-stage]") return stage;
       if (selector === "[data-cue]") return cue;
       if (selector === "[data-platter-b]") return platter;
       if (selector === "[data-difficulty]") return { value: options.difficulty || "steady" };
@@ -61,7 +68,7 @@ function makeTrainer(options = {}) {
   };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
-  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document, scoreDrift, scorecard, platter, platterListeners };
+  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document, scoreDrift, scorecard, platter, platterListeners, stage };
 }
 
 function setRunningState(probe, elapsed) {
@@ -415,4 +422,60 @@ test("mouse jog drag still works, rejects right-click and ignores idle swipes", 
   assert.equal(probe.state.nudge, 1, "mouse drag still pushes the platter");
   probe.platterListeners.pointerup({ pointerId: 3 });
   assert.equal(probe.state.nudge, 0);
+});
+
+test("keyboard shortcuts never hijack page navigation or native trainer controls", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  const originalPosB = probe.state.posB;
+  const outside = { insideTrainer: false, matches() { return false; }, closest() { return null; } };
+  const button = { insideTrainer: true, matches(selector) { return selector.includes("button"); }, closest() { return null; } };
+  const shortcut = code => ({ code, target: outside, preventDefault() { throw Error("page shortcut intercepted"); } });
+  probe.documentListeners.keydown(shortcut("Space"));
+  probe.documentListeners.keydown(shortcut("ArrowDown"));
+  probe.documentListeners.keydown(shortcut("KeyC"));
+  assert.equal(probe.state.running, true, "outside Space must not stop the drill");
+  assert.equal(probe.state.pitch, 0, "outside arrows must retain native page behavior");
+  assert.equal(probe.state.posB, originalPosB, "outside C must not trigger CUE");
+
+  probe.documentListeners.keydown({
+    code: "Space", target: button,
+    preventDefault() { throw Error("native button Space intercepted"); }
+  });
+  assert.equal(probe.state.running, true, "native button Space must remain native");
+});
+
+test("focused practice stage accepts shortcuts and respects modifier keys", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  let prevented = 0;
+  const target = { insideTrainer: true, matches() { return false; }, closest() { return null; } };
+  const key = (code, extra = {}) => ({
+    code, target, preventDefault() { prevented++; }, ...extra
+  });
+  probe.documentListeners.keydown(key("ArrowRight"));
+  assert.equal(probe.state.nudge, 1, "focused stage should nudge B");
+  probe.documentListeners.keyup({ code: "ArrowRight" });
+  assert.equal(probe.state.nudge, 0);
+  probe.documentListeners.keydown(key("ArrowUp"));
+  assert.equal(probe.state.pitch, 0.1, "focused stage should adjust pitch");
+  probe.documentListeners.keydown(key("ArrowDown", { ctrlKey: true }));
+  assert.equal(probe.state.pitch, 0.1, "modified shortcuts must not alter the trainer");
+  assert.equal(prevented, 2, "only active trainer shortcuts prevent browser defaults");
+});
+
+test("START focuses the accessible practice stage; R retries only a visible scorecard", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  probe.stop("manual");
+  probe.start();
+  assert.equal(probe.stage.focusCalls, 1, "START should enable focused stage shortcuts");
+  const target = { insideTrainer: true, matches() { return false; }, closest() { return null; } };
+  const retry = () => probe.documentListeners.keydown({ code: "KeyR", target, preventDefault() {} });
+  retry();
+  assert.equal(probe.stage.focusCalls, 1, "R must not reset an active drill");
+  probe.scorecard.hidden = false;
+  retry();
+  assert.equal(probe.stage.focusCalls, 2, "R should retry when scorecard is visible");
+  assert.equal(probe.scorecard.hidden, true, "retry hides the old scorecard");
 });
