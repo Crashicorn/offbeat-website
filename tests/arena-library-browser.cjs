@@ -151,23 +151,45 @@ function visibleCount(page) {
         // the platter advertises swiping but previously listened only for
         // mousedown/mousemove and did nothing for a finger.
         await page.$eval("[data-platter-b]", el =>
-          el.scrollIntoView({ block: "center" }));
+          el.scrollIntoView({ block: "center", behavior: "instant" }));
+        // Verify the touch actually lands on the platter, not a transient
+        // scroll position left behind by the prior CUE-button click.
+        await page.waitForFunction(() => {
+          const p = document.querySelector("[data-platter-b]");
+          const r = p.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return hit && (hit === p || p.contains(hit));
+        }, { timeout: 2000 });
         const box = await page.$eval("[data-platter-b]", el => {
           const r = el.getBoundingClientRect();
           return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
         });
+        await page.evaluate(() => {
+          window.__touchProbe = [];
+          const p = document.querySelector("[data-platter-b]");
+          for (const type of ["pointerdown", "pointermove", "pointerup", "pointercancel"]) {
+            p.addEventListener(type, e => window.__touchProbe.push({
+              type, pointerId: e.pointerId, y: e.clientY
+            }), { capture: true });
+          }
+        });
         const neutral = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
         await page.touchscreen.touchStart(box.x, box.y);
         await page.touchscreen.touchMove(box.x, box.y - 45);
-        await new Promise(resolve => setTimeout(resolve, 120));
-        const nudged = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
-        assert.ok(nudged > neutral * 1.1,
-          "real mobile finger swipe must audibly accelerate Deck B");
-        await page.touchscreen.touchEnd();
-        await new Promise(resolve => setTimeout(resolve, 120));
-        const released = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
-        assert.ok(Math.abs(released - neutral) < 0.2,
-          "releasing the mobile jog must restore the pitch-fader tempo");
+        try {
+          await page.waitForFunction(baseBpm =>
+            Number(document.querySelector("[data-bpm-b]").textContent) > baseBpm * 1.1,
+          { timeout: 1500 }, neutral);
+        } catch (e) {
+          const events = await page.evaluate(() => window.__touchProbe);
+          throw new Error("Mobile jog did not accelerate: neutral=" + neutral +
+            " events=" + JSON.stringify(events) + " cause=" + e.message);
+        } finally {
+          await page.touchscreen.touchEnd();
+        }
+        await page.waitForFunction(baseBpm =>
+          Math.abs(Number(document.querySelector("[data-bpm-b]").textContent) - baseBpm) < 0.2,
+        { timeout: 1500 }, neutral);
       }
       await page.click("[data-stop]");
       assert.equal(await page.$eval(".teacher-stage",
