@@ -204,3 +204,32 @@ test("starting while an idle nudge control was held begins at neutral tempo", ()
   assert.equal(probe.state.isDraggingPlatter, false);
   assert.equal(probe.currentBpmB(), probe.state.bpmB);
 });
+
+test("a stalled animation frame never credits unseen seconds as locked practice", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.001);
+  Object.assign(probe.state, {
+    posA: 8, posB: 8, scheduledA: 8, scheduledB: 10,
+    nudge: 0, lastAudio: 0, lastFrame: 1000,
+    totalMs: 0, lockedMs: 0, currentStreakMs: 100
+  });
+  probe.frame(4000); // Simulate a three-second stalled/backgrounded frame.
+  assert.equal(probe.state.locked, true, "near-phase/tempo alignment can still display");
+  assert.equal(probe.state.totalMs, 0, "unobserved time must not inflate denominator");
+  assert.equal(probe.state.lockedMs, 0, "unobserved time must not earn a score");
+  assert.equal(probe.state.currentStreakMs, 0, "streak is broken across a long stall");
+});
+
+test("backgrounding a running drill stops it and silences queued deck audio", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  const oldA = probe.audio.chanA;
+  const oldB = probe.audio.chanB;
+  probe.state.nudge = 1;
+  probe.document.hidden = true;
+  probe.documentListeners.visibilitychange();
+  assert.equal(probe.state.running, false);
+  assert.equal(probe.state.nudge, 0);
+  assert.equal(oldA.disconnected, true);
+  assert.equal(oldB.disconnected, true);
+});
