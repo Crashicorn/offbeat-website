@@ -1,9 +1,9 @@
 {
   "meta": {
-    "version": "2026.2",
-    "updated": "25 October 2026",
+    "version": "2026.3",
+    "updated": "27 October 2026",
     "currency": "USD",
-    "disclosure": "Prices are approximate US retail estimates checked on 25 October 2026. Retailer links may generate affiliate referral commissions for Offbeat at no extra cost to you."
+    "disclosure": "Prices are approximate US retail estimates checked on 27 October 2026. Retailer links may generate affiliate referral commissions for Offbeat at no extra cost to you."
   },
   "categories": [
     {
@@ -105,7 +105,16 @@
         "rekordbox for iOS",
         "rekordbox for Android"
       ],
-      "mobile_support_source": "https://www.pioneerdj.com/en/product/dj-controllers/ddj-flx4/"
+      "mobile_support_source": "https://www.pioneerdj.com/en/product/dj-controllers/ddj-flx4/",
+      "outputs": [
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA (unbalanced) master"
+        }
+      ]
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -133,7 +142,16 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "outputs": [
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm stereo master"
+        }
+      ]
     },
     {
       "id": "pioneer-ddj-flx10",
@@ -165,7 +183,30 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The club-layout deck for four-deck sets"
+      "pick": "The club-layout deck for four-deck sets",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
     },
     {
       "id": "alphatheta-ddj-grv6",
@@ -195,7 +236,30 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "outputs": [
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "1/4-inch TRS master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "booth",
+          "label": "Booth RCA"
+        }
+      ]
     },
     {
       "id": "traktor-kontrol-s2-mk3",
@@ -223,7 +287,23 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "outputs": [
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm master"
+        }
+      ]
     },
     {
       "id": "denon-prime-4-plus",
@@ -256,7 +336,30 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The standalone system we recommend when the budget allows"
+      "pick": "The standalone system we recommend when the budget allows",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
     },
     {
       "id": "denon-prime-go",
@@ -286,7 +389,30 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
     },
     {
       "id": "hercules-inpulse-500",
@@ -316,7 +442,23 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "Best value two-channel deck with real outputs"
+      "pick": "Best value two-channel deck with real outputs",
+      "outputs": [
+        {
+          "connector": "ts",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "Dual 1/4-inch TS master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        }
+      ]
     },
     {
       "id": "rane-four",
@@ -346,7 +488,30 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
     },
     {
       "id": "sennheiser-hd25",
@@ -469,11 +634,42 @@
       "brand": "Pioneer DJ",
       "model": "DM-40D (Pair)",
       "price": 149,
-      "type": "Active Desktop Monitors (Pair)",
+      "type": "Active Desktop Monitors (Pair, master + passive)",
       "inputs": [
         "RCA (Unbalanced)",
-        "3.5mm Stereo Mini"
+        "3.5 mm Stereo Mini"
       ],
+      "connection": {
+        "topology": "master_slave",
+        "feeds_per_box": 1,
+        "channels_per_feed": 2,
+        "inputs": [
+          {
+            "connector": "rca",
+            "channels": 2,
+            "balanced": false
+          },
+          {
+            "connector": "jack35",
+            "channels": 2,
+            "balanced": false
+          }
+        ],
+        "note": "The left cabinet holds the amplifier and every input; the right cabinet is passive and plugs into it with the supplied speaker cord. One signal run feeds both cabinets."
+      },
+      "included_cables": [
+        {
+          "from": "jack35",
+          "to": "rca",
+          "feeds_covered": 1,
+          "label": "3.5 mm stereo mini-plug to dual RCA converter cable",
+          "note": "In the box, so a 3.5 mm controller output needs no extra lead.",
+          "passive": true
+        }
+      ],
+      "speaker_units": 2,
+      "box_label": "pair",
+      "pack_note": "Sold as one pair in one box. The left cabinet is the powered master with every input; the right cabinet is passive and connects with the supplied speaker cord. One cable run feeds both.",
       "driver_size": "4-inch fiberglass woofer",
       "sound_modes": "DJ / Production switchable DSP switch",
       "ideal_for": "Bedroom DJ desks and direct RCA controller pairing",
@@ -487,10 +683,7 @@
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
       "pick": "The default bedroom monitor pair",
-      "speaker_units": 2,
-      "box_label": "pair",
-      "cable_runs_per_box": 1,
-      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
+      "price_basis": "Pioneer DJ DM-40D pair, US retail estimate checked 2026-10-27."
     },
     {
       "id": "pioneer-dm50d",
@@ -498,16 +691,52 @@
       "brand": "Pioneer DJ",
       "model": "DM-50D (Pair)",
       "price": 199,
-      "type": "Active Desktop Monitors (Pair)",
+      "type": "Active Desktop Monitors (Pair, master + passive)",
       "inputs": [
         "1/4\" TRS (Balanced)",
         "RCA (Unbalanced)",
-        "3.5mm Stereo Mini"
+        "3.5 mm Stereo Mini"
       ],
+      "connection": {
+        "topology": "master_slave",
+        "feeds_per_box": 1,
+        "channels_per_feed": 2,
+        "inputs": [
+          {
+            "connector": "trs",
+            "channels": 2,
+            "balanced": true
+          },
+          {
+            "connector": "rca",
+            "channels": 2,
+            "balanced": false
+          },
+          {
+            "connector": "jack35",
+            "channels": 2,
+            "balanced": false
+          }
+        ],
+        "note": "The left cabinet holds the amplifier and every input; the right cabinet is passive and plugs into it with the supplied speaker cord. One signal run feeds both cabinets, even though the pair is stereo."
+      },
+      "included_cables": [
+        {
+          "from": "jack35",
+          "to": "rca",
+          "feeds_covered": 1,
+          "label": "3.5 mm stereo mini-plug to dual RCA converter cable",
+          "note": "In the box, so a 3.5 mm controller output needs no extra lead.",
+          "passive": true
+        }
+      ],
+      "speaker_units": 2,
+      "box_label": "pair",
+      "pack_note": "Sold as one pair in one box. The left cabinet is the powered master with every input; the right cabinet is passive and connects with the supplied speaker cord. One cable run feeds both.",
       "driver_size": "5-inch fiberglass woofer",
       "sound_modes": "DJ / Production switchable DSP switch",
-      "ideal_for": "Home studios requiring deeper bass and balanced 1/4\" TRS connectivity",
-      "tagline": "Class D amplifier power with balanced 1/4\" TRS inputs for zero-hum connection to pro controllers.",
+      "ideal_for": "Home studios that want RCA, 3.5 mm and balanced 1/4-inch TRS inputs on one desk pair",
+      "tagline": "Class D amplifier power with a balanced 1/4-inch TRS input alongside RCA and 3.5 mm on the master cabinet.",
       "image": "assets/img/products/pioneer-dm50d.svg",
       "slug": "best-dj-monitor-speakers.html",
       "amazon_search": "Pioneer DJ DM-50D 5-inch Desktop Monitor Speaker Pair",
@@ -516,38 +745,125 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "speaker_units": 2,
-      "box_label": "pair",
-      "cable_runs_per_box": 1,
-      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
+      "price_basis": "Pioneer DJ DM-50D pair, US retail estimate checked 2026-10-27."
     },
     {
       "id": "krk-rokit-5-g4",
       "category": "speakers",
       "brand": "KRK",
-      "model": "Classic 5 / ROKIT 5 G4 (Pair)",
-      "price": 299,
-      "type": "Active Studio Reference Monitors (Pair)",
+      "model": "ROKIT 5 G4",
+      "price": 169,
+      "type": "Active Studio Monitor (Single Cabinet)",
       "inputs": [
-        "Combo XLR / 1/4\" TRS (Balanced)",
-        "RCA (Unbalanced)"
+        "Combo XLR / 1/4\" TRS (Balanced)"
       ],
-      "driver_size": "5-inch Kevlar woofer",
-      "sound_modes": "Onboard DSP room tuning EQ",
-      "ideal_for": "Electronic music production and punchy low-end DJ practice",
-      "tagline": "Iconic yellow Kevlar drivers delivering tight, impactful kick transient response.",
-      "image": "assets/img/products/krk-classic-5.svg",
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "One powered cabinet with a single balanced combo input and no RCA socket. A stereo pair is two separate purchases, two power sockets and two signal cables."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold as one cabinet. A stereo pair means buying two, with one signal cable and one power socket each. There is no RCA input on the G4, so an RCA-only controller needs a dual RCA to dual 1/4-inch lead or a balanced path.",
+      "driver_size": "5.25-inch Kevlar aramid woofer, 1-inch Kevlar dome tweeter",
+      "amplifier": "55 W bi-amped Class-D (35 W low frequency, 20 W high frequency)",
+      "frequency_response": "43 Hz – 40 kHz",
+      "max_spl": "104 dB",
+      "sound_modes": "Onboard LCD DSP: room-tuning EQ, input sensitivity, standby",
+      "ideal_for": "Electronic music production that wants weight in the low end plus room tuning",
+      "tagline": "The G4 ROKIT is a single powered cabinet with an LCD-controlled DSP, a Kevlar woofer and one combo XLR / 1/4-inch input. No RCA.",
+      "image": "assets/img/products/krk-rokit-5-g4.svg",
       "slug": "best-studio-monitors.html",
-      "amazon_search": "KRK Classic 5 Studio Monitor Pair",
+      "amazon_search": "KRK ROKIT 5 G4 studio monitor single",
       "image_type": "schematic_vector",
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
+      "price_basis": "KRK Systems store lists the ROKIT 5 G4 at $169.99 each; a pair is two units. US retail estimate checked 2026-10-27.",
+      "price_source": "https://www.krkmusic.com/collections/rokit-series-g4-powered-studio-monitors",
+      "spec_source": "https://www.krkmusic.com/products/rokit-5-generation-4-powered-studio-monitor-black",
+      "id_note": "ROKIT 5 G4 only. It is not the KRK Classic 5: the Classic has RCA, TRS and XLR jacks, a 50 W Class A/B amplifier and a glass-aramid woofer. Those are separate catalog entries."
+    },
+    {
+      "id": "krk-classic-5-pair",
+      "category": "speakers",
+      "brand": "KRK",
+      "model": "Classic 5 (Pair, Monitor Pack)",
+      "price": 299,
+      "type": "Active Studio Monitors (Pair, two powered cabinets)",
+      "inputs": [
+        "XLR (Balanced)",
+        "1/4\" TRS (Balanced)",
+        "RCA (Unbalanced)"
+      ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 2,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "xlr",
+            "channels": 1,
+            "balanced": true
+          },
+          {
+            "connector": "trs",
+            "channels": 1,
+            "balanced": true
+          },
+          {
+            "connector": "rca",
+            "channels": 1,
+            "balanced": false
+          }
+        ],
+        "note": "Two independently powered cabinets, each with its own XLR, TRS and RCA input and its own power socket. Each cabinet needs its own signal cable, or one dual lead whose two plugs reach both."
+      },
+      "included_cables": [
+        {
+          "from": "xlr",
+          "to": "xlr",
+          "feeds_covered": 2,
+          "label": "two 10 ft XLR-M to XLR-F cables",
+          "note": "In the monitor pack, so an XLR-out controller needs no extra cable.",
+          "passive": true
+        }
+      ],
+      "included_accessories": [
+        "Two split-foam wedge isolation pads",
+        "Two AC power cables"
+      ],
       "speaker_units": 2,
       "box_label": "pair",
-      "cable_runs_per_box": 1,
-      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
+      "pack_note": "Sold as one monitor pack containing two powered cabinets, two 10 ft XLR cables and two isolation pads. Each cabinet still needs its own power socket and its own signal feed.",
+      "driver_size": "5-inch glass-aramid woofer, 1-inch textile soft-dome tweeter",
+      "amplifier": "50 W bi-amped Class A/B (30 W low frequency, 20 W high frequency)",
+      "frequency_response": "46 Hz – 34.5 kHz (-10 dB)",
+      "max_spl": "101 dB",
+      "sound_modes": "Volume, low-frequency and high-frequency trim controls, built-in limiter",
+      "ideal_for": "Budget studio monitoring with the widest choice of input sockets",
+      "tagline": "The Classic 5 revives the older ROKIT sound: glass-aramid woofer, Class A/B amplifier, and XLR, TRS and RCA sockets on every cabinet.",
+      "image": "assets/img/products/krk-classic-5.svg",
+      "slug": "best-studio-monitors.html",
+      "amazon_search": "KRK Classic 5 studio monitor pair",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "price_basis": "KRK CL5G3PK1-NA monitor pack (two Classic 5 monitors, two XLR cables, two isolation pads) at $299 US retail, checked 2026-10-27.",
+      "spec_source": "https://www.bhphotovideo.com/c/product/1795088-REG/krk_cl5g3pk1_na_classic_5_studio_monitor.html",
+      "id_note": "Classic 5 only. It is a different product line from the ROKIT 5 G4: glass-aramid woofer, 50 W Class A/B, and RCA sockets the G4 does not have."
     },
     {
       "id": "yamaha-hs5",
@@ -555,15 +871,40 @@
       "brand": "Yamaha",
       "model": "HS5 (Pair)",
       "price": 398,
-      "type": "Bi-Amplified Pro Studio Monitors (Pair)",
+      "type": "Bi-Amplified Studio Monitors (Pair, two powered cabinets)",
       "inputs": [
         "XLR3-31 (Balanced)",
         "1/4\" TRS (Balanced)"
       ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 2,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "xlr",
+            "channels": 1,
+            "balanced": true
+          },
+          {
+            "connector": "trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "Two independently powered cabinets with balanced XLR and 1/4-inch TRS inputs and no RCA socket. Each cabinet needs its own signal cable and its own power socket."
+      },
+      "included_cables": [],
+      "speaker_units": 2,
+      "box_label": "pair",
+      "pack_note": "Priced here as two cabinets at about $199 each. Every HS5 is sold and powered on its own: one signal cable per cabinet plus one power socket each. There is no RCA input, so an RCA-only controller needs a dual RCA to dual 1/4-inch lead (one plug into each cabinet) or a balanced path.",
       "driver_size": "5-inch white cone woofer",
+      "amplifier": "70 W bi-amped (45 W low frequency, 25 W high frequency)",
+      "frequency_response": "54 Hz – 30 kHz (-10 dB)",
+      "max_spl": "up to 108 dB",
       "sound_modes": "Room Control and High Trim switches",
       "ideal_for": "Serious music production and ultra-accurate mix balance",
-      "tagline": "Legendary white-cone monitors with unhyped, clinically honest frequency response.",
+      "tagline": "White-cone monitors with an unhyped response, balanced XLR and TRS inputs, and no unbalanced RCA socket.",
       "image": "assets/img/products/yamaha-hs5.svg",
       "slug": "best-studio-monitors.html",
       "amazon_search": "Yamaha HS5 Powered Studio Monitor Pair",
@@ -572,26 +913,44 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "speaker_units": 2,
-      "box_label": "pair",
-      "cable_runs_per_box": 1,
-      "pack_note": "Sold as a stereo pair: one purchase is two speaker cabinets and needs one dual RCA run."
+      "price_basis": "Yamaha HS5 at $199.99 each (two-$399.98 pair pricing), checked 2026-10-27; sold per monitor.",
+      "spec_source": "https://usa.yamaha.com/products/proaudio/speakers/hs_series/specs.html"
     },
     {
       "id": "jbl-eon-715",
       "category": "speakers",
       "brand": "JBL Professional",
       "model": "EON715 15\" (Single)",
-      "price": 549,
-      "type": "Powered PA Club / Mobile Speaker (1300W Peak)",
+      "price": 599,
+      "type": "Powered PA Cabinet (single, 1300 W peak / 650 W RMS)",
       "inputs": [
-        "Dual Combo XLR / 1/4\" (Balanced)",
+        "2 x Combo XLR / 1/4\" (Mic/Line, balanced or unbalanced)",
         "Bluetooth 5.0 streaming"
       ],
-      "driver_size": "15-inch custom ferrite woofer",
-      "sound_modes": "dbx DriveRack DSP feedback suppression",
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "One powered cabinet with two mono combo inputs and an XLR thru. Each cabinet needs its own signal feed and power socket; two cabinets are needed for a stereo spread."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold as one cabinet. Each EON715 needs its own signal feed, its own power socket and a stand or pole if it is to be heard over a room. Two cabinets are needed for stereo.",
+      "driver_size": "15-inch ferrite woofer, 1-inch compression driver",
+      "sound_modes": "dbx DSP with presets, 8-band parametric EQ and feedback suppression (JBL Pro Connect app)",
+      "frequency_response": "45 Hz – 20 kHz (-10 dB)",
+      "max_spl": "128 dB peak",
+      "dispersion": "90° x 60°",
       "ideal_for": "Mobile wedding DJs, house parties, and medium venue live sound",
-      "tagline": "1300 watts of high-output portable PA power with integrated mixer and app control.",
+      "tagline": "A 15-inch powered PA cabinet with two combo inputs, an XLR thru and Bluetooth, at 1300 W peak / 650 W RMS.",
       "image": "assets/img/products/jbl-eon715.svg",
       "slug": "festival-dj-gear-checklist.html",
       "amazon_search": "JBL EON715 15-inch Powered PA Speaker",
@@ -600,10 +959,8 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "speaker_units": 1,
-      "box_label": "single speaker",
-      "cable_runs_per_box": 1,
-      "pack_note": "Sold as a single speaker cabinet: one purchase is one cabinet and needs its own cable run."
+      "price_basis": "JBL EON715 single cabinet at $599 US retail, checked 2026-10-27.",
+      "spec_source": "https://jblpro.com/en-US/products/jbl-eon715"
     },
     {
       "id": "macbook-air-m2",
@@ -709,8 +1066,8 @@
       "connector_a": "2x Male RCA (Red/White)",
       "connector_b": "2x Male RCA (Red/White)",
       "shielding": "Double shielded OFC braided wire",
-      "ideal_for": "Connecting controllers (DDJ-FLX4, S2 MK3) to desktop monitors (Pioneer DM-40D)",
-      "tagline": "Essential audio cable for connecting entry-level DJ controllers to RCA desktop monitors.",
+      "ideal_for": "RCA master output to a desktop pair with RCA inputs (Pioneer DM-40D / DM-50D) or two monitors whose RCA inputs each take one channel",
+      "tagline": "One dual RCA lead carries left and right: both plugs into one stereo input pair, or one plug into each of two separately powered monitors.",
       "image": "assets/img/products/cables-pro-audio.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
       "amazon_search": "Dual RCA to Dual RCA Audio Cable 6ft",
@@ -719,7 +1076,16 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The cable most bedroom rigs need"
+      "pick": "The cable most bedroom rigs need",
+      "cable": {
+        "a": "rca",
+        "b": "rca",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      }
     },
     {
       "id": "cable-rca-trs",
@@ -730,8 +1096,8 @@
       "connector_a": "2x Male RCA",
       "connector_b": "2x 1/4\" TS Mono Jacks",
       "shielding": "Oxygen-Free Copper (OFC) conductors",
-      "ideal_for": "Connecting RCA controllers (DDJ-FLX4) to 1/4\" pro studio monitors (Yamaha HS5, DM-50D)",
-      "tagline": "Bridges unbalanced RCA controller master outputs to 1/4-inch monitor speaker inputs.",
+      "ideal_for": "RCA master output to monitors with 1/4-inch inputs (Yamaha HS5, KRK, JBL EON combo jacks): one TS plug per cabinet",
+      "tagline": "Splits an unbalanced RCA pair into two 1/4-inch TS plugs. It fits TRS and combo jacks but does not make the signal balanced.",
       "image": "assets/img/products/cable-rca-trs.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
       "amazon_search": "Hosa Dual RCA to Dual 1/4 TS Cable 6ft",
@@ -739,7 +1105,16 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "cable": {
+        "a": "rca",
+        "b": "ts",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      }
     },
     {
       "id": "cable-xlr-xlr",
@@ -751,7 +1126,7 @@
       "connector_b": "2x Female XLR 3-pin",
       "shielding": "Balanced differential noise-cancelling braided shield",
       "ideal_for": "Connecting pro controllers (FLX10, Prime 4+, Rane Four) to studio monitors or PA club systems",
-      "tagline": "Balanced pro-audio transmission over long cable runs without ground hum or RF interference.",
+      "tagline": "Two balanced XLR leads: one per independently powered cabinet, for the quietest long runs.",
       "image": "assets/img/products/cable-xlr-xlr.svg",
       "slug": "how-to-connect-dj-controller-to-speakers.html",
       "amazon_search": "Balanced XLR Cable Pair 10ft",
@@ -759,7 +1134,16 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "cable": {
+        "a": "xlr",
+        "b": "xlr",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": true,
+        "pack_of": 2
+      }
     },
     {
       "id": "adapter-headphone-jack",
@@ -792,13 +1176,22 @@
       "estimate_note": "Offbeat does not recommend a single retailer SKU for this lead: the correct cable depends on whether your speakers take dual RCA, a 3.5 mm input or a combo jack. Budget about $15 and confirm the connector at both ends.",
       "connector_a": "3.5 mm stereo mini-jack (male)",
       "connector_b": "2x RCA (male) — confirm your speaker input before buying",
-      "ideal_for": "Controllers with a 3.5 mm master output, such as the DDJ-FLX2, feeding powered speakers",
-      "tagline": "A budget allowance for the adapter lead a 3.5 mm/aux master output needs. Connector ends must be confirmed — no specific product is recommended.",
+      "ideal_for": "Controllers with a 3.5 mm master output (DDJ-FLX2) feeding a pair with RCA inputs, or two monitors that each take one RCA channel",
+      "tagline": "A budget allowance for the lead a 3.5 mm master output needs. Many desktop pairs already include one — check the box before buying, and confirm the connector at both ends.",
       "image": "assets/img/products/cables-pro-audio.svg",
       "image_type": "illustrative_vector",
       "no_retailer_link": true,
       "provenance": "Offbeat planning allowance (2026)",
-      "license": "Original Offbeat planning data"
+      "license": "Original Offbeat planning data",
+      "cable": {
+        "a": "jack35",
+        "b": "rca",
+        "channels": 2,
+        "a_plugs": 1,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      }
     },
     {
       "id": "laptop-stand-pyle",
@@ -858,14 +1251,196 @@
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
       "pick": "The default vocal mic"
+    },
+    {
+      "id": "cable-aux-trs-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "3.5 mm stereo mini-jack to dual 1/4-inch TS cable (allowance)",
+      "price": 15,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $15 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "One 3.5 mm plug splits into two 1/4-inch plugs, one per independently powered cabinet. Offbeat does not recommend a single retailer SKU: confirm plug length and jack type at both ends.",
+      "cable": {
+        "a": "jack35",
+        "b": "ts",
+        "channels": 2,
+        "a_plugs": 1,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      },
+      "ideal_for": "Controllers with a 3.5 mm master output feeding monitors that only have 1/4-inch inputs (Yamaha HS5, KRK ROKIT 5 G4)",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-aux-xlr-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "3.5 mm stereo mini-jack to dual XLR cable (allowance)",
+      "price": 18,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $18 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "An unbalanced 3.5 mm output into XLR inputs stays unbalanced; keep the run short. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "jack35",
+        "b": "xlr",
+        "channels": 2,
+        "a_plugs": 1,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      },
+      "ideal_for": "Controllers with only a 3.5 mm master output feeding powered speakers or a PA that only take XLR",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-rca-xlr-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "Dual RCA to dual XLR cable (allowance)",
+      "price": 18,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $18 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "The cable plugs in, but the signal stays unbalanced: it cannot become balanced. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "rca",
+        "b": "xlr",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 1
+      },
+      "ideal_for": "RCA master output feeding a powered speaker or PA with XLR inputs only",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-trs-trs-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "Two 1/4-inch TRS cables (allowance)",
+      "price": 20,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $20 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "Two balanced leads, one per cabinet. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "trs",
+        "b": "trs",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": true,
+        "pack_of": 2
+      },
+      "ideal_for": "Controllers with 1/4-inch TRS master outputs feeding monitors with 1/4-inch inputs",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-trs-xlr-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "Two 1/4-inch TRS to XLR cables (allowance)",
+      "price": 22,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $22 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "Two balanced leads, one per cabinet. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "trs",
+        "b": "xlr",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": true,
+        "pack_of": 2
+      },
+      "ideal_for": "Controllers with 1/4-inch TRS master outputs feeding XLR-only powered speakers",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-xlr-trs-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "Two XLR to 1/4-inch TRS cables (allowance)",
+      "price": 22,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $22 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "Two balanced leads, one per cabinet. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "xlr",
+        "b": "trs",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": true,
+        "pack_of": 2
+      },
+      "ideal_for": "Controllers with XLR master outputs feeding monitors that only have 1/4-inch inputs",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
+    },
+    {
+      "id": "cable-ts-trs-allowance",
+      "category": "cables",
+      "brand": "Estimated accessory",
+      "model": "Two 1/4-inch TS cables (allowance)",
+      "price": 15,
+      "estimate_only": true,
+      "no_retailer_link": true,
+      "price_basis": "Planning allowance of $15 checked 2026-10-27. This is a budget allowance, not a verified product listing.",
+      "estimate_note": "Two unbalanced leads, one per cabinet. Offbeat does not recommend a single retailer SKU.",
+      "cable": {
+        "a": "ts",
+        "b": "ts",
+        "channels": 2,
+        "a_plugs": 2,
+        "b_plugs": 2,
+        "balanced": false,
+        "pack_of": 2
+      },
+      "ideal_for": "Controllers with unbalanced 1/4-inch master outputs feeding monitors with 1/4-inch inputs",
+      "tagline": "A planning allowance for the lead this socket combination needs. No specific product is recommended: confirm the plugs at both ends before ordering.",
+      "image": "assets/img/products/cables-pro-audio.svg",
+      "image_type": "illustrative_vector",
+      "provenance": "Offbeat planning allowance (2026)",
+      "license": "Original Offbeat planning data"
     }
   ],
   "presets": [
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "$638 to buy",
-      "desc": "The quintessential beginner DJ bundle: 2-channel smart controller, studio-grade closed-back headphones, desktop monitors, and essential RCA cabling.",
+      "badge": "Beginner",
+      "desc": "A two-channel controller, monitoring headphones, a desktop monitor pair with the lead it needs in the box, and a laptop riser. One dual RCA lead is still required because the FLX4 has RCA outputs.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
@@ -882,8 +1457,8 @@
     {
       "id": "club-ready",
       "name": "The Club-Ready Rig",
-      "badge": "$2231 to buy",
-      "desc": "Club-standard 4-channel controller with jog displays, industry-standard HD 25 headphones, bi-amped Yamaha 5-inch monitors, balanced XLR cabling, and USB 3.2 flash drive for CDJ export.",
+      "badge": "Club",
+      "desc": "Four-channel controller, HD 25 headphones, two independently powered Yamaha HS5 cabinets fed by a balanced XLR pair, and a USB drive for export.",
       "slots": {
         "controllers": "pioneer-ddj-flx10",
         "headphones": "sennheiser-hd25",
@@ -901,7 +1476,7 @@
     {
       "id": "mobile-pro",
       "name": "The Mobile & Wedding Pro",
-      "badge": "$3052 to buy",
+      "badge": "Mobile / wedding",
       "desc": "Standalone 4-channel console with 10-inch touchscreen (no laptop required), 15-inch 1300W JBL PA speaker, Shure SM58 vocal mic, headphones, and balanced cables.",
       "slots": {
         "controllers": "denon-prime-4-plus",
@@ -920,20 +1495,41 @@
     {
       "id": "traktor-techno",
       "name": "The Traktor Techno Specialist",
-      "badge": "$781 to buy",
-      "desc": "Precision Traktor Kontrol S2 MK3 controller, Sony MDR-7506 reference monitoring, punchy KRK Classic 5 monitors, RCA-to-TRS cables, and laptop riser.",
+      "badge": "Traktor",
+      "desc": "Traktor-native controller, reference headphones, the KRK Classic 5 monitor pack (two powered cabinets, two XLR leads and isolation pads) and the dual RCA lead its RCA inputs need.",
       "slots": {
         "controllers": "traktor-kontrol-s2-mk3",
         "headphones": "sony-mdr-7506",
-        "speakers": "krk-rokit-5-g4",
+        "speakers": "krk-classic-5-pair",
         "laptops": "macbook-air-m2",
-        "cables": "cable-rca-trs",
+        "cables": "cable-rca-rca",
         "stands": "laptop-stand-pyle"
       },
       "owned": [
         "laptops"
       ],
-      "blurb": "Traktor-native controller, honest headphones, two-monitor output path."
+      "blurb": "Traktor-native controller, honest headphones, two KRK cabinets on RCA, one dual RCA lead."
     }
-  ]
+  ],
+  "schema": {
+    "version": 2,
+    "connectors": {
+      "xlr": "3-pin XLR, balanced",
+      "trs": "1/4-inch TRS jack, capable of a balanced connection",
+      "ts": "1/4-inch TS plug, unbalanced",
+      "rca": "RCA phono, unbalanced",
+      "jack35": "3.5 mm stereo mini-jack",
+      "combo_xlr_trs": "combined XLR / 1/4-inch socket (accepts an XLR plug or a TRS/TS plug)"
+    },
+    "notes": [
+      "A shopping quantity is a retail box, not a cabinet: speaker_units states how many cabinets one box contains.",
+      "connection.feeds_per_box is the number of separately powered destinations one box must feed. A master/slave desktop pair feeds one cabinet; two independently powered monitors feed two.",
+      "connection.channels_per_feed is 2 when one cabinet accepts a stereo input pair and 1 when every cabinet takes a single mono channel.",
+      "included_cables lists leads that ship in the box, with the number of feeds they cover. A lead in the box is never a purchase.",
+      "cable.a and cable.b are the plug families at the source and speaker end. b_plugs is how many speaker-end plugs one purchase provides; pack_of is how many physical leads one purchase contains.",
+      "Items flagged estimate_only are planning allowances, not verified retailer products: they carry a cost but no SKU and no retailer link.",
+      "A lead in the box is a passive conductor assembly: the same plugs carry signal either way round, so included_cables entries are matched in both orientations. Set \"directional\": true on any lead that contains electronics (a DI box, an active converter, a USB audio adapter) and it will only be matched in its documented direction.",
+      "controller.outputs[] entries are physical sockets. One stereo output feeds one speaker line; a second line needs its own output. The model reports that as an unresolved route instead of pricing another cable, because Offbeat has no verified splitter to sell."
+    ]
+  }
 }

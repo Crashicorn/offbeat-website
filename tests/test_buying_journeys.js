@@ -56,66 +56,101 @@ function dollars(text) {
 
   try {
     /* ---------------------------------------------------------------- H1 --
-     * The $15 FLX2 cable allowance must survive the hand-off, and the guide's
-     * total must equal Rig Studio's bill to the dollar, in both ownership
-     * states and after a controller change. */
+     * The guide's total must equal Rig Studio's bill to the dollar, in both
+     * ownership states and after a controller change.
+     *
+     * Corrected model (N2/N3 + defect A): the FLX2 has a 3.5 mm master and the
+     * DM-40D pair ships with a 3.5 mm to dual RCA lead, so that route buys no
+     * cable: $199 + $49 + $149 = $397. The FLX4's master is a pair of RCA
+     * jacks, and the same passive lead fits it the other way round, so the FLX4
+     * rig also buys no cable: $329 + $49 + $149 = $527 (it used to be charged
+     * $12 for a second lead the box already contains). */
     await page.goto(BASE + "/best-dj-controllers-for-beginners.html", { waitUntil: "networkidle0" });
     await page.waitForSelector("[data-bl-total]");
     await page.click('[data-bl-choose="pioneer-ddj-flx2"]');
     await wait(150);
 
     const guideFlx2 = await page.$eval("[data-bl-total]", (el) => el.textContent.trim());
-    assert.strictEqual(dollars(guideFlx2), 412, `FLX2 guide total should be $412, got ${guideFlx2}`);
+    assert.strictEqual(dollars(guideFlx2), 397, `FLX2 guide total should be $397, got ${guideFlx2}`);
     const guideRows = await page.$$eval(".beginner-lab-line", (els) => els.map((el) => el.textContent.replace(/\s+/g, " ").trim()));
-    assert.ok(guideRows.some((row) => /3\.5 mm → RCA cable allowance/.test(row) && /\$15/.test(row)),
-      `the FLX2 line should show the $15 3.5 mm allowance, got ${JSON.stringify(guideRows)}`);
-    assert.ok(guideRows.some((row) => /allowance/i.test(row)), "the allowance row should be labelled as an estimate");
+    assert.ok(guideRows.some((row) => /Speaker cable/.test(row) && /included with the pair/.test(row) && /\$0/.test(row)),
+      `the FLX2 line should show the in-box lead at $0, got ${JSON.stringify(guideRows)}`);
+    assert.ok(!guideRows.some((row) => /allowance/i.test(row)),
+      `no allowance may be charged when the box lead fits, got ${JSON.stringify(guideRows)}`);
 
     const flx2Href = await page.$eval("[data-bl-build]", (el) => el.getAttribute("href"));
     await openRig(flx2Href);
     const flx2Rig = await rigCost();
-    assert.strictEqual(flx2Rig.buyTotal, 412, `Rig Studio should charge $412 for the same rig, got $${flx2Rig.buyTotal}`);
-    assert.strictEqual(flx2Rig.fullTotal, 412, `full rig value should be $412, got $${flx2Rig.fullTotal}`);
+    assert.strictEqual(flx2Rig.buyTotal, 397, `Rig Studio should charge $397 for the same rig, got $${flx2Rig.buyTotal}`);
+    assert.strictEqual(flx2Rig.fullTotal, 397, `full rig value should be $397, got $${flx2Rig.fullTotal}`);
 
+    const flx2CableSlots = await page.evaluate(() => window.__rigStudio.state().items.filter((s) => s.category === "cables"));
+    assert.strictEqual(flx2CableSlots.length, 0,
+      `the in-box lead must not arrive as a cable purchase, got ${JSON.stringify(flx2CableSlots)}`);
     const allowanceChecks = await rigChecks();
-    assert.ok(allowanceChecks.some((c) => c.key === "cables" && /\$15/.test(c.title)),
-      `the cable check should account for the $15 allowance, got ${JSON.stringify(allowanceChecks.filter((c) => c.key === "cables"))}`);
+    const boxCableCheck = allowanceChecks.find((c) => c.key === "cables");
+    assert.strictEqual(boxCableCheck.level, "ok", `a supplied lead should satisfy the cable check, got ${JSON.stringify(boxCableCheck)}`);
+    assert.ok(/supplied in the box/i.test(boxCableCheck.title), `the check should credit the box, got ${boxCableCheck.title}`);
 
     const shopText = await page.evaluate(() => window.__rigStudio.shoppingText());
-    assert.ok(/3\.5 mm stereo mini-jack to dual RCA cable \(allowance\)/.test(shopText), "the shopping list carries the allowance");
-    assert.ok(/no recommended SKU/i.test(shopText), "the shopping list says the allowance has no recommended SKU");
-    assert.ok(/ESTIMATED TOTAL: \$412/.test(shopText), "the printed list totals $412");
+    assert.ok(!/allowance/i.test(shopText), "the shopping list must not carry a cable the buyer does not need");
+    assert.ok(/ESTIMATED TOTAL: \$397/.test(shopText), `the printed list totals $397, got ${shopText}`);
 
     const ribbon = await page.$eval(".rs-ribbon", (el) => el.textContent.replace(/\s+/g, " ").trim());
     assert.ok(/guide/i.test(ribbon) && !/shared build/i.test(ribbon),
       `a guide hand-off must not claim to be someone else's shared build, got: ${ribbon}`);
 
-    /* Ownership toggle in Rig Studio: the allowance stops being charged. */
-    const cableSlotId = await page.evaluate(() => {
-      const slot = window.__rigStudio.state().items.find((s) => s.category === "cables");
-      return slot ? slot.slotId : null;
-    });
-    assert.ok(cableSlotId, "the imported rig has a cable line to toggle");
-    await page.click(`[data-rs="own"][data-slot="${cableSlotId}"]`);
-    await wait(250);
-    const ownedRig = await rigCost();
-    assert.strictEqual(ownedRig.buyTotal, 397, `owning the cable leaves $397, got $${ownedRig.buyTotal}`);
-    assert.strictEqual(ownedRig.fullTotal, 412, "the full rig value does not change when a line is marked owned");
-    const ownedChecks = await rigChecks();
-    assert.ok(ownedChecks.some((c) => c.key === "cables" && c.level === "ok"),
-      `an owned 3.5 mm lead should satisfy the cable check, got ${JSON.stringify(ownedChecks.filter((c) => c.key === "cables"))}`);
-
-    /* Controller change in the guide: verified dual-RCA cable, no allowance. */
+    /* Controller change in the guide (defect A): the FLX4 drops from $539 to
+       $527 because its own box lead already reaches the RCA master. No cable
+       line may appear, and the guide row must say so in words. */
     await page.goto(BASE + "/best-dj-controllers-for-beginners.html", { waitUntil: "networkidle0" });
     await page.waitForSelector("[data-bl-total]");
     const flx4Href = await page.$eval("[data-bl-build]", (el) => el.getAttribute("href"));
-    assert.strictEqual(dollars(await page.$eval("[data-bl-total]", (el) => el.textContent.trim())), 539);
+    assert.strictEqual(dollars(await page.$eval("[data-bl-total]", (el) => el.textContent.trim())), 527,
+      "the FLX4 guide total is the deck, the headphones and the pair: $527");
+    const flx4Rows = await page.$$eval(".beginner-lab-line", (els) => els.map((el) => el.textContent.replace(/\s+/g, " ").trim()));
+    assert.ok(flx4Rows.some((row) => /Speaker cable/.test(row) && /in the box/.test(row) && /other way round/.test(row) && /\$0/.test(row)),
+      `the FLX4 row should credit the box lead and explain the orientation, got ${JSON.stringify(flx4Rows)}`);
+    assert.ok(!flx4Rows.some((row) => /allowance|Cable\b.*\$12/i.test(row)),
+      `no cable may be charged on the FLX4 route, got ${JSON.stringify(flx4Rows)}`);
+
     await openRig(flx4Href);
     const flx4Rig = await rigCost();
-    assert.strictEqual(flx4Rig.buyTotal, 539, `FLX4 rig should cost $539, got $${flx4Rig.buyTotal}`);
+    assert.strictEqual(flx4Rig.buyTotal, 527, `FLX4 rig should cost $527, got $${flx4Rig.buyTotal}`);
+    assert.strictEqual(flx4Rig.fullTotal, 527, `FLX4 full rig value should be $527, got $${flx4Rig.fullTotal}`);
     const flx4Cable = (await rigSpeakers()).cableRunsNeeded[0];
-    assert.strictEqual(flx4Cable.cableId, "cable-rca-rca", "the FLX4 uses the verified dual RCA cable");
-    assert.strictEqual(flx4Cable.allowanceId, null, "no allowance is charged when a verified cable exists");
+    assert.strictEqual(flx4Cable.needed, 0, "the box lead covers the only feed, so nothing is needed");
+    assert.strictEqual(flx4Cable.cableId, null, "the FLX4 route invents no cable SKU");
+    assert.strictEqual(flx4Cable.allowanceId, null, "the FLX4 route charges no allowance");
+    const flx4Slots = await page.evaluate(() => window.__rigStudio.state().items.filter((s) => s.category === "cables"));
+    assert.strictEqual(flx4Slots.length, 0,
+      `the FLX4 hand-off must not pre-load a cable purchase, got ${JSON.stringify(flx4Slots)}`);
+    const flx4Conn = (await page.evaluate(() => window.__rigStudio.connections()))[0];
+    assert.strictEqual(flx4Conn.kind, "included", "the panel reports the in-box lead");
+    assert.strictEqual(flx4Conn.reversedLead, true, "the passive lead is used the other way round");
+    assert.strictEqual(flx4Conn.socket, "jack35", "the DM-40D pair is fed through its 3.5 mm input");
+    const flx4Check = (await rigChecks()).find((c) => c.key === "cables");
+    assert.strictEqual(flx4Check.level, "ok", `the in-box lead satisfies the cable check, got ${JSON.stringify(flx4Check)}`);
+    assert.ok(/supplied in the box/i.test(flx4Check.title), `the check credits the box, got ${flx4Check.title}`);
+    const flx4Shop = await page.evaluate(() => window.__rigStudio.shoppingText());
+    assert.ok(/ESTIMATED TOTAL: \$527/.test(flx4Shop) && !/allowance/i.test(flx4Shop),
+      `the shopping list totals $527 with no cable, got ${flx4Shop}`);
+
+    /* Ownership state must stay honest for a covered line: marking the pair
+       owned removes its price and leaves the box lead credited, not charged. */
+    const speakerSlotId = await page.evaluate(() => {
+      const slot = window.__rigStudio.state().items.find((s) => s.category === "speakers");
+      return slot ? slot.slotId : null;
+    });
+    assert.ok(speakerSlotId, "the FLX4 rig has a speaker line to toggle");
+    await page.click(`[data-rs="own"][data-slot="${speakerSlotId}"]`);
+    await wait(250);
+    const ownedRig = await rigCost();
+    assert.strictEqual(ownedRig.buyTotal, 378, `owning the pair leaves the deck and headphones: $378, got $${ownedRig.buyTotal}`);
+    assert.strictEqual(ownedRig.fullTotal, 527, "the full rig value does not change when a line is marked owned");
+    const ownedChecks = await rigChecks();
+    assert.ok(ownedChecks.some((c) => c.key === "cables" && c.level === "ok"),
+      `the owned pair still credits its box lead, got ${JSON.stringify(ownedChecks.filter((c) => c.key === "cables"))}`);
 
     /* ---------------------------------------------------------------- H2 --
      * A retail pair is one purchase, two cabinets, one cable run. */
@@ -125,7 +160,7 @@ function dollars(text) {
       [["pioneer-dm40d", 1, 2]], `one DM-40D box should be one purchase of two cabinets, got ${JSON.stringify(pairSpeakers.boxes)}`);
     assert.strictEqual(pairSpeakers.cabinets, 2, "a purchased pair is two physical speakers");
     assert.strictEqual(pairSpeakers.cableRunsNeeded.length, 1);
-    assert.strictEqual(pairSpeakers.cableRunsNeeded[0].needed, 1, "a pair still needs one dual RCA run, not two");
+    assert.strictEqual(pairSpeakers.cableRunsNeeded[0].needed, 0, "the pair's own lead covers its one feed");
 
     const pairCost = await rigCost();
     const pairChecks = await rigChecks();
@@ -143,15 +178,29 @@ function dollars(text) {
     assert.ok(wires.some((to) => /speaker0/.test(to)) && wires.some((to) => /speaker1/.test(to)),
       `both cabinets should be wired, got ${JSON.stringify(wires)}`);
 
-    /* Quantity stepper: two pairs = four cabinets, two purchases, two runs. */
+    /* Quantity stepper (defect B): two pairs = four cabinets and two feeds, but
+       the FLX4 has one RCA master, so the second pair has nowhere to go. The
+       rig must say so and price no lead rather than sell a splitter. */
     const speakerSlot = await page.evaluate(() => window.__rigStudio.state().items.find((s) => s.category === "speakers").slotId);
     await page.click(`[data-rs="qty"][data-slot="${speakerSlot}"][data-step="1"]`);
     await wait(300);
     const doubled = await rigSpeakers();
     const doubledCost = await rigCost();
     assert.strictEqual(doubled.cabinets, 4, "two pairs are four cabinets");
-    assert.strictEqual(doubled.cableRunsNeeded[0].needed, 2, "two boxes need two cable runs");
+    assert.strictEqual(doubled.cableRunsNeeded[0].needed, 0, "no lead is priced for a route that does not exist");
     assert.strictEqual(doubledCost.fullTotal - pairCost.fullTotal, 149, "the second pair costs exactly one more box, not two speakers");
+    const doubledConn = (await page.evaluate(() => window.__rigStudio.connections()))[0];
+    assert.strictEqual(doubledConn.feeds, 2, "two pairs are two stereo feeds");
+    assert.strictEqual(doubledConn.conflict, true, "one RCA master cannot feed two pairs");
+    assert.strictEqual(doubledConn.kind, "unresolved", "the panel reports the route as unresolved");
+    const doubledCableCheck = (await rigChecks()).find((c) => c.key === "cables");
+    assert.strictEqual(doubledCableCheck.level, "bad", `an unresolvable route must not read as ready, got ${JSON.stringify(doubledCableCheck)}`);
+    assert.ok(/unresolved/i.test(doubledCableCheck.title), `the cable check names the problem, got ${doubledCableCheck.title}`);
+    const doubledOutput = (await rigChecks()).find((c) => c.key === "output");
+    assert.strictEqual(doubledOutput.level, "warn", "the output check warns instead of selling");
+    const doubledShop = await page.evaluate(() => window.__rigStudio.shoppingText());
+    assert.ok(!/splitter|distribution/i.test(doubledShop), "no unverified splitter may reach the shopping list");
+    assert.ok(/ESTIMATED TOTAL: \$805/.test(doubledShop), `the bill is the hardware only, got ${doubledShop}`);
     await page.click(`[data-rs="qty"][data-slot="${speakerSlot}"][data-step="-1"]`);
     await wait(250);
 
@@ -197,15 +246,21 @@ function dollars(text) {
     assert.ok(stages[1].lines.some((line) => /DM-40D \(Pair\)/.test(line)), "monitors belong to step 2");
     assert.ok(stages[0].lines.every((line) => !/DM-40D/.test(line)), "step 1 does not quietly include the monitors");
 
-    /* A guide rig with the FLX2 allowance shows it in the plan, explicitly. */
-    await page.goto(BASE + "/best-dj-controllers-for-beginners.html", { waitUntil: "networkidle0" });
-    await page.waitForSelector("[data-bl-total]");
-    await page.click('[data-bl-choose="pioneer-ddj-flx2"]');
-    await wait(150);
-    await openRig(await page.$eval("[data-bl-build]", (el) => el.getAttribute("href")));
+    /* An FLX2 with the HS5 pair genuinely has no verified lead, so the staged
+       plan has to show the $15 allowance as an allowance rather than a SKU. */
+    const allowanceRig = "build-your-dj-setup.html?rig=" + Buffer.from(JSON.stringify({
+      n: "Allowance rig",
+      i: [
+        { slotId: "allowance-deck", category: "controllers", itemId: "pioneer-ddj-flx2", qty: 1, owned: false },
+        { slotId: "allowance-speakers", category: "speakers", itemId: "yamaha-hs5", qty: 1, owned: false }
+      ]
+    }), "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    await openRig(allowanceRig);
     const allowanceStages = await page.$$eval("#rs-plan .rs-step-lines li", (els) => els.map((el) => el.textContent.replace(/\s+/g, " ").trim()));
-    assert.ok(allowanceStages.some((line) => /3\.5 mm/.test(line) && /allowance/i.test(line) && /\$15/.test(line)),
+    assert.ok(allowanceStages.some((line) => /1\/4-inch TS/.test(line) && /allowance/i.test(line) && /\$15/.test(line)),
       `the staged plan should show the $15 allowance as an allowance, got ${JSON.stringify(allowanceStages)}`);
+    const allowanceBill = await rigCost();
+    assert.strictEqual(allowanceBill.buyTotal, 199 + 398 + 15, `the allowance is priced once, got $${allowanceBill.buyTotal}`);
 
     /* ---------------------------------------------------------------- H3 --
      * Each action cell must sit under its own product heading. */
@@ -232,7 +287,16 @@ function dollars(text) {
           x: Math.round(r.x),
           right: Math.round(r.right),
           display: getComputedStyle(cell).display,
-          links: [...cell.querySelectorAll("a")].map((a) => ({ text: a.textContent.trim(), label: a.getAttribute("aria-label") }))
+          links: [...cell.querySelectorAll("a")].map((a) => {
+            const box = a.getBoundingClientRect();
+            return {
+              text: a.textContent.trim(),
+              label: a.getAttribute("aria-label"),
+              height: Math.round(box.height),
+              left: Math.round(box.left),
+              right: Math.round(box.right)
+            };
+          })
         };
       });
       return { heads, cells, rows: table.tBodies[0].rows.length };
@@ -251,10 +315,24 @@ function dollars(text) {
       assert.strictEqual(cell.links.length, 2, "each controller keeps its own guide and planner links");
       cell.links.forEach((link) => {
         assert.ok(link.label && link.label.length > 8, `link "${link.text}" should name its product for assistive tech`);
+        /* N4: the next-step links were 20px text lines. They are touch targets
+           now, and they must stay inside their own product column. */
+        assert.ok(link.height >= 44, `"${link.text}" for ${cell.product} is ${link.height}px tall; touch targets need 44px`);
+        assert.ok(link.left >= cell.x - 2 && link.right <= cell.right + 2,
+          `"${link.text}" should sit inside the ${cell.product} cell (${cell.x}-${cell.right}), got ${link.left}-${link.right}`);
       });
     });
     /* The three cells must not share one column. */
     assert.strictEqual(new Set(actionCells.map((c) => c.x)).size, 3, "action links for different controllers must not stack in one column");
+
+    /* Every control in a controller card's action row is also a touch target. */
+    const cardTargets = await page.evaluate(() => [...document.querySelectorAll(".mat-actions-row a, .mat-actions-row button")].map((el) => ({
+      text: el.textContent.trim(),
+      height: Math.round(el.getBoundingClientRect().height)
+    })));
+    cardTargets.forEach((target) => {
+      assert.ok(target.height >= 44, `card control "${target.text}" is ${target.height}px tall; touch targets need 44px`);
+    });
 
     /* ------------------------------------------------ H3 mobile usability --
      * Switching to a mobile viewport reloads the page, so the shortlist is
@@ -285,13 +363,30 @@ function dollars(text) {
       const firstCells = [...document.querySelectorAll(".matrix-compare-table tbody th")].slice(0, 3).map((th) => Math.round(th.getBoundingClientRect().x));
       const labels = [...document.querySelectorAll(".matrix-compare-table tbody td")].slice(0, 3)
         .map((td) => getComputedStyle(td, "::before").content);
-      return { scrollLeft: Math.round(sc.scrollLeft), firstCells, labels };
+      /* N4 on a phone: each next-step link is a 44px target that stays inside
+         its own cell, even after the table is scrolled sideways. */
+      const tapTargets = [...document.querySelectorAll(".matrix-compare-cell .matrix-compare-links a")].map((a) => {
+        const box = a.getBoundingClientRect();
+        const cell = a.closest("td").getBoundingClientRect();
+        return {
+          text: a.textContent.trim(),
+          height: Math.round(box.height),
+          insideCell: box.left >= cell.left - 2 && box.right <= cell.right + 2
+        };
+      });
+      return { scrollLeft: Math.round(sc.scrollLeft), firstCells, labels, tapTargets };
     });
     assert.ok(mobileScrolled.scrollLeft > 0, "the comparison actually scrolled");
     assert.strictEqual(new Set(mobileScrolled.firstCells).size, 1,
       `the decision column should stay pinned while scrolling, got x positions ${mobileScrolled.firstCells}`);
     assert.ok(mobileScrolled.labels.some((content) => /Pioneer|Rane/i.test(content)),
       `scrolled cells should repeat their controller name, got ${JSON.stringify(mobileScrolled.labels)}`);
+    assert.ok(mobileScrolled.tapTargets.length >= 6,
+      `every shortlisted controller keeps both next-step links on a phone, got ${JSON.stringify(mobileScrolled.tapTargets)}`);
+    mobileScrolled.tapTargets.forEach((target) => {
+      assert.ok(target.height >= 44, `mobile link "${target.text}" is ${target.height}px tall; it needs to be tappable`);
+      assert.ok(target.insideCell, `mobile link "${target.text}" escaped its product column`);
+    });
 
     /* ------------------------------------------- shared and restored rigs -- */
     await page.setViewport({ width: 1280, height: 900 });

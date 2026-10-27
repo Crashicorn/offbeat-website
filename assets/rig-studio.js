@@ -108,7 +108,11 @@
     drawer: null,
     modal: null,
     quiz: null,
-    menuOpen: false
+    menuOpen: false,
+    /* Cables retired by reconciliation, so a swap back can restore them, and
+       cable lines the buyer deliberately removed. */
+    cableMemory: {},
+    cableOptOut: {}
   };
 
   var STORAGE_KEY = "offbeat.rig.v2";
@@ -165,7 +169,8 @@
       category: raw.category,
       itemId: (raw.itemId != null && raw.itemId !== "") ? String(raw.itemId) : null,
       qty: cleanQty(raw.qty),
-      owned: raw.owned === true
+      owned: raw.owned === true,
+      manual: raw.manual === true
     };
   }
   function sanitizeItems(rawItems) {
@@ -258,56 +263,29 @@
     safeSet(SAVED_KEY, JSON.stringify(list.slice(0, 20)));
   }
 
-  /* ------------------------------------------ 3. Compatibility engine */
-  function outputsText(controller) {
-    return ((controller && controller.master_outputs) || []).join(" ").toLowerCase();
+  /* ------------------------------------------ 3. Compatibility engine
+     The catalogue describes sockets, not marketing phrases:
+       controller.outputs[]       {connector, channels, balanced, role, label}
+       speaker.connection         {topology, feeds_per_box, channels_per_feed, inputs[]}
+       speaker.included_cables[]  {from, to, feeds_covered, label}
+       cable.cable                {a, b, channels, b_plugs, balanced, pack_of}
+     Four facts are enough to answer the question buyers actually ask: how many
+     leads must I buy, and where does each lead go? */
+  /* The socket rules live in assets/gear-connections.js so the guide, the
+     speaker finder and the planner cannot drift apart. These wrappers keep the
+     call sites in this file short and pass the loaded catalogue in. */
+  var GEAR = (typeof window !== "undefined" && window.OffbeatGear) || null;
+  function gearApi() {
+    if (!GEAR) throw new Error("assets/gear-connections.js did not load");
+    return GEAR;
   }
-  function inputsText(speaker) {
-    return ((speaker && speaker.inputs) || []).join(" ").toLowerCase();
-  }
-
-  /* Which cable does this controller → speaker pairing actually need? */
-  function cableFor(controller, speaker) {
-    if (!controller || !speaker) return { type: null, itemId: null, label: "—", name: "unknown pairing" };
-    var out = outputsText(controller);
-    var inp = inputsText(speaker);
-    var outXLR = /xlr|booth/.test(out);
-    var outRCA = /rca/.test(out);
-    var outTRS = /trs|1\/4/.test(out);
-    var outAux = /3\.5mm|aux/.test(out);
-    var inXLR = /xlr/.test(inp);
-    var inRCA = /rca/.test(inp);
-    var inTRS = /trs|1\/4|combo/.test(inp);
-
-    if (outXLR && inXLR) return { type: "xlr", itemId: "cable-xlr-xlr", label: "XLR", name: "balanced XLR pair" };
-    if (outRCA && inRCA) return { type: "rca", itemId: "cable-rca-rca", label: "RCA", name: "dual RCA cable" };
-    if (outRCA && inTRS) return { type: "rca-trs", itemId: "cable-rca-trs", label: "RCA → 1/4\"", name: "dual RCA to dual 1/4\" TS cable" };
-    if (outTRS && inXLR) return { type: "trs-xlr", itemId: "cable-xlr-xlr", label: "1/4\" → XLR", name: "1/4\" TRS to XLR cable" };
-    if (outTRS && inTRS) return { type: "trs", itemId: "cable-rca-trs", label: "1/4\" TS", name: "dual 1/4\" TS cable" };
-    if (outAux && inRCA) return { type: "aux-rca", itemId: null, estimateId: "cable-aux-rca-allowance", label: "3.5 mm → RCA", name: "3.5 mm to dual RCA cable" };
-    if (outAux && inTRS) return { type: "aux-trs", itemId: null, estimateId: "cable-aux-rca-allowance", label: "3.5 mm → 1/4\"", name: "3.5 mm to dual 1/4\" cable" };
-    if (outRCA && inXLR) return { type: "rca-xlr", itemId: null, label: "RCA → XLR", name: "dual RCA to XLR cable" };
-    return { type: "unknown", itemId: null, label: "check jacks", name: "cable you will need to confirm" };
-  }
-
-  /* Package quantities. A retail "pair" is two cabinets in one box, so one
-     purchase already fills left and right; a single cabinet is one side only.
-     Prices are per box, so neither count may be multiplied by price. */
-  function speakerUnitsOf(item) {
-    return Math.max(1, Math.round(Number(item && item.speaker_units)) || 1);
-  }
-  function cableRunsPerBox(item) {
-    return Math.max(1, Math.round(Number(item && item.cable_runs_per_box)) || 1);
-  }
-  /* Catalogue lines that are planning allowances rather than verified products:
-     they carry a cost, but never a retailer SKU or affiliate link. */
-  function isEstimateItem(item) {
-    return Boolean(item && (item.estimate_only === true || item.no_retailer_link === true));
-  }
-
-  /* One cable run covers one stereo pair, or one mono speaker cabinet. */
-  function runsFor(slot, item) {
-    return (slot.qty || 1) * cableRunsPerBox(item);
+  function endpointLabel(connector) { return gearApi().endpointLabel(connector); }
+  function speakerUnitsOf(item) { return gearApi().speakerUnitsOf(item); }
+  function feedShape(item, qty) { return gearApi().feedShape(item, qty); }
+  function cableUnitsFor(feeds, channelsPerFeed, cable) { return gearApi().cableUnitsFor(feeds, channelsPerFeed, cable); }
+  function isEstimateItem(item) { return gearApi().isEstimateItem(item); }
+  function connectionPlan(controller, speaker, qty, options) {
+    return gearApi().connectionPlan(CATALOG, controller, speaker, qty, options);
   }
 
   /* Base64 that survives a query string (+ and / would be mangled). */
@@ -322,11 +300,109 @@
     return JSON.parse(decodeURIComponent(escape(atob(b64))));
   }
 
+  /* Purchases, not cabinets: one line of quantity can hold two leads. */
   function cableRunsAvailable(itemId) {
     if (!itemId) return 0;
     return state.items.reduce(function (sum, slot) {
       return slot.category === "cables" && slot.itemId === itemId ? sum + (slot.qty || 1) : sum;
     }, 0);
+  }
+
+  /* ----------------------------------- 3c. Purchase-list reconciliation
+     Swapping a deck or a speaker can invalidate a line the buyer already has
+     in the list. The old model simply left it there and charged for it while
+     the compatibility check reported the correct lead as missing. This pass
+     makes the list agree with the plan after every change:
+
+       · a lead the rig still needs keeps its price and quantity;
+       · a lead the rig cannot use is retired, never silently charged;
+       · a lead the rig now needs is added back at the right quantity;
+       · a line the buyer marked as owned is never deleted — it becomes a
+         visible spare, because ownership is information, not a price;
+       · a lead the buyer deliberately picked is left alone, but the
+         compatibility check still says it does not fit this path.
+
+     Retired lines are remembered, so switching FLX2 → FLX4 → FLX2 restores
+     the same $15 allowance instead of forgetting what the rig had. */
+  /* Plan every speaker line in cart order, reserving one output socket per
+     line. Shared by the reconciliation pass and the rendered rig so the
+     shopping list and the connection panel can never disagree. */
+  function planSpeakerLines() {
+    var controller = itemOf(slotsOf("controllers").filter(function (s) { return s.itemId; })[0]);
+    var usedOutputs = {};
+    return slotsOf("speakers").filter(function (s) { return s.itemId; }).map(function (slot) {
+      var item = itemOf(slot);
+      var plan = connectionPlan(controller, item, slot.qty || 1, { usedOutputs: usedOutputs });
+      if (plan.output && plan.kind !== "unresolved") {
+        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+      }
+      return { slot: slot, speaker: item, plan: plan, conflict: plan.kind === "unresolved" };
+    });
+  }
+
+  function rigCableNeeds() {
+    var needs = {};
+    planSpeakerLines().forEach(function (entry) {
+      var plan = entry.plan;
+      if (plan.itemId && plan.units > 0) needs[plan.itemId] = (needs[plan.itemId] || 0) + plan.units;
+    });
+    return needs;
+  }
+
+  function rememberCable(slot) {
+    if (!state.cableMemory) state.cableMemory = {};
+    state.cableMemory[slot.itemId] = { qty: slot.qty || 1, owned: Boolean(slot.owned) };
+  }
+
+  function reconcileCables() {
+    if (!CATALOG) return { removed: [], added: [] };
+    var needs = rigCableNeeds();
+    var removed = [], added = [], kept = [];
+    state.items.forEach(function (slot) {
+      if (slot.category !== "cables" || !slot.itemId) { kept.push(slot); return; }
+      var wanted = needs[slot.itemId];
+      if (slot.owned) {
+        /* Keep the buyer's property. A line that no longer feeds anything is a
+           spare: still listed, but with $0 in the bill. */
+        slot.spare = !wanted;
+        if (wanted) slot.qty = Math.max(wanted, 1);
+        kept.push(slot);
+        return;
+      }
+      if (slot.manual) { kept.push(slot); return; }
+      if (wanted) { slot.qty = wanted; kept.push(slot); return; }
+      rememberCable(slot);
+      removed.push(itemOf(slot));
+    });
+    state.items = kept;
+
+    Object.keys(needs).forEach(function (id) {
+      var present = state.items.some(function (s) { return s.category === "cables" && s.itemId === id; });
+      if (present) return;
+      if (state.cableOptOut && state.cableOptOut[id]) return;
+      var mem = state.cableMemory && state.cableMemory[id];
+      var slot = newSlot("cables", id, Boolean(mem && mem.owned));
+      slot.qty = needs[id];
+      slot.restored = Boolean(mem);
+      if (mem) delete state.cableMemory[id];
+      state.items.push(slot);
+      added.push(itemOf(slot));
+    });
+    return { removed: removed, added: added };
+  }
+
+  function reconcileMessage(result) {
+    if (!result || (!result.removed.length && !result.added.length)) return "";
+    var bits = [];
+    if (result.removed.length) {
+      bits.push("Removed " + result.removed.map(function (i) { return i ? i.model : "a cable"; }).join(", ") +
+        " — this rig cannot use it");
+    }
+    if (result.added.length) {
+      bits.push("Added " + result.added.map(function (i) { return i ? i.model : "a cable"; }).join(", ") +
+        " for the new connection");
+    }
+    return bits.join(". ") + ".";
   }
 
   function computeRig() {
@@ -375,20 +451,26 @@
     });
     var physicalSpeakers = speakerUnits.length;
 
-    /* -- cable plan per speaker slot -- */
-    var cablePlan = speakers.map(function (entry) {
-      var plan = cableFor(controller, entry.item);
-      var needed = runsFor(entry.slot, entry.item);
-      var estimate = plan.itemId ? null : byId(plan.estimateId);
+    /* -- connection plan per speaker box ---------------------------------
+       The plan answers three separate questions the old model blurred:
+       how many cabinets there are, how many signals must reach them, and
+       which of those leads (if any) still has to be bought. */
+    /* A stereo master socket is one destination. Speaker lines are planned in
+       cart order against the sockets still free, so a second pair cannot be
+       handed a cable the deck has no output to drive. `unresolved` carries the
+       honest gap instead of a price. */
+    var cablePlan = planSpeakerLines().map(function (line) {
+      var plan = line.plan;
       return {
-        slot: entry.slot, speaker: entry.item, plan: plan, needed: needed,
-        estimate: estimate,
-        available: cableRunsAvailable(plan.itemId) + (estimate ? cableRunsAvailable(estimate.id) : 0)
+        slot: line.slot, speaker: line.speaker, plan: plan,
+        needed: plan.units, feeds: plan.feeds, covered: plan.coveredFeeds,
+        conflict: line.conflict,
+        available: plan.itemId && plan.units > 0 ? cableRunsAvailable(plan.itemId) : 0
       };
     });
     var totalRunsNeeded = cablePlan.reduce(function (n, p) { return n + p.needed; }, 0);
+    var includedFeeds = cablePlan.reduce(function (n, p) { return n + p.covered; }, 0);
     var primaryPlan = cablePlan[0] ? cablePlan[0].plan : null;
-    var sameCableId = primaryPlan && primaryPlan.itemId;
 
     var checks = [];
     var warnings = 0, blockers = 0;
@@ -453,7 +535,7 @@
         action: { kind: "swap-cat", cat: "headphones", itemId: "pioneer-hdj-cue1", label: "Add HDJ-CUE1 · $69" } });
     }
 
-    /* 4. Output — count cabinets, not shopping lines. */
+    /* 4. Output — count cabinets and feeds, not shopping lines. */
     if (speakers.length) {
       var outputNote = speakers.map(function (s) {
         var p = cablePlan.filter(function (c) { return c.slot.slotId === s.slot.slotId; })[0];
@@ -463,44 +545,56 @@
         var countText = unitsPerBox > 1
           ? " (" + (boxes > 1 ? boxes + " pairs = " : "1 pair = ") + count + " cabinets)"
           : boxes > 1 ? " (" + count + " cabinets)" : "";
-        return s.item.model + " ×" + boxes + countText + (p ? " via " + p.plan.label : "");
-      }).join(" · ");
-      if (physicalSpeakers >= 2) {
-        var pairNote = physicalSpeakers === 2 && speakers.length === 1
-          ? "One purchase covers both sides: left and right are two cabinets from the same box, and one cable run feeds the pair."
-          : speakers.length > 1
-            ? "One cable run per speaker line keeps left and right independent."
-            : "One cable run per box: " + physicalSpeakers + " cabinets in total.";
+        return s.item.model + " \u00d7" + boxes + countText + (p ? " via " + p.plan.label : "");
+      }).join(" \u00b7 ");
+      var feedNote;
+      if (speakers.length === 1 && primaryPlan && primaryPlan.topology === "master_slave") {
+        feedNote = "One powered cabinet takes the input and drives the passive one, so a single lead covers both sides.";
+      } else if (speakers.length === 1 && physicalSpeakers === 2) {
+        feedNote = "Two independently powered cabinets: each needs its own feed, and one dual lead reaches both.";
+      } else if (speakers.length > 1) {
+        feedNote = "Each speaker line keeps its own feed, so left and right stay independent.";
+      } else {
+        feedNote = "One cabinet per box: " + physicalSpeakers + " in total.";
+      }
+      var unresolvedLines = cablePlan.filter(function (p) { return p.conflict; });
+      if (unresolvedLines.length) {
+        warnings++;
+        checks.push({ key: "output", level: "warn", weight: 2,
+          title: "Output: " + physicalSpeakers + " cabinets, " + unresolvedLines.length + " line without a verified feed",
+          note: outputNote + " \u2014 " + unresolvedLines[0].plan.note,
+          action: { kind: "pick-cat", cat: "speakers", slotId: unresolvedLines[0].slot.slotId, label: "Swap this speaker line" } });
+      } else if (physicalSpeakers >= 2) {
         checks.push({ key: "output", level: "ok", weight: 2,
           title: "Output: stereo, " + physicalSpeakers + " cabinets",
-          note: outputNote + " — " + pairNote });
+          note: outputNote + " \u2014 " + feedNote });
       } else {
         warnings++;
         checks.push({ key: "output", level: "warn", weight: 1,
           title: "Output: mono, 1 cabinet",
-          note: outputNote + " — one cabinet cannot make a stereo image. Add a matching second unit (or swap to a pair) when you want left and right.",
+          note: outputNote + " \u2014 one cabinet cannot make a stereo image. Add a matching second unit (or swap to a pair) when you want left and right.",
           action: null });
       }
     } else if (controller) {
       warnings++;
       checks.push({ key: "output", level: "warn", weight: 1, title: "Headphones-only practice rig",
         note: "Fine for quiet practice. Add monitors when you want to hear how the mix behaves in a room.",
-        action: { kind: "swap-cat", cat: "speakers", itemId: "pioneer-dm40d", label: "Add DM-40D pair · $149" } });
+        action: { kind: "swap-cat", cat: "speakers", itemId: "pioneer-dm40d", label: "Add DM-40D pair \u00b7 $149" } });
     }
 
-    /* 5. Cables — aggregate the runs each speaker path needs, per cable type */
+    /* 5. Cables — what each speaker path needs, what is in the box, and what
+          still has to be bought. Runs are purchases, not cabinets. */
     if (controller && speakers.length) {
       var needsByCable = {};
       cablePlan.forEach(function (p) {
-        var id = p.plan.itemId || (p.estimate && p.estimate.id);
-        if (!id) return;
-        needsByCable[id] = (needsByCable[id] || 0) + p.needed;
+        if (!p.plan.itemId || p.needed <= 0) return;
+        needsByCable[p.plan.itemId] = (needsByCable[p.plan.itemId] || 0) + p.needed;
       });
       var cableIds = Object.keys(needsByCable);
-      var unknownPlan = cablePlan.filter(function (p) { return !p.plan.itemId && !p.estimate; })[0];
-      var allowancePlan = cablePlan.filter(function (p) { return !p.plan.itemId && p.estimate; })[0];
+      var unknownPlan = cablePlan.filter(function (p) { return p.plan.kind === "unknown"; })[0];
+      var includedPlans = cablePlan.filter(function (p) { return p.covered > 0; });
       var totalRuns = cableIds.reduce(function (n, id) { return n + needsByCable[id]; }, 0);
-      var missingRuns = 0, missingMoney = 0, haveRuns = 0, firstMissing = null;
+      var missingRuns = 0, missingMoney = 0, haveRuns = 0, firstMissing = null, paidIncluded = 0;
       cableIds.forEach(function (id) {
         var need = needsByCable[id];
         var have = cableRunsAvailable(id);
@@ -511,46 +605,59 @@
           if (!firstMissing) firstMissing = { id: id, need: need - have };
         }
       });
+      var includedNote = includedPlans.length
+        ? includedPlans.map(function (p) {
+            return p.speaker.model + ": " + p.plan.includedLabel + " (" + p.covered + " of " + p.feeds + " feeds)";
+          }).join(" · ")
+        : "";
+      var unknownCable = ((cablePlan.filter(function (p) { return p.plan.kind === "unknown"; })[0] || {}).plan || {});
 
-      if (unknownPlan) {
+      var unresolvedPlan = cablePlan.filter(function (p) { return p.conflict; })[0];
+      if (unresolvedPlan) {
+        blockers++;
+        checks.push({ key: "cables", level: "bad", weight: 2,
+          title: "Routing unresolved: " + unresolvedPlan.speaker.model + " has no free output",
+          note: unresolvedPlan.plan.note,
+          action: { kind: "pick-cat", cat: "speakers", slotId: unresolvedPlan.slot.slotId, label: "Review the speaker lines" } });
+      } else if (unknownPlan) {
         warnings++;
         checks.push({ key: "cables", level: "warn", weight: 2, title: "Cable needs checking",
-          note: controller.model + " and " + unknownPlan.speaker.model + " do not share a cable type in our catalog. You need " + unknownPlan.plan.name + " — confirm the jacks before ordering.",
+          note: controller.model + " and " + unknownPlan.speaker.model + " do not share a socket type in our catalogue. " +
+            (unknownCable.name && unknownCable.name !== "cable you will need to confirm"
+              ? "You need " + unknownCable.name + "."
+              : "Confirm the jacks before ordering."),
           action: { kind: "pick-cat", cat: "cables", label: "Choose a cable" } });
-      } else if (allowancePlan && missingRuns > 0) {
-        /* No verified cable exists for this output pair, so the rig carries a
-           priced allowance. It is still a purchase; it is just not a SKU. */
+      } else if (missingRuns === 0) {
+        var matchedParts = [];
+        if (totalRuns > 0) {
+          matchedParts.push("You have the " + totalRuns + " " + (totalRuns === 1 ? "lead" : "leads") + " this rig needs");
+        }
+        if (includedNote) matchedParts.push("included in the box: " + includedNote);
+        checks.push({ key: "cables", level: "ok", weight: 2,
+          title: includedNote && totalRuns === 0 ? "Cables: supplied in the box" : "Cables matched: " + (totalRuns || includedPlans.length) + " " + ((totalRuns || 1) === 1 ? "path" : "paths"),
+          note: (matchedParts.length ? matchedParts.join("; ") + "." : "Every speaker path is covered.") +
+            (includedNote ? " A lead already in the box is never charged again." : "") });
+      } else if (firstMissing && (byId(firstMissing.id) || {}).estimate_only) {
         warnings++;
         checks.push({ key: "cables", level: "warn", weight: 2,
-          title: "Cable: " + totalRuns + " allowance run" + (totalRuns === 1 ? "" : "s") + " still to buy",
-          note: "No verified " + allowancePlan.plan.name + " matches this pairing in the catalog, so the rig carries a " + money(missingMoney) + " allowance for it. Confirm the connector at both ends — Offbeat does not recommend a specific SKU.",
-          action: { kind: "add-cable", itemId: allowancePlan.estimate.id, qty: missingRuns, label: "Add the allowance · " + money(missingMoney) } });
-      } else if (missingRuns === 0 && allowancePlan) {
-        var allowanceOwned = state.items.some(function (slot) {
-          return slot.category === "cables" && slot.itemId === allowancePlan.estimate.id && slot.owned;
-        });
-        if (allowanceOwned) {
-          checks.push({ key: "cables", level: "ok", weight: 2, title: "Cable: your own 3.5 mm → RCA lead",
-            note: "You marked a lead for this output as owned, so the allowance is not being charged. Check that it reaches and matches the " + allowancePlan.speaker.model + " input." });
-        } else {
-          warnings++;
-          checks.push({ key: "cables", level: "warn", weight: 2,
-            title: "Cable: allowance in place · " + money(allowancePlan.estimate.price * cableRunsAvailable(allowancePlan.estimate.id)),
-            note: "This run is budgeted as an allowance, not an order. Confirm the exact " + allowancePlan.plan.name + " connectors before buying.",
-            action: { kind: "pick-cat", cat: "cables", label: "Pick a verified cable" } });
-        }
-      } else if (missingRuns === 0) {
-        checks.push({ key: "cables", level: "ok", weight: 2, title: "Cables matched: " + totalRuns + " " + (totalRuns === 1 ? "run" : "runs"),
-          note: "Every speaker path in the rig has the cable it needs, and the count is right." });
+          title: "Cable: " + missingRuns + " allowance" + (missingRuns === 1 ? "" : "s") + " still to buy",
+          note: "No verified lead in the catalogue matches " + controller.model + " → " + speakers[0].item.model +
+            ", so the rig carries a " + money(missingMoney) + " planning allowance (" + ((byId(firstMissing.id) || {}).name || "") +
+            "). Confirm the connector at both ends — Offbeat does not recommend a specific SKU." +
+            (includedNote ? " Already in the box: " + includedNote + "." : ""),
+          action: { kind: "add-cable", itemId: firstMissing.id, qty: firstMissing.need, label: "Add the allowance · " + money(missingMoney) } });
       } else if (haveRuns > 0) {
         warnings++;
         checks.push({ key: "cables", level: "warn", weight: 2, title: "Short on cable runs",
-          note: "The rig needs " + totalRuns + " and has " + haveRuns + ". The missing runs cost about " + money(missingMoney) + ".",
+          note: "The rig needs " + totalRuns + " and has " + haveRuns + ". The missing runs cost about " + money(missingMoney) + "." +
+            (includedNote ? " Already in the box: " + includedNote + "." : ""),
           action: firstMissing ? { kind: "add-cable", itemId: firstMissing.id, qty: firstMissing.need, label: "Add " + firstMissing.need + " more · " + money(missingMoney) } : null });
       } else {
         blockers++;
-        checks.push({ key: "cables", level: "bad", weight: 2, title: "Missing: " + totalRuns + " × " + cablePlan[0].plan.name,
-          note: "Without this the speakers stay silent on the day the box arrives.",
+        var missingName = firstMissing ? ((byId(firstMissing.id) || {}).model || "the cable") : "the cable";
+        checks.push({ key: "cables", level: "bad", weight: 2, title: "Missing: " + totalRuns + " × " + missingName,
+          note: "Without it the speakers stay silent on the day the box arrives." +
+            (includedNote ? " Already in the box: " + includedNote + "." : ""),
           action: firstMissing ? { kind: "add-cable", itemId: firstMissing.id, qty: firstMissing.need, label: "Add the cable · " + money(missingMoney) } : null });
       }
     }
@@ -604,19 +711,27 @@
       wiring.push({ from: "host", to: "controller", status: "ok", label: "computer app host" });
     }
 
-    /* One wire per physical cabinet so a purchased pair draws left AND right. */
+    /* One wire per physical cabinet so a purchased pair draws left AND right.
+       A lead already in the box is drawn green with the word "included". */
     speakerUnits.slice(0, 2).forEach(function (unit, i) {
       var plan = cablePlan.filter(function (p) { return p.slot.slotId === unit.slot.slotId; })[0];
       if (!plan) return;
       var status = "ok";
       if (!controller) status = "idle";
-      else if (!plan.plan.itemId && !plan.estimate) status = "warn";   /* jack type still unknown */
-      else if (plan.available >= plan.needed) status = "ok";
+      else if (plan.plan.kind === "unresolved" || plan.plan.kind === "unknown") status = "bad";
+      else if (plan.plan.kind === "included" || plan.available >= plan.needed) status = "ok";
       else if (plan.available > 0) status = "warn";
       else status = "bad";
+      var label = !controller
+        ? "add a controller"
+        : plan.plan.kind === "unresolved"
+          ? "no free output"
+          : plan.plan.kind === "included"
+            ? "included \u00b7 " + plan.plan.short
+            : plan.plan.label + (plan.needed > 1 ? " \u00d7 " + plan.needed : "");
       wiring.push({
         from: "controller", to: "speaker" + i, status: status,
-        label: controller ? plan.plan.label + (plan.needed > 1 ? " × " + plan.needed : "") : "add a controller"
+        label: label, kind: plan.plan.kind
       });
     });
 
@@ -634,7 +749,9 @@
       itemCount: itemCount, buyCount: buyCount, ownedCount: ownedCount,
       controller: controller, host: host, speakers: speakers, headphones: headphones,
       speakerUnits: speakerUnits, physicalSpeakers: physicalSpeakers,
-      cablePlan: cablePlan, totalRunsNeeded: totalRunsNeeded,
+      cablePlan: cablePlan, totalRunsNeeded: totalRunsNeeded, includedFeeds: includedFeeds,
+      controllerOutputs: controller ? gearApi().controllerOutputs(controller) : [],
+      masterOutputCount: controller ? gearApi().controllerOutputs(controller).filter(function (o) { return o.role !== "booth"; }).length : 0,
       checks: checks, wiring: wiring, readiness: readiness, status: status,
       blockers: blockers, warnings: warnings, upgrade: recommendUpgrade(), quote: quote
     };
@@ -652,6 +769,12 @@
       return "This phone/tablet is not a verified host for the selected controller. Confirm the app and OS or use a computer.";
     }
     if (!r.speakers.length) return "Headphones-only is a valid practice rig. Add monitors when you want to hear the room.";
+    var unresolvedLines = (r.cablePlan || []).filter(function (p) { return p.conflict; });
+    if (unresolvedLines.length) {
+      return (r.masterOutputCount || 0) > 1
+        ? "One speaker line has no free output left. Check which output each line is using before adding another pair."
+        : "This deck has one master output, so it can feed one speaker line. A second pair needs a splitter or a deck with two outputs.";
+    }
     if (r.buyTotal === 0) return "Everything here is already in your room. That is the best kind of rig.";
     if (r.buyTotal < 300) return "That is a small list — and the fastest way to start mixing this week.";
     if (r.buyTotal > 2500) return "Big build. Buy the deck first, run it for a month, then add the rest.";
@@ -894,6 +1017,7 @@
       renderMap(rig) +
       '<aside class="rs-side">' +
         renderReadiness(rig) +
+        renderConnections(rig) +
         renderBudget(rig) +
         renderUpgrade(rig) +
       "</aside>" +
@@ -1163,6 +1287,104 @@
             icon("route") + "Guided setup</button>" +
         "</div>"
       "</div></section>";
+  }
+
+  /* ------------------------------------------------ connection plan panel
+     The signal map answers "what is plugged into what". This panel answers the
+     buying question underneath it: how many physical connections the rig has,
+     which lead carries each one, whether that lead is a verified product, a
+     planning allowance or already in a box, and how many purchases that means. */
+  function renderConnections(rig) {
+    /* With speakers but no deck there is no signal to trace yet, and saying so
+       is more useful than hiding the panel exactly when the buyer is deciding
+       what to plug in. */
+    if (!rig.cablePlan.length || (!rig.controller && !rig.speakers.length)) return "";
+    var deckless = !rig.controller;
+    var toBuy = 0, inBox = 0, unknown = 0, unresolved = 0;
+    rig.cablePlan.forEach(function (entry) {
+      if (entry.conflict) unresolved++;
+      else if (entry.plan.kind === "unknown") unknown++;
+      if (entry.covered > 0) inBox += entry.covered;
+      toBuy += entry.needed || 0;
+    });
+
+    var rows = rig.cablePlan.map(function (entry) {
+      var plan = entry.plan;
+      var boxes = entry.slot.qty || 1;
+      var unitsPerBox = speakerUnitsOf(entry.speaker);
+      var cabs = unitsPerBox * boxes;
+      var cabinetText = cabs === 1 ? "1 cabinet" : cabs + " cabinets";
+      var feedText = entry.feeds === 1 ? "1 signal feed" : entry.feeds + " signal feeds";
+      var outputLabel = plan.output ? plan.output.label || endpointLabel(plan.output.connector) : "output";
+      var socketLabel = plan.socket ? endpointLabel(plan.socket.connector) + " input" : "input";
+      var lead, costClass, cost;
+      if (deckless) {
+        lead = "Add the deck and this row will name the lead it needs";
+        costClass = "unknown";
+        cost = "No deck yet";
+      } else if (plan.kind === "unresolved") {
+        lead = "No lead can solve this: the deck has no free output for it";
+        costClass = "unresolved";
+        cost = "Routing unresolved";
+      } else if (plan.kind === "included") {
+        lead = plan.name;
+        costClass = "inbox";
+        cost = "In the box";
+      } else if (plan.kind === "allowance") {
+        lead = plan.name;
+        costClass = "allowance";
+        cost = money(((byId(plan.itemId) || {}).price || 0) * entry.needed) + " allowance";
+      } else if (plan.kind === "product") {
+        lead = plan.name;
+        costClass = entry.available >= entry.needed ? "owned" : "buy";
+        cost = entry.available >= entry.needed ? "On the list" : money(((byId(plan.itemId) || {}).price || 0) * entry.needed);
+      } else {
+        lead = "No verified lead in the catalogue";
+        costClass = "unknown";
+        cost = "Confirm the jacks";
+      }
+      var action = "";
+      if (deckless) {
+        action = '<button type="button" class="rs-connect-fix rs-connect-fix--swap" data-rs="check-action" data-kind="pick-cat" data-cat="controllers">Choose a deck</button>';
+      } else if (plan.kind === "unresolved") {
+        action = '<button type="button" class="rs-connect-fix rs-connect-fix--swap" data-rs="pick" data-slot="' +
+          escapeHtml(entry.slot.slotId) + '" data-cat="speakers">Change speakers</button>';
+      } else if (plan.kind !== "unknown" && plan.itemId && entry.available < entry.needed && plan.kind !== "included") {
+        action = '<button type="button" class="rs-connect-fix" data-rs="check-action" data-kind="add-cable" data-cat="cables" ' +
+          'data-item="' + escapeHtml(plan.itemId) + '" data-qty="' + (entry.needed - entry.available) + '">' +
+          "Add " + money(((byId(plan.itemId) || {}).price || 0) * (entry.needed - entry.available)) + "</button>";
+      }
+      return '<li class="rs-connect-row rs-connect-row--' + costClass + '">' +
+        '<div class="rs-connect-what"><span class="rs-connect-model">' + escapeHtml(entry.speaker.model) + "</span>" +
+          '<span class="rs-connect-meta">' + escapeHtml(cabinetText + " · " + feedText + " · " + socketLabel) + "</span></div>" +
+        '<div class="rs-connect-from"><span class="rs-connect-meta">from</span><strong>' +
+          escapeHtml(rig.controller ? rig.controller.model : "no deck selected yet") + "</strong>" +
+          '<span class="rs-connect-meta">' + escapeHtml(outputLabel) + "</span></div>" +
+        '<div class="rs-connect-lead"><span class="rs-connect-meta">' + escapeHtml(deckless ? "path to confirm" : plan.label) + "</span>" + escapeHtml(lead) +
+          '<span class="rs-connect-meta">' + escapeHtml(plan.note || "") + "</span></div>" +
+        '<div class="rs-connect-cost"><span class="rs-connect-price">' + escapeHtml(cost) + "</span>" + action + "</div>" +
+      "</li>";
+    }).join("");
+
+    var summaryBits = [];
+    if (deckless) summaryBits.push("Waiting on a deck");
+    else summaryBits.push(rig.totalRunsNeeded === 0
+      ? (inBox ? "Nothing to buy: " + inBox + " lead" + (inBox === 1 ? "" : "s") + " in a box" : "No cable purchase needed")
+      : toBuy + " lead purchase" + (toBuy === 1 ? "" : "s"));
+    if (inBox) summaryBits.push(inBox + " already supplied");
+    if (unknown) summaryBits.push(unknown + " to confirm");
+    if (unresolved) summaryBits.push(unresolved + " line" + (unresolved === 1 ? "" : "s") + " without a verified output");
+
+    return '<section class="rs-panel rs-connect" id="rs-connect">' +
+      '<div class="rs-panel-head"><div><h2>' + icon("cable") + "Connection plan</h2>" +
+        '<p class="rs-panel-sub">Every speaker path, the lead it takes, and whether that lead is a product, an allowance or already in the box.</p></div>' +
+        '<span class="rs-connect-summary">' + escapeHtml(summaryBits.join(" · ")) + "</span></div>" +
+      '<ul class="rs-connect-list">' + rows + "</ul>" +
+      '<p class="rs-connect-note">A lead listed as an allowance has a budget price but no recommended SKU: confirm the plugs at both ends. ' +
+        "A lead in the box is never charged again, and marking a lead as owned keeps it in the rig without pricing it. " +
+        '<a href="how-to-connect-dj-controller-to-speakers.html">Open the connection guide</a> or ' +
+        '<a href="best-dj-monitor-speakers.html#speaker-planner">plan a speaker purchase</a>.</p>' +
+    "</section>";
   }
 
   function renderBudget(rig) {
@@ -1647,19 +1869,31 @@
         return { tone: "warn", text: needsHost + " No host device is listed in this rig." };
       }
       if (spk) {
-        var plan = cableFor(item, spk);
-        return plan.itemId
-          ? { tone: "ok", text: "Connects to your " + spk.model + " over " + plan.name + "." }
-          : { tone: "warn", text: "Your " + spk.model + " would need " + plan.name + " — not in our cable list." };
+        var plan = connectionPlan(item, spk, 1);
+        if (plan.kind === "included") {
+          return { tone: "ok", text: "Connects to your " + spk.model + " with " + plan.includedLabel + ", which is already in the box." };
+        }
+        if (plan.kind === "unknown") {
+          return { tone: "warn", text: "Confirm the jacks before ordering: our catalogue has no verified lead for this " + spk.model + " path." };
+        }
+        return { tone: "ok", text: "Connects to your " + spk.model + " over " + plan.label + " (" + plan.name + ")" +
+          (plan.kind === "allowance" ? " — a planning allowance, not a verified product." : ".") };
       }
       return { tone: "neutral", text: "Unlocks " + (item.software_unlocks || []).join(", ") + "." };
     }
     if (item.category === "speakers") {
       if (!ctrl) return { tone: "neutral", text: "Choose a controller first to check the cable." };
-      var p = cableFor(ctrl, item);
-      return p.itemId
-        ? { tone: "ok", text: "Pairs with your " + ctrl.model + " over " + p.name + "." }
-        : { tone: "warn", text: ctrl.model + " → " + item.model + " needs " + p.name + "." };
+      var p = connectionPlan(ctrl, item, 1);
+      if (p.kind === "included") {
+        return { tone: "ok", text: "Pairs with your " + ctrl.model + " using " + p.includedLabel + ", already in the box. " +
+          (p.topology === "master_slave" ? "The powered cabinet drives the passive one." : "One lead reaches both cabinets.") };
+      }
+      if (p.kind === "unknown") {
+        return { tone: "warn", text: ctrl.model + " → " + item.model + ": confirm the socket types before ordering." };
+      }
+      return { tone: p.kind === "product" ? "ok" : "neutral",
+        text: "Pairs with your " + ctrl.model + " over " + p.label + " (" + p.units + " \u00d7 " + p.name + ")" +
+          (p.kind === "allowance" ? " — a planning allowance, not a verified product." : ".") };
     }
     if (item.category === "laptops") {
       if (item.host_type === "mobile") {
@@ -1682,10 +1916,13 @@
     }
     if (item.category === "cables") {
       if (ctrl && spk) {
-        var need = cableFor(ctrl, spk);
+        var need = connectionPlan(ctrl, spk, 1);
+        if (need.kind === "included") {
+          return { tone: "neutral", text: "You may not need this: the " + spk.model + " box already includes " + need.includedLabel + "." };
+        }
         return need.itemId === item.id
-          ? { tone: "ok", text: "Exactly the run your " + ctrl.model + " → " + spk.model + " path needs." }
-          : { tone: "neutral", text: "Your current path needs " + need.name + " instead." };
+          ? { tone: "ok", text: "Exactly the lead your " + ctrl.model + " → " + spk.model + " path needs (" + need.units + " purchase" + (need.units === 1 ? "" : "s") + ")." }
+          : { tone: "warn", text: "This lead does not fit that path. " + ctrl.model + " → " + spk.model + " needs " + need.label + (need.itemId ? " (" + need.name + ")." : ".") };
       }
       return { tone: "neutral", text: "Match the controller's output jack to the speaker's input." };
     }
@@ -2297,19 +2534,21 @@
     var cableCats = {};
     speakers.forEach(function (s) {
       if (!s.item) return;
-      var plan = cableFor(controller, s.item);
-      /* When no verified cable matches the jacks, the kit carries the priced
-         allowance: the same money the planner will show, never a silent gap. */
-      var cableId = plan.itemId || plan.estimateId;
+      var plan = connectionPlan(controller, s.item, 1);
+      if (plan.kind === "included") {
+        reasons.push("No cable purchase for the " + s.item.model + ": the box already includes " + plan.includedLabel + ".");
+        return;
+      }
+      var cableId = plan.itemId;
       if (cableId && !cableCats[cableId]) {
-        var runs = runsFor(s.slot, s.item);
         var slot = newSlot("cables", cableId, false);
-        slot.qty = runs;
+        slot.qty = plan.units;
         items.push(slot);
         cableCats[cableId] = true;
-        reasons.push(runs + " × " + plan.name + " (" + money((byId(cableId) || {}).price * runs) + ")" +
-          (plan.itemId ? " — the piece most first rigs forget until the speakers are silent."
-            : " budgeted as an allowance, because the exact 3.5 mm lead depends on the speaker input; confirm the connectors."));
+        reasons.push(plan.units + " \u00d7 " + plan.name + " (" + money((byId(cableId) || {}).price * plan.units) + ")" +
+          (plan.kind === "product"
+            ? " \u2014 one lead per " + (plan.channelsPerFeed >= 2 ? "stereo pair" : "pair of cabinets") + ", the piece most first rigs forget until the speakers are silent."
+            : " budgeted as an allowance: no verified product matches these sockets, so confirm the plugs at both ends."));
       }
     });
 
@@ -2358,6 +2597,14 @@
       slot.category = item.category;
       if (isExistingHost(item)) slot.owned = true;
       else if (isExistingHost(previousItem)) slot.owned = false;
+    }
+    /* A cable the buyer picks by hand stays in the list even when the current
+       path does not need it: the compatibility check will say so out loud
+       rather than quietly rewriting the choice. */
+    if (item.category === "cables") {
+      slot.manual = true;
+      slot.spare = false;
+      if (state.cableOptOut) delete state.cableOptOut[itemId];
     }
     state.drawer = null;
     saveAndRender();
@@ -2410,14 +2657,22 @@
   }
 
   function removeSlot(slotId) {
+    var removed = slotById(slotId);
+    if (removed && removed.category === "cables" && removed.itemId && !removed.owned) {
+      if (!state.cableOptOut) state.cableOptOut = {};
+      state.cableOptOut[removed.itemId] = true;
+    }
     state.items = state.items.filter(function (s) { return s.slotId !== slotId; });
     saveAndRender();
     toast("Removed from the rig");
   }
 
   function saveAndRender() {
+    var reconciled = reconcileCables();
     save();
     render();
+    var message = reconcileMessage(reconciled);
+    if (message) toast(message);
   }
 
   function autoFix() {
@@ -2450,27 +2705,22 @@
       speakers = [spkSlot];
       added.push("speakers");
     }
-    /* Cables for every speaker, quantity included */
-    var totalNeeded = 0, cableId = null;
+    /* Cables for every speaker path, counted the way the plan counts them and
+       allocated against the deck's real outputs. A line the deck cannot feed is
+       left unresolved on purpose: buying a cable for it would be a lie. */
+    var usedOutputs = {};
     speakers.forEach(function (slot) {
-      var plan = cableFor(controller, itemOf(slot));
-      var neededId = plan.itemId || plan.estimateId;
-      if (neededId) {
-        totalNeeded += runsFor(slot, itemOf(slot));
-        cableId = cableId || neededId;
-        if (neededId !== cableId) {
-          /* mixed cable types: add the run for this one separately */
-          var extra = slotsOf("cables").filter(function (s) { return s.itemId === neededId; })[0];
-          if (extra) extra.qty = Math.max(extra.qty || 1, runsFor(slot, itemOf(slot)));
-          else { var ns = newSlot("cables", neededId, false); ns.qty = runsFor(slot, itemOf(slot)); state.items.push(ns); added.push("a cable"); }
-        }
+      var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1, { usedOutputs: usedOutputs });
+      if (plan.output && plan.kind !== "unresolved") {
+        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
       }
+      if (plan.kind === "included" || plan.kind === "unresolved" || !plan.itemId || plan.units <= 0) return;
+      var existing = slotsOf("cables").filter(function (s) { return s.itemId === plan.itemId; })[0];
+      if (existing) existing.qty = Math.max(existing.qty || 1, plan.units);
+      else { var cslot = newSlot("cables", plan.itemId, false); cslot.qty = plan.units; state.items.push(cslot); added.push("a cable"); }
+      if (state.cableOptOut) delete state.cableOptOut[plan.itemId];
     });
-    if (cableId) {
-      var existing = slotsOf("cables").filter(function (s) { return s.itemId === cableId; })[0];
-      if (!existing) { var cslot = newSlot("cables", cableId, false); cslot.qty = totalNeeded; state.items.push(cslot); added.push("the cable"); }
-      else if ((existing.qty || 1) < totalNeeded) { existing.qty = totalNeeded; }
-    }
+
     if (controller.standalone && !slotsOf("storage").filter(function (s) { return s.itemId; }).length) {
       state.items.push(newSlot("storage", "usb-sandisk-extreme", false));
       added.push("a USB drive");
@@ -2857,10 +3107,12 @@
         else { state.items.push(newSlot(cat, itemId, false)); saveAndRender(); toast("Added to the rig"); }
       } else if (kind === "add-cable") {
         var existing = slotsOf("cables").filter(function (s) { return s.itemId === itemId; })[0];
-        if (existing) existing.qty = (existing.qty || 1) + qty;
+        if (existing) existing.qty = Math.max(existing.qty || 1, qty);
         else { var s2 = newSlot("cables", itemId, false); s2.qty = qty; state.items.push(s2); }
+        /* Buying it again means the earlier removal no longer applies. */
+        if (state.cableOptOut) delete state.cableOptOut[itemId];
         saveAndRender();
-        toast("Cable runs added");
+        toast("Cable added to the shopping list");
       }
     },
     "upgrade-apply": function (el) {
@@ -3041,6 +3293,7 @@
       .then(function (data) {
         CATALOG = data;
         handleArrival();
+        reconcileCables();
         render();
       })
       .catch(function (err) {
@@ -3074,7 +3327,33 @@
           cableRunsNeeded: r.cablePlan.map(function (p) { return { slotId: p.slot.slotId, needed: p.needed, cableId: p.plan.itemId, allowanceId: p.estimate ? p.estimate.id : null }; })
         };
       },
-      shoppingText: function () { return shoppingText(); }
+      shoppingText: function () { return shoppingText(); },
+      /* The connection plan, per speaker box: what feeds what, and which leads
+         are bought, included or still an allowance. */
+      connections: function () {
+        var r = computeRig();
+        return r.cablePlan.map(function (p) {
+          return {
+            speakerId: p.speaker.id, slotId: p.slot.slotId, units: p.needed,
+            feeds: p.feeds, covered: p.covered, cabinets: p.plan.cabinets,
+            kind: p.plan.kind, itemId: p.plan.itemId, label: p.plan.label,
+            name: p.plan.name, balanced: p.plan.balanced,
+            reversedLead: Boolean(p.plan.reversedLead),
+            conflict: Boolean(p.conflict),
+            outputsNeeded: p.plan.outputsNeeded || 1,
+            output: p.plan.output ? p.plan.output.connector : null,
+            socket: p.plan.socket ? p.plan.socket.connector : null
+          };
+        });
+      },
+      cableLines: function () {
+        return state.items.filter(function (s) { return s.category === "cables"; }).map(function (s) {
+          return {
+            itemId: s.itemId, qty: s.qty || 1, owned: Boolean(s.owned),
+            manual: Boolean(s.manual), spare: Boolean(s.spare), charged: !s.owned
+          };
+        });
+      }
     };
 
     window.addEventListener("resize", function () {
