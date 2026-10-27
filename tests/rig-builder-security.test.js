@@ -264,3 +264,67 @@ test("a genuine headphone plug mismatch warns without an unverified auto-add", (
   assert.equal(advisory.fixCableId, null);
   assert.match(advisory.desc, /1\/4-inch female to 3.5mm male/);
 });
+
+test("additional controllers cannot inherit a green single-controller compatibility verdict", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "standalone", category: "controllers", brand: "Example", model: "Standalone Deck",
+      price: 900, standalone: true, master_outputs: ["RCA (Unbalanced)"] },
+    { id: "usb-only", category: "controllers", brand: "Example", model: "Laptop Controller",
+      price: 250, standalone: false, master_outputs: ["RCA (Unbalanced)"] },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" },
+    { id: "sp", category: "speakers", price: 180, inputs: ["RCA (Unbalanced)"] },
+    { id: "cable-rca-rca", category: "cables", price: 12 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "primary", category: "controllers", itemId: "standalone", qty: 1 },
+    { slotId: "second", category: "controllers", itemId: "usb-only", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 },
+    { slotId: "sp", category: "speakers", itemId: "sp", qty: 1 },
+    { slotId: "cable", category: "cables", itemId: "cable-rca-rca", qty: 1 }
+  ] }), true);
+  const verdict = api.runDeepCompatibilityChecks();
+  assert.equal(verdict.requiresManualReview, true);
+  assert.ok(verdict.readiness <= 50);
+  assert.ok(verdict.checks.some(c => /Multiple controllers Need Manual Verification/.test(c.title)));
+  assert.equal(api.calculateRigStats().totalValue, 1491,
+    "all controllers must remain in the purchase valuation");
+});
+
+test("a single controller is not penalized for multiple accessory cables", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "deck", category: "controllers", model: "Standalone Deck", price: 900, standalone: true },
+    { id: "cable1", category: "cables", price: 12 },
+    { id: "cable2", category: "cables", price: 15 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "deck", qty: 1 },
+    { slotId: "c1", category: "cables", itemId: "cable1", qty: 1 },
+    { slotId: "c2", category: "cables", itemId: "cable2", qty: 1 }
+  ] }), true);
+  const verdict = api.runDeepCompatibilityChecks();
+  assert.equal(verdict.requiresManualReview, false);
+  assert.ok(!verdict.checks.some(c => /Multiple .* Need Manual Verification/.test(c.title)));
+});
+
+test("additional speakers require manual review even when the first speaker matches", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "deck", category: "controllers", model: "Standalone Deck", price: 900, standalone: true,
+      master_outputs: ["RCA (Unbalanced)"] },
+    { id: "rca", category: "speakers", model: "RCA Monitor", price: 180, inputs: ["RCA (Unbalanced)"] },
+    { id: "xlr", category: "speakers", model: "XLR PA", price: 500, inputs: ["XLR (Balanced)"] },
+    { id: "cable-rca-rca", category: "cables", price: 12 }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "deck", qty: 1 },
+    { slotId: "sp1", category: "speakers", itemId: "rca", qty: 1 },
+    { slotId: "sp2", category: "speakers", itemId: "xlr", qty: 1 },
+    { slotId: "cable", category: "cables", itemId: "cable-rca-rca", qty: 1 }
+  ] }), true);
+  const verdict = api.runDeepCompatibilityChecks();
+  assert.equal(verdict.requiresManualReview, true);
+  assert.ok(verdict.readiness <= 50);
+  assert.ok(verdict.checks.some(c => /Multiple speakers Need Manual Verification/.test(c.title)));
+});
