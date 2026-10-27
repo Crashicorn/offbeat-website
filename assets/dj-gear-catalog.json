@@ -663,7 +663,8 @@
           "to": "rca",
           "feeds_covered": 1,
           "label": "3.5 mm stereo mini-plug to dual RCA converter cable",
-          "note": "In the box, so a 3.5 mm controller output needs no extra lead."
+          "note": "In the box, so a 3.5 mm controller output needs no extra lead.",
+          "passive": true
         }
       ],
       "speaker_units": 2,
@@ -725,7 +726,8 @@
           "to": "rca",
           "feeds_covered": 1,
           "label": "3.5 mm stereo mini-plug to dual RCA converter cable",
-          "note": "In the box, so a 3.5 mm controller output needs no extra lead."
+          "note": "In the box, so a 3.5 mm controller output needs no extra lead.",
+          "passive": true
         }
       ],
       "speaker_units": 2,
@@ -833,7 +835,8 @@
           "to": "xlr",
           "feeds_covered": 2,
           "label": "two 10 ft XLR-M to XLR-F cables",
-          "note": "In the monitor pack, so an XLR-out controller needs no extra cable."
+          "note": "In the monitor pack, so an XLR-out controller needs no extra cable.",
+          "passive": true
         }
       ],
       "included_accessories": [
@@ -1524,7 +1527,9 @@
       "connection.channels_per_feed is 2 when one cabinet accepts a stereo input pair and 1 when every cabinet takes a single mono channel.",
       "included_cables lists leads that ship in the box, with the number of feeds they cover. A lead in the box is never a purchase.",
       "cable.a and cable.b are the plug families at the source and speaker end. b_plugs is how many speaker-end plugs one purchase provides; pack_of is how many physical leads one purchase contains.",
-      "Items flagged estimate_only are planning allowances, not verified retailer products: they carry a cost but no SKU and no retailer link."
+      "Items flagged estimate_only are planning allowances, not verified retailer products: they carry a cost but no SKU and no retailer link.",
+      "A lead in the box is a passive conductor assembly: the same plugs carry signal either way round, so included_cables entries are matched in both orientations. Set \"directional\": true on any lead that contains electronics (a DI box, an active converter, a USB audio adapter) and it will only be matched in its documented direction.",
+      "controller.outputs[] entries are physical sockets. One stereo output feeds one speaker line; a second line needs its own output. The model reports that as an unresolved route instead of pricing another cable, because Offbeat has no verified splitter to sell."
     ]
   }
 }
