@@ -8,7 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-function makeTrainer() {
+function makeTrainer(options = {}) {
   const source = fs.readFileSync(path.join(__dirname, "../assets/beatmatch-trainer.js"), "utf8");
   assert.match(source, /\}\)\(\);\s*$/, "Expected trainer IIFE");
   const instrumented = source.replace(/\}\)\(\);\s*$/,
@@ -25,6 +25,8 @@ function makeTrainer() {
   const root = {
     querySelector(selector) {
       if (selector === "[data-cue]") return cue;
+      if (selector === "[data-difficulty]") return { value: options.difficulty || "steady" };
+      if (selector === "[data-pitch]") return { min: "-8", max: "8", value: "0", addEventListener() {} };
       if (selector === "[data-score-drift]") return scoreDrift;
       if (selector === "[data-scorecard]") return scorecard;
       return null;
@@ -44,7 +46,10 @@ function makeTrainer() {
       cancelAnimationFrame() {},
       addEventListener(type, handler) { windowListeners[type] = handler; }
     },
-    console, Math
+    console,
+    Math: options.randomValues ? Object.assign(Object.create(Math), {
+      random() { return options.randomValues.shift() ?? 0.5; }
+    }) : Math
   };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
@@ -276,4 +281,36 @@ test("practice and unobserved frames cannot inflate the drill drift sample", () 
   probe.showScorecard();
   assert.equal(probe.scoreDrift.textContent, "Not measured",
     "a drill with no observed samples must not claim ±0 ms");
+});
+
+test("hard-mode tempo mismatch is challenging but always reachable with the visible 8% pitch fader", () => {
+  for (const magnitude of [0, 0.999999]) {
+    for (const sign of [0, 0.999999]) {
+      const probe = makeTrainer({ difficulty: "hard", randomValues: [magnitude, sign, 0.5] });
+      setRunningState(probe, 0.12);
+      probe.start();
+      const correction = (probe.state.bpmA / probe.state.baseBpm - 1) * 100;
+      assert.ok(Math.abs(correction) >= 6.5 - 1e-8,
+        "hard mode must present a meaningful tempo challenge");
+      assert.ok(Math.abs(correction) <= 8 + 1e-8,
+        "hard mode must never demand a correction beyond the physical fader");
+      assert.ok(Math.abs(probe.state.baseBpm * (1 + correction / 100) - probe.state.bpmA) < 1e-8,
+        "a legal pitch adjustment must bring Deck B exactly to Deck A tempo");
+    }
+  }
+});
+
+test("easy and steady initial offsets also stay within their intended playable ranges", () => {
+  for (const [difficulty, lower, upper] of [["easy", 2, 4], ["steady", 2, 7]]) {
+    for (const magnitude of [0, 0.999999]) {
+      for (const sign of [0, 0.999999]) {
+        const probe = makeTrainer({ difficulty, randomValues: [magnitude, sign, 0.5] });
+        setRunningState(probe, 0.12);
+        probe.start();
+        const correction = Math.abs((probe.state.bpmA / probe.state.baseBpm - 1) * 100);
+        assert.ok(correction >= lower - 1e-8 && correction <= upper + 1e-8,
+          difficulty + " mode correction must be reachable and appropriately scaled");
+      }
+    }
+  }
 });
