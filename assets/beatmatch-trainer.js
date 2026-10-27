@@ -589,12 +589,17 @@
     el.nudgeFwd.addEventListener("touchend", endNudge);
   }
 
-  // CUE Drop (Drops Deck B onto current Downbeat)
+  // A CUE press starts Deck B from its own beat 1 at the moment of the
+  // press. It must NOT quantize/snap to Deck A: that would reward a mistimed
+  // drop and defeat the listening exercise. Reset the B scheduler as well so
+  // the next B kick is not delayed by the previous playback position.
   if (el.cueBtn) {
     el.cueBtn.addEventListener("click", function () {
       if (!state.running) return;
-      state.posB = Math.floor(state.posA);
-      state.scheduledB = state.scheduledA;
+      advanceClock(); // Account for time since the last animation frame.
+      state.posB = 0;
+      state.beatB = 0;
+      state.scheduledB = -1;
     });
   }
 
