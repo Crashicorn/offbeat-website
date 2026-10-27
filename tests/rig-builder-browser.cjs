@@ -178,6 +178,77 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await quantity.context.close();
     console.log("PASS: two controllers via one quantity stepper require routing review");
 
+    // Guide-to-planner links must not wipe an existing saved shopping list.
+    // Replacing a controller resets only its own purchase/quantity state;
+    // accessory links append rather than replacing a different cable.
+    const handoff = await visit(browser, 390);
+    await handoff.page.evaluate(() => {
+      localStorage.setItem("offbeat.rig.active", JSON.stringify({
+        name: "Owner's Existing DJ Rig",
+        items: [
+          { slotId: "ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 2, owned: true },
+          { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
+          { slotId: "sp", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
+          { slotId: "host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: true },
+          { slotId: "mic", category: "microphones", itemId: "mic-shure-sm58", qty: 1, owned: false },
+          { slotId: "rca", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
+        ]
+      }));
+    });
+    async function followGuideLink(itemId) {
+      await handoff.page.goto(base + "/build-your-dj-setup.html?add=" + encodeURIComponent(itemId), {
+        waitUntil: "load", timeout: 20000
+      });
+      await handoff.page.waitForSelector(".rig-dashboard-shell", { timeout: 15000 });
+      return handoff.page.evaluate(() => ({
+        state: JSON.parse(localStorage.getItem("offbeat.rig.active")),
+        url: location.search,
+        spend: document.querySelector(".metric-val--spend")?.textContent.trim()
+      }));
+    }
+    let linked = await followGuideLink("denon-prime-4-plus");
+    let slots = linked.state.items;
+    assert.equal(linked.state.name, "Owner's Existing DJ Rig", "preserve user-defined rig name");
+    assert.equal(slots.length, 6, "controller swap must not discard other equipment");
+    assert.deepEqual(
+      slots.filter(s => s.category === "controllers").map(s => [s.itemId, s.qty, s.owned]),
+      [["denon-prime-4-plus", 1, false]],
+      "different controller must not inherit old model's quantity or owned state"
+    );
+    assert.equal(slots.find(s => s.category === "laptops").owned, true);
+    assert.equal(slots.find(s => s.category === "headphones").owned, true);
+    assert.ok(slots.some(s => s.itemId === "mic-shure-sm58"));
+    assert.ok(slots.some(s => s.itemId === "cable-rca-rca"));
+    assert.match(linked.url, /^\\?rig=/, "guide import must yield shareable current rig URL");
+    assert.ok(Number(linked.spend.replace(/[^\\d.]/g, "")) > 2000,
+      "spend must reflect new unowned controller, not silently reset to default rig");
+
+    linked = await followGuideLink("cable-xlr-xlr");
+    assert.ok(linked.state.items.some(s => s.itemId === "cable-rca-rca"),
+      "adding XLR must preserve existing RCA cable");
+    assert.ok(linked.state.items.some(s => s.itemId === "cable-xlr-xlr"),
+      "new cable must appear in shopping list");
+    const accessoryCount = linked.state.items.length;
+    linked = await followGuideLink("cable-xlr-xlr");
+    assert.equal(linked.state.items.length, accessoryCount,
+      "following the same accessory link twice must not duplicate purchases");
+
+    // Following a link for equipment already owned must not mark it unowned.
+    await handoff.page.evaluate(() => {
+      const state = JSON.parse(localStorage.getItem("offbeat.rig.active"));
+      const controller = state.items.find(s => s.category === "controllers");
+      controller.owned = true;
+      controller.qty = 2;
+      localStorage.setItem("offbeat.rig.active", JSON.stringify(state));
+    });
+    linked = await followGuideLink("denon-prime-4-plus");
+    const same = linked.state.items.find(s => s.category === "controllers");
+    assert.equal(same.owned, true, "same-product guide link preserves ownership");
+    assert.equal(same.qty, 2, "same-product guide link preserves quantity");
+    assert.deepEqual(handoff.errors, [], "guide handoffs must not throw browser errors");
+    await handoff.context.close();
+    console.log("PASS: guide-to-planner preserves rig, ownership, quantities and accessory purchases");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
