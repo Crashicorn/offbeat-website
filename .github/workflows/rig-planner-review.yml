@@ -17,6 +17,7 @@ on:
       - tests/rig-builder-browser.cjs
       - tests/arena-library-browser.cjs
       - assets/site.js
+      - assets/quick-search.js
       - all-dj-guides.html
       - assets/search-index.json
       - tools/build_index.py
@@ -43,6 +44,8 @@ jobs:
       - name: Parse planner and tests
         run: |
           node --check assets/rig-builder.js
+          node --check assets/site.js
+          node --check assets/quick-search.js
           node --check tests/rig-builder-security.test.js
           node --check tests/rig-builder-browser.cjs
           node --check tests/arena-library-browser.cjs
