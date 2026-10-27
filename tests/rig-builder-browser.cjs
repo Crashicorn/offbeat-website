@@ -85,6 +85,26 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await missingController.context.close();
     console.log("PASS: accessory-only shared rig visibly blocked as incomplete");
 
+    // A standalone controller alone has no selected listening path.
+    const noAudio = {
+      name: "No listening device",
+      items: [{ slotId: "ctrl", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: false }]
+    };
+    const noAudioQuery = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(noAudio)), "binary").toString("base64")
+    );
+    const silentRig = await visit(browser, 390, noAudioQuery);
+    const silentState = await silentRig.page.evaluate(() => ({
+      tag: document.querySelector(".compat-status-tag")?.textContent || "",
+      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+    }));
+    assert.match(silentState.tag, /Incompatible Configuration/);
+    assert.match(silentState.alerts, /Headphones or Speakers Required/);
+    assert.ok(silentState.readiness <= 40);
+    await silentRig.context.close();
+    console.log("PASS: standalone controller with no listening device is incomplete");
+
     // A second controller is counted in the budget but cannot silently inherit
     // the first controller's host and cable compatibility verdict.
     const twoControllers = {
