@@ -325,7 +325,9 @@ test("START plays Deck A beat zero immediately and reserves it against duplicate
   assert.equal(probe.state.beatA, 0, "master begins on beat zero");
   assert.equal(probe.state.scheduledA, 0, "first beat is reserved in lookahead state");
   const initialStarts = audio.starts.filter(when => when === 0.12).length;
-  assert.ok(initialStarts >= 2, "kick and bass oscillator start at the actual START time");
+  assert.ok(initialStarts >= 1, "the first kick oscillator starts at the actual START time");
+  assert.ok(audio.starts.some(when => Math.abs(when - 0.14) < 1e-9),
+    "the first bass note follows 20 ms after the downbeat");
 
   probe.frame(1016); // First animation frame, with no audio-time progression.
   assert.equal(audio.starts.filter(when => when === 0.12).length, initialStarts,
