@@ -5,6 +5,8 @@
 .swa {
   --swa-fits: #34d399;
   --swa-costs: #fbbf24;
+  --swa-partial: #60a5fa;
+  --swa-check: #e879f9;
   --swa-blocked: #f87171;
   margin: 28px 0 12px;
   padding: clamp(18px, 3vw, 32px);
@@ -168,6 +170,8 @@
 
 .swa-group--fits h3 { color: var(--swa-fits); }
 .swa-group--costs h3 { color: var(--swa-costs); }
+.swa-group--partial h3 { color: var(--swa-partial); }
+.swa-group--check h3 { color: var(--swa-check); }
 .swa-group--blocked h3 { color: var(--swa-blocked); }
 
 .swa-cards {
@@ -189,6 +193,8 @@
 
 .swa-card--fits { border-top-color: var(--swa-fits); }
 .swa-card--costs { border-top-color: var(--swa-costs); }
+.swa-card--partial { border-top-color: var(--swa-partial); }
+.swa-card--check { border-top-color: var(--swa-check); }
 .swa-card--blocked { border-top-color: var(--swa-blocked); opacity: .92; }
 
 .swa-card-head {
@@ -217,6 +223,8 @@
 
 .swa-card--fits .swa-badge { background: rgba(52, 211, 153, .16); color: #a7f3d0; }
 .swa-card--costs .swa-badge { background: rgba(251, 191, 36, .16); color: #fde68a; }
+.swa-card--partial .swa-badge { background: rgba(96, 165, 250, .16); color: #bfdbfe; }
+.swa-card--check .swa-badge { background: rgba(232, 121, 249, .16); color: #f5d0fe; }
 .swa-card--blocked .swa-badge { background: rgba(248, 113, 113, .14); color: #fecaca; }
 
 .swa-maker {
@@ -257,6 +265,9 @@
 .swa-why,
 .swa-notes,
 .swa-checks,
+.swa-permodel,
+.swa-gaps,
+.swa-fillers,
 .swa-blockers {
   margin: 0;
   padding: 0;
@@ -271,6 +282,9 @@
 .swa-why li,
 .swa-notes li,
 .swa-checks li,
+.swa-permodel li,
+.swa-gaps li,
+.swa-fillers li,
 .swa-blockers li {
   position: relative;
   padding-left: 16px;
@@ -280,6 +294,9 @@
 .swa-why li::before { content: "✓"; position: absolute; left: 0; color: var(--swa-fits); font-weight: 700; }
 .swa-notes li::before { content: "→"; position: absolute; left: 0; color: var(--swa-costs); font-weight: 700; }
 .swa-checks li::before { content: "?"; position: absolute; left: 0; color: var(--cyan, #38bdf8); font-weight: 700; }
+.swa-permodel li::before { content: "?"; position: absolute; left: 0; color: var(--swa-check); font-weight: 700; }
+.swa-gaps li::before { content: "—"; position: absolute; left: 0; color: var(--swa-partial); font-weight: 700; }
+.swa-fillers li::before { content: "+"; position: absolute; left: 0; color: var(--swa-partial); font-weight: 700; }
 .swa-blockers li::before { content: "×"; position: absolute; left: 0; color: var(--swa-blocked); font-weight: 700; }
 
 .swa-verify {
