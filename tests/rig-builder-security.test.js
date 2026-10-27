@@ -185,3 +185,27 @@ test("matching XLR output and input select XLR cable, never RCA fallback", () =>
   ] }), true);
   assert.equal(api.runDeepCompatibilityChecks().checks[0].fixCableId, "cable-xlr-xlr");
 });
+
+
+test("a laptop-dependent controller with no computer is not declared playable", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "usb-only", category: "controllers", brand: "Example", model: "USB Controller",
+      price: 250, standalone: false },
+    { id: "standalone", category: "controllers", brand: "Example", model: "Standalone Deck",
+      price: 900, standalone: true }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "usb-only", qty: 1 }
+  ] }), true);
+  const needsHost = api.runDeepCompatibilityChecks();
+  assert.equal(needsHost.fatalErrors, 1);
+  assert.ok(needsHost.readiness <= 40);
+  assert.ok(needsHost.checks.some(check => check.type === "error" && /Host Computer Required/.test(check.title)));
+
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 1 }
+  ] }), true);
+  const standalone = api.runDeepCompatibilityChecks();
+  assert.equal(standalone.fatalErrors, 0);
+});
