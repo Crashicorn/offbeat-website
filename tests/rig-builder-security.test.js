@@ -328,3 +328,25 @@ test("additional speakers require manual review even when the first speaker matc
   assert.ok(verdict.readiness <= 50);
   assert.ok(verdict.checks.some(c => /Multiple speakers Need Manual Verification/.test(c.title)));
 });
+
+test("a controller without headphones or speakers is not declared ready", () => {
+  const { api } = harness(false);
+  api.setCatalog({ items: [
+    { id: "standalone", category: "controllers", brand: "Example", model: "Standalone Deck",
+      price: 900, standalone: true },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" }
+  ], categories: [], presets: [] });
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 1 }
+  ] }), true);
+  const incomplete = api.runDeepCompatibilityChecks();
+  assert.ok(incomplete.fatalErrors > 0);
+  assert.ok(incomplete.readiness <= 40);
+  assert.ok(incomplete.checks.some(c => /Headphones or Speakers Required/.test(c.title)));
+  assert.equal(api.normalizeRigState({ items: [
+    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
+  ] }), true);
+  const listening = api.runDeepCompatibilityChecks();
+  assert.equal(listening.fatalErrors, 0, "headphones-only practice remains supported");
+});
