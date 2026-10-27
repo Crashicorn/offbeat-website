@@ -219,8 +219,8 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.equal(slots.find(s => s.category === "headphones").owned, true);
     assert.ok(slots.some(s => s.itemId === "mic-shure-sm58"));
     assert.ok(slots.some(s => s.itemId === "cable-rca-rca"));
-    assert.match(linked.url, /^\\?rig=/, "guide import must yield shareable current rig URL");
-    assert.ok(Number(linked.spend.replace(/[^\\d.]/g, "")) > 2000,
+    assert.match(linked.url, /^\?rig=/, "guide import must yield shareable current rig URL");
+    assert.ok(Number(linked.spend.replace(/[^\d.]/g, "")) > 2000,
       "spend must reflect new unowned controller, not silently reset to default rig");
 
     linked = await followGuideLink("cable-xlr-xlr");
