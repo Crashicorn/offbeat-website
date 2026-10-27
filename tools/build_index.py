@@ -3,8 +3,8 @@
 
 Extracts the human-facing title, meta description and section for every page,
 then writes:
-  * assets/search-index.json  — used by the header search dialog
   * all-dj-guides.html        — the browsable library page
+  * assets/search-index.json  — preserves curated/deep-link entries and appends new pages
 Run after any page is added or retitled.
 """
 import glob
@@ -135,9 +135,29 @@ def main():
             "f": path in FEATURED,
         })
 
-    with open("assets/search-index.json", "w", encoding="utf-8") as handle:
-        json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))
-    print("index entries:", len(items))
+    # The search index contains curated categories and ?add= product deep links
+    # absent from the HTML-only generator. Never silently overwrite those
+    # valuable entries with a smaller, generic index on a library rebuild.
+    index_path = "assets/search-index.json"
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as handle:
+            existing = json.load(handle)
+        if not isinstance(existing, list) or not all(
+            isinstance(entry, dict) and isinstance(entry.get("u"), str)
+            for entry in existing
+        ):
+            raise ValueError("Curated search index is invalid; refusing overwrite")
+        urls = {entry["u"] for entry in existing}
+        added = [item for item in items if item["u"] not in urls]
+        if added:
+            with open(index_path, "w", encoding="utf-8") as handle:
+                json.dump(existing + added, handle, ensure_ascii=False, separators=(",", ":"))
+        print("search index entries:", len(existing) + len(added),
+              "(curated entries preserved; new pages:", len(added), ")")
+    else:
+        with open(index_path, "w", encoding="utf-8") as handle:
+            json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))
+        print("new search index entries:", len(items))
 
     # ---------- library page ----------
     order = [g[0] for g in GROUPS]
