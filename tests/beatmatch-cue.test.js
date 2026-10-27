@@ -12,7 +12,7 @@ function makeTrainer() {
   const source = fs.readFileSync(path.join(__dirname, "../assets/beatmatch-trainer.js"), "utf8");
   assert.match(source, /\}\)\(\);\s*$/, "Expected trainer IIFE");
   const instrumented = source.replace(/\}\)\(\);\s*$/,
-    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio, start: start, stop: stop, frame: frame, currentBpmB: currentBpmB };})();");
+    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio, start: start, stop: stop, frame: frame, currentBpmB: currentBpmB, showScorecard: showScorecard };})();");
   const cueListeners = {};
   const documentListeners = {};
   const windowListeners = {};
@@ -20,8 +20,15 @@ function makeTrainer() {
     addEventListener(type, handler) { cueListeners[type] = handler; },
     click() { cueListeners.click(); }
   };
+  const scoreDrift = { textContent: "" };
+  const scorecard = { hidden: true };
   const root = {
-    querySelector(selector) { return selector === "[data-cue]" ? cue : null; },
+    querySelector(selector) {
+      if (selector === "[data-cue]") return cue;
+      if (selector === "[data-score-drift]") return scoreDrift;
+      if (selector === "[data-scorecard]") return scorecard;
+      return null;
+    }, },
     querySelectorAll() { return []; }
   };
   const document = {
@@ -41,7 +48,7 @@ function makeTrainer() {
   };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
-  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document };
+  return { ...context.__trainerProbe, cue, documentListeners, windowListeners, document, scoreDrift, scorecard };
 }
 
 function setRunningState(probe, elapsed) {
@@ -232,4 +239,41 @@ test("backgrounding a running drill stops it and silences queued deck audio", ()
   assert.equal(probe.state.nudge, 0);
   assert.equal(oldA.disconnected, true);
   assert.equal(oldB.disconnected, true);
+});
+
+
+test("timed drill includes severe 250ms phase misses in reported average drift", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.001);
+  Object.assign(probe.state, {
+    mode: "drill", endsAt: 46000, posA: 8, posB: 8.5,
+    scheduledA: 8, scheduledB: 10, lastFrame: 1000, offsets: []
+  });
+  probe.frame(1016);
+  assert.equal(probe.state.locked, false);
+  assert.equal(probe.state.offsets.length, 1, "severe miss must not be silently excluded");
+  assert.ok(probe.state.offsets[0] >= 240, "half-beat phase error is about 250ms");
+  probe.showScorecard();
+  assert.equal(probe.scoreDrift.textContent, "±250 ms",
+    "the final scorecard must not present a severe miss as zero drift");
+});
+
+test("practice and unobserved frames cannot inflate the drill drift sample", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.001);
+  Object.assign(probe.state, {
+    mode: "practice", posA: 8, posB: 8.5,
+    scheduledA: 8, scheduledB: 10, lastFrame: 1000, offsets: []
+  });
+  probe.frame(1016);
+  assert.equal(probe.state.offsets.length, 0,
+    "untimed practice must not accumulate an unbounded scorecard sample");
+  probe.state.mode = "drill";
+  probe.state.endsAt = 46000;
+  probe.frame(4000);
+  assert.equal(probe.state.offsets.length, 0,
+    "a stalled/unobserved frame must not contaminate measured drift");
+  probe.showScorecard();
+  assert.equal(probe.scoreDrift.textContent, "Not measured",
+    "a drill with no observed samples must not claim ±0 ms");
 });
