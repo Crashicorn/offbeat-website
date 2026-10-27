@@ -193,10 +193,12 @@ test("a laptop-dependent controller with no computer is not declared playable", 
     { id: "usb-only", category: "controllers", brand: "Example", model: "USB Controller",
       price: 250, standalone: false },
     { id: "standalone", category: "controllers", brand: "Example", model: "Standalone Deck",
-      price: 900, standalone: true }
+      price: 900, standalone: true },
+    { id: "hp", category: "headphones", price: 149, jack_type: "3.5mm" }
   ], categories: [], presets: [] });
   assert.equal(api.normalizeRigState({ items: [
-    { slotId: "ctrl", category: "controllers", itemId: "usb-only", qty: 1 }
+    { slotId: "ctrl", category: "controllers", itemId: "usb-only", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
   ] }), true);
   const needsHost = api.runDeepCompatibilityChecks();
   assert.equal(needsHost.fatalErrors, 1);
@@ -204,7 +206,8 @@ test("a laptop-dependent controller with no computer is not declared playable", 
   assert.ok(needsHost.checks.some(check => check.type === "error" && /Host Computer Required/.test(check.title)));
 
   assert.equal(api.normalizeRigState({ items: [
-    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 1 }
+    { slotId: "ctrl", category: "controllers", itemId: "standalone", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "hp", qty: 1 }
   ] }), true);
   const standalone = api.runDeepCompatibilityChecks();
   assert.equal(standalone.fatalErrors, 0);
