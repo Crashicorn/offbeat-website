@@ -148,12 +148,15 @@ def main():
             continue
         by_group[item["g"]].append(item)
 
-    chips = "".join(
-        '<button class="chip-filter%s" type="button" data-filter="%s" aria-pressed="%s">%s <span>%d</span></button>'
-        % (" is-active" if index == 0 else "", gid, "true" if index == 0 else "false",
-           headings[gid][0], len(by_group[gid]))
-        for index, gid in enumerate(order)
-        if by_group[gid]
+    total_guides = sum(len(group_items) for group_items in by_group.values())
+    chips = (
+        '<button class="chip-filter is-active" type="button" data-filter="all" '
+        'aria-pressed="true">All guides <span>%d</span></button>' % total_guides
+    ) + "".join(
+        '<button class="chip-filter" type="button" data-filter="%s" '
+        'aria-pressed="false">%s <span>%d</span></button>'
+        % (gid, headings[gid][0], len(by_group[gid]))
+        for gid in order if by_group[gid]
     )
 
     sections = []
@@ -177,7 +180,7 @@ def main():
 
     template = open("tools/library-template.html", encoding="utf-8").read()
     page = template.replace("<!--CHIPS-->", chips).replace("<!--GROUPS-->", "\n".join(sections))
-    page = page.replace("<!--TOTAL-->", str(len(items)))
+    page = page.replace("<!--TOTAL-->", str(total_guides))
     with open("all-dj-guides.html", "w", encoding="utf-8") as handle:
         handle.write(page)
     print("library written")
