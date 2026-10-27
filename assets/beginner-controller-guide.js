@@ -36,6 +36,15 @@
   ];
   var current = { profile: "balanced", item: "pioneer-ddj-flx4", controllerOwned: false, headphonesOwned: false, speakersOwned: false, cableOwned: false, catalog: null };
 
+  /* The FLX2 has a 3.5 mm master output, so no verified cable in the catalog is
+     guaranteed to fit every speaker. Rather than invent a SKU, the planner
+     carries an explicit catalog *allowance*: a real line item with a price, an
+     ownership flag and no retailer link. Rig Studio resolves it by id, so the
+     money cannot disappear on handoff. */
+  var CABLE_ALLOWANCE_ID = "cable-aux-rca-allowance";
+  var CABLE_ALLOWANCE_FALLBACK = 15;
+  var CABLE_ALLOWANCE_LABEL = "3.5 mm → RCA cable allowance";
+
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
@@ -58,32 +67,42 @@
     current.profile = profile;
     render();
   }
+  function cableItem() {
+    if (activeChoice().id === "pioneer-ddj-flx2") return find(CABLE_ALLOWANCE_ID) || { id: CABLE_ALLOWANCE_ID, price: CABLE_ALLOWANCE_FALLBACK, estimate_only: true };
+    return find("cable-rca-rca");
+  }
+  function cableLabel() {
+    return activeChoice().id === "pioneer-ddj-flx2" ? CABLE_ALLOWANCE_LABEL : "Dual RCA cable";
+  }
   function hrefForRig() {
     var choice = activeChoice();
-    var controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d"), cable = find("cable-rca-rca");
+    var controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d");
     if (!controller || !headphones || !speakers) return "build-your-dj-setup.html";
-    var cableId = controller.id === "pioneer-ddj-flx2" ? null : (cable && cable.id);
+    var cable = cableItem();
+    var cableId = cable ? cable.id : null;
     var slots = [
       { slotId: "guide-controller", category: "controllers", itemId: controller.id, qty: 1, owned: current.controllerOwned },
       { slotId: "guide-headphones", category: "headphones", itemId: headphones.id, qty: 1, owned: current.headphonesOwned },
       { slotId: "guide-speakers", category: "speakers", itemId: speakers.id, qty: 1, owned: current.speakersOwned },
       { slotId: "guide-cable", category: "cables", itemId: cableId, qty: 1, owned: current.cableOwned }
     ];
-    var payload = { n: "First setup · " + controller.model, i: slots };
+    /* g marks a guide hand-off, so Rig Studio can greet it as "opened from the
+       guide" instead of pretending the visitor followed someone else's link. */
+    var payload = { n: "First setup · " + controller.model, i: slots, g: "guide" };
     var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     // Encode the complete UTF-8 JSON first, then make base64 URL-safe.
     encoded = encoded.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     return "build-your-dj-setup.html?rig=" + encodeURIComponent(encoded);
   }
   function costModel() {
-    var choice = activeChoice(), controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d"), rca = find("cable-rca-rca");
-    var cablePrice = choice.id === "pioneer-ddj-flx2" ? 15 : (rca ? Number(rca.price) : 12);
-    var cableLabel = choice.id === "pioneer-ddj-flx2" ? "3.5 mm → RCA cable allowance" : "Dual RCA cable";
+    var choice = activeChoice(), controller = find(choice.id), headphones = find("ath-m20x"), speakers = find("pioneer-dm40d");
+    var cable = cableItem();
+    var cablePrice = cable ? Number(cable.price) : 12;
     var rows = [
       { label: (controller && controller.model) || "Controller", value: controller ? Number(controller.price) : 0, included: !current.controllerOwned },
       { label: "Closed-back headphones · ATH-M20x", value: headphones ? Number(headphones.price) : 49, included: !current.headphonesOwned },
       { label: "Powered desktop monitors · pair", value: speakers ? Number(speakers.price) : 149, included: !current.speakersOwned },
-      { label: cableLabel, value: current.cableOwned ? 0 : cablePrice, included: !current.cableOwned }
+      { label: cableLabel(), value: current.cableOwned ? 0 : cablePrice, included: !current.cableOwned, estimate: Boolean(cable && cable.estimate_only) }
     ];
     return { rows: rows, total: rows.reduce(function (sum, row) { return sum + (row.included ? row.value : 0); }, 0) };
   }
@@ -106,7 +125,9 @@
         '<button type="button" data-bl-choose="' + esc(option.id) + '" aria-pressed="' + (selected ? "true" : "false") + '">' + (selected ? "Selected for your setup" : "Compare this one →") + '</button></article>';
     }).join("");
     var rowHtml = costs.rows.map(function (row) {
-      return '<div class="beginner-lab-line"><span>' + esc(row.label) + '</span><b>' + (row.included ? money(row.value) : "Already have it") + '</b></div>';
+      return '<div class="beginner-lab-line"><span>' + esc(row.label) +
+        (row.estimate ? ' <span class="beginner-lab-estimate-tag" title="Budget estimate, not a verified product listing">estimate</span>' : "") +
+        '</span><b>' + (row.included ? money(row.value) : "Already have it") + '</b></div>';
     }).join("");
     var productImage = item.image ? '<img src="' + esc(item.image) + '" alt="Illustrated equipment schematic for ' + esc(item.brand + " " + item.model) + '" loading="lazy" decoding="async">' : "";
     var profileCopy = {
@@ -126,8 +147,9 @@
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="headphones" ' + (current.headphonesOwned ? "checked" : "") + '> Headphones</label>' +
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="speakers" ' + (current.speakersOwned ? "checked" : "") + '> Monitor pair</label>' +
       '<label class="beginner-lab-check"><input type="checkbox" data-bl-owned="cable" ' + (current.cableOwned ? "checked" : "") + '> A suitable speaker cable</label></fieldset>' +
-      '<div class="beginner-lab-total"><span>Estimated new spend</span><strong data-bl-total aria-live="polite">' + money(costs.total) + '</strong></div><p class="beginner-lab-disclaimer">Includes controller, ATH-M20x headphones, DM-40D monitor pair and a speaker cable allowance. Assumes you have a compatible host device; excludes tax, software upgrades and a PA. The FLX2 uses a 3.5 mm cable allowance—confirm the exact cable and inputs. Catalog prices are estimates, not live retailer quotes.</p>' +
-      '<a class="beginner-lab-build" data-bl-build href="' + esc(hrefForRig()) + '">Open this setup in Rig Studio →</a></aside></div>' +
+      '<div class="beginner-lab-total"><span>Estimated new spend</span><strong data-bl-total aria-live="polite">' + money(costs.total) + '</strong></div><p class="beginner-lab-disclaimer">Includes controller, ATH-M20x headphones, DM-40D monitor pair and a speaker cable allowance. Assumes you have a compatible host device; excludes tax, software upgrades and a PA. The FLX2 line is a <b>$15 allowance for a 3.5 mm → RCA lead</b>, not a recommended product: confirm the connector at both ends. Catalog prices are estimates, not live retailer quotes.</p>' +
+      '<a class="beginner-lab-build" data-bl-build href="' + esc(hrefForRig()) + '">Open this setup in Rig Studio →</a>' +
+      '<p class="beginner-lab-handoff">Every line above travels with you, including the cable allowance and what you already own. Rig Studio totals should match this estimate.</p></aside></div>' +
       '<section class="beginner-lab-alternatives" aria-labelledby="beginner-lab-alt-title"><div class="beginner-lab-alternatives-head"><h3 id="beginner-lab-alt-title">Compare the other ways in</h3><p>Each one is a good fit for a different reason—and has a real trade-off.</p></div><div class="beginner-lab-cards">' + alternatives + '</div></section>' +
       '<div class="beginner-lab-note"><b>Before you buy</b><p>Confirm the exact software edition and device/OS pairing, speaker input, and cable ends. The controller’s headphone cue is separate from its speaker output. <a href="controller-software-compatibility-matrix.html">Check software support</a> or <a href="how-to-connect-dj-controller-to-speakers.html">follow the speaker connection guide</a>.</p></div>' +
       '</section>';

@@ -284,15 +284,30 @@
     if (outRCA && inTRS) return { type: "rca-trs", itemId: "cable-rca-trs", label: "RCA → 1/4\"", name: "dual RCA to dual 1/4\" TS cable" };
     if (outTRS && inXLR) return { type: "trs-xlr", itemId: "cable-xlr-xlr", label: "1/4\" → XLR", name: "1/4\" TRS to XLR cable" };
     if (outTRS && inTRS) return { type: "trs", itemId: "cable-rca-trs", label: "1/4\" TS", name: "dual 1/4\" TS cable" };
-    if (outAux && inRCA) return { type: "aux-rca", itemId: null, label: "3.5 mm → RCA", name: "3.5 mm to dual RCA cable" };
-    if (outAux && inTRS) return { type: "aux-trs", itemId: null, label: "3.5 mm → 1/4\"", name: "3.5 mm to dual 1/4\" cable" };
+    if (outAux && inRCA) return { type: "aux-rca", itemId: null, estimateId: "cable-aux-rca-allowance", label: "3.5 mm → RCA", name: "3.5 mm to dual RCA cable" };
+    if (outAux && inTRS) return { type: "aux-trs", itemId: null, estimateId: "cable-aux-rca-allowance", label: "3.5 mm → 1/4\"", name: "3.5 mm to dual 1/4\" cable" };
     if (outRCA && inXLR) return { type: "rca-xlr", itemId: null, label: "RCA → XLR", name: "dual RCA to XLR cable" };
     return { type: "unknown", itemId: null, label: "check jacks", name: "cable you will need to confirm" };
   }
 
-  /* One cable run covers one stereo pair, or one mono speaker. */
-  function runsFor(slot) {
-    return slot.qty || 1;
+  /* Package quantities. A retail "pair" is two cabinets in one box, so one
+     purchase already fills left and right; a single cabinet is one side only.
+     Prices are per box, so neither count may be multiplied by price. */
+  function speakerUnitsOf(item) {
+    return Math.max(1, Math.round(Number(item && item.speaker_units)) || 1);
+  }
+  function cableRunsPerBox(item) {
+    return Math.max(1, Math.round(Number(item && item.cable_runs_per_box)) || 1);
+  }
+  /* Catalogue lines that are planning allowances rather than verified products:
+     they carry a cost, but never a retailer SKU or affiliate link. */
+  function isEstimateItem(item) {
+    return Boolean(item && (item.estimate_only === true || item.no_retailer_link === true));
+  }
+
+  /* One cable run covers one stereo pair, or one mono speaker cabinet. */
+  function runsFor(slot, item) {
+    return (slot.qty || 1) * cableRunsPerBox(item);
   }
 
   /* Base64 that survives a query string (+ and / would be mangled). */
@@ -343,13 +358,32 @@
     var speakers = speakerSlots.map(function (s) { return { slot: s, item: itemOf(s) }; });
     var headphones = itemOf(hpSlots[0]);
 
+    /* -- physical speaker cabinets, not shopping lines --------------------
+       A pair counts as two cabinets on the map and for stereo readiness, while
+       staying one purchase at one price and needing one cable run. */
+    var speakerUnits = [];
+    speakers.forEach(function (entry) {
+      var unitsPerBox = speakerUnitsOf(entry.item);
+      var cabinets = unitsPerBox * (entry.slot.qty || 1);
+      for (var u = 0; u < cabinets; u++) {
+        speakerUnits.push({
+          slot: entry.slot, item: entry.item, position: speakerUnits.length,
+          unitsPerBox: unitsPerBox, indexInBox: u % unitsPerBox,
+          boxes: entry.slot.qty || 1
+        });
+      }
+    });
+    var physicalSpeakers = speakerUnits.length;
+
     /* -- cable plan per speaker slot -- */
     var cablePlan = speakers.map(function (entry) {
       var plan = cableFor(controller, entry.item);
       var needed = runsFor(entry.slot, entry.item);
+      var estimate = plan.itemId ? null : byId(plan.estimateId);
       return {
         slot: entry.slot, speaker: entry.item, plan: plan, needed: needed,
-        available: cableRunsAvailable(plan.itemId)
+        estimate: estimate,
+        available: cableRunsAvailable(plan.itemId) + (estimate ? cableRunsAvailable(estimate.id) : 0)
       };
     });
     var totalRunsNeeded = cablePlan.reduce(function (n, p) { return n + p.needed; }, 0);
@@ -419,14 +453,34 @@
         action: { kind: "swap-cat", cat: "headphones", itemId: "pioneer-hdj-cue1", label: "Add HDJ-CUE1 · $69" } });
     }
 
-    /* 4. Output */
+    /* 4. Output — count cabinets, not shopping lines. */
     if (speakers.length) {
       var outputNote = speakers.map(function (s) {
         var p = cablePlan.filter(function (c) { return c.slot.slotId === s.slot.slotId; })[0];
-        return s.item.model + (p ? " via " + p.plan.label : "");
+        var boxes = s.slot.qty || 1, unitsPerBox = speakerUnitsOf(s.item);
+        var count = boxes * unitsPerBox;
+        /* "DM-40D (Pair) (1 pair = 2 cabinets)": purchase and room agree. */
+        var countText = unitsPerBox > 1
+          ? " (" + (boxes > 1 ? boxes + " pairs = " : "1 pair = ") + count + " cabinets)"
+          : boxes > 1 ? " (" + count + " cabinets)" : "";
+        return s.item.model + " ×" + boxes + countText + (p ? " via " + p.plan.label : "");
       }).join(" · ");
-      checks.push({ key: "output", level: "ok", weight: 2, title: "Output: " + outputNote,
-        note: speakers.length > 1 ? "Two outputs is a stereo rig — plan for one cable run each." : "Add a second speaker when you want true stereo in a bigger room." });
+      if (physicalSpeakers >= 2) {
+        var pairNote = physicalSpeakers === 2 && speakers.length === 1
+          ? "One purchase covers both sides: left and right are two cabinets from the same box, and one cable run feeds the pair."
+          : speakers.length > 1
+            ? "One cable run per speaker line keeps left and right independent."
+            : "One cable run per box: " + physicalSpeakers + " cabinets in total.";
+        checks.push({ key: "output", level: "ok", weight: 2,
+          title: "Output: stereo, " + physicalSpeakers + " cabinets",
+          note: outputNote + " — " + pairNote });
+      } else {
+        warnings++;
+        checks.push({ key: "output", level: "warn", weight: 1,
+          title: "Output: mono, 1 cabinet",
+          note: outputNote + " — one cabinet cannot make a stereo image. Add a matching second unit (or swap to a pair) when you want left and right.",
+          action: null });
+      }
     } else if (controller) {
       warnings++;
       checks.push({ key: "output", level: "warn", weight: 1, title: "Headphones-only practice rig",
@@ -438,11 +492,13 @@
     if (controller && speakers.length) {
       var needsByCable = {};
       cablePlan.forEach(function (p) {
-        if (!p.plan.itemId) return;
-        needsByCable[p.plan.itemId] = (needsByCable[p.plan.itemId] || 0) + p.needed;
+        var id = p.plan.itemId || (p.estimate && p.estimate.id);
+        if (!id) return;
+        needsByCable[id] = (needsByCable[id] || 0) + p.needed;
       });
       var cableIds = Object.keys(needsByCable);
-      var unknownPlan = cablePlan.filter(function (p) { return !p.plan.itemId; })[0];
+      var unknownPlan = cablePlan.filter(function (p) { return !p.plan.itemId && !p.estimate; })[0];
+      var allowancePlan = cablePlan.filter(function (p) { return !p.plan.itemId && p.estimate; })[0];
       var totalRuns = cableIds.reduce(function (n, id) { return n + needsByCable[id]; }, 0);
       var missingRuns = 0, missingMoney = 0, haveRuns = 0, firstMissing = null;
       cableIds.forEach(function (id) {
@@ -461,6 +517,28 @@
         checks.push({ key: "cables", level: "warn", weight: 2, title: "Cable needs checking",
           note: controller.model + " and " + unknownPlan.speaker.model + " do not share a cable type in our catalog. You need " + unknownPlan.plan.name + " — confirm the jacks before ordering.",
           action: { kind: "pick-cat", cat: "cables", label: "Choose a cable" } });
+      } else if (allowancePlan && missingRuns > 0) {
+        /* No verified cable exists for this output pair, so the rig carries a
+           priced allowance. It is still a purchase; it is just not a SKU. */
+        warnings++;
+        checks.push({ key: "cables", level: "warn", weight: 2,
+          title: "Cable: " + totalRuns + " allowance run" + (totalRuns === 1 ? "" : "s") + " still to buy",
+          note: "No verified " + allowancePlan.plan.name + " matches this pairing in the catalog, so the rig carries a " + money(missingMoney) + " allowance for it. Confirm the connector at both ends — Offbeat does not recommend a specific SKU.",
+          action: { kind: "add-cable", itemId: allowancePlan.estimate.id, qty: missingRuns, label: "Add the allowance · " + money(missingMoney) } });
+      } else if (missingRuns === 0 && allowancePlan) {
+        var allowanceOwned = state.items.some(function (slot) {
+          return slot.category === "cables" && slot.itemId === allowancePlan.estimate.id && slot.owned;
+        });
+        if (allowanceOwned) {
+          checks.push({ key: "cables", level: "ok", weight: 2, title: "Cable: your own 3.5 mm → RCA lead",
+            note: "You marked a lead for this output as owned, so the allowance is not being charged. Check that it reaches and matches the " + allowancePlan.speaker.model + " input." });
+        } else {
+          warnings++;
+          checks.push({ key: "cables", level: "warn", weight: 2,
+            title: "Cable: allowance in place · " + money(allowancePlan.estimate.price * cableRunsAvailable(allowancePlan.estimate.id)),
+            note: "This run is budgeted as an allowance, not an order. Confirm the exact " + allowancePlan.plan.name + " connectors before buying.",
+            action: { kind: "pick-cat", cat: "cables", label: "Pick a verified cable" } });
+        }
       } else if (missingRuns === 0) {
         checks.push({ key: "cables", level: "ok", weight: 2, title: "Cables matched: " + totalRuns + " " + (totalRuns === 1 ? "run" : "runs"),
           note: "Every speaker path in the rig has the cable it needs, and the count is right." });
@@ -526,13 +604,16 @@
       wiring.push({ from: "host", to: "controller", status: "ok", label: "computer app host" });
     }
 
-    speakers.forEach(function (entry, i) {
-      var plan = cablePlan[i];
+    /* One wire per physical cabinet so a purchased pair draws left AND right. */
+    speakerUnits.slice(0, 2).forEach(function (unit, i) {
+      var plan = cablePlan.filter(function (p) { return p.slot.slotId === unit.slot.slotId; })[0];
+      if (!plan) return;
       var status = "ok";
       if (!controller) status = "idle";
-      else if (!plan.plan.itemId) status = "warn";
+      else if (!plan.plan.itemId && !plan.estimate) status = "warn";   /* jack type still unknown */
       else if (plan.available >= plan.needed) status = "ok";
-      else status = plan.available > 0 ? "warn" : "bad";
+      else if (plan.available > 0) status = "warn";
+      else status = "bad";
       wiring.push({
         from: "controller", to: "speaker" + i, status: status,
         label: controller ? plan.plan.label + (plan.needed > 1 ? " × " + plan.needed : "") : "add a controller"
@@ -552,6 +633,7 @@
       groups: groups, value: value, ownedValue: ownedValue, buyTotal: buyTotal,
       itemCount: itemCount, buyCount: buyCount, ownedCount: ownedCount,
       controller: controller, host: host, speakers: speakers, headphones: headphones,
+      speakerUnits: speakerUnits, physicalSpeakers: physicalSpeakers,
       cablePlan: cablePlan, totalRunsNeeded: totalRunsNeeded,
       checks: checks, wiring: wiring, readiness: readiness, status: status,
       blockers: blockers, warnings: warnings, upgrade: recommendUpgrade(), quote: quote
@@ -591,14 +673,21 @@
         itemId: "sennheiser-hd25", slotId: hpSlot.slotId, cta: "Swap headphones"
       };
     }
-    if (spkSlots.length === 1) {
+    /* Stereo advice is driven by cabinet counts, never by a "(Pair)" suffix. */
+    var cabinets = 0;
+    spkSlots.forEach(function (slot) { cabinets += (slot.qty || 1) * speakerUnitsOf(itemOf(slot)); });
+    if (cabinets === 1 && spkSlots.length === 1) {
       var spk = itemOf(spkSlots[0]);
-      if (spk && !/\(pair\)/i.test(spk.model) && (spkSlots[0].qty || 1) === 1) {
+      if (spk) {
+        var soldSingly = speakerUnitsOf(spk) === 1;
         return {
           kicker: "Next step",
-          title: "Add a second " + spk.model,
-          body: "One speaker is mono. A matched second unit gives you real stereo width, and every club and wedding rig you meet later will be stereo.",
-          itemId: spk.id, slotId: null, cta: "Add a second speaker", addCategory: "speakers"
+          title: soldSingly ? "Add a second " + spk.model : "Step up to a stereo pair",
+          body: soldSingly
+            ? "One cabinet is mono: a matched second unit gives you real stereo width, and every club and wedding rig you meet later will be stereo."
+            : "One cabinet cannot make a stereo image. Swapping to a pair costs one purchase, not two.",
+          itemId: soldSingly ? spk.id : "pioneer-dm40d", slotId: soldSingly ? null : spkSlots[0].slotId,
+          cta: soldSingly ? "Add a second speaker" : "Swap to a pair", addCategory: soldSingly ? "speakers" : null
         };
       }
     }
@@ -720,7 +809,7 @@
 
   function renderStudio() {
     var rig = computeRig();
-    return renderRibbon() + renderBar(rig) + renderMain(rig) + renderGearList(rig) + renderShop(rig) + renderSaved(rig) + renderRelated();
+    return renderRibbon() + renderBar(rig) + renderMain(rig) + renderStages(rig) + renderGearList(rig) + renderShop(rig) + renderSaved(rig) + renderRelated();
   }
 
   function renderRibbon() {
@@ -738,6 +827,16 @@
           '<button type="button" class="rs-btn rs-btn--quiet rs-btn--sm" data-rs="dismiss-ribbon">Dismiss</button>' +
         "</div></div>" +
         '<button type="button" class="rs-ribbon-close" data-rs="dismiss-ribbon" aria-label="Dismiss">' + "✕" + "</button></div>";
+    } else if (r.kind === "imported") {
+      /* A guide hand-off is not someone else's shared link: say where it came from. */
+      html = '<div class="rs-ribbon rs-ribbon--violet">' + icon("route") +
+        '<div class="rs-ribbon-body"><strong>Opened from the first-controller guide</strong> — “' + escapeHtml(state.name) + '”. ' +
+        "Every line, quantity and ownership flag came with it, including the cable allowance. Nothing is stored until you save a copy in this browser." +
+        '<div class="rs-ribbon-actions">' +
+          '<button type="button" class="rs-btn rs-btn--sm" data-rs="save">Save a copy</button>' +
+          '<a class="rs-btn rs-btn--ghost rs-btn--sm" href="best-dj-controllers-for-beginners.html">Back to the guide</a>' +
+          '<button type="button" class="rs-btn rs-btn--quiet rs-btn--sm" data-rs="dismiss-ribbon">Dismiss</button>' +
+        "</div></div></div>";
     } else if (r.kind === "shared") {
       html = '<div class="rs-ribbon rs-ribbon--violet">' + icon("share") +
         '<div class="rs-ribbon-body"><strong>You are viewing a shared build</strong> — “' + escapeHtml(state.name) + '”. ' +
@@ -839,15 +938,26 @@
       nodes += ghostNode("host", "Add a host device", "Computer, supported mobile, or standalone", "laptops");
     }
 
-    /* Speakers: two positions on the map, extras handled in the list */
-    var spk = slotsOf("speakers").filter(function (s) { return s.itemId; });
+    /* Speakers: left and right are physical cabinets. A purchased stereo pair
+       fills both positions; a single cabinet leaves the right side visibly open. */
+    var units = rig.speakerUnits || [];
     for (var i = 0; i < 2; i++) {
-      if (spk[i]) {
-        nodes += nodeHtml("speaker" + i, itemOf(spk[i]), { role: i === 0 ? "Output L" : "Output R", slot: spk[i], qty: spk[i].qty, status: status["speaker" + i] });
+      var unit = units[i];
+      if (unit) {
+        var role = units.length >= 2
+          ? (i === 0 ? "Left cabinet" : "Right cabinet")
+          : "Output (mono)";
+        var unitOpts = { role: role, slot: unit.slot, status: status["speaker" + i], qty: 1 };
+        if (unit.unitsPerBox > 1 && units.length >= 2) {
+          /* Both nodes point at the same purchase: show the box, not a second charge. */
+          unitOpts.qty = 0;
+          unitOpts.priceNote = "from the same pair";
+        }
+        nodes += nodeHtml("speaker" + i, unit.item, unitOpts);
       } else if (i === 0) {
         nodes += ghostNode("speaker0", "Add speakers", "Monitors or a PA", "speakers");
-      } else if (spk.length === 1) {
-        nodes += ghostNode("speaker1", "Add a second", "for true stereo", "speakers", false, true);
+      } else if (units.length === 1) {
+        nodes += ghostNode("speaker1", "Add the right side", "for true stereo", "speakers", false, true);
       }
     }
 
@@ -926,7 +1036,7 @@
         d = "M" + ax + " " + ay + " C" + mx + " " + ay + " " + mx + " " + by + " " + bx + " " + by;
       }
       var cls = w.status === "ok" ? "ok" : w.status === "warn" ? "warn" : w.status === "bad" ? "bad" : "idle";
-      out += '<path class="rs-wire rs-wire--' + cls + '" d="' + d + '"/>';
+      out += '<path class="rs-wire rs-wire--' + cls + '" data-from="' + escapeHtml(w.from) + '" data-to="' + escapeHtml(w.to) + '" d="' + d + '"/>';
 
       /* Park the label where neither card is, so it stays legible. */
       var lx = vertical ? mx + 14 : mx;
@@ -953,7 +1063,12 @@
     var owned = opts.slot && (opts.slot.owned || isExistingHost(item));
     var qty = opts.qty || 1;
     var status = opts.status || "ok";
-    var priceLabel = isExistingHost(item) ? "already owned" : owned ? "owned" : item.price === 0 ? "no cost" : money(item.price * (qty || 1));
+    var priceLabel = isExistingHost(item)
+      ? "already owned"
+      : owned ? "owned"
+        : opts.priceNote ? opts.priceNote
+          : item.price === 0 ? "no cost"
+            : money(item.price * (qty || 1));
     var roleIcon = item.host_type === "mobile" ? "mobile" : (CAT_ICON[item.category] || "layers");
     return '<button type="button" class="rs-node rs-node--pos-' + pos + (opts.hero ? " rs-node--hero" : "") + (owned ? " rs-node--owned" : "") + '"' +
       ' style="--x:' + p[0] + "%;--y:" + p[1] + '%"' +
@@ -1064,6 +1179,80 @@
       "</div></section>";
   }
 
+  /* ------------------------------------------- Staged purchase plan
+     The planner used to answer "what does it all cost" but never "what do I
+     have to buy first to actually play". The guided quiz already reasoned in
+     core/full kits; this is the same idea made visible for any rig, derived
+     from the same lines and the same prices — so the stages always add up to
+     the bill. */
+  var STAGE_META = [
+    { id: "play", title: "1 · Play tonight", blurb: "The chain that has to exist before any sound comes out." },
+    { id: "room", title: "2 · Hear it in a room", blurb: "Speakers, and the cable runs that feed them." },
+    { id: "extras", title: "3 · Make it a rig", blurb: "Ergonomics, media and everything that can wait." }
+  ];
+
+  function purchasePlan(rig) {
+    var buckets = { play: [], room: [], extras: [] };
+    var needsBuying = function (line) { return Boolean(line.item) && !line.slot.owned && !isExistingHost(line.item); };
+    var hasSpeakers = (rig.groups.speakers || []).some(function (l) { return l.item; });
+    var stageFor = {
+      controllers: "play", laptops: "play", headphones: "play",
+      speakers: "room", cables: hasSpeakers ? "room" : "extras",
+      microphones: "extras", stands: "extras", storage: "extras"
+    };
+    ROLE_ORDER.forEach(function (cat) {
+      (rig.groups[cat] || []).forEach(function (line) {
+        if (!needsBuying(line)) return;
+        buckets[stageFor[cat] || "extras"].push({ cat: cat, line: line });
+      });
+    });
+
+    var cumulative = 0;
+    return STAGE_META.map(function (meta) {
+      var lines = buckets[meta.id];
+      var total = lines.reduce(function (n, l) { return n + l.line.lineTotal; }, 0);
+      cumulative += total;
+      return {
+        id: meta.id, title: meta.title, blurb: meta.blurb,
+        lines: lines, total: total, cumulative: cumulative,
+        count: lines.reduce(function (n, l) { return n + (l.line.qty || 1); }, 0)
+      };
+    });
+  }
+
+  function renderStages(rig) {
+    var plan = purchasePlan(rig);
+    var remaining = plan.filter(function (stage) { return stage.lines.length; });
+    if (!remaining.length) return "";
+    var playStage = plan[0];
+    var headline = playStage.lines.length
+      ? "Buy step 1 and you can mix tonight for " + money(playStage.total) + "."
+      : "The essentials are already covered. The rest of these are upgrades.";
+
+    var stagesHtml = plan.filter(function (stage) { return stage.lines.length; }).map(function (stage) {
+      var names = stage.lines.map(function (entry) {
+        var item = entry.line.item;
+        var estimate = isEstimateItem(item);
+        return '<li><span>' + escapeHtml(item.model) + (entry.line.qty > 1 ? " ×" + entry.line.qty : "") +
+          (estimate ? ' <span class="rs-step-tag">allowance</span>' : "") + "</span><b>" + money(entry.line.lineTotal) + "</b></li>";
+      }).join("");
+      return '<section class="rs-step rs-step--' + stage.id + '">' +
+        '<div class="rs-step-head"><h4>' + escapeHtml(stage.title) + "</h4>" +
+          '<span class="rs-step-sum">' + money(stage.total) + "</span></div>" +
+        "<p>" + escapeHtml(stage.blurb) + "</p>" +
+        '<ul class="rs-step-lines">' + names + "</ul>" +
+        '<p class="rs-step-run">Running total after this step <b>' + money(stage.cumulative) + "</b></p>" +
+      "</section>";
+    }).join("");
+
+    return '<section class="rs-panel rs-plan rs-print-hide" id="rs-plan">' +
+      '<div class="rs-panel-head"><div><h2>' + icon("route") + "What to buy first</h2>" +
+        '<p class="rs-panel-sub">' + escapeHtml(headline) + "</p></div></div>" +
+      '<div class="rs-step-grid">' + stagesHtml + "</div>" +
+      '<p class="rs-step-note">Stages are the same lines and the same prices as the shopping list — nothing is duplicated or hidden. ' +
+        "Speakers only move to step 2 because headphone-only practice is a real way to start.</p></section>";
+  }
+
   function renderUpgrade(rig) {
     if (!rig.upgrade) return "";
     var u = rig.upgrade;
@@ -1096,8 +1285,11 @@
         var item = line.item;
         var qty = line.qty;
         var owned = line.slot.owned || isExistingHost(item);
-        return '<div class="rs-item' + (owned ? " rs-item--owned" : "") + '">' +
-          '<img class="rs-item-img" src="' + escapeHtml(item.image) + '" alt="" loading="lazy">' +
+        var estimate = isEstimateItem(item);
+        return '<div class="rs-item' + (owned ? " rs-item--owned" : "") + (estimate ? " rs-item--estimate" : "") + '">' +
+          (item.image
+            ? '<img class="rs-item-img" src="' + escapeHtml(item.image) + '" alt="" loading="lazy">'
+            : '<span class="rs-item-img rs-item-img--none" aria-hidden="true">' + icon(CAT_ICON[cat] || "layers") + "</span>") +
           '<div class="rs-item-copy">' +
             '<div class="rs-item-name">' + escapeHtml(item.brand) + " " + escapeHtml(item.model) +
               '<span class="rs-item-role">' + escapeHtml(ROLE_LABEL[cat] || cat) + "</span></div>" +
@@ -1113,7 +1305,7 @@
           '<div class="rs-item-side">' +
             '<span class="rs-item-price' + (owned || isExistingHost(item) ? " rs-item-price--owned" : "") + '">' +
               (isExistingHost(item) ? "Already owned" : owned ? "Owned" : money(line.lineTotal)) +
-              "<small>" + (item.host_type === "mobile" ? "app, adapter & power costs not included" : item.host_type === "computer" ? "software & accessories not included" : qty > 1 ? money(item.price) + " each" : "est. retail") + "</small></span>" +
+              "<small>" + (item.host_type === "mobile" ? "app, adapter & power costs not included" : item.host_type === "computer" ? "software & accessories not included" : estimate ? "allowance · not a retailer SKU" : qty > 1 ? money(item.price) + " each" : "est. retail") + "</small></span>" +
             '<div class="rs-item-controls">' +
               (isExistingHost(item)
                 ? '<button type="button" class="rs-own-toggle is-on" disabled aria-pressed="true">Already owned</button>'
@@ -1184,12 +1376,15 @@
 
     var rows = needLines.map(function (entry) {
       var item = entry.line.item;
-      return '<li class="rs-shop-line">' +
+      var estimate = isEstimateItem(item);
+      return '<li class="rs-shop-line' + (estimate ? " rs-shop-line--estimate" : "") + '">' +
         '<span class="rs-shop-line-name"><strong>' + escapeHtml(item.brand + " " + item.model) +
           (entry.line.qty > 1 ? " ×" + entry.line.qty : "") + "</strong>" +
-          "<span>" + escapeHtml(ROLE_LABEL[entry.cat] || entry.cat) + " · " + escapeHtml(item.tagline || "") + "</span></span>" +
+          "<span>" + escapeHtml(ROLE_LABEL[entry.cat] || entry.cat) + " · " + escapeHtml(item.tagline || "") + "</span>" +
+          (estimate ? '<span class="rs-shop-line-estimate">Budget allowance · no recommended SKU. ' + escapeHtml(item.estimate_note || "Confirm the connector at both ends.") + "</span>" : "") +
+        "</span>" +
         '<span class="rs-shop-line-price">' + money(entry.line.lineTotal) + "</span>" +
-        retailerLinks(item) +
+        (estimate ? '<span class="rs-shop-retailers rs-shop-retailers--none">No retailer link</span>' : retailerLinks(item)) +
       "</li>";
     }).join("");
 
@@ -1327,7 +1522,8 @@
   }
 
   function optionsFor(d) {
-    var all = CATALOG.items.filter(function (i) { return i.category === d.category; });
+    /* Allowances are planning lines, not products: never offer one as a pick. */
+    var all = CATALOG.items.filter(function (i) { return i.category === d.category && !isEstimateItem(i); });
     var q = (d.query || "").toLowerCase().trim();
     if (q) {
       var tokens = q.split(/\s+/);
@@ -1545,6 +1741,8 @@
       item.mobile_support ? ["Mobile support", item.mobile_support] : null,
       item.host_type ? ["Host type", item.host_type === "mobile" ? "Existing phone / tablet; already owned" : "Existing compatible computer; already owned"] : item.standalone != null ? ["Host requirement", hostRequirement(item)] : null,
       item.price_basis ? ["Price context", item.price_basis] : null,
+      item.estimate_note ? ["Why an allowance", item.estimate_note] : null,
+      item.speaker_units ? ["Sold as", item.box_label ? "One " + item.box_label + " (" + item.speaker_units + " cabinet" + (item.speaker_units === 1 ? "" : "s") + ")" : String(item.speaker_units) + " cabinets"] : null,
       item.driver_size ? ["Drivers", item.driver_size] : null,
       item.driver_mm ? ["Driver size", item.driver_mm + " mm"] : null,
       item.impedance_ohm ? ["Impedance", item.impedance_ohm + " Ω"] : null,
@@ -2100,13 +2298,18 @@
     speakers.forEach(function (s) {
       if (!s.item) return;
       var plan = cableFor(controller, s.item);
-      if (plan.itemId && !cableCats[plan.itemId]) {
+      /* When no verified cable matches the jacks, the kit carries the priced
+         allowance: the same money the planner will show, never a silent gap. */
+      var cableId = plan.itemId || plan.estimateId;
+      if (cableId && !cableCats[cableId]) {
         var runs = runsFor(s.slot, s.item);
-        var slot = newSlot("cables", plan.itemId, false);
+        var slot = newSlot("cables", cableId, false);
         slot.qty = runs;
         items.push(slot);
-        cableCats[plan.itemId] = true;
-        reasons.push(runs + " × " + plan.name + " (" + money((byId(plan.itemId) || {}).price * runs) + ") — the piece most first rigs forget until the speakers are silent.");
+        cableCats[cableId] = true;
+        reasons.push(runs + " × " + plan.name + " (" + money((byId(cableId) || {}).price * runs) + ")" +
+          (plan.itemId ? " — the piece most first rigs forget until the speakers are silent."
+            : " budgeted as an allowance, because the exact 3.5 mm lead depends on the speaker input; confirm the connectors."));
       }
     });
 
@@ -2251,14 +2454,15 @@
     var totalNeeded = 0, cableId = null;
     speakers.forEach(function (slot) {
       var plan = cableFor(controller, itemOf(slot));
-      if (plan.itemId) {
+      var neededId = plan.itemId || plan.estimateId;
+      if (neededId) {
         totalNeeded += runsFor(slot, itemOf(slot));
-        cableId = cableId || plan.itemId;
-        if (plan.itemId !== cableId) {
+        cableId = cableId || neededId;
+        if (neededId !== cableId) {
           /* mixed cable types: add the run for this one separately */
-          var extra = slotsOf("cables").filter(function (s) { return s.itemId === plan.itemId; })[0];
+          var extra = slotsOf("cables").filter(function (s) { return s.itemId === neededId; })[0];
           if (extra) extra.qty = Math.max(extra.qty || 1, runsFor(slot, itemOf(slot)));
-          else { var ns = newSlot("cables", plan.itemId, false); ns.qty = runsFor(slot, itemOf(slot)); state.items.push(ns); added.push("a cable"); }
+          else { var ns = newSlot("cables", neededId, false); ns.qty = runsFor(slot, itemOf(slot)); state.items.push(ns); added.push("a cable"); }
         }
       }
     });
@@ -2310,7 +2514,7 @@
     if (existing >= 0) saved[existing] = entry; else saved.unshift(entry);
     writeSavedRigs(saved);
     state.modal = null;
-    if (state.ribbon && state.ribbon.kind === "shared") state.ribbon = null;
+    if (state.ribbon && (state.ribbon.kind === "shared" || state.ribbon.kind === "imported")) state.ribbon = null;
     saveAndRender();
     toast(existing >= 0 ? "Saved over “" + finalName + "”" : "Saved “" + finalName + "”");
   }
@@ -2350,7 +2554,8 @@
       lines.push(ROLE_LABEL[cat].toUpperCase());
       group.forEach(function (l) {
         need += l.lineTotal;
-        lines.push("  " + (l.qty > 1 ? l.qty + " × " : "") + l.item.brand + " " + l.item.model + " — " + money(l.lineTotal));
+        lines.push("  " + (l.qty > 1 ? l.qty + " × " : "") + l.item.brand + " " + l.item.model + " — " + money(l.lineTotal) +
+          (isEstimateItem(l.item) ? " (budget allowance — no recommended SKU; confirm connectors)" : ""));
       });
       lines.push("");
     });
@@ -2444,7 +2649,9 @@
             state.name = cleanName(parsed.n || parsed.name, "Shared build");
             state.items = items;
             state.view = "studio";
-            state.ribbon = { kind: "shared" };
+            /* g:"guide" marks a hand-off from an Offbeat guide; anything else is
+               a link somebody shared. The two are not the same thing. */
+            state.ribbon = { kind: parsed.g === "guide" ? "imported" : "shared" };
             return true;
           }
         } catch (e) { /* fall through to stored state */ }
@@ -2854,7 +3061,20 @@
         return shoppingList(computeRig()).map(function (l) { return { itemId: l.itemId, qty: l.qty, lineTotal: l.lineTotal }; });
       },
       shareUrl: function () { return shareUrl({ n: state.name, i: state.items }); },
-      readiness: function () { return (computeRig().checks || []).map(function (c) { return { key: c.key, level: c.level }; }); }
+      readiness: function () { return (computeRig().checks || []).map(function (c) { return { key: c.key, level: c.level }; }); },
+      checks: function () {
+        return (computeRig().checks || []).map(function (c) { return { key: c.key, level: c.level, title: c.title, note: c.note || "" }; });
+      },
+      speakers: function () {
+        var r = computeRig();
+        return {
+          boxes: r.speakers.map(function (e) { return { itemId: e.item.id, qty: e.slot.qty || 1, unitsPerBox: speakerUnitsOf(e.item) }; }),
+          cabinets: r.physicalSpeakers,
+          units: r.speakerUnits.map(function (u) { return { slotId: u.slot.slotId, itemId: u.item.id, indexInBox: u.indexInBox }; }),
+          cableRunsNeeded: r.cablePlan.map(function (p) { return { slotId: p.slot.slotId, needed: p.needed, cableId: p.plan.itemId, allowanceId: p.estimate ? p.estimate.id : null }; })
+        };
+      },
+      shoppingText: function () { return shoppingText(); }
     };
 
     window.addEventListener("resize", function () {

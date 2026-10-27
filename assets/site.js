@@ -182,8 +182,11 @@
     var wrap = main.querySelector(".content-wrap") || main.querySelector(".page-content");
     if (!wrap) return;
 
+    /* Headings inside a live module are replaced when its data loads, so an
+       anchor built from them would point at nothing. [data-guide-mount] marks
+       those containers; their own jump link lives with the module. */
     var headings = [].slice.call(wrap.querySelectorAll("h2")).filter(function (h) {
-      return h.textContent.trim().length > 3 && !h.closest("details");
+      return h.textContent.trim().length > 3 && !h.closest("details") && !h.closest("[data-guide-mount]");
     });
     if (headings.length < 4) return;
 

@@ -3663,9 +3663,22 @@ h3.mini {
 .ob-product-visual--photo img { background: #f2f1ef; }
 .gear-product-card > .ob-product-visual figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2rem .5rem; margin-top: .45rem; color: #6a6b74; font-size: .66rem; line-height: 1.35; text-align: left; }
 .ob-product-visual--schematic figcaption { color: #979bb0; }
-.ob-figure-rig-link { display: inline-block; margin-top: .3rem; color: #8bdcf4; font-weight: 700; text-decoration: none; }
-.ob-figure-rig-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* This is the hand-off from a review to the planner, so it has to look like a
+   control rather than a 13px caption footnote. */
+.ob-figure-rig-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: .3rem;
+  min-height: 34px; margin: .45rem auto .1rem; padding: .4rem .62rem;
+  border: 1px solid rgba(56,189,248,.36); border-radius: 7px;
+  background: rgba(56,189,248,.09); color: #a5e6f6;
+  font-size: .71rem; font-weight: 700; letter-spacing: .01em;
+  text-decoration: none; text-align: center;
+}
+.ob-figure-rig-link:hover { border-color: rgba(56,189,248,.68); background: rgba(56,189,248,.16); color: #fff; text-decoration: none; }
 .ob-figure-rig-link:focus-visible { outline: 2px solid #83d9ed; outline-offset: 2px; }
+.gear-product-card > .ob-product-visual figcaption .ob-figure-rig-link { margin-left: auto; }
+@media (max-width: 760px) {
+  .ob-figure-rig-link { min-height: 44px; font-size: .74rem; }
+}
 /* Product media slots (quick-pick cards) and head-to-head comparison duos.
    Figures are injected by assets/product-illustrations.js; empty slots
    collapse so the layout is unchanged when JS or the catalog is absent. */
@@ -3756,7 +3769,14 @@ h3.mini {
 .matrix-eyebrow { margin:0; color:#90dbf2; font-size:.64rem; font-weight:750; letter-spacing:.13em; text-transform:uppercase; }
 .matrix-compare-close { flex:0 0 auto; background:transparent; color:#a9b6c8; }
 .matrix-table-hint { display:none; margin:.3rem 0 .4rem; color:#a8afc2; font-size:.7rem; }
-.matrix-compare-scroll { max-width:100%; overflow-x:auto; border:1px solid var(--line); border-radius:9px; overscroll-behavior-inline:contain; }
+.matrix-compare-scroll { max-width:100%; max-height:min(74vh,660px); overflow:auto; border:1px solid var(--line); border-radius:9px; overscroll-behavior:contain; scrollbar-gutter:stable; }
+/* Horizontally scrolling a wide table loses identity fast: pin the decision
+   column and the product headings, and give the pinned cells solid grounds. */
+.matrix-compare-table thead th { position:sticky; top:0; z-index:2; box-shadow:inset 0 -1px 0 rgba(255,255,255,.1); }
+.matrix-compare-table thead th:first-child { left:0; z-index:4; }
+.matrix-compare-table tbody th { position:sticky; left:0; z-index:1; background:#0d0d17; box-shadow:inset -1px 0 0 rgba(255,255,255,.07); }
+.matrix-compare-table tbody tr:nth-child(even) > th { background:#101019; }
+.matrix-compare-legend { display:none; }
 .matrix-compare-table { width:100%; min-width:660px; border-collapse:collapse; color:#c8c9d6; font-size:.72rem; line-height:1.45; }
 .matrix-compare-table th,.matrix-compare-table td { padding:.6rem .65rem; border-bottom:1px solid rgba(255,255,255,.075); text-align:left; vertical-align:top; }
 .matrix-compare-table thead th { background:#11111b; color:#f0edf9; font-weight:700; }
@@ -3764,7 +3784,11 @@ h3.mini {
 .matrix-compare-table tbody th { width:130px; color:#d9d6e6; font-weight:650; }
 .matrix-compare-table tbody tr:nth-child(even) { background:rgba(255,255,255,.018); }
 .matrix-compare-table tr:last-child th,.matrix-compare-table tr:last-child td { border-bottom:0; }
-.matrix-compare-links { display:grid; gap:.35rem; }.matrix-compare-links a { color:#8bdcf4; font-weight:650; }
+/* The wrapper may be a grid; the table cell must not be, or its contents leave the column. */
+.matrix-compare-table td.matrix-compare-cell { display:table-cell; }
+.matrix-compare-links { display:grid; gap:.35rem; justify-items:start; }
+.matrix-compare-links a { color:#8bdcf4; font-weight:650; }
+.matrix-compare-links a:hover { color:#fff; }
 @media(max-width:760px) {
   .matrix-shell { padding:.8rem; }
   .matrix-toolbar { gap:.6rem; }.matrix-filters { grid-template-columns:1fr; }
@@ -3782,6 +3806,17 @@ h3.mini {
   .matrix-compare-panel { padding:.8rem; }.matrix-compare-heading { flex-direction:column; }
   .matrix-compare-close { align-self:flex-start; }
   .matrix-table-hint { display:block; }
+  .matrix-compare-legend { display:flex; flex-wrap:wrap; gap:.35rem .5rem; margin:0 0 .5rem; padding:0; list-style:none; }
+  .matrix-compare-legend li { display:inline-flex; align-items:center; gap:.32rem; padding:.28rem .45rem; border:1px solid rgba(56,189,248,.24); border-radius:999px; background:rgba(56,189,248,.07); color:#c9d6e6; font-size:.66rem; font-weight:650; max-width:100%; overflow-wrap:anywhere; }
+  .matrix-compare-legend-n { display:inline-flex; align-items:center; justify-content:center; width:1.05rem; height:1.05rem; border-radius:50%; background:rgba(56,189,248,.2); color:#dff6ff; font-size:.6rem; font-variant-numeric:tabular-nums; }
+  .matrix-compare-scroll { max-height:min(62vh,520px); }
+  /* The row header eats most of a phone viewport, so trim it and let each cell
+     repeat its controller name instead of relying on a scrolled-away heading. */
+  .matrix-compare-table { min-width:560px; }
+  .matrix-compare-table tbody th { width:auto; min-width:92px; max-width:104px; font-size:.66rem; white-space:normal; overflow-wrap:anywhere; }
+  .matrix-compare-table thead th:first-child { min-width:92px; max-width:104px; font-size:.62rem; }
+  .matrix-compare-table tbody td::before { content:attr(data-compare-product); display:block; margin-bottom:.12rem; color:#8bdcf4; font-size:.56rem; font-weight:750; letter-spacing:.05em; text-transform:uppercase; }
+  .matrix-compare-table tbody td.matrix-compare-cell::before { display:block; }
 }
 @media (max-width:400px) {
   .mat-head { grid-template-columns:70px minmax(0,1fr); gap:.45rem; }

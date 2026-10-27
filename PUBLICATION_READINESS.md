@@ -37,6 +37,54 @@ remain owner actions; this document is the evidence pack for that decision.
   broken images, no console errors. Representative stills in
   `evidence/publication-completion-2026-10/`.
 
+## Buying-defect repair round (independent MacBook browser review)
+
+_Branch `arena/8d6fd22e-offbeat-website`, based on `arena/4af406ed-offbeat-website` (PR #8 head, `5a8a732`). Not merged, not deployed._
+
+A separate session drove the live site in a real Chrome browser on macOS with
+DOM measurements and screenshots. It found three visitor-facing defects that
+the source-level suites could not see. This round fixes those, plus four
+secondary issues, and adds one connected planning improvement.
+
+| Defect | Root cause | Correction |
+| --- | --- | --- |
+| **H1** The FLX2's $15 cable allowance vanished on hand-off to Rig Studio ($412 → $397). | `hrefForRig()` sent `itemId: null` for the FLX2's unverified 3.5 mm lead while `costModel()` still charged $15, so Rig Studio had a priced line it could not resolve. | The catalogue now contains an explicit **allowance line** (`cable-aux-rca-allowance`, `estimate_only: true`, `no_retailer_link: true`). It is a real priced line with an ownership flag, never a claimed SKU or affiliate link. Rig Studio resolves it, shows it as an allowance, and keeps it out of the product picker and retailer links. |
+| **H2** A retail *pair* of DM-40D monitors read as one speaker: green "ready" beside advice to add a second speaker, and no right-hand cabinet on the signal map. | Stereo readiness counted *shopping lines*, and asked the model name for a `(Pair)` suffix. | Catalogue speakers now carry `speaker_units` (2 for DM-40D, DM-50D, ROKIT 5 G4, HS5; 1 for the EON715) and `cable_runs_per_box`. Readiness, the map, wiring, quantity stepping and upgrade advice all count **cabinets**: one pair = two cabinets, one purchase, one cable run. Totals are unchanged by the count — price stays per box. |
+| **H3** Comparison action links stacked under the first controller's column. | `.matrix-compare-links { display:grid }` was applied **to the `<td>`**, which takes the cell out of table layout. | The class moved to a child `<div>`; the cell stays `display: table-cell`. Each cell and link is now labelled with its own product, and the header row plus the decision column stay pinned while the table scrolls. |
+
+Secondary fixes in the same round:
+
+- Invalid table-of-contents anchor on the beginner guide: guide navigation now
+  skips live modules (`[data-guide-mount]`) whose headings are replaced after
+  data loads, so every rail/TOC link resolves (verified: 18/18).
+- "Add to Rig Studio" under review figures was a 13px caption link; it is now a
+  bordered 34px control (44px on touch) in the same style as the planner button.
+- Mobile comparison lost product identity while scrolling: a numbered legend,
+  a smaller decision column, per-cell product labels and sticky headers were
+  added.
+- Guide-imported rigs announced themselves as "a shared build"; hand-offs now
+  carry `g: "guide"` and read "Opened from the first-controller guide", while
+  genuine shared links keep the shared-build wording.
+- The desktop illustration panel in the guide's match card was 133px wide in a
+  540px column (tiny drawing, large empty box); it now has a 200–280px column.
+- Rig Studio's action bar overflowed a 390px phone by 33px (the ⋯ button broke
+  the wrapping); it now fits without horizontal scrolling.
+
+Connected improvement: **"What to buy first"** — Rig Studio now splits the bill
+into *Play tonight* (deck, host, cue), *Hear it in a room* (speakers and their
+cable runs) and *Make it a rig* (ergonomics, media, extras), with a running
+total. The stages are derived from the same lines and prices as the shopping
+list, and the test asserts they sum exactly to the bill.
+
+Verification for this round (real headless Chromium, rendered, not source
+greps): `tests/test_buying_journeys.js` (new, 7 journeys) plus
+`test_rig_studio.js`, `test_rig_mobile_host.js`, `test_controller_matrix.js`,
+`test_speaker_finder.js`, `test_flx4_comparison.js`, `test_flx4_verdict.js`,
+`test_mixlab.js`, `test_journeys.js`, `test_headphone_fit.js`,
+`test_turntable_budget.js`, the rig security suites,
+`tests/beginner-controller-guide.test.js`,
+`tests/check_site_structure.py` (118/118) and `tools/check_site.py`.
+
 ## Area assessment
 
 | Area | Verdict | Notes |
