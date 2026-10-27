@@ -514,6 +514,14 @@
     setPitch(0);
     applyAudioRouting();
 
+    // Start the audible master downbeat at the actual START press. Waiting
+    // for the first animation frame advances posA above zero, causing the
+    // scheduler to skip beat 0 and delay the first kick by nearly a beat.
+    // Reserve beat 0 so the lookahead scheduler cannot play it twice.
+    state.beatA = 0;
+    scheduleBeat("a", ctx.currentTime, state.bpmA);
+    state.scheduledA = 0;
+
     if (el.start) el.start.disabled = true;
     if (el.stop) el.stop.disabled = false;
     if (el.scorecard) el.scorecard.hidden = true;
