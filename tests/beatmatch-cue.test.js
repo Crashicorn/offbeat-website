@@ -1,7 +1,7 @@
 "use strict";
 
-// Deterministic source-level acceptance of the trainer's CUE timing.
-// No production test hooks, audio devices, browser storage or network needed.
+// Deterministic source-level acceptance of CUE timing and audible downbeat.
+// No production test hooks, browser audio devices or network required.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -11,8 +11,8 @@ const vm = require("node:vm");
 function makeTrainer() {
   const source = fs.readFileSync(path.join(__dirname, "../assets/beatmatch-trainer.js"), "utf8");
   assert.match(source, /\}\)\(\);\s*$/, "Expected trainer IIFE");
-  const instrumented = source.replace(/\}\)\(\);\s*$/, 
-    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs };})();");
+  const instrumented = source.replace(/\}\)\(\);\s*$/,
+    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio };})();");
   const cueListeners = {};
   const documentListeners = {};
   const cue = {
@@ -35,45 +35,69 @@ function makeTrainer() {
 }
 
 function setRunningState(probe, elapsed) {
-  Object.assign(probe.state, {
-    running: true,
-    ctx: { currentTime: elapsed },
-    lastAudio: 0,
-    bpmA: 120,
-    bpmB: 120,
-    posA: 8,
-    posB: 7.2,
-    beatB: 7,
-    scheduledA: 8,
-    scheduledB: 10
+  const starts = [];
+  function gainNode() {
+    return {
+      gain: { value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+      connect() { return this; },
+      disconnect() { this.disconnected = true; }
+    };
+  }
+  const oldB = gainNode();
+  const ctx = {
+    currentTime: elapsed,
+    createGain: gainNode,
+    createOscillator() {
+      return {
+        frequency: { value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+        connect() { return this; },
+        start(when) { starts.push(when); },
+        stop() {}
+      };
+    }
+  };
+  Object.assign(probe.audio, {
+    chanA: gainNode(), chanB: oldB, master: gainNode(),
+    pannerA: null, pannerB: null, noise: null
   });
+  Object.assign(probe.state, {
+    running: true, ctx, lastAudio: 0,
+    bpmA: 120, bpmB: 120,
+    posA: 8, posB: 7.2, beatB: 7,
+    scheduledA: 8, scheduledB: 10
+  });
+  return { starts, oldB };
 }
 
-test("mistimed CUE starts B from beat 1 without snapping to A", () => {
+test("mistimed CUE sounds B beat 1 immediately without snapping to A", () => {
   const probe = makeTrainer();
-  setRunningState(probe, 0.25); // Half a beat after A's downbeat at 120 BPM.
+  const audio = setRunningState(probe, 0.25); // Half a beat late at 120 BPM.
   probe.cue.click();
   assert.equal(probe.state.posA, 8.5, "A advances to the actual press time");
   assert.equal(probe.state.posB, 0, "B starts from its own beat 1");
   assert.equal(probe.state.beatB, 0);
-  assert.equal(probe.state.scheduledB, -1, "stale B scheduler position invalidated");
+  assert.equal(probe.state.scheduledB, 0, "beat 1 scheduled, not deferred a beat");
+  assert.equal(audio.oldB.disconnected, true, "stale queued B audio silenced");
+  assert.notEqual(probe.audio.chanB, audio.oldB, "fresh B channel connected");
+  assert.ok(audio.starts.includes(0.25), "immediate B downbeat actually scheduled");
   assert.ok(Math.abs(probe.phaseMs()) >= 240,
-    "a half-beat-late press must remain visibly out of phase");
+    "a half-beat-late press remains visibly out of phase");
 });
 
-test("well-timed CUE can align the beats without changing either tempo", () => {
+test("well-timed CUE aligns phase without altering either tempo", () => {
   const probe = makeTrainer();
-  setRunningState(probe, 0.003);
+  const audio = setRunningState(probe, 0.003);
   probe.cue.click();
+  assert.ok(audio.starts.includes(0.003), "near-downbeat CUE sounds immediately");
   assert.ok(Math.abs(probe.phaseMs()) < 18, "near-downbeat press is aligned");
   assert.equal(probe.state.bpmA, 120);
   assert.equal(probe.state.bpmB, 120);
   assert.equal(probe.state.posB, 0);
 });
 
-test("keyboard C uses the same timed CUE behavior", () => {
+test("keyboard C uses the same timed CUE and channel reset", () => {
   const probe = makeTrainer();
-  setRunningState(probe, 0.25);
+  const audio = setRunningState(probe, 0.25);
   let prevented = false;
   probe.documentListeners.keydown({
     code: "KeyC",
@@ -82,6 +106,8 @@ test("keyboard C uses the same timed CUE behavior", () => {
   });
   assert.equal(prevented, true);
   assert.equal(probe.state.posB, 0);
-  assert.equal(probe.state.scheduledB, -1);
+  assert.equal(probe.state.scheduledB, 0);
+  assert.equal(audio.oldB.disconnected, true);
+  assert.ok(audio.starts.includes(0.25));
   assert.ok(Math.abs(probe.phaseMs()) >= 240);
 });
