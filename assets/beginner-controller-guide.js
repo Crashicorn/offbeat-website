@@ -123,7 +123,9 @@
         value: buyable ? cablePrice(plan) : 0,
         buying: buyable ? !current.cableOwned : true,
         estimate: Boolean(plan && plan.kind === "allowance"),
-        note: plan && plan.kind === "included" ? "included with the pair" : (plan ? plan.label : ""),
+        note: plan && plan.kind === "included"
+          ? (plan.reversedLead ? "in the box \u00b7 used the other way round" : "included with the pair")
+          : (plan ? plan.label : ""),
         buyable: buyable
       }
     ];
@@ -136,8 +138,10 @@
       "Assumes you have a compatible host device; excludes tax, software upgrades and a PA.";
     if (!plan) return base + " Confirm the cable connectors before ordering.";
     if (plan.kind === "included") {
-      return base + " No cable purchase: the DM-40D pair ships with " + plan.includedLabel + ", which fits this controller's " +
-        gear().endpointLabel(plan.output && plan.output.connector) + " output.";
+      return base + " No cable purchase: the DM-40D pair ships with " + plan.includedLabel +
+        ", which connects this controller's " + gear().endpointLabel(plan.output && plan.output.connector) + " output" +
+        (plan.reversedLead ? " (the lead is passive, so it works either way round)" : "") +
+        ". If you need more reach than the supplied lead gives you, add a longer one in Rig Studio.";
     }
     if (plan.kind === "allowance") {
       return base + " The cable line is a $" + cablePrice(plan) + " planning allowance for " + plan.label +
@@ -199,7 +203,7 @@
       '</fieldset>' +
       '<div class="beginner-lab-total"><span>Estimated new spend</span><strong data-bl-total aria-live="polite">' + money(costs.total) + '</strong></div><p class="beginner-lab-disclaimer">' + esc(cableDisclaimer(costs.plan)) + ' Catalog prices are estimates, not live retailer quotes.</p>' +
       '<a class="beginner-lab-build" data-bl-build href="' + esc(hrefForRig()) + '">Open this setup in Rig Studio →</a>' +
-      '<p class="beginner-lab-handoff">Every line above travels with you, including the cable allowance and what you already own. Rig Studio totals should match this estimate.</p></aside></div>' +
+      '<p class="beginner-lab-handoff">Every line above travels with you, including what still has to be bought and what you already own. Rig Studio totals should match this estimate.</p></aside></div>' +
       '<section class="beginner-lab-alternatives" aria-labelledby="beginner-lab-alt-title"><div class="beginner-lab-alternatives-head"><h3 id="beginner-lab-alt-title">Compare the other ways in</h3><p>Each one is a good fit for a different reason—and has a real trade-off.</p></div><div class="beginner-lab-cards">' + alternatives + '</div></section>' +
       '<div class="beginner-lab-note"><b>Before you buy</b><p>Confirm the exact software edition and device/OS pairing, speaker input, and cable ends. The controller’s headphone cue is separate from its speaker output. <a href="controller-software-compatibility-matrix.html">Check software support</a> or <a href="how-to-connect-dj-controller-to-speakers.html">follow the speaker connection guide</a>.</p></div>' +
       '</section>';
