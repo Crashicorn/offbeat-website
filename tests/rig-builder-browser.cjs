@@ -53,7 +53,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // First-time buyers must not be assigned an imaginary owned laptop.
       assert.equal(metrics.spend, "$1,637", "default includes the full $999 laptop");
       const initialOwned = await page.$eval(".metric-val--owned", el => el.textContent.trim());
-      assert.match(initialOwned, /\\$0$/, "default ownership deduction must be zero");
+      assert.match(initialOwned, /\$0$/, "default ownership deduction must be zero");
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
       assert.ok(Number.isFinite(before) && before > 0, "initial spend must be a real amount");
       await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
