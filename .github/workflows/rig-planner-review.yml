@@ -6,14 +6,18 @@ on:
   push:
     branches:
       - fix/arena-rig-share-safety-20261026
+      - review/arena-relaunch-safety-integrated-20261027
   pull_request:
     branches:
       - review/arena-rig-original-20261026
+      - main
     paths:
       - assets/rig-builder.js
       - tests/rig-builder-security.test.js
       - tests/rig-builder-browser.cjs
       - .github/workflows/rig-planner-review.yml
+      - tools/check_site.py
+      - tests/check_site_structure.py
 
 permissions:
   contents: read
@@ -36,6 +40,10 @@ jobs:
           node --check assets/rig-builder.js
           node --check tests/rig-builder-security.test.js
           node --check tests/rig-builder-browser.cjs
+      - name: Validate all site pages, links, media, structure and metadata
+        run: |
+          python3 tools/check_site.py
+          python3 tests/check_site_structure.py
       - name: Execute committed regression suite
         run: node --test tests/rig-builder-security.test.js
       - name: Browser-check real planner at desktop and mobile sizes
