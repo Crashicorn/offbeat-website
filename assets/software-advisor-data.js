@@ -33,6 +33,21 @@
   var DATA = {
     verified: "27 October 2026",
 
+    /* What fills a gap a platform leaves open. Only platforms this page already
+       documents appear, so a suggestion never outruns its source. These are the
+       "what fills the gap" lines in a partial-fit result. */
+    gapFill: {
+      cdj: "rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.",
+      video: "djay Pro, VirtualDJ Pro and rekordbox Professional are the platforms on this page that output video.",
+      stems: "Serato (Stems is in the free DJ Lite tier), djay Pro, rekordbox Core and VirtualDJ Pro are the stem routes on this page.",
+      dvs: "Serato's DVS expansion, rekordbox on Hardware Unlock-list hardware, or djay Pro are the DVS routes on this page.",
+      fourdecks: "Serato Pro, Traktor Pro 4, djay Pro and rekordbox Professional are the four-deck routes on this page."
+    },
+
+    /* Mixed-library answer for platforms with no streaming at all: they still
+       carry the owned-files half, so the streamed half gets a named route. */
+    streamingGapFill: "For the streamed half, Serato, djay, VirtualDJ or rekordbox all integrate the major services — keep this for your own files and use one of those for that role (each service still bills itself separately).",
+
     /* ------------------------------------------------------ questions -- */
     questions: [
       {
@@ -57,7 +72,9 @@
           { value: "flx4", label: "Pioneer DDJ-FLX4" },
           { value: "flx2", label: "Pioneer DDJ-FLX2" },
           { value: "flx10", label: "Pioneer DDJ-FLX10 / FLX6" },
-          { value: "denon", label: "Denon DJ / Engine hardware" },
+          { value: "prime4", label: "Denon DJ PRIME 4 / PRIME 4+" },
+          { value: "prime_go", label: "Denon DJ PRIME GO / PRIME GO+" },
+          { value: "engine_other", label: "Other Engine OS player (Numark, SC LIVE, PRIME 4 G2…)" },
           { value: "traktor", label: "Traktor Kontrol S2 / S3 / S4" },
           { value: "other", label: "Numark, Hercules, Reloop or Rane" },
           { value: "unsure", label: "Not sure yet" }
@@ -133,29 +150,55 @@
      *   "pro"         this hardware unlocks the full paid Serato licence
      *   "os"          Engine DJ desktop is the free tool for this hardware
      *   "play"        Traktor Play is bundled or plug-and-play with this gear
+     *   "home"/"pro"  VirtualDJ: the cheapest tier that covers controller use
+     *                 with this unit (the GO/GO+ line is documented at Pro)
      *   "unknown"     the vendor lists per-model behaviour we have not verified
+     *
+     * engineFamily  this player runs Engine OS (the free Engine DJ desktop app
+     *               prepares its media); nothing in the family is assumed to
+     *               drive other platforms until verified per model
+     * pioneer       Pioneer standalones/CDJs read rekordbox-format media
+     * rekImport     this player reads rekordbox drives natively (Denon's
+     *               PRIME 4+ FAQ) — so rekordbox can still prepare for it
      */
     hardware: {
       none: { label: "No hardware yet", unlocks: {} },
       flx4: {
         label: "DDJ-FLX4",
+        pioneer: true,
         unlocks: { rekordbox: "hu", serato: "lite", traktor: "play" },
         note: "On rekordbox's Hardware Unlock list, on Serato's Lite campaign list, and plug-and-play with Traktor Play."
       },
       flx2: {
         label: "DDJ-FLX2",
+        pioneer: true,
         unlocks: { rekordbox: "hu", serato: "lite", traktor: "play" },
         note: "On rekordbox's Hardware Unlock list, unlocks Serato DJ Lite for free (Serato DJ Pro is a paid upgrade), and plug-and-play with Traktor Play."
       },
       flx10: {
         label: "DDJ-FLX10 / FLX6",
+        pioneer: true,
         unlocks: { rekordbox: "hu", serato: "pro" },
         note: "On rekordbox's Hardware Unlock list and unlocks Serato DJ Pro for free while it is connected; the Serato DVS expansion stays a separate purchase."
       },
-      denon: {
-        label: "Denon DJ / Engine hardware",
+      prime4: {
+        label: "Denon DJ PRIME 4 / PRIME 4+",
+        engineFamily: true,
+        rekImport: true,
+        unlocks: { engine: "os", serato: "pro", virtualdj: "home" },
+        note: "A standalone player that also works as a laptop controller: Serato's own PRIME 4 and PRIME 4+ pages list both as unlocking Serato DJ Pro, and Denon's PRIME 4+ FAQ lists Virtual DJ compatibility. Serato's per-model page also names the DVS expansion for control vinyl/CDs. rekordbox is still useful: the PRIME 4+ reads rekordbox drives natively (music, playlists, hot cues) — that is an import, not a controller unlock. The PRIME 4 G2 is a different unit and has not been verified here, so it sits in the 'other Engine OS player' option."
+      },
+      prime_go: {
+        label: "Denon DJ PRIME GO / PRIME GO+",
+        engineFamily: true,
+        unlocks: { engine: "os", virtualdj: "pro" },
+        note: "A battery-powered standalone player. Denon documents Virtual DJ support for the GO and GO+ with a Pro licence. GO+ adds Apple Music and Amazon Music Unlimited over the original GO (Engine DJ's streaming list), keeps the Ethernet port off while supporting USB-Ethernet adapters, and carries the manufacturer's ~25% better battery rating — so the model matters for streaming and networking. Serato, rekordbox, Traktor and djay are not verified for this unit here."
+      },
+      engine_other: {
+        label: "Other Engine OS player (Numark Mixstream, SC LIVE, PRIME 4 G2…)",
+        engineFamily: true,
         unlocks: { engine: "os" },
-        note: "Engine DJ desktop is free and is the preparation tool for Engine OS players."
+        note: "Engine OS players are prepared by the free Engine DJ desktop app. Which performance software (if any) a specific unit works with as a controller is per-model — this page verifies the PRIME 4/4+ (Serato DJ Pro, Virtual DJ) and the GO/GO+ (Virtual DJ Pro) only."
       },
       traktor: {
         label: "Traktor Kontrol controller",
