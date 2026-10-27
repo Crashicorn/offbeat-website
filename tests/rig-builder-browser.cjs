@@ -178,6 +178,45 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await quantity.context.close();
     console.log("PASS: two controllers via one quantity stepper require routing review");
 
+    // Connection auto-fix must add the recommended cable, not silently
+    // replace an unrelated owned cable or discard its quantity. A buyer may
+    // need both RCA and XLR cabling for different equipment/venues.
+    const cableFixRig = {
+      name: "Keep owned RCA when adding XLR",
+      items: [
+        { slotId: "ctrl", category: "controllers", itemId: "denon-prime-go", qty: 1, owned: false },
+        { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
+        { slotId: "sp", category: "speakers", itemId: "yamaha-hs5", qty: 1, owned: false },
+        { slotId: "rca", category: "cables", itemId: "cable-rca-rca", qty: 2, owned: true }
+      ]
+    };
+    const cableFixQuery = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(cableFixRig)), "binary").toString("base64")
+    );
+    const cableFix = await visit(browser, 390, cableFixQuery);
+    const spendBeforeCable = await cableFix.page.$eval(".metric-val--spend", el =>
+      Number(el.textContent.replace(/[^\\d.]/g, "")));
+    const fixSelector = '[data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
+    assert.ok(await cableFix.page.$(fixSelector), "XLR suggestion must be available");
+    await cableFix.page.click(fixSelector);
+    const cableFixResult = await cableFix.page.evaluate(() => ({
+      state: JSON.parse(localStorage.getItem("offbeat.rig.active")),
+      spend: Number((document.querySelector(".metric-val--spend")?.textContent || "").replace(/[^\\d.]/g, "")),
+      alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+    }));
+    const originalCable = cableFixResult.state.items.find(s => s.itemId === "cable-rca-rca");
+    const addedCable = cableFixResult.state.items.filter(s => s.itemId === "cable-xlr-xlr");
+    assert.ok(originalCable, "auto-fix must preserve existing RCA cable");
+    assert.equal(originalCable.qty, 2, "existing cable quantity must survive");
+    assert.equal(originalCable.owned, true, "existing cable ownership must survive");
+    assert.equal(addedCable.length, 1, "XLR fix must add exactly one cable slot");
+    assert.equal(addedCable[0].owned, false, "new cable is not automatically owned");
+    assert.equal(cableFixResult.spend, spendBeforeCable + 28, "only new cable price increases spend");
+    assert.match(cableFixResult.alerts, /Listed Audio Connection Match/);
+    assert.deepEqual(cableFix.errors, [], "no JS errors after cable auto-fix");
+    await cableFix.context.close();
+    console.log("PASS: connection fix adds XLR without discarding owned RCA cables");
+
     // Guide-to-planner links must not wipe an existing saved shopping list.
     // Replacing a controller resets only its own purchase/quantity state;
     // accessory links append rather than replacing a different cable.
