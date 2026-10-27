@@ -146,6 +146,29 @@ function visibleCount(page) {
         "trainer must start from a visitor click");
       await page.click("[data-cue]");
       await page.keyboard.press("c");
+      if (width < 600) {
+        // Actual mobile Chromium touch input, not synthetic mouse dispatch:
+        // the platter advertises swiping but previously listened only for
+        // mousedown/mousemove and did nothing for a finger.
+        await page.$eval("[data-platter-b]", el =>
+          el.scrollIntoView({ block: "center" }));
+        const box = await page.$eval("[data-platter-b]", el => {
+          const r = el.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        const neutral = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
+        await page.touchscreen.touchStart(box.x, box.y);
+        await page.touchscreen.touchMove(box.x, box.y - 45);
+        await new Promise(resolve => setTimeout(resolve, 120));
+        const nudged = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
+        assert.ok(nudged > neutral * 1.1,
+          "real mobile finger swipe must audibly accelerate Deck B");
+        await page.touchscreen.touchEnd();
+        await new Promise(resolve => setTimeout(resolve, 120));
+        const released = Number(await page.$eval("[data-bpm-b]", el => el.textContent));
+        assert.ok(Math.abs(released - neutral) < 0.2,
+          "releasing the mobile jog must restore the pitch-fader tempo");
+      }
       await page.click("[data-stop]");
       assert.equal(await page.$eval(".teacher-stage",
         el => el.classList.contains("is-running")), false,
