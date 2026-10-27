@@ -311,6 +311,16 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
     plan.name = "a second stereo feed this deck does not have";
     var outLabel = blocked.output.label || endpointLabel(blocked.output.connector);
     var busy = (used[blocked.output.connector] || 0) > 0;
+    /* A deck can own other master sockets and still leave this line stranded:
+       say which ones stay free, so the sentence never reads "it has only one
+       output" when the deck plainly has three. */
+    var otherOuts = controllerOutputs(controller).filter(function (o) {
+      return o.connector !== blocked.output.connector;
+    });
+    var otherNote = !otherOuts.length ? "" :
+      " The deck's " + otherOuts.map(function (o) { return o.label || endpointLabel(o.connector); }).join(" and ") +
+      " stay free, but Offbeat has no verified lead from " + (otherOuts.length > 1 ? "those outputs" : "that output") +
+      " to these inputs, so nothing is priced for it.";
     plan.note = blocked.socketsNeeded > 1
       ? "This line needs " + blocked.socketsNeeded + " leads, and each lead needs its own " + endpointLabel(blocked.output.connector) +
         " socket. " + controller.model + " has " + capacity[blocked.output.connector] + " \u00d7 " + outLabel +
@@ -319,6 +329,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
         (busy ? " is already feeding another speaker line." : " is the only one it has.") +
         " A second pair needs its own output or a splitter; Offbeat has no verified splitter, so no lead is priced here and the routing stays unresolved." +
         " The headphone socket is for cueing, not a second master, so it cannot stand in for one.";
+    plan.note += otherNote;
     return plan;
   }
 

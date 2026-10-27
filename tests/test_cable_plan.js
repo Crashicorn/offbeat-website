@@ -273,6 +273,25 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     assert.ok(/Routing unresolved/.test(panelRows[1].textContent), "the panel marks the unresolved line");
     assert.ok(page.queryAll(".rs-connect-fix--swap").length >= 1, "the panel offers a speaker swap for the dead end");
 
+    /* A deck with spare masters must never be described as having one output:
+       the FLX10 leaves XLR and booth free, and the note has to say so while
+       still refusing to price an unverified lead. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx10"),
+      slot("pair1", "speakers", "pioneer-dm40d"),
+      slot("pair2", "speakers", "pioneer-dm40d")
+    ]));
+    const flx10PairPlans = await page.connections();
+    assert.strictEqual(flx10PairPlans[0].kind, "included", "the first pair uses its box lead");
+    assert.strictEqual(flx10PairPlans[1].kind, "unresolved", "the second pair still has no priced route");
+    const flx10PairNote = (await page.checks()).find((c) => c.key === "cables").note;
+    assert.match(flx10PairNote, /XLR master and Booth 1\/4-inch TRS stay free/,
+      `the note names the deck's spare outputs: ${flx10PairNote}`);
+    assert.match(flx10PairNote, /no verified lead from those outputs/,
+      `the note says why nothing is priced: ${flx10PairNote}`);
+    assert.strictEqual((await page.cost()).buyTotal, 1599 + 149 + 149,
+      "two pairs of monitors cost two pairs, with no invented lead");
+
     /* The quantity stepper is the same physics: one box slot set to 2 is two
        pairs and two feeds, so it cannot quietly behave better than two slots. */
     await open(rigUrl(server.base, [
