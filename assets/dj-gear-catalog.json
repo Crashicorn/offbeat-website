@@ -1440,19 +1440,18 @@
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
       "badge": "Beginner",
-      "desc": "A two-channel controller, monitoring headphones, a desktop monitor pair with the lead it needs in the box, and a laptop riser. One dual RCA lead is still required because the FLX4 has RCA outputs.",
+      "desc": "A two-channel controller, monitoring headphones, a desktop monitor pair whose in-box lead feeds the FLX4's RCA master, and a laptop riser. No separate cable purchase is needed for this route.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
         "speakers": "pioneer-dm40d",
         "laptops": "macbook-air-m2",
-        "cables": "cable-rca-rca",
         "stands": "laptop-stand-pyle"
       },
       "owned": [
         "laptops"
       ],
-      "blurb": "Two-channel deck, cue headphones, desk monitors and the cable. Laptop assumed owned."
+      "blurb": "Two-channel deck, cue headphones and desk monitors whose in-box lead already does the wiring. Laptop assumed owned."
     },
     {
       "id": "club-ready",
