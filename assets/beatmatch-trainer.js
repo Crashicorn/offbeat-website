@@ -589,17 +589,27 @@
     el.nudgeFwd.addEventListener("touchend", endNudge);
   }
 
-  // A CUE press starts Deck B from its own beat 1 at the moment of the
-  // press. It must NOT quantize/snap to Deck A: that would reward a mistimed
-  // drop and defeat the listening exercise. Reset the B scheduler as well so
-  // the next B kick is not delayed by the previous playback position.
+  // A CUE press starts Deck B from beat 1 at the *actual* press time.
+  // Do not snap to Deck A: a late drop must sound late and score accordingly.
+  // Swap B's output channel to silence notes already queued by the lookahead
+  // scheduler; otherwise a stale kick can play after the new downbeat.
   if (el.cueBtn) {
     el.cueBtn.addEventListener("click", function () {
       if (!state.running) return;
       advanceClock(); // Account for time since the last animation frame.
+      if (audio.chanB) {
+        var previousB = audio.chanB;
+        var freshB = state.ctx.createGain();
+        freshB.connect(audio.pannerB || audio.master);
+        audio.chanB = freshB;
+        previousB.disconnect();
+        applyAudioRouting();
+      }
       state.posB = 0;
       state.beatB = 0;
-      state.scheduledB = -1;
+      state.scheduledB = 0;
+      // Schedule beat 1 immediately, not one beat after the next frame.
+      scheduleBeat("b", state.ctx.currentTime, currentBpmB());
     });
   }
 
