@@ -373,7 +373,10 @@
       state.currentStreakMs = 0;
     }
 
-    if (absDiff < 200) state.offsets.push(absDiff);
+    // Include every audible phase error, even severe 200-250 ms misses.
+    // Excluding those misses produced a falsely excellent average drift.
+    // Collect only observed timed-drill frames; practice is unbounded.
+    if (state.mode === "drill" && delta > 0) state.offsets.push(absDiff);
 
     // Update drift readout
     if (el.drift) el.drift.textContent = (diff > 0 ? "+" : "") + Math.round(diff) + " ms";
@@ -547,7 +550,7 @@
   function showScorecard() {
     if (!el.scorecard) return;
     var finalScore = state.totalMs > 0 ? Math.round((state.lockedMs / state.totalMs) * 100) : 0;
-    var avgOffset = state.offsets.length > 0 ? Math.round(state.offsets.reduce(function (a, b) { return a + b; }, 0) / state.offsets.length) : 0;
+    var avgOffset = state.offsets.length > 0 ? Math.round(state.offsets.reduce(function (a, b) { return a + b; }, 0) / state.offsets.length) : null;
     var streakSec = (state.bestStreakMs / 1000).toFixed(1);
 
     var gradeBadge = root.querySelector("[data-score-grade]");
@@ -557,7 +560,7 @@
     var tipElem = root.querySelector("[data-score-tip]");
 
     if (valElem) valElem.textContent = finalScore + "%";
-    if (driftElem) driftElem.textContent = "±" + avgOffset + " ms";
+    if (driftElem) driftElem.textContent = avgOffset === null ? "Not measured" : "±" + avgOffset + " ms";
     if (streakElem) streakElem.textContent = streakSec + "s";
 
     var grade = "TRAINWRECK";
