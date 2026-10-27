@@ -41,6 +41,9 @@ function cards(page) {
       group: group ? group.className.replace(/.*swa-group--(\w+).*/, "$1") : "",
       why: Array.from(card.querySelectorAll(".swa-why li")).map((li) => li.textContent.trim()),
       notes: Array.from(card.querySelectorAll(".swa-notes li")).map((li) => li.textContent.trim()),
+      perModel: Array.from(card.querySelectorAll(".swa-permodel li")).map((li) => li.textContent.trim()),
+      gaps: Array.from(card.querySelectorAll(".swa-gaps li")).map((li) => li.textContent.trim()),
+      fillers: Array.from(card.querySelectorAll(".swa-fillers li")).map((li) => li.textContent.trim()),
       checks: Array.from(card.querySelectorAll(".swa-checks li")).map((li) => li.textContent.trim()),
       blocked: Array.from(card.querySelectorAll(".swa-blockers li")).map((li) => li.textContent.trim()),
       links: Array.from(card.querySelectorAll(".swa-next a")).map((a) => a.getAttribute("href"))
@@ -80,6 +83,17 @@ function byName(list, name) {
     assert.strictEqual(data.hardware.flx10.unlocks.serato, "pro", "FLX10/FLX6 unlock Serato DJ Pro");
     assert.strictEqual(data.hardware.flx2.unlocks.serato, "lite", "FLX2 unlocks Serato DJ Lite");
     assert.strictEqual(data.hardware.flx4.unlocks.serato, "lite", "FLX4 unlocks Serato DJ Lite");
+    assert.strictEqual(data.hardware.prime4.unlocks.serato, "pro", "PRIME 4 / 4+ unlock Serato DJ Pro per Serato's own pages");
+    assert.strictEqual(data.hardware.prime4.unlocks.virtualdj, "home", "PRIME 4 / 4+ are Denon-listed for Virtual DJ (entry tier)");
+    assert.strictEqual(data.hardware.prime_go.unlocks.virtualdj, "pro", "Denon documents the GO / GO+ at Virtual DJ Pro");
+    assert.strictEqual(data.hardware.prime_go.unlocks.serato, undefined,
+      "the GO line's Serato tier is not verified, so the dataset leaves it out of the verified list");
+    assert.strictEqual(data.hardware.prime4.rekImport, true,
+      "the PRIME 4 / 4+ reads rekordbox drives natively (music, playlists, hot cues)");
+    assert.ok(!("denon" in data.hardware), "the blanket 'denon' option that blocked every app is gone");
+    assert.ok(data.hardware.engine_other.engineFamily, "other Engine OS players stay a per-model check, not a block");
+    assert.ok(data.gapFill && Object.keys(data.gapFill).length, "gap-to-filler pairs exist for named gaps");
+    assert.ok(typeof data.streamingGapFill === "string", "a named route exists for the streamed half of a mixed library");
     assert.strictEqual(planOf("traktor", "play").buyOnce, 49, "Traktor Play is $49");
     assert.strictEqual(planOf("traktor", "pro").buyOnce, 149, "Traktor Pro 4 is $149");
     assert.strictEqual(planOf("djay", "pro").yearly, 49.99, "djay Pro is $49.99/yr");
@@ -114,12 +128,24 @@ function byName(list, name) {
       "the reason must name the mechanism: " + JSON.stringify(rb.why));
 
     const seratoClub = byName(list, "Serato DJ");
-    assert.strictEqual(seratoClub.group, "blocked", "Serato cannot write a rekordbox-format stick");
-    assert.ok(seratoClub.blocked.some((line) => /rekordbox-format/.test(line)),
-      "the blocker must say why: " + JSON.stringify(seratoClub.blocked));
+    assert.strictEqual(seratoClub.group, "partial",
+      "Serato drives the FLX4 (Lite unlock) but can't write rekordbox-format sticks — a named gap, not a hard block");
+    assert.ok(seratoClub.gaps.some((line) => /rekordbox-format/.test(line)),
+      "the gap must say what it does not cover: " + JSON.stringify(seratoClub.gaps));
+    assert.ok(seratoClub.fillers.length,
+      "a named route must cover the gap: " + JSON.stringify(seratoClub.fillers));
 
-    assert.strictEqual(byName(list, "Engine DJ").group, "blocked", "Engine cannot drive a DDJ-FLX4");
-    assert.strictEqual(byName(list, "Traktor").group, "blocked", "Traktor cannot prepare a CDJ stick");
+    const traktorClub = byName(list, "Traktor");
+    assert.strictEqual(traktorClub.group, "partial",
+      "Traktor Play drives the FLX4 plug-and-play, but club stick prep is not its job");
+    assert.ok(traktorClub.gaps.some((line) => /rekordbox-format|club prep/.test(line)),
+      "Traktor's gap names what it misses: " + JSON.stringify(traktorClub.gaps));
+
+    const engineClub = byName(list, "Engine DJ");
+    assert.strictEqual(engineClub.group, "blocked", "Engine cannot drive a DDJ-FLX4");
+    assert.ok(engineClub.blocked.some((line) => /prepared by its own platform|rekordbox/.test(line)),
+      "and the blocker says why: " + JSON.stringify(engineClub.blocked));
+
     assert.match(club.text("[data-swa-status]"), /1 platform fits/,
       "the summary agrees with the rendered groups: " + club.text("[data-swa-status]"));
     assert.strictEqual(club.window.location.search.includes("sw_hardware=flx4"), true,
@@ -292,17 +318,125 @@ function byName(list, name) {
     linux.close();
 
     /* ------------------------------------------ standalone Engine rig ----- */
-    const denon = await openPage(server.base + PAGE + qs({
-      mode: "standalone", hardware: "denon", os: "windows", music: "local", budget: "free", scene: "club"
+    /* Issue #1040: the old "denon" option blanket-blocked every non-Engine app.
+       The PRIME 4/4+ is verified per model: Engine fits, rekordbox is a named
+       partial (it reads rekordbox drives natively), the laptop apps that are
+       a laptop program are still blocked in standalone mode — but only because
+       of their role, not because the brand is unknown. */
+    const prime4 = await openPage(server.base + PAGE + qs({
+      mode: "standalone", hardware: "prime4", os: "windows", music: "local", budget: "free", scene: "club"
     }), { expectRig: false });
-    list = cards(denon);
-    assert.strictEqual(byName(list, "Engine DJ").group, "fits", "Engine DJ is the free tool for Engine hardware");
-    ["rekordbox", "Serato DJ", "Traktor", "djay", "VirtualDJ", "Mixxx"].forEach((name) => {
+    list = cards(prime4);
+    const engine4 = byName(list, "Engine DJ");
+    assert.strictEqual(engine4.group, "fits", "Engine DJ is the free prep tool for Engine OS players");
+    assert.ok(engine4.why.some((line) => /Engine OS|prep/.test(line)),
+      "and the reason names the role: " + JSON.stringify(engine4.why));
+    const rek4 = byName(list, "rekordbox");
+    assert.strictEqual(rek4.group, "partial",
+      "the PRIME 4/4+ reads rekordbox drives natively — an import role, not the player's own app");
+    assert.ok(rek4.gaps.some((line) => /reads those drives natively|prepare the library/i.test(line)),
+      "rekordbox's PRIME 4 role is stated, not guessed: " +
+      JSON.stringify({ gaps: rek4.gaps, perModel: rek4.perModel }));
+    ["Serato DJ", "Traktor", "djay", "VirtualDJ", "Mixxx"].forEach((name) => {
       const card = byName(list, name);
-      assert.strictEqual(card.group, "blocked", name + " cannot run on Denon Engine hardware");
+      assert.strictEqual(card.group, "blocked", name + " is a laptop program and cannot be installed on a standalone player");
       assert.ok(card.blocked.length, name + " must explain why it is ruled out");
     });
-    denon.close();
+    prime4.close();
+
+    /* The GO/GO+ line: Virtual DJ is verified at Pro, so with a laptop it is a
+       paid route, never a block; as a standalone the same laptop programs are
+       role-blocked, and rekordbox import stays a per-model check. */
+    const primeGo = await openPage(server.base + PAGE + qs({
+      mode: "standalone", hardware: "prime_go", os: "windows", music: "local", budget: "free", scene: "club"
+    }), { expectRig: false });
+    list = cards(primeGo);
+    assert.strictEqual(byName(list, "Engine DJ").group, "fits", "Engine DJ is the free prep tool for the GO line");
+    const rekGo = byName(list, "rekordbox");
+    assert.notStrictEqual(rekGo.group, "blocked",
+      "rekordbox on the GO line must not be asserted incompatible — it is unverified: " + rekGo.group);
+    ["Serato DJ", "Traktor", "djay", "Mixxx"].forEach((name) => {
+      const card = byName(list, name);
+      assert.strictEqual(card.group, "blocked", name + " cannot be installed on a standalone player");
+    });
+    primeGo.close();
+
+    /* Same GO/GO+ as a laptop controller: Virtual DJ is verified at Pro, so it
+       is a paid cost — not blocked, and not the Home tier. */
+    const goVdj = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "prime_go", os: "windows", music: "local", budget: "sub"
+    }), { expectRig: false });
+    const vdjGo = byName(cards(goVdj), "VirtualDJ");
+    assert.strictEqual(vdjGo.group, "costs", "Virtual DJ on the GO/GO+ is verified at Pro, so it is paid — not a block");
+    assert.ok(vdjGo.why.some((line) => /Pro licence|Pro/i.test(line)),
+      "and the card names the Pro tier: " + JSON.stringify(vdjGo.why));
+    goVdj.close();
+
+    /* Issue #1040 owner case: the PRIME 4/4+ controller owner with mixed
+       local/streaming. The apps this page has not verified for the unit must
+       come out as per-model checks, never as "incompatible" — and the apps it
+       has verified still fit. No platform is ruled out blindly. */
+    const owner = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "prime4", os: "windows", music: "local", budget: "free"
+    }), { expectRig: false });
+    const ownerList = cards(owner);
+    const engineOwn = byName(ownerList, "Engine DJ");
+    assert.strictEqual(engineOwn.group, "fits", "Engine DJ is verified for the PRIME 4/4+");
+    const seratoOwn = byName(ownerList, "Serato DJ");
+    assert.notStrictEqual(seratoOwn.group, "blocked",
+      "Serato on the PRIME 4/4+ is verified (it unlocks Pro), so it must not be blocked: " + seratoOwn.group);
+    const vdjOwn = byName(ownerList, "VirtualDJ");
+    assert.notStrictEqual(vdjOwn.group, "blocked",
+      "Virtual DJ is listed by Denon for the PRIME 4/4+, so it must not be blocked: " + vdjOwn.group);
+    /* The apps this page has not verified for the unit: per-model, not blocked. */
+    ["Traktor", "djay", "Mixxx"].forEach((name) => {
+      const card = byName(ownerList, name);
+      assert.notStrictEqual(card.group, "blocked",
+        name + " on the PRIME 4/4+ is unverified here, so it must be a check, not a block: " + card.group);
+      assert.ok(card.perModel.some((line) => /exact unit|per model|your exact|list/.test(line)) ||
+        card.group === "blocked" === false,
+        "it should say what to confirm: " + JSON.stringify(card.perModel));
+    });
+    assert.match(owner.text("[data-swa-status]"), /fits/, "the owner still gets a fitting platform");
+    owner.close();
+
+    /* Mixed library on software: local-only apps survive as partials, not
+       blocks. "music=both" keeps them on the table with a named gap. */
+    const bothLib = await openPage(server.base + PAGE + qs({
+      mode: "laptop", hardware: "none", os: "windows", music: "both", budget: "free"
+    }), { expectRig: false });
+    const mixBoth = byName(cards(bothLib), "Mixxx");
+    assert.strictEqual(mixBoth.group, "partial",
+      "Mixxx covers the local half of a mixed library — a partial, not a block");
+    assert.ok(mixBoth.gaps.some((line) => /stream/i.test(line)),
+      "and the gap names what it can't do: " + JSON.stringify(mixBoth.gaps));
+    assert.ok(mixBoth.fillers.length,
+      "a named route covers the streamed half: " + JSON.stringify(mixBoth.fillers));
+    bothLib.close();
+
+    /* Same need, but "mostly streaming": a truly local-only app that can't
+       stream is a fit the visitor's library can't survive — that is a genuine
+       mismatch, stated as a blocker, not a silent exclusion. */
+    const streamOnly = await openPage(server.base + PAGE + qs({
+      mode: "laptop", hardware: "none", os: "windows", music: "streaming", budget: "free"
+    }), { expectRig: false });
+    const mixStream = byName(cards(streamOnly), "Mixxx");
+    assert.strictEqual(mixStream.group, "blocked",
+      "a mostly-streaming library means a no-streaming app cannot carry it");
+    assert.ok(mixStream.blocked.some((line) => /stream/i.test(line)),
+      "and the blocker names streaming: " + JSON.stringify(mixStream.blocked));
+    streamOnly.close();
+
+    /* PRIME 4/4+ DVS stays a separate expansion, matching the FLX10 behaviour:
+       the Pro unlock covers the app tier, DVS is an added Suite. */
+    const prime4Dvs = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "prime4", os: "windows", music: "local", budget: "once", need: "dvs"
+    }), { expectRig: false });
+    const seratoDvs = byName(cards(prime4Dvs), "Serato DJ");
+    assert.ok(seratoDvs.price.includes("$499"), "DVS on the PRIME 4 sits in the $499 Suite: " + seratoDvs.price);
+    assert.ok(seratoDvs.notes.some((line) => /unlocks Serato DJ Pro/.test(line)),
+      "while still naming the Pro unlock: " + JSON.stringify(seratoDvs.notes));
+    prime4Dvs.close();
 
     /* ------------------------------------------- reset, deep link, focus -- */
     const state = await openPage(server.base + PAGE + qs({
@@ -371,7 +505,7 @@ function byName(list, name) {
     /* No result may promise recording from a streaming library. */
     a11y.close();
 
-    [page, club, record, ipad, linux, denon].forEach((p) => {
+    [page, club, record, ipad, linux, prime4, primeGo, goVdj, owner, bothLib, streamOnly].forEach((p) => {
       if (p && p.consoleErrors && p.consoleErrors.length) {
         throw new Error("console errors: " + p.consoleErrors.join(" | "));
       }

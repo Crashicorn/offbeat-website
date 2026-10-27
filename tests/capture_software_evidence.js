@@ -52,8 +52,24 @@ const CASES = [
     query: "sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=local&sw_budget=free&sw_need=recording"
   },
   {
-    title: "Denon standalone player, no laptop in the booth",
-    query: "sw_mode=standalone&sw_hardware=denon&sw_os=macos&sw_music=local&sw_budget=free"
+    title: "PRIME 4 / 4+ standalone player, no laptop in the booth",
+    query: "sw_mode=standalone&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free"
+  },
+  {
+    title: "PRIME GO / GO+ standalone player, no laptop in the booth",
+    query: "sw_mode=standalone&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=free"
+  },
+  {
+    title: "PRIME 4 / 4+ owner with a Windows laptop (the issue #1040 case)",
+    query: "sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free"
+  },
+  {
+    title: "PRIME 4 / 4+ owner who also wants DVS",
+    query: "sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs"
+  },
+  {
+    title: "PRIME GO / GO+ used as a laptop controller",
+    query: "sw_mode=controller&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=sub"
   },
   {
     title: "Turntables, timecode, prefers to buy once",
@@ -63,7 +79,7 @@ const CASES = [
 
 function dump(cards, page) {
   const lines = [];
-  ["fits", "costs", "blocked"].forEach((group) => {
+  ["fits", "costs", "partial", "check", "blocked"].forEach((group) => {
     const nodes = page.queryAll(".swa-group--" + group + " .swa-card");
     if (!nodes.length) return;
     const heading = page.text(".swa-group--" + group + " h3").replace(/\s+/g, " ").trim();
@@ -77,7 +93,7 @@ function dump(cards, page) {
       if (price) lines.push("     price: " + price.textContent.trim());
       const free = card.querySelector(".swa-free");
       if (free) lines.push("     free tier: " + free.textContent.trim());
-      ["swa-why|why", "swa-blockers|no", "swa-notes|note", "swa-checks|check"].forEach((pair) => {
+      ["swa-why|why", "swa-blockers|no", "swa-notes|note", "swa-permodel|model", "swa-gaps|gap", "swa-fillers|fills", "swa-checks|check"].forEach((pair) => {
         const [className, label] = pair.split("|");
         Array.from(card.querySelectorAll("." + className + " li")).forEach((li) => {
           lines.push("     " + label + ": " + li.textContent.trim());
@@ -127,7 +143,8 @@ function dump(cards, page) {
       page.close();
     }
     out.push("=".repeat(78));
-    out.push("Scores, star ratings and rankings are deliberately absent: the page groups by fit, then by cost.");
+    out.push("Scores, star ratings and rankings are deliberately absent: the page groups by the five outcomes,");
+    out.push("from fit, through cost and named gaps, to per-model checks and genuine incompatibilities.");
     fs.writeFileSync(OUT, out.join("\n") + "\n");
     console.log("wrote " + path.relative(process.cwd(), OUT) + " (" + out.length + " lines)");
   } finally {

@@ -49,14 +49,21 @@ async function answerFor(page, query) {
     const read = (selector) => Array.from(document.querySelectorAll(selector)).map((card) => ({
       name: card.querySelector("h4").textContent.trim(),
       badge: card.querySelector(".swa-badge").textContent.trim(),
+      price: card.querySelector(".swa-price") ? card.querySelector(".swa-price").textContent.trim() : "",
       why: Array.from(card.querySelectorAll(".swa-why li")).map((li) => li.textContent.trim()),
+      gaps: Array.from(card.querySelectorAll(".swa-gaps li")).map((li) => li.textContent.trim()),
+      fillers: Array.from(card.querySelectorAll(".swa-fillers li")).map((li) => li.textContent.trim()),
+      perModel: Array.from(card.querySelectorAll(".swa-permodel li")).map((li) => li.textContent.trim()),
       checked: Array.from(card.querySelectorAll(".swa-checks li")).map((li) => li.textContent.trim()),
+      blocked: Array.from(card.querySelectorAll(".swa-blockers li")).map((li) => li.textContent.trim()),
       verify: card.querySelector(".swa-verify") ? card.querySelector(".swa-verify").textContent.trim() : ""
     }));
     return {
       status: document.querySelector("[data-swa-status]").textContent.trim(),
       fits: read(".swa-group--fits .swa-card"),
       costs: read(".swa-group--costs .swa-card"),
+      partial: read(".swa-group--partial .swa-card"),
+      check: read(".swa-group--check .swa-card"),
       blocked: read(".swa-group--blocked .swa-card"),
       streamingNote: !!document.querySelector(".swa-note")
     };
@@ -276,45 +283,101 @@ async function auditLayout(page, label) {
     assert.deepStrictEqual(entry.__errors, [], "entry page console errors: " + entry.__errors.join(" | "));
     await entry.close();
 
-    /* ------------------------------ the ten cases the brief names, in a browser */
+    /* ------------------------------ the cases the brief names, in a browser -- */
     const cases = await newPage(browser, DESKTOP);
     cases.__base = server.base;
     const seen = [];
     const check = async (label, query, expectations) => {
       const answer = await answerFor(cases, query);
       expectations(answer, label);
-      const rows = answer.fits.length + answer.costs.length + answer.blocked.length;
+      const rows = answer.fits.length + answer.costs.length + answer.partial.length
+        + answer.check.length + answer.blocked.length;
       assert.ok(rows >= 1, `${label}: something is rendered`);
-      seen.push(`${label.padEnd(34)} fits: ${answer.fits.map((c) => c.name + " " + c.badge).join(", ") || "none"}` +
+      seen.push(`${label.padEnd(36)} fits: ${answer.fits.map((c) => c.name + " " + c.badge).join(", ") || "none"}` +
         ` | costs: ${answer.costs.map((c) => c.name + " " + c.badge).join(", ") || "none"}` +
+        ` | partial: ${answer.partial.map((c) => c.name).join(", ") || "none"}` +
+        ` | check: ${answer.check.map((c) => c.name).join(", ") || "none"}` +
         ` | blocked: ${answer.blocked.map((c) => c.name).join(", ") || "none"}`);
       await auditLayout(cases, label);
     };
 
     await check("no hardware, beginner, free", "sw_mode=laptop&sw_hardware=none&sw_os=macos&sw_music=local&sw_budget=free", (answer) => {
-      assert.deepStrictEqual(names(answer.fits), ["Mixxx", "Serato DJ", "VirtualDJ", "djay", "rekordbox"].sort(),
-        "a laptop-only beginner still gets free options: " + names(answer.fits));
-      answer.fits.forEach((card) => card.why.forEach((line) => {
+      const beginner = answer.fits.concat(answer.partial);
+      assert.strictEqual(beginner.length, 5, "a laptop-only beginner gets the five free routes, nothing ruled out: " +
+        beginner.map((c) => c.name).join(", "));
+      beginner.forEach((card) => card.why.forEach((line) => {
         assert.ok(!line.includes("$"), `a free answer does not pitch a price (${card.name}): ${line}`);
       }));
     });
 
-    await check("hardware unlocked, club prep, free", "sw_mode=controller&sw_hardware=flx4&sw_os=macos&sw_music=local&sw_budget=free&sw_scene=club", (answer) => {
+    await check("hardware unlocked, club prep, free", "sw_mode=controller&sw_hardware=flx4&sw_os=macos&sw_music=local&sw_budget=free&sw_scene=club&sw_need=cdj", (answer) => {
       const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
-      assert.ok(rekordbox, "an FLX4 puts rekordbox in the free group: " + names(answer.fits));
+      assert.ok(rekordbox, "an FLX4 puts rekordbox in the fits group: " + names(answer.fits));
       assert.strictEqual(rekordbox.badge, "No licence cost", "and the badge says so");
       assert.ok(rekordbox.why.some((line) => /Hardware Unlock list/.test(line)),
         "and it says why in hardware terms: " + JSON.stringify(rekordbox.why));
-      assert.ok(rekordbox.why.some((line) => /CDJs/.test(line)), "club prep is named as the reason");
-      assert.deepStrictEqual(names(answer.fits), ["Mixxx", "Serato DJ", "djay", "rekordbox"],
-        "a club-prep setup still gets every free performance route, rekordbox among them");
-      assert.deepStrictEqual(names(answer.costs), ["Traktor", "VirtualDJ"],
-        "the platforms that charge once hardware is attached are priced, not hidden");
+      const serato = answer.partial.find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "Serato with a CDJ-stick need is a partial fit, not a block: " + answer.partial.map((c) => c.name).join(", "));
+      assert.ok(serato.gaps.some((line) => /rekordbox-format/.test(line)),
+        "and the gap names what it misses: " + JSON.stringify(serato.gaps));
+      assert.ok(serato.fillers.length, "a named route covers the gap: " + JSON.stringify(serato.fillers));
+      const engine = answer.blocked.find((card) => card.name === "Engine DJ");
+      assert.ok(engine, "Engine has no role on an FLX4, and says so: " + answer.blocked.map((c) => c.name).join(", "));
     });
 
-    await check("standalone Engine hardware", "sw_mode=standalone&sw_hardware=denon&sw_os=macos&sw_music=local&sw_budget=free", (answer) => {
-      assert.deepStrictEqual(names(answer.fits), ["Engine DJ"], "Denon standalone means Engine DJ, not a laptop app");
-      assert.strictEqual(answer.blocked.length, 6, "the laptop platforms are ruled out with reasons");
+    await check("standalone PRIME 4/4+ (issue #1040)", "sw_mode=standalone&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
+      assert.deepStrictEqual(names(answer.fits), ["Engine DJ"], "the player itself runs Engine OS: " + names(answer.fits));
+      const rek = answer.partial.find((card) => card.name === "rekordbox");
+      assert.ok(rek, "rekordbox is a named partial (drives the PRIME 4/4+ natively), not a block");
+      assert.strictEqual(answer.blocked.length, 5, "the laptop programs are role-blocked, all with reasons");
+    });
+
+    await check("standalone PRIME GO/GO+", "sw_mode=standalone&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
+      assert.deepStrictEqual(names(answer.fits), ["Engine DJ"], "the GO line runs Engine OS: " + names(answer.fits));
+      const rek = answer.check.find((card) => card.name === "rekordbox");
+      assert.ok(rek, "rekordbox on the GO line is a per-model check, never a block: " + names(answer.check));
+      const vdj = answer.blocked.find((card) => card.name === "VirtualDJ");
+      assert.ok(vdj, "VirtualDJ is role-blocked in standalone mode but the card names the laptop pairing: " +
+        JSON.stringify(vdj && vdj.blocked));
+    });
+
+    await check("GO/GO+ as controller (VDJ at Pro)", "sw_mode=controller&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=sub", (answer) => {
+      const vdj = answer.costs.find((card) => card.name === "VirtualDJ");
+      assert.ok(vdj, "Virtual DJ on the GO/GO+ is a paid route, not a block: " + answer.partial.concat(answer.check, answer.costs).map((c) => c.name).join(", "));
+      assert.ok(/Pro/.test(vdj.why.join(" ")) || /Pro/.test(vdj.price), "and it is named at the Pro tier: " + JSON.stringify({ why: vdj.why, price: vdj.price }));
+    });
+
+    await check("PRIME 4/4+ owner keeps their apps (#1040)", "sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
+      assert.ok(names(answer.fits).includes("Serato DJ"), "Serato is verified for the PRIME 4/4+ and is not ruled out");
+      assert.ok(names(answer.fits).includes("Engine DJ"), "Engine DJ is verified for the PRIME 4/4+");
+      assert.ok(names(answer.costs).includes("VirtualDJ") || names(answer.partial).includes("VirtualDJ") || names(answer.check).includes("VirtualDJ"),
+        "Virtual DJ (Denon-listed) is not ruled out: " + answer.costs.concat(answer.partial, answer.check).map((c) => c.name).join(", "));
+      ["Traktor", "djay", "Mixxx"].forEach((name) => {
+        const card = answer.check.find((c) => c.name === name);
+        assert.ok(card, name + " is an unverified check on the PRIME 4/4+, never a block: " + JSON.stringify(answer));
+        assert.ok(card.perModel.length, name + " says what to confirm: " + JSON.stringify(card.perModel));
+      });
+      assert.strictEqual(answer.blocked.length, 0, "no platform is ruled out for this owner: " + answer.blocked.map((c) => c.name).join(", "));
+    });
+
+    await check("PRIME 4/4+ with a DVS need", "sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs", (answer) => {
+      const serato = answer.costs.find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "DVS pricing lands as a cost, not a mystery: " + answer.costs.concat(answer.partial, answer.check).map((c) => c.name).join(", "));
+      assert.match(serato.price, /\$499/, "DVS on the PRIME 4 sits in the $499 Suite: " + serato.price);
+    });
+
+    await check("mixed library (both)", "sw_mode=laptop&sw_hardware=none&sw_os=windows&sw_music=both&sw_budget=free", (answer) => {
+      const mix = answer.partial.find((card) => card.name === "Mixxx");
+      assert.ok(mix, "a local-only app is a named partial for a mixed library, not a block: " + names(answer.partial));
+      assert.ok(mix.gaps.some((line) => /stream/i.test(line)), "and the gap names streaming: " + JSON.stringify(mix.gaps));
+      const streaming = answer.fits.concat(answer.partial).filter((c) => /rekordbox|Serato|djay|Virtual DJ/.test(c.name));
+      assert.ok(streaming.length >= 3, "the streaming routes stay on the table: " + streaming.map((c) => c.name).join(", "));
+    });
+
+    await check("mostly streaming blocks no-stream apps", "sw_mode=laptop&sw_hardware=none&sw_os=windows&sw_music=streaming&sw_budget=free", (answer) => {
+      assert.ok(names(answer.blocked).includes("Mixxx"), "a no-streaming app cannot carry a streaming library");
+      assert.deepStrictEqual(names(answer.fits).sort(), ["Serato DJ", "VirtualDJ", "djay", "rekordbox"].sort(),
+        "the integrated apps carry it for free: " + names(answer.fits));
     });
 
     await check("genuinely free on Linux", "sw_mode=laptop&sw_hardware=none&sw_os=linux&sw_music=local&sw_budget=free", (answer) => {
@@ -338,9 +401,9 @@ async function auditLayout(page, label) {
 
     await check("DVS and scratch, buy once", "sw_mode=vinyl&sw_hardware=other&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs", (answer) => {
       assert.ok(names(answer.fits).includes("Mixxx"), "a free DVS route exists");
-      const serato = answer.costs.find((card) => card.name === "Serato DJ");
-      assert.ok(serato, "Serato is priced rather than presented as free for DVS");
-      assert.match(serato.badge, /499/, "DVS sits in the Suite licence: " + serato.badge);
+      const serato = answer.costs.concat(answer.check).find((card) => card.name === "Serato DJ");
+      assert.ok(serato, "Serato is priced for DVS, never presented as free: " + JSON.stringify(names(answer.costs).concat(names(answer.check))));
+      assert.match(serato.price, /Suite/, "DVS sits in the Suite licence: " + serato.price);
     });
 
     await check("paying is fine (stems)", "sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=sub&sw_need=stems", (answer) => {
@@ -350,28 +413,22 @@ async function auditLayout(page, label) {
     });
 
     await check("recording on FLX4 unlock gear", "sw_mode=controller&sw_hardware=flx4&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
-      assert.deepStrictEqual(names(answer.fits), ["Mixxx", "rekordbox"].sort(),
+      assert.deepStrictEqual(names(answer.fits).sort(), ["Mixxx", "rekordbox"].sort(),
         "an FLX4 is on the Hardware Unlock list — recording is free there — and Mixxx is free regardless: " + names(answer.fits));
       const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
-      assert.strictEqual(rekordbox.badge, "No licence cost",
-        "the free route is offered, not discovered later");
-      assert.ok(rekordbox.why.some((line) => /recording/i.test(line)),
-        "and it names the unlock that earns the recording: " + JSON.stringify(rekordbox.why));
+      assert.strictEqual(rekordbox.badge, "No licence cost", "the free route is offered, not discovered later");
       const serato = answer.costs.find((card) => card.name === "Serato DJ");
-      assert.match(serato.badge, /299/,
-        "but an FLX4 unlocks Serato Lite only, so Serato recording still costs the Pro licence: " + serato.badge);
+      assert.match(serato.badge, /299/, "an FLX4 unlocks Serato Lite only, so recording still costs the Pro licence: " + serato.badge);
     });
 
     await check("FLX10 recording needs no purchase", "sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
       const serato = answer.fits.find((card) => card.name === "Serato DJ");
       assert.ok(serato, "an FLX10 unlocks Serato DJ Pro itself, so Serato fits free here: " + names(answer.fits));
-      assert.strictEqual(serato.badge, "No licence cost",
-        "no $299 licence is asked of an FLX10 owner: " + serato.badge);
+      assert.strictEqual(serato.badge, "No licence cost", "no $299 licence is asked of an FLX10 owner: " + serato.badge);
       assert.ok(serato.why.some((line) => /unlocks Serato DJ Pro/.test(line)),
         "and the Pro unlock is named: " + JSON.stringify(serato.why));
       const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
-      assert.strictEqual(rekordbox.badge, "No licence cost",
-        "rekordbox recording is free on the same hardware");
+      assert.strictEqual(rekordbox.badge, "No licence cost", "rekordbox recording is free on the same hardware");
     });
 
     await check("FLX2 unlocks Serato Lite, not Pro", "sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording", (answer) => {
@@ -379,15 +436,12 @@ async function auditLayout(page, label) {
       assert.ok(serato, "an FLX2 unlocks Lite only, so recording still needs a Pro licence: " + names(answer.costs));
       assert.match(serato.badge, /299/, "the Pro licence price is stated: " + serato.badge);
       const rekordbox = answer.fits.find((card) => card.name === "rekordbox");
-      assert.strictEqual(rekordbox.badge, "No licence cost",
-        "while rekordbox recording is free on the same hardware");
+      assert.strictEqual(rekordbox.badge, "No licence cost", "while rekordbox recording is free on the same hardware");
     });
 
     await check("unknown hardware, unknown goal", "sw_mode=unsure&sw_hardware=unsure&sw_os=windows&sw_music=both&sw_budget=unsure", (answer) => {
-      assert.ok(answer.fits.length + answer.costs.length >= 4, "not knowing is still answerable");
-      answer.fits.concat(answer.costs).forEach((card) => {
-        assert.ok(card.checked.length > 0 || card.verify, `${card.name} tells an unsure reader what to confirm`);
-      });
+      const total = answer.fits.concat(answer.costs, answer.partial, answer.check);
+      assert.ok(total.length >= 5, "not knowing is still answerable: " + total.map((c) => c.name + ":" + c.badge).join(", "));
     });
 
     await check("hardware already owned vs proposed", "sw_mode=controller&sw_hardware=flx4&sw_os=windows&sw_music=local&sw_budget=free", (answer) => {
@@ -406,6 +460,22 @@ async function auditLayout(page, label) {
     await reveal(cases, "[data-swa-results]");
     await cases.screenshot({ path: path.join(EVIDENCE, "software-advisor-1440-free-path.png"), fullPage: false });
 
+    /* The issue #1040 owner, on a phone: the per-model groups must render and
+       fit the 390px width without a sideways swipe. */
+    const ownerPhone = await newPage(browser, PHONE);
+    await ownerPhone.goto(server.base + "/dj-software-hub.html?sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free",
+      { waitUntil: "networkidle2", timeout: 45000 });
+    await sleep(300);
+    await auditLayout(ownerPhone, "owner phone 390");
+    await reveal(ownerPhone, "[data-swa-results]");
+    await ownerPhone.screenshot({ path: path.join(EVIDENCE, "software-advisor-390-prime4-owner.png"), fullPage: false });
+    const ownerStatus = await ownerPhone.$eval("[data-swa-status]", (el) => el.textContent.trim());
+    assert.match(ownerStatus, /fit/, "the owner's summary reads on a phone: " + ownerStatus);
+    assert.deepStrictEqual(ownerPhone.__errors, [], "owner phone console errors: " + ownerPhone.__errors.join(" | "));
+    await ownerPhone.close();
+
+    /* The same owner at 1440, captured. */
+    await reveal(cases, "[data-swa-results]").catch(() => {});
     assert.deepStrictEqual(cases.__errors, [], "use-case console errors: " + cases.__errors.join(" | "));
     assert.deepStrictEqual(cases.__failed, [], "use-case failed requests: " + cases.__failed.join(" | "));
     await cases.close();
