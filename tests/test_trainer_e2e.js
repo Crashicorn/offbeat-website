@@ -1,9 +1,9 @@
-const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
+const puppeteer = require("puppeteer-core");
 const assert = require("assert");
 
 (async () => {
   const browser = await puppeteer.launch({
-    executablePath: "/tmp/chromium",
+    executablePath: process.env.CHROME_BIN,
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"]
   });
@@ -56,7 +56,26 @@ const assert = require("assert");
   await new Promise(r => setTimeout(r, 200));
   console.log("✓ Nudge button pressed");
 
-  // 7. Pause
+  // 7. Keyboard shortcuts must not hijack page navigation.
+  await page.focus("a.skip-link");
+  await page.keyboard.press("Space");
+  assert.ok(await page.$eval("[data-stage]", el => el.classList.contains("is-running")),
+    "Space on a page link must not stop the trainer");
+  const pitchBefore = await page.$eval("[data-pitch]", el => el.value);
+  await page.keyboard.press("ArrowUp");
+  assert.strictEqual(await page.$eval("[data-pitch]", el => el.value), pitchBefore,
+    "ArrowUp outside the trainer must not change its pitch");
+
+  // Explicitly focusing the practice stage enables the advertised shortcuts.
+  await page.focus("[data-stage]");
+  await page.keyboard.press("ArrowUp");
+  assert.notStrictEqual(await page.$eval("[data-pitch]", el => el.value), pitchBefore,
+    "ArrowUp on the focused practice stage should adjust the pitch");
+  await page.keyboard.press("c");
+  assert.ok(await page.$eval("[data-stage]", el => el.classList.contains("is-running")),
+    "CUE shortcut should preserve the running drill");
+
+  // 8. Pause
   await page.click("[data-stop]");
   await new Promise(r => setTimeout(r, 200));
 
