@@ -297,6 +297,18 @@
     var fatalErrors = 0;
     var warnings = 0;
 
+    // A rig with no controller/decks/mixer is not a playable DJ setup.
+    // Accessories alone must never produce a green preliminary match.
+    if (!controller) {
+      checks.push({
+        type: "error", statusLevel: "incompatible",
+        title: "DJ Controller or Mixer Required",
+        desc: "No DJ controller, decks, or mixer are selected. Add a compatible DJ playback and mixing system before treating this as a complete setup.",
+        fixCableId: null
+      });
+      fatalErrors++;
+    }
+
     // 1. Audio Signal Cable Matching (3-Way Verification)
     if (controller && speakers) {
       var ctrlOutputs = controller.master_outputs || [];
@@ -413,17 +425,27 @@
     if (controller && headphones) {
       var ctrlJack = controller.headphone_jack || "";
       var hpJack = headphones.jack_type || "";
-      var hasAdapter = cableSlots.some(function (cs) { return cs.itemId === "adapter-headphone-jack"; });
+      var ctrlMini = ctrlJack.indexOf("3.5mm") !== -1;
+      var ctrlQuarter = ctrlJack.indexOf('1/4"') !== -1;
+      var hpMini = hpJack.indexOf("3.5mm") !== -1;
+      var hpQuarter = hpJack.indexOf('1/4"') !== -1;
 
-      if (ctrlJack.indexOf("3.5mm") !== -1 && hpJack.indexOf("1/4\"") !== -1 && !hasAdapter) {
+      // Most catalog headphones have a native 3.5mm plug AND an included
+      // 1/4-inch adapter. Never suggest purchasing an unnecessary extra.
+      // The generic adapter catalog entry does not specify connector direction.
+      if ((ctrlMini && !ctrlQuarter && hpQuarter && !hpMini) ||
+          (ctrlQuarter && !ctrlMini && hpMini && !hpQuarter)) {
+        var requiredAdapter = ctrlMini
+          ? "1/4-inch female to 3.5mm male"
+          : "3.5mm female to 1/4-inch male";
         checks.push({
-          type: "info",
-          statusLevel: "workable",
-          title: "Headphone Jack Adapter Advisory",
-          desc: "Your controller uses a 3.5mm mini-jack. Make sure your headphones include a 3.5mm plug or add a gold 3.5mm-to-1/4\" adapter to your checklist.",
-          fixCableId: "adapter-headphone-jack",
-          fixActionText: "Add 1/4\" to 3.5mm Adapter ($8)"
+          type: "warning", statusLevel: "workable",
+          title: "Headphone Connector Adapter Needed",
+          desc: "The listed headphone plug does not fit the controller cue socket directly. Check for an included " +
+            requiredAdapter + " adapter or purchase the correct direction separately.",
+          fixCableId: null
         });
+        warnings++;
       }
     }
 
