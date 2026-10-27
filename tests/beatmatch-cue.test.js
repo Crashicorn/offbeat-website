@@ -12,7 +12,7 @@ function makeTrainer() {
   const source = fs.readFileSync(path.join(__dirname, "../assets/beatmatch-trainer.js"), "utf8");
   assert.match(source, /\}\)\(\);\s*$/, "Expected trainer IIFE");
   const instrumented = source.replace(/\}\)\(\);\s*$/,
-    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio };})();");
+    "globalThis.__trainerProbe = { state: state, phaseMs: phaseMs, audio: audio, start: start, stop: stop };})();");
   const cueListeners = {};
   const documentListeners = {};
   const cue = {
@@ -28,7 +28,15 @@ function makeTrainer() {
     querySelector() { return null; },
     addEventListener(type, handler) { documentListeners[type] = handler; }
   };
-  const context = { document, window: {}, console, Math };
+  const context = {
+    document,
+    window: {
+      performance: { now() { return 1000; } },
+      requestAnimationFrame() { return 1; },
+      cancelAnimationFrame() {}
+    },
+    console, Math
+  };
   vm.runInNewContext(instrumented, context, { filename: "beatmatch-trainer.js" });
   assert.equal(typeof cueListeners.click, "function", "CUE handler registered");
   return { ...context.__trainerProbe, cue, documentListeners };
@@ -110,4 +118,22 @@ test("keyboard C uses the same timed CUE and channel reset", () => {
   assert.equal(audio.oldB.disconnected, true);
   assert.ok(audio.starts.includes(0.25));
   assert.ok(Math.abs(probe.phaseMs()) >= 240);
+});
+
+test("STOP disconnects both queued audio paths; immediate restart cannot replay stale beats", () => {
+  const probe = makeTrainer();
+  setRunningState(probe, 0.12);
+  const oldA = probe.audio.chanA;
+  const oldB = probe.audio.chanB;
+  probe.stop("manual");
+  assert.equal(probe.state.running, false);
+  assert.equal(oldA.disconnected, true, "scheduled A notes have no output path");
+  assert.equal(oldB.disconnected, true, "scheduled B notes have no output path");
+  assert.notEqual(probe.audio.chanA, oldA, "fresh A output reserved for next run");
+  assert.notEqual(probe.audio.chanB, oldB, "fresh B output reserved for next run");
+
+  probe.start();
+  assert.equal(probe.state.running, true, "new session can start immediately");
+  assert.equal(oldA.disconnected, true, "old A cannot reappear after restart");
+  assert.equal(oldB.disconnected, true, "old B cannot reappear after restart");
 });
