@@ -481,17 +481,18 @@
       "id": "krk-rokit-5-g4",
       "category": "speakers",
       "brand": "KRK",
-      "model": "Classic 5 / ROKIT 5 G4 (Pair)",
+      "model": "Classic 5 (Pair)",
       "price": 299,
-      "type": "Active Studio Reference Monitors (Pair)",
+      "type": "Two Classic 5 Active Studio Monitors (Pair)",
       "inputs": [
-        "Combo XLR / 1/4\" TRS (Balanced)",
+        "XLR (Balanced)",
+        "1/4\" TRS (Balanced)",
         "RCA (Unbalanced)"
       ],
-      "driver_size": "5-inch Kevlar woofer",
-      "sound_modes": "Onboard DSP room tuning EQ",
+      "driver_size": "5-inch glass-aramid composite woofer",
+      "sound_modes": "Analog LF/HF level controls and optional +2 dB bass boost (no DSP)",
       "ideal_for": "Electronic music production and punchy low-end DJ practice",
-      "tagline": "Iconic yellow Kevlar drivers delivering tight, impactful kick transient response.",
+      "tagline": "Front-ported Classic 5 pair with RCA, XLR and TRS inputs; verify the listing includes two monitors.",
       "image": "assets/img/products/krk-classic-5.svg",
       "slug": "best-studio-monitors.html",
       "amazon_search": "KRK Classic 5 Studio Monitor Pair",
@@ -499,7 +500,8 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "spec_source": "https://www.krkmusic.com/products/classic-5-powered-studio-monitor-pack"
     },
     {
       "id": "yamaha-hs5",
