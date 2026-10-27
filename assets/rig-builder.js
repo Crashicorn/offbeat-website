@@ -1518,13 +1518,20 @@
         }
       } else if (action === "auto-fix-cable") {
         var cableId = btn.getAttribute("data-cable-id");
-        if (cableId) {
-          var existingCableSlot = currentRig.items.find(function (s) { return s.category === "cables"; });
-          if (existingCableSlot) {
-            if (!replaceSlotItem(existingCableSlot, cableId)) return;
-          } else {
+        var cableItem = getItem(cableId);
+        if (cableItem && cableItem.category === "cables") {
+          // The connection suggestion is additive, not a request to replace
+          // another cable the visitor may already own or need elsewhere.
+          // Preserve every existing cable's quantity and ownership.
+          var alreadySelected = currentRig.items.some(function (s) { return s.itemId === cableId; });
+          if (!alreadySelected) {
+            var newSlotId = "auto-cable-" + Date.now();
+            var suffix = 0;
+            while (currentRig.items.some(function (s) { return s.slotId === newSlotId; })) {
+              newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
+            }
             currentRig.items.push({
-              slotId: "core-cable",
+              slotId: newSlotId,
               category: "cables",
               itemId: cableId,
               qty: 1,
