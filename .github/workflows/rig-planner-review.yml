@@ -40,7 +40,14 @@ jobs:
       - name: Check out exact candidate
         uses: actions/checkout@v4
         with:
+          # Default pull_request checkout uses a synthetic merge ref, NOT the
+          # candidate head. Validate the actual head SHA on PR and push runs.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Verify exact candidate checkout
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
