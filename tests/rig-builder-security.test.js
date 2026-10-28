@@ -140,6 +140,30 @@ test("share links encode base64 plus and restore correctly without local storage
   assert.equal(api.getRig().name, name);
 });
 
+test("guide add of an existing secondary controller preserves the whole shared rig", () => {
+  const { api, memory, window, lastUrl } = harness(false);
+  api.setCatalog({ items: [
+    { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+    { id: "denon-prime-4-plus", category: "controllers", price: 2199 },
+    { id: "sennheiser-hd25", category: "headphones", price: 149 }
+  ], categories: [], presets: [] });
+  const shared = { name: "Two-controller comparison", items: [
+    { slotId: "first", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: true },
+    { slotId: "second", category: "controllers", itemId: "denon-prime-4-plus", qty: 2, owned: false },
+    { slotId: "headphones", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true }
+  ] };
+  memory["offbeat.rig.active"] = JSON.stringify({ items: [slot()] });
+  const encoded = btoa(encodeURIComponent(JSON.stringify(shared)));
+  window.location.search = "?add=denon-prime-4-plus&rig=" + encodeURIComponent(encoded);
+  api.parseUrlOrLocalState();
+  const actual = api.getRig();
+  assert.equal(actual.name, shared.name);
+  assert.equal(actual.items.length, 3, "repeated add must not duplicate or replace a core device");
+  assert.deepEqual(Array.from(actual.items, s => [s.slotId, s.itemId, s.qty, s.owned]),
+    shared.items.map(s => [s.slotId, s.itemId, s.qty, s.owned]));
+  assert.match(lastUrl(), /\\?rig=/, "the unchanged rig remains shareable");
+});
+
 test("replacing an owned product resets the new purchase to not-owned", () => {
   const { api } = harness(false);
   const old = api.getRig().items[0];
