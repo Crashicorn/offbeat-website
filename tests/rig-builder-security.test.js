@@ -48,7 +48,8 @@ function harness(storageDisabled) {
     calculateRigStats: calculateRigStats,
     presetPriceBadge: presetPriceBadge,
     recommendNextUpgrade: recommendNextUpgrade,
-    renderModularTableRow: renderModularTableRow
+    renderModularTableRow: renderModularTableRow,
+    renderCompareGridContent: renderCompareGridContent
   };
 ` + hook);
   vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
@@ -622,4 +623,39 @@ test("adding an already-selected shared item does not reset owned quantity", () 
   assert.equal(api.getRig().items.length, 1);
   assert.equal(api.getRig().items[0].qty, 3);
   assert.equal(api.getRig().items[0].owned, true);
+});
+
+test("rig comparison shows every controller, quantities, ownership and real spend", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "a", category: "controllers", brand: "Alpha", model: "Controller", price: 299 },
+      { id: "b", category: "controllers", brand: "Denon", model: "Prime 4+", price: 2199 },
+      { id: "hp", category: "headphones", brand: "Sennheiser", model: "HD 25", price: 149 }
+    ],
+    categories: [
+      { id: "controllers", name: "Controllers" },
+      { id: "headphones", name: "Headphones" }
+    ],
+    presets: []
+  });
+  const markup = api.renderCompareGridContent({
+    name: "Owned <Rig>",
+    items: [
+      { slotId: "first", category: "controllers", itemId: "a", qty: 2, owned: true },
+      { slotId: "second", category: "controllers", itemId: "b", qty: 1, owned: false },
+      { slotId: "hp", category: "headphones", itemId: "hp", qty: 1, owned: false }
+    ]
+  }, {
+    name: "New",
+    items: [{ slotId: "first", category: "controllers", itemId: "b", qty: 1, owned: false }]
+  });
+  assert.match(markup, /To buy: \$2,348/);
+  assert.match(markup, /Full value: \$2,946 · Already owned: \$598/);
+  assert.match(markup, /Alpha Controller \(×2, Owned, \$598\)/);
+  assert.match(markup, /Denon Prime 4\+ \(×1, Buy, \$2,199\)/);
+  assert.match(markup, /Sennheiser HD 25 \(×1, Buy, \$149\)/);
+  assert.match(markup, /To buy: \$2,199/);
+  assert.match(markup, /Owned &lt;Rig&gt;/);
+  assert.doesNotMatch(markup, /Owned <Rig>/);
 });
