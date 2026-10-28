@@ -439,6 +439,8 @@
         "RCA (Unbalanced)",
         "3.5mm Stereo Mini"
       ],
+      "included_audio_cable_3_5mm_to_rca": true,
+      "included_cable_source": "https://pioneernz.co.nz/pages/specifications-dm40d",
       "driver_size": "4-inch fiberglass woofer",
       "sound_modes": "DJ / Production switchable DSP switch",
       "ideal_for": "Bedroom DJ desks and direct RCA controller pairing",
@@ -754,14 +756,13 @@
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "Est. $1,637 total",
-      "desc": "The quintessential beginner DJ bundle: 2-channel smart controller, studio-grade closed-back headphones, desktop monitors, and essential RCA cabling.",
+      "badge": "Est. $1,625 total",
+      "desc": "Beginner bundle with controller, headphones, monitors, laptop and stand. The DM-40D pair already includes the matching audio lead.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
         "speakers": "pioneer-dm40d",
         "laptops": "macbook-air-m2",
-        "cables": "cable-rca-rca",
         "stands": "laptop-stand-pyle"
       }
     },
