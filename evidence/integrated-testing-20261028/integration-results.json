@@ -1,0 +1,125 @@
+{
+  "testedAt": "2026-10-28T23:41:17.607Z",
+  "browser": "HeadlessChrome/153.0.8010.0",
+  "pages": [
+    {
+      "file": "denon-sc6000-review.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/denon-sc6000-review-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/denon-sc6000-review-mobile.png"
+      }
+    },
+    {
+      "file": "denon-prime-go-review.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/denon-prime-go-review-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/denon-prime-go-review-mobile.png"
+      }
+    },
+    {
+      "file": "xdj-az-vs-denon-prime-4-plus.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/xdj-az-vs-denon-prime-4-plus-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/xdj-az-vs-denon-prime-4-plus-mobile.png"
+      }
+    },
+    {
+      "file": "best-standalone-dj-systems.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/best-standalone-dj-systems-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/best-standalone-dj-systems-mobile.png"
+      }
+    },
+    {
+      "file": "dj-laptop-setup-guide.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/dj-laptop-setup-guide-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/dj-laptop-setup-guide-mobile.png"
+      }
+    },
+    {
+      "file": "midi-controllers-for-music-production.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/midi-controllers-for-music-production-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/midi-controllers-for-music-production-mobile.png"
+      }
+    },
+    {
+      "file": "dj-software-hub.html",
+      "desktop": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/dj-software-hub-desktop.png"
+      },
+      "mobile": {
+        "status": 200,
+        "overflow": false,
+        "brokenImages": 0,
+        "errors": 0,
+        "screenshot": "evidence/integrated-testing-20261028/dj-software-hub-mobile.png"
+      }
+    }
+  ]
+}
