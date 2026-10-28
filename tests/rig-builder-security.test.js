@@ -428,7 +428,7 @@ test("all four preset badges equal full current catalog totals", () => {
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
   api.setCatalog(catalog);
   const expected = {
-    "bedroom-starter": 1637,
+    "bedroom-starter": 1625,
     "club-ready": 3230,
     "mobile-pro": 3052,
     "traktor-techno": 1780
@@ -658,4 +658,38 @@ test("rig comparison shows every controller, quantities, ownership and real spen
   assert.match(markup, /To buy: \$2,199/);
   assert.match(markup, /Owned &lt;Rig&gt;/);
   assert.doesNotMatch(markup, /Owned <Rig>/);
+});
+
+test("manufacturer-supplied DM-40D lead connects FLX2 and FLX4 without another purchase", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const dm = catalog.items.find(item => item.id === "pioneer-dm40d");
+  assert.equal(dm.included_audio_cable_3_5mm_to_rca, true);
+  const starter = catalog.presets.find(p => p.id === "bedroom-starter");
+  assert.equal(starter.slots.cables, undefined, "starter must not bill a redundant RCA lead");
+  for (const controllerId of ["pioneer-ddj-flx4", "pioneer-ddj-flx2"]) {
+    const items = [
+      { slotId: "controller", category: "controllers", itemId: controllerId, qty: 1, owned: false },
+      { slotId: "speaker", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
+      { slotId: "headphones", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
+      { slotId: "host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: false }
+    ];
+    assert.equal(api.normalizeRigState({ name: "Included cable", items }), true);
+    const checks = api.runDeepCompatibilityChecks().checks;
+    assert.ok(checks.some(c => c.title === "Included Speaker Cable Matches" && c.type === "success"),
+      controllerId + " must recognize the supplied cable");
+    assert.ok(!checks.some(c => c.title === "Audio Cable Needed"),
+      controllerId + " must not upsell a cable already included");
+  }
+  const withExtra = [
+    { slotId: "controller", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1 },
+    { slotId: "speaker", category: "speakers", itemId: "pioneer-dm40d", qty: 1 },
+    { slotId: "extra-cable", category: "cables", itemId: "cable-rca-rca", qty: 1 }
+  ];
+  assert.equal(api.normalizeRigState({ name: "Extra cable", items: withExtra }), true);
+  const extraChecks = api.runDeepCompatibilityChecks().checks;
+  assert.ok(extraChecks.some(c => c.title === "Separate Cable May Be Unnecessary" && c.type === "warning"),
+    "existing optional cable must remain in the rig but be flagged");
+  assert.equal(api.getRig().items.length, 3, "do not delete user-selected equipment");
 });
