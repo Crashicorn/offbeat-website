@@ -27,8 +27,7 @@
       { slotId: "core-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
       { slotId: "core-spk", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
       { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: false },
-      { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false },
-      { slotId: "core-cable", category: "cables", itemId: "cable-rca-rca", qty: 1, owned: false }
+      { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false }
     ]
   };
 
@@ -301,6 +300,19 @@
     };
   }
 
+  // A speaker package can supply a passive 3.5mm-stereo-to-dual-RCA lead.
+  // Verify the two connector types and the explicit manufacturer bundle.
+  function includedSpeakerCableMatches(controller, speakers) {
+    if (!controller || !speakers || speakers.included_audio_cable_3_5mm_to_rca !== true) return false;
+    var outputs = controller.master_outputs || [];
+    var inputs = speakers.inputs || [];
+    var has = function (ports, connector) {
+      return ports.some(function (port) { return port.indexOf(connector) !== -1; });
+    };
+    return (has(outputs, "3.5mm") && has(inputs, "RCA")) ||
+           (has(outputs, "RCA") && has(inputs, "3.5mm"));
+  }
+
   /* ------------------------------------------- Real DJ Compatibility Engine */
   function runDeepCompatibilityChecks() {
     var controllerSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
@@ -411,7 +423,26 @@
       var selected = options.find(function (c) {
         return cableSlots.some(function (slot) { return slot.itemId === c.id; });
       });
-      if (selected) {
+      if (includedSpeakerCableMatches(controller, speakers)) {
+        checks.push({
+          type: "success", statusLevel: "verified",
+          title: "Included Speaker Cable Matches",
+          desc: speakers.model + " includes a 3.5mm stereo-to-dual-RCA cable that matches " +
+            controller.model + "'s master output and the speaker input. " +
+            "No separate cable purchase is needed for this connection; verify package contents and length.",
+          fixCableId: null
+        });
+        if (selected) {
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Separate Cable May Be Unnecessary",
+            desc: selected.name + " is also selected. The speaker package already includes a matching cable; " +
+              "keep the extra only if another connection needs it.",
+            fixCableId: null
+          });
+          warnings++;
+        }
+      } else if (selected) {
         checks.push({
           type: "success", statusLevel: "workable",
           title: "Listed Audio Connection Match",
@@ -956,7 +987,14 @@
 
   function getCableSummaryText() {
     var cables = currentRig.items.filter(function (s) { return s.category === "cables"; });
-    if (cables.length === 0) return "No Audio Cables Selected";
+    if (cables.length === 0) {
+      var controllerSlot = findSlot("controllers"), speakerSlot = findSlot("speakers");
+      if (controllerSlot && speakerSlot &&
+          includedSpeakerCableMatches(getSlotItem(controllerSlot), getSlotItem(speakerSlot))) {
+        return "Speaker Package Includes Audio Cable";
+      }
+      return "No Audio Cables Selected";
+    }
     return cables.map(function (c) {
       var item = getSlotItem(c);
       return item ? item.model : "Audio Cable";
