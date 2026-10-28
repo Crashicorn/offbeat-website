@@ -109,6 +109,14 @@
       });
   }
 
+  // A guide ?add= link must apply to an explicitly shared rig before any
+  // unrelated localStorage state from this browser.
+  function restoreSharedRigParam(value) {
+    if (!value || value.length > 8192) return false;
+    try { return normalizeRigState(JSON.parse(decodeURIComponent(atob(value)))); }
+    catch (e) { console.warn("Invalid rig URL param:", e); return false; }
+  }
+
   function parseUrlOrLocalState() {
     var params = new URLSearchParams(window.location.search);
 
@@ -119,10 +127,12 @@
     if (addParam) {
       var targetItem = getItem(addParam);
       if (targetItem) {
-        var savedRig = safeStorageGet("offbeat.rig.active");
-        if (savedRig && savedRig.length <= 16384) {
-          try { normalizeRigState(JSON.parse(savedRig)); }
-          catch (e) { console.warn("Invalid local rig state:", e); }
+        if (!restoreSharedRigParam(params.get("rig"))) {
+          var savedRig = safeStorageGet("offbeat.rig.active");
+          if (savedRig && savedRig.length <= 16384) {
+            try { normalizeRigState(JSON.parse(savedRig)); }
+            catch (e) { console.warn("Invalid local rig state:", e); }
+          }
         }
 
         // Additional accessories are additive. A guide's cable/USB/mic link
@@ -164,14 +174,7 @@
     }
 
     // 3. Base64 encoded rig state param (e.g. ?rig=...)
-    var rigParam = params.get("rig");
-    if (rigParam && rigParam.length <= 8192) {
-      try {
-        if (normalizeRigState(JSON.parse(decodeURIComponent(atob(rigParam))))) return;
-      } catch (e) {
-        console.warn("Invalid rig URL param:", e);
-      }
-    }
+    if (restoreSharedRigParam(params.get("rig"))) return;
 
     // 4. Local state is optional and untrusted, just like shared URLs.
     var local = safeStorageGet("offbeat.rig.active");
