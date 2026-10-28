@@ -150,6 +150,16 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.match(multiState.alerts, /Multiple controllers Need Manual Verification/);
     assert.ok(multiState.readiness <= 50);
     assert.deepEqual(multi.errors, []);
+    // The compare modal must show every controller and actual unowned spend,
+    // not just the first controller's unit price or the full owned valuation.
+    await multi.page.click('[data-action="open-compare"]');
+    await multi.page.waitForSelector("#compare-content-grid");
+    const compareText = await multi.page.$eval("#compare-content-grid", el => el.textContent);
+    assert.match(compareText, /To buy:\s*\$609/);
+    assert.match(compareText, /Full value:\s*\$2,808/);
+    assert.match(compareText, /Already owned:\s*\$2,199/);
+    assert.match(compareText, /Denon DJ Prime 4\+ \(×1, Owned, \$2,199\)/);
+    assert.match(compareText, /Pioneer DJ DDJ-FLX4 \(×1, Buy, \$299\)/);
     await multi.context.close();
     console.log("PASS: multi-controller shared rig warns that additional routing is unverified");
 
