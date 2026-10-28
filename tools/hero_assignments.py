@@ -35,6 +35,9 @@ ALT = {
     "hero-wedding.jpg": "Wedding reception speakers on stands with a mixer on a table and guests dancing under festoon lights",
     "vinyl-hero.jpg": "A tonearm and stylus tracking a record on a turntable",
     "wikimedia-stylus-cartridge-detail.jpg": "A focus-stacked photograph showing a turntable cartridge and stylus at two points along a record groove",
+    "pexels-dj-laptop-mixing-17858169.jpg": "Close-up photograph of hands mixing on a DJ controller connected to a performance laptop on a desk",
+    "pexels-dj-nightclub-booth-4062561.jpg": "A DJ performing in a vibrant nightclub booth with a multi-deck controller and a laptop displaying live DJ performance software",
+    "pexels-music-production-workstation-27495246.jpg": "A music production workstation with a laptop running digital audio workstation software beside a tactile MIDI pad controller and mixer",
 }
 
 # Only pages that need to move away from an over-used hero. Pages absent
@@ -71,6 +74,9 @@ ASSIGN = {
     "best-online-dj-courses.html": "mixer-hero.jpg",
     "dj-equipment-checklist.html": "mobile-dj-hero.jpg",
     "how-to-become-a-dj.html": "pexels-dj-console-portrait-20116408.jpg",
+    "dj-laptop-setup-guide.html": "pexels-dj-laptop-mixing-17858169.jpg",
+    "dj-software-hub.html": "pexels-dj-nightclub-booth-4062561.jpg",
+    "midi-controllers-for-music-production.html": "pexels-music-production-workstation-27495246.jpg",
 }
 
 # Intrinsic pixel dimensions per photograph (kept honest so the browser
@@ -92,6 +98,9 @@ DIMS = {
     "software-desk.jpg": (1408, 768),
     "vinyl-hero.jpg": (1408, 768),
     "wikimedia-stylus-cartridge-detail.jpg": (1600, 640),
+    "pexels-dj-laptop-mixing-17858169.jpg": (1200, 750),
+    "pexels-dj-nightclub-booth-4062561.jpg": (1200, 750),
+    "pexels-music-production-workstation-27495246.jpg": (1200, 750),
 }
 
 # Pages whose figcaption must change with the photo (photographer
@@ -104,6 +113,18 @@ CAPTIONS = {
     "how-to-become-a-dj.html": (
         "<figcaption>Illustrative Offbeat visual; the scene is representative, not a specific DJ, venue or booking.</figcaption>",
         '<figcaption class="img-attribution">Photograph by <a href="https://www.pexels.com/@foerder-zone-441814813/" target="_blank" rel="noopener">FOERDER ZONE</a> on Pexels. The DJ pictured is illustrative, not a specific person, venue or booking.</figcaption>',
+    ),
+    "dj-laptop-setup-guide.html": (
+        "<figcaption>Offbeat editorial photography. Illustrative image, not a photo of the specific product.</figcaption>",
+        '<figcaption class="img-attribution">Photograph by <a href="https://www.pexels.com/photo/dj-using-sound-mixer-and-laptop-17858169/" target="_blank" rel="noopener">Oliver Morgan Media</a> on Pexels. Illustrative laptop DJ setup; not an endorsement of a specific laptop brand.</figcaption>',
+    ),
+    "dj-software-hub.html": (
+        "<figcaption>Offbeat editorial photography. Illustrative image, not a photo of a specific product.</figcaption>",
+        '<figcaption class="img-attribution">Photograph by <a href="https://www.pexels.com/photo/dj-with-mixer-controller-in-night-club-4062561/" target="_blank" rel="noopener">Erik Mclean</a> on Pexels. Illustrative live performance booth; not an endorsement of a single software platform.</figcaption>',
+    ),
+    "midi-controllers-for-music-production.html": (
+        "<figcaption>Offbeat editorial photography. Illustrative image, not a photo of the specific product.</figcaption>",
+        '<figcaption class="img-attribution">Photograph by <a href="https://www.pexels.com/photo/a-laptop-and-a-mixer-on-a-table-27495246/" target="_blank" rel="noopener">Giuseppe Di Maria</a> on Pexels. Illustrative home studio setup; not a specific recommended hardware bundle.</figcaption>',
     ),
 }
 
