@@ -1406,17 +1406,20 @@
   function renderCompareGridContent(rigA, rigB) {
     var valA = calculateCustomRigValuation(rigA.items);
     var valB = calculateCustomRigValuation(rigB.items);
+    var ownedA = calculateCustomRigValuation(rigA.items.filter(function (s) { return s.owned; }));
+    var ownedB = calculateCustomRigValuation(rigB.items.filter(function (s) { return s.owned; }));
 
     return `
       <div class="compare-rig-card">
         <h4>${escapeHtml(rigA.name)}</h4>
-        <div class="compare-price-tag">$${valA.toLocaleString()}</div>
+        <div class="compare-price-tag">To buy: $${(valA - ownedA).toLocaleString()}</div>
+        <div class="metric-sub">Full value: $${valA.toLocaleString()} · Already owned: $${ownedA.toLocaleString()}</div>
         <div class="compare-specs-table">
           ${CATALOG.categories.map(function (cat) {
-            var item = findItemInItems(rigA.items, cat.id);
+            var summary = getCategorySummary(rigA.items, cat.id);
             return `<div class="compare-spec-row">
               <span class="spec-cat-label">${cat.name}:</span>
-              <strong>${item ? (item.brand + ' ' + item.model + ' ($' + item.price + ')') : 'None'}</strong>
+              <strong>${summary}</strong>
             </div>`;
           }).join("")}
         </div>
@@ -1424,13 +1427,14 @@
 
       <div class="compare-rig-card">
         <h4>${escapeHtml(rigB.name)}</h4>
-        <div class="compare-price-tag">$${valB.toLocaleString()}</div>
+        <div class="compare-price-tag">To buy: $${(valB - ownedB).toLocaleString()}</div>
+        <div class="metric-sub">Full value: $${valB.toLocaleString()} · Already owned: $${ownedB.toLocaleString()}</div>
         <div class="compare-specs-table">
           ${CATALOG.categories.map(function (cat) {
-            var item = findItemInItems(rigB.items, cat.id);
+            var summary = getCategorySummary(rigB.items, cat.id);
             return `<div class="compare-spec-row">
               <span class="spec-cat-label">${cat.name}:</span>
-              <strong>${item ? (item.brand + ' ' + item.model + ' ($' + item.price + ')') : 'None'}</strong>
+              <strong>${summary}</strong>
             </div>`;
           }).join("")}
         </div>
@@ -1438,9 +1442,19 @@
     `;
   }
 
-  function findItemInItems(items, category) {
-    var s = items.find(function (slot) { return slot.category === category; });
-    return s ? getItem(s.itemId) : null;
+  // Compare every selected device, quantity and ownership flag. Showing only
+  // the first device per category and a single-unit price misleads buyers.
+  function getCategorySummary(items, category) {
+    var selected = items.filter(function (slot) { return slot.category === category; });
+    if (!selected.length) return "None";
+    return selected.map(function (slot) {
+      var item = getItem(slot.itemId);
+      if (!item) return "";
+      var qty = slot.qty || 1;
+      return escapeHtml(item.brand + " " + item.model) +
+        " (×" + qty + ", " + (slot.owned ? "Owned" : "Buy") +
+        ", $" + (item.price * qty).toLocaleString("en-US") + ")";
+    }).filter(Boolean).join("<br>");
   }
 
   function calculateCustomRigValuation(items) {
