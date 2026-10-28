@@ -142,14 +142,15 @@
         var existingSlot = additive ? null : currentRig.items.find(function (s) {
           return s.category === targetItem.category;
         });
-        if (existingSlot) {
-          // An identical guide link must preserve owned/quantity state. Only
-          // an actual product swap resets the old product's assumptions.
-          if (existingSlot.itemId !== targetItem.id) {
-            replaceSlotItem(existingSlot, targetItem.id);
-            existingSlot.qty = 1;
-          }
-        } else if (!alreadySelected) {
+        if (alreadySelected) {
+          // An Add-to-Rig link is idempotent even when the item lives in a
+          // second core slot. Never overwrite another selected/owned device.
+        } else if (existingSlot) {
+          // A genuinely new core product replaces the primary slot, while
+          // accessories remain additive. Replacement resets ownership.
+          replaceSlotItem(existingSlot, targetItem.id);
+          existingSlot.qty = 1;
+        } else {
           currentRig.items.push({
             slotId: "guide-" + targetItem.category + "-" + Date.now(),
             category: targetItem.category,
