@@ -161,7 +161,7 @@ test("guide add of an existing secondary controller preserves the whole shared r
   assert.equal(actual.items.length, 3, "repeated add must not duplicate or replace a core device");
   assert.deepEqual(Array.from(actual.items, s => [s.slotId, s.itemId, s.qty, s.owned]),
     shared.items.map(s => [s.slotId, s.itemId, s.qty, s.owned]));
-  assert.match(lastUrl(), /\\?rig=/, "the unchanged rig remains shareable");
+  assert.match(lastUrl(), /\?rig=/, "the unchanged rig remains shareable");
 });
 
 test("replacing an owned product resets the new purchase to not-owned", () => {
