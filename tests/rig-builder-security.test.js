@@ -554,3 +554,48 @@ test("KRK Classic 5 catalog entry never blends ROKIT G4 connectors or DSP", () =
   assert.match(classic.amazon_search, /Classic 5/);
   assert.doesNotMatch(classic.model, /ROKIT|G4/i);
 });
+
+test("guide add preserves explicit shared rig over unrelated local state", () => {
+  const { api, memory, window } = harness(false);
+  const shared = { name: "Shared buyer build", items: [{ ...slot(), qty: 2, owned: true }] };
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Unrelated saved build", items: [{ ...slot(), qty: 1, owned: false }]
+  });
+  window.location.search = "?rig=" +
+    encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(shared)))) +
+    "&add=sennheiser-hd25";
+  api.parseUrlOrLocalState();
+  const rig = api.getRig();
+  assert.equal(rig.name, "Shared buyer build");
+  assert.equal(rig.items.length, 2);
+  assert.equal(rig.items[0].qty, 2);
+  assert.equal(rig.items[0].owned, true);
+  assert.equal(rig.items[1].itemId, "sennheiser-hd25");
+  assert.equal(rig.items[1].owned, false);
+});
+
+test("corrupt shared rig falls back to valid saved rig during guide add", () => {
+  const { api, memory, window } = harness(false);
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Saved fallback", items: [{ ...slot(), owned: true }]
+  });
+  window.location.search = "?rig=not-base64!&add=sennheiser-hd25";
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Saved fallback");
+  assert.equal(api.getRig().items.length, 2);
+  assert.equal(api.getRig().items[0].owned, true);
+});
+
+test("adding an already-selected shared item does not reset owned quantity", () => {
+  const { api, memory, window } = harness(false);
+  const shared = { name: "Owned controller", items: [{ ...slot(), qty: 3, owned: true }] };
+  memory["offbeat.rig.active"] = JSON.stringify({ name: "Other", items: [slot()] });
+  window.location.search = "?rig=" +
+    encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(shared)))) +
+    "&add=pioneer-ddj-flx4";
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Owned controller");
+  assert.equal(api.getRig().items.length, 1);
+  assert.equal(api.getRig().items[0].qty, 3);
+  assert.equal(api.getRig().items[0].owned, true);
+});
