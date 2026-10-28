@@ -50,8 +50,14 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
       const initialAlerts = await page.$eval(".compat-items-grid", el => el.textContent);
       assert.doesNotMatch(initialAlerts, /Headphone Connector Adapter Needed|Headphone Jack Adapter Advisory/);
+      assert.match(initialAlerts, /Included Speaker Cable Matches/,
+        "DM-40D bundle must supply the compatible analog lead");
+      assert.doesNotMatch(initialAlerts, /Audio Cable Needed/,
+        "default must not upsell a separate audio cable");
+      const includedLabel = await page.$eval(".cable-title", el => el.textContent.trim());
+      assert.match(includedLabel, /Speaker Package Includes Audio Cable/);
       // First-time buyers must not be assigned an imaginary owned laptop.
-      assert.equal(metrics.spend, "$1,637", "default includes the full $999 laptop");
+      assert.equal(metrics.spend, "$1,625", "default includes the full $999 laptop but no redundant speaker cable");
       const initialOwned = await page.$eval(".metric-val--owned", el => el.textContent.trim());
       assert.match(initialOwned, /\$0$/, "default ownership deduction must be zero");
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
@@ -65,7 +71,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // Every preset button must quote the same full total displayed after
       // selecting it, including host laptop, speakers, cables and accessories.
       const expectedPresets = [
-        ["bedroom-starter", "$1,637"],
+        ["bedroom-starter", "$1,625"],
         ["club-ready", "$3,230"],
         ["mobile-pro", "$3,052"],
         ["traktor-techno", "$1,780"]
