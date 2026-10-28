@@ -1,0 +1,977 @@
+Offbeat software advisor — what a reader actually sees, 27 October 2026.
+Captured from the published page in jsdom after DOM interaction: text, prices, verdicts and links.
+Screenshots of the same states at 1440px and 390px are in evidence/software-advisor-2026-10/, and
+tests/software-advisor.browser.js re-runs the whole flow in Chromium.
+
+==============================================================================
+CASE: DDJ-FLX4 owner preparing club USB sticks, free budget
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=flx4&sw_os=macos&sw_music=local&sw_budget=free&sw_need=cdj&sw_scene=club
+
+STATUS: 1 platform fits what you described · 5 fit with named gaps · 1 does not fit · 7 of 7 questions answered.
+
+ [Fits what you described 1]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: Your DDJ-FLX4 is on rekordbox's Hardware Unlock list, so Performance mode runs on the Free plan.
+     why: Club CDJs read rekordbox-format USB sticks, so what you prepare at home plays in the booth.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Fits, with a named gap 5]
+   Serato DJ — No licence cost
+     price: DJ Lite — no licence fee
+     free tier: What the free tier covers: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     why: Your DDJ-FLX4 unlocks Serato DJ Lite at no cost, and Stems is included in Lite.
+     gap: Serato is a performance environment: it does not write rekordbox-format sticks for club CDJs.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Traktor — $49 / 3 yrs
+     price: Traktor Play — $49 once
+     why: Your DDJ-FLX4 is plug-and-play with Traktor, and some retail bundles include a Traktor Play licence — check the box before paying.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     gap: Traktor does not export rekordbox-format sticks; club prep is not its job.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — No licence cost
+     price: Free app — no licence fee
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     gap: djay does not write rekordbox-format sticks for club CDJs.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     gap: Mixxx does not write rekordbox-format sticks.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $132 / 3 yrs
+     price: Home — $44/yr or $4/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Home at $44/yr.
+     gap: VirtualDJ does not write rekordbox-format sticks for club CDJs.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 1]
+   Engine DJ — Doesn't fit
+     why: Engine DJ is the preparation side of the Engine OS ecosystem.
+     no: Your DDJ-FLX4 is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.
+     gap: Engine writes Engine-format media for Denon and Numark players, not rekordbox sticks for CDJs.
+     fills: rekordbox on the Free tier writes the USB sticks club CDJs and Pioneer standalones read; for Engine OS players the same job is Engine DJ's export. Neither costs anything for it.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   rekordbox | Free | no licence | No licence fee
+   Serato DJ | DJ Lite | no licence | No licence fee
+   Traktor | Traktor Play | $49 once | $49
+   djay | Free app | no licence | No licence fee
+   Mixxx | Free | no licence | No licence fee
+   VirtualDJ | Home | $44/yr | $132
+
+console errors: none
+==============================================================================
+CASE: DDJ-FLX4 owner who wants to record mixes but would rather not pay
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=flx4&sw_os=macos&sw_music=local&sw_budget=free&sw_need=recording
+
+STATUS: 2 platforms fit what you described · 4 would need paying · 1 does not fit · 6 of 7 questions answered.
+
+ [Fits what you described 2]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: Your DDJ-FLX4 is on rekordbox's Hardware Unlock list, so Performance mode, recording and mix sharing run on the Free plan.
+     check: Whether your device is on rekordbox's Hardware Unlock list — the DDJ-FLX2, FLX4, FLX6 and FLX10 are.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 4]
+   Traktor — $149 / 3 yrs
+     price: Traktor Pro 4 — $149 once
+     why: Your DDJ-FLX4 is plug-and-play with Traktor, and some retail bundles include a Traktor Play licence — check the box before paying.
+     note: Traktor Play cannot record a mix; Pro 4 can.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Pro 4 at $149 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — $299 / 3 yrs
+     price: DJ Pro — $299 once or $143.88/yr or $11.99/mo
+     why: A genuine buy-once Pro licence at $299 — cheaper than three years of subscription rivals.
+     note: Your DDJ-FLX4 unlocks Serato DJ Lite, not DJ Pro. Reaching DJ Pro is the cost this choice hides: $299 over three years.
+     note: Recording a mix needs a Pro or Suite licence unless the hardware unlocks Pro, as the DDJ-FLX10 and FLX6 do.
+     note: Not free for your answers: the cheapest tier that does what you asked for is DJ Pro at $299 once.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: Recording needs the Pro subscription, and streamed tracks cannot be recorded at all.
+     note: Not free for your answers: the cheapest tier that does what you asked for is djay Pro at $49.99/yr.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Recording needs Pro; Home cannot record or output video.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Pro at $199/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 1]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: Your DDJ-FLX4 is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.
+     note: Recording happens on the Engine hardware, not in the desktop app.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   rekordbox | Free | no licence | No licence fee
+   Mixxx | Free | no licence | No licence fee
+   Traktor | Traktor Pro 4 | $149 once | $149
+   Serato DJ | DJ Pro | $299 once | $299
+   djay | djay Pro | $49.99/yr | $149.97
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+CASE: DDJ-FLX10 owner who wants to record mixes
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording
+
+STATUS: 3 platforms fit what you described · 3 would need paying · 1 does not fit · 6 of 7 questions answered.
+
+ [Fits what you described 3]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: Your DDJ-FLX10 / FLX6 is on rekordbox's Hardware Unlock list, so Performance mode, recording and mix sharing run on the Free plan.
+     check: Whether your device is on rekordbox's Hardware Unlock list — the DDJ-FLX2, FLX4, FLX6 and FLX10 are.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — No licence cost
+     price: DJ Pro — $299 once or $143.88/yr or $11.99/mo
+     free tier: What the free tier covers: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     why: Your DDJ-FLX10 / FLX6 unlocks Serato DJ Pro while it is connected, so Pro features such as recording and four decks come with it — no licence to buy.
+     note: Recording a mix needs a Pro or Suite licence unless the hardware unlocks Pro, as the DDJ-FLX10 and FLX6 do.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 3]
+   Traktor — $149 / 3 yrs
+     price: Traktor Pro 4 — $149 once
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     note: Traktor Play cannot record a mix; Pro 4 can.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Pro 4 at $149 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: Recording needs the Pro subscription, and streamed tracks cannot be recorded at all.
+     note: Not free for your answers: the cheapest tier that does what you asked for is djay Pro at $49.99/yr.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Recording needs Pro; Home cannot record or output video.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Pro at $199/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 1]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: Your DDJ-FLX10 / FLX6 is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.
+     note: Recording happens on the Engine hardware, not in the desktop app.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   rekordbox | Free | no licence | No licence fee
+   Serato DJ | DJ Pro | no licence | No licence fee
+   Mixxx | Free | no licence | No licence fee
+   Traktor | Traktor Pro 4 | $149 once | $149
+   djay | djay Pro | $49.99/yr | $149.97
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+CASE: DDJ-FLX2 owner who wants to record mixes
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=flx2&sw_os=windows&sw_music=local&sw_budget=free&sw_need=recording
+
+STATUS: 2 platforms fit what you described · 4 would need paying · 1 does not fit · 6 of 7 questions answered.
+
+ [Fits what you described 2]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: Your DDJ-FLX2 is on rekordbox's Hardware Unlock list, so Performance mode, recording and mix sharing run on the Free plan.
+     check: Whether your device is on rekordbox's Hardware Unlock list — the DDJ-FLX2, FLX4, FLX6 and FLX10 are.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 4]
+   Traktor — $149 / 3 yrs
+     price: Traktor Pro 4 — $149 once
+     why: Your DDJ-FLX2 is plug-and-play with Traktor, and some retail bundles include a Traktor Play licence — check the box before paying.
+     note: Traktor Play cannot record a mix; Pro 4 can.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Pro 4 at $149 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — $299 / 3 yrs
+     price: DJ Pro — $299 once or $143.88/yr or $11.99/mo
+     why: A genuine buy-once Pro licence at $299 — cheaper than three years of subscription rivals.
+     note: Your DDJ-FLX2 unlocks Serato DJ Lite, not DJ Pro. Reaching DJ Pro is the cost this choice hides: $299 over three years.
+     note: Recording a mix needs a Pro or Suite licence unless the hardware unlocks Pro, as the DDJ-FLX10 and FLX6 do.
+     note: Not free for your answers: the cheapest tier that does what you asked for is DJ Pro at $299 once.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: Recording needs the Pro subscription, and streamed tracks cannot be recorded at all.
+     note: Not free for your answers: the cheapest tier that does what you asked for is djay Pro at $49.99/yr.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Recording needs Pro; Home cannot record or output video.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Pro at $199/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 1]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: Your DDJ-FLX2 is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.
+     note: Recording happens on the Engine hardware, not in the desktop app.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   rekordbox | Free | no licence | No licence fee
+   Mixxx | Free | no licence | No licence fee
+   Traktor | Traktor Pro 4 | $149 once | $149
+   Serato DJ | DJ Pro | $299 once | $299
+   djay | djay Pro | $49.99/yr | $149.97
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+CASE: DDJ-FLX10 owner who wants the DVS expansion
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=flx10&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs
+
+STATUS: 1 platform fits what you described · 5 would need paying · 1 does not fit · 6 of 7 questions answered.
+
+ [Fits what you described 1]
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 5]
+   rekordbox — $360 / 3 yrs
+     price: Core — $120/yr or $12/mo
+     why: Your DDJ-FLX10 / FLX6 unlocks Performance mode on the Free plan, but Core is still needed for what you asked for.
+     note: DVS needs a paid plan as well as a device on rekordbox's Hardware Unlock DVS list.
+     note: There is no buy-once licence, so this is a subscription: $120/yr over three years.
+     check: Your device in the DVS column of rekordbox's Hardware Unlock list.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — $499 / 3 yrs
+     price: DJ Suite — $499 once or $179.88/yr or $14.99/mo
+     why: It can be owned outright rather than rented.
+     note: Your DDJ-FLX10 / FLX6 unlocks Serato DJ Pro, but DVS and video are separate additions: DJ Suite is still the price for those.
+     note: DVS is a Suite feature, not part of Lite or Pro.
+     check: Whether the hardware you own provides DVS without the Suite expansion.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Traktor — $149 / 3 yrs
+     price: Traktor Pro 4 — $149 once
+     why: It can be owned outright rather than rented.
+     note: DVS is part of Pro 4.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: DVS is a Pro feature and needs compatible timecode hardware.
+     note: There is no buy-once licence, so this is a subscription: $49.99/yr over three years.
+     check: Whether djay supports your timecode interface on your platform.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Timecode control needs Pro.
+     note: Atomix still sells an Infinity licence, but its price is not published on the buy page and it excludes some newer AI features — ask the vendor rather than budgeting for it.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 1]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: Your DDJ-FLX10 / FLX6 is prepared by its own platform (Pioneer gear by rekordbox, Traktor gear by Traktor) — Engine DJ prepares Engine OS players, so it has no role here.
+     note: Engine is not a DVS system.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Mixxx | Free | no licence | No licence fee
+   rekordbox | Core | $120/yr | $360
+   Serato DJ | DJ Suite | $499 once | $499
+   Traktor | Traktor Pro 4 | $149 once | $149
+   djay | djay Pro | $49.99/yr | $149.97
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+CASE: No hardware, laptop only, wants something genuinely free
+URL: /dj-software-hub.html?sw_mode=laptop&sw_hardware=none&sw_os=macos&sw_music=local&sw_budget=free
+
+STATUS: 5 platforms fit what you described · 1 depends on the exact model · 1 would need paying · 5 of 7 questions answered.
+
+ [Fits what you described 5]
+   djay — No licence cost
+     price: Free app — no licence fee
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     unverified: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — No licence cost
+     price: DJ Lite — no licence fee
+     why: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Free only without a controller or mixer, and not for paid work. Add hardware and Home or Pro is required.
+     why: Widest hardware and file-format support of anything here.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 1]
+   Traktor — $49 / 3 yrs
+     price: Traktor Play — $49 once
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 1]
+   Engine DJ — Depends on your model
+     price: Free desktop — no licence fee
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     model: Engine DJ only matters if you go Denon DJ or Numark Mixstream — both Engine OS: it is then the free prep tool. On any other route it has no role.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   djay | Free app | no licence | No licence fee
+   Mixxx | Free | no licence | No licence fee
+   rekordbox | Free | no licence | No licence fee
+   Serato DJ | DJ Lite | no licence | No licence fee
+   VirtualDJ | Free | no licence | No licence fee
+   Traktor | Traktor Play | $49 once | $49
+
+console errors: none
+==============================================================================
+CASE: Linux user, files owned, free budget
+URL: /dj-software-hub.html?sw_mode=laptop&sw_hardware=none&sw_os=linux&sw_music=local&sw_budget=free
+
+STATUS: 1 platform fits what you described · 6 do not fit · 5 of 7 questions answered.
+
+ [Fits what you described 1]
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     unverified: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 6]
+   djay — Doesn't fit
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     no: There is no Linux version.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: There is no Linux version.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+   rekordbox — Doesn't fit
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     no: There is no Linux version.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html
+   Serato DJ — Doesn't fit
+     why: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     no: There is no Linux version.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html
+   VirtualDJ — Doesn't fit
+     why: Widest hardware and file-format support of anything here.
+     no: There is no Linux version.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html
+   Traktor — Doesn't fit
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     no: There is no Linux version.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Mixxx | Free | no licence | No licence fee
+
+console errors: none
+==============================================================================
+CASE: iPad and a streaming subscription
+URL: /dj-software-hub.html?sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=streaming&sw_budget=free
+
+STATUS: 3 platforms fit what you described · 4 do not fit · 5 of 7 questions answered.
+
+ [Fits what you described 3]
+   djay — No licence cost
+     price: Free app — no licence fee
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     note: Streaming: Streamed songs cannot be recorded, and Neural Mix is unavailable with Apple Music or Spotify.
+     check: Which features the free app leaves out on your phone or tablet.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     note: Streaming: Spotify, Apple Music and the rest need their own subscription and are licensed for personal, non-commercial use.
+     check: What the rekordbox mobile app allows on your free account compared with the desktop app.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — No licence cost
+     price: Serato DJ for iOS — free (feature limited)
+     free tier: What the free tier covers: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     why: Serato DJ for iOS has a free tier on iPhone and iPad, so the app works on the tablet before anything is paid for.
+     note: Serato DJ for iOS runs free with basic stems, FX and sync; recording, DVS and advanced stems are the paid step.
+     note: The $149 iOS licence is for iPhone and iPad only — it does not unlock desktop DJ Pro. A DJ Suite ($14.99/mo or $499) is what adds the desktop app.
+     note: Streaming: Streamed tracks cannot be recorded, and Apple Music streaming tracks cannot be used with Stems.
+     check: The current Serato DJ for iOS feature limits on your device, and how your controller behaves with it.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 4]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: There is no iPad or iPhone version.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+   Mixxx — Doesn't fit
+     why: Genuinely free, including recording and four decks.
+     no: There is no iPad or iPhone version.
+     unverified: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   VirtualDJ — Doesn't fit
+     why: Widest hardware and file-format support of anything here.
+     no: There is no iPad or iPhone version.
+     note: Streaming: Streaming arrived in September 2026 and is for personal use only.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html
+   Traktor — Doesn't fit
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     no: There is no iPad or iPhone version.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     note: Streaming: Play streams Beatport only; Pro 4 adds the rest of the Beatport catalogue integration. Local files are the main event.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+NOTE: Streaming is not a licence. Apple Music, Spotify, TIDAL and the rest bill you separately, are licensed for personal use, and cannot be recorded or stem-separated in any of these apps. Paid work needs files you own.
+
+THREE-YEAR LICENCE TABLE:
+   djay | Free app | no licence | No licence fee
+   rekordbox | Free | no licence | No licence fee
+   Serato DJ | DJ Lite | no licence | No licence fee
+
+console errors: none
+==============================================================================
+CASE: iPad owner who wants to record the mix on the tablet
+URL: /dj-software-hub.html?sw_mode=mobile&sw_hardware=none&sw_os=ios&sw_music=local&sw_budget=free&sw_need=recording
+
+STATUS: 0 platforms fit what you described · 3 would need paying · 4 do not fit · 6 of 7 questions answered.
+
+ [Works, but you would be paying 3]
+   Serato DJ — $149 / 3 yrs
+     price: DJ for iOS — $149 once
+     why: Serato DJ for iOS keeps recording and DVS as paid features, so the $149 licence is the tier that gives you what you asked for.
+     note: On iPhone and iPad the $149 Serato DJ for iOS licence adds the paid features — recording and DVS are among them.
+     note: The $149 iOS licence is for iPhone and iPad only — it does not unlock desktop DJ Pro. A DJ Suite ($14.99/mo or $499) is what adds the desktop app.
+     note: Not free for your answers: the cheapest tier that does what you asked for is DJ for iOS at $149 once.
+     check: The current Serato DJ for iOS feature limits on your device, and how your controller behaves with it.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: Recording needs the Pro subscription, and streamed tracks cannot be recorded at all.
+     note: Not free for your answers: the cheapest tier that does what you asked for is djay Pro at $49.99/yr.
+     check: Which features the free app leaves out on your phone or tablet.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   rekordbox — $360 / 3 yrs
+     price: Core — $120/yr or $12/mo
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     note: Recording and mix sharing come with eligible Hardware Unlock gear on the Free plan, per rekordbox's v7 FAQ. Without unlock hardware, that means Core.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Core at $120/yr.
+     check: Whether your device is on rekordbox's Hardware Unlock list — the DDJ-FLX2, FLX4, FLX6 and FLX10 are.
+     check: What the rekordbox mobile app allows on your free account compared with the desktop app.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 4]
+   Engine DJ — Doesn't fit
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     no: There is no iPad or iPhone version.
+     note: Recording happens on the Engine hardware, not in the desktop app.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+   Mixxx — Doesn't fit
+     why: Genuinely free, including recording and four decks.
+     no: There is no iPad or iPhone version.
+     unverified: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   Traktor — Doesn't fit
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     no: There is no iPad or iPhone version.
+     note: Traktor Play cannot record a mix; Pro 4 can.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Pro 4 at $149 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+   VirtualDJ — Doesn't fit
+     why: Widest hardware and file-format support of anything here.
+     no: There is no iPad or iPhone version.
+     note: Recording needs Pro; Home cannot record or output video.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Pro at $199/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Serato DJ | DJ for iOS | $149 once | $149
+   djay | djay Pro | $49.99/yr | $149.97
+   rekordbox | Core | $120/yr | $360
+
+console errors: none
+==============================================================================
+CASE: PRIME 4 / 4+ standalone player, no laptop in the booth
+URL: /dj-software-hub.html?sw_mode=standalone&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free
+
+STATUS: 1 platform fits what you described · 1 fits with a named gap · 5 do not fit · 5 of 7 questions answered.
+
+ [Fits what you described 1]
+   Engine DJ — No licence cost
+     price: Free desktop — no licence fee
+     free tier: What the free tier covers: The desktop app is free. The software that actually plays is Engine OS, which is built into the hardware.
+     why: Your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself, and Engine DJ is the free preparation tool built for exactly that: it organises, analyses and exports the music the player plays.
+     why: Engine DJ desktop is free and is the preparation tool your hardware is built around.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Fits, with a named gap 1]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     gap: rekordbox prepares its own USB format, and the Denon DJ PRIME 4 / PRIME 4+ reads those drives natively (music, playlists and hot cues) — so it can prepare the library; the player itself runs Engine OS, and the performance side is Serato DJ Pro or Virtual DJ.
+     fills: For the player's native format, the free Engine DJ app is what the Denon DJ PRIME 4 / PRIME 4+ is built around.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Does not fit 5]
+   Serato DJ — Doesn't fit
+     why: Your Denon DJ PRIME 4 / PRIME 4+ unlocks Serato DJ Pro while it is connected, so the Pro tier is already covered at no cost.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html
+   VirtualDJ — Doesn't fit
+     why: Denon lists the PRIME 4/4+ as compatible with Virtual DJ; with a controller attached the free edition stops applying, so Home is the entry tier that allows it.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself. With a computer it also works as a controller with Virtual DJ (licence required) — that is the laptop route, not this one.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Home at $44/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html
+   djay — Doesn't fit
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+   Mixxx — Doesn't fit
+     why: Genuinely free, including recording and four decks.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   Traktor — Doesn't fit
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME 4 / PRIME 4+ runs Engine OS itself.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Engine DJ | Free desktop | no licence | No licence fee
+   rekordbox | Free | no licence | No licence fee
+
+console errors: none
+==============================================================================
+CASE: PRIME GO / GO+ standalone player, no laptop in the booth
+URL: /dj-software-hub.html?sw_mode=standalone&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=free
+
+STATUS: 1 platform fits what you described · 1 depends on the exact model · 5 do not fit · 5 of 7 questions answered.
+
+ [Fits what you described 1]
+   Engine DJ — No licence cost
+     price: Free desktop — no licence fee
+     free tier: What the free tier covers: The desktop app is free. The software that actually plays is Engine OS, which is built into the hardware.
+     why: Your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself, and Engine DJ is the free preparation tool built for exactly that: it organises, analyses and exports the music the player plays.
+     why: Engine DJ desktop is free and is the preparation tool your hardware is built around.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 1]
+   rekordbox — Depends on your model
+     price: Free — no licence fee
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     model: rekordbox's Hardware Unlock list is Pioneer DJ gear, and Engine format is this player's native media — whether the two meet at all is per-model; the PRIME 4/4+ reads rekordbox drives, the GO line is not documented as doing so.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html
+
+ [Does not fit 5]
+   VirtualDJ — Doesn't fit
+     why: Denon documents Virtual DJ support for the PRIME GO and GO+ with a Pro licence, so Pro — not Home — is the tier for this unit.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself. With a computer it also works as a controller with Virtual DJ (licence required) — that is the laptop route, not this one.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Pro at $199/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html
+   djay — Doesn't fit
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+   Mixxx — Doesn't fit
+     why: Genuinely free, including recording and four decks.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   Serato DJ — Doesn't fit
+     why: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html
+   Traktor — Doesn't fit
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     no: It is a laptop program and cannot be installed on a standalone player — your Denon DJ PRIME GO / PRIME GO+ runs Engine OS itself.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Engine DJ | Free desktop | no licence | No licence fee
+
+console errors: none
+==============================================================================
+CASE: PRIME 4 / 4+ owner with a Windows laptop (the issue #1040 case)
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=free
+
+STATUS: 2 platforms fit what you described · 1 fits with a named gap · 3 depend on the exact model · 1 would need paying · 5 of 7 questions answered.
+
+ [Fits what you described 2]
+   Engine DJ — No licence cost
+     price: Free desktop — no licence fee
+     free tier: What the free tier covers: The desktop app is free. The software that actually plays is Engine OS, which is built into the hardware.
+     why: Engine DJ is the free prep side of your Denon DJ PRIME 4 / PRIME 4+: the player runs Engine OS, and the app organises, analyses and exports the music it plays.
+     why: Engine DJ desktop is free and is the preparation tool your hardware is built around.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   Serato DJ — No licence cost
+     price: DJ Lite — no licence fee
+     free tier: What the free tier covers: Serato's free tiers are per product: DJ Lite on desktop, and a feature-limited free Serato DJ for iOS app on iPhone and iPad.
+     why: Your Denon DJ PRIME 4 / PRIME 4+ unlocks Serato DJ Pro while it is connected, so the Pro tier is already covered at no cost.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 1]
+   VirtualDJ — $132 / 3 yrs
+     price: Home — $44/yr or $4/mo
+     why: Denon lists the PRIME 4/4+ as compatible with Virtual DJ; with a controller attached the free edition stops applying, so Home is the entry tier that allows it.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Home at $44/yr.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Fits, with a named gap 1]
+   rekordbox — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Library management, analysis, cue points and USB export on the Free plan, plus Performance mode, recording and mix sharing while eligible Hardware Unlock gear is connected.
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     gap: rekordbox prepares its own USB format, and the Denon DJ PRIME 4 / PRIME 4+ reads those drives natively (music, playlists and hot cues) — so it can prepare the library; the player itself runs Engine OS, and the performance side is Serato DJ Pro or Virtual DJ.
+     fills: For the player's native format, the free Engine DJ app is what the Denon DJ PRIME 4 / PRIME 4+ is built around.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 3]
+   djay — Depends on your model
+     price: Free app — no licence fee
+     why: The app is free to download and use with limits; the Pro subscription unlocks recording, full Neural Mix and the rest.
+     model: djay's hardware support is per model — confirm your exact unit on djay's list before relying on it.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+   Mixxx — Depends on your model
+     price: Free — no licence fee
+     why: Genuinely free, including recording and four decks.
+     model: Mixxx depends on community mappings, so whether your exact unit works — and how complete the mapping is — has to be checked first.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   Traktor — Depends on your model
+     price: Traktor Play — $49 once
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     note: Not free for your answers: the cheapest tier that does what you asked for is Traktor Play at $49 once.
+     model: Traktor's compatibility list is per model and does not verify this Engine OS unit here — check Traktor's controller list before expecting support.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Engine DJ | Free desktop | no licence | No licence fee
+   Serato DJ | DJ Lite | no licence | No licence fee
+   VirtualDJ | Home | $44/yr | $132
+   rekordbox | Free | no licence | No licence fee
+
+console errors: none
+==============================================================================
+CASE: PRIME 4 / 4+ owner who also wants DVS
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=prime4&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs
+
+STATUS: 1 platform fits what you described · 1 fits with a named gap · 3 depend on the exact model · 2 would need paying · 6 of 7 questions answered.
+
+ [Fits what you described 1]
+   Engine DJ — No licence cost
+     price: Free desktop — no licence fee
+     free tier: What the free tier covers: The desktop app is free. The software that actually plays is Engine OS, which is built into the hardware.
+     why: Engine DJ is the free prep side of your Denon DJ PRIME 4 / PRIME 4+: the player runs Engine OS, and the app organises, analyses and exports the music it plays.
+     why: Engine DJ desktop is free and is the preparation tool your hardware is built around.
+     note: Engine is not a DVS system.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 2]
+   Serato DJ — $499 / 3 yrs
+     price: DJ Suite — $499 once or $179.88/yr or $14.99/mo
+     why: It can be owned outright rather than rented.
+     note: Your Denon DJ PRIME 4 / PRIME 4+ unlocks Serato DJ Pro, but DVS and video are separate additions: DJ Suite is still the price for those.
+     note: DVS is a Suite feature, not part of Lite or Pro.
+     check: Whether the hardware you own provides DVS without the Suite expansion.
+     unverified: Whether your controller unlocks Lite, Pro or nothing on Serato's own hardware list.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: Denon lists the PRIME 4/4+ as compatible with Virtual DJ; with a controller attached the free edition stops applying, so Home is the entry tier that allows it.
+     note: Timecode control needs Pro.
+     note: Atomix still sells an Infinity licence, but its price is not published on the buy page and it excludes some newer AI features — ask the vendor rather than budgeting for it.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Fits, with a named gap 1]
+   rekordbox — $360 / 3 yrs
+     price: Core — $120/yr or $12/mo
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     note: DVS needs a paid plan as well as a device on rekordbox's Hardware Unlock DVS list.
+     note: There is no buy-once licence, so this is a subscription: $120/yr over three years.
+     gap: rekordbox prepares its own USB format, and the Denon DJ PRIME 4 / PRIME 4+ reads those drives natively (music, playlists and hot cues) — so it can prepare the library; the player itself runs Engine OS, and the performance side is Serato DJ Pro or Virtual DJ.
+     fills: For the player's native format, the free Engine DJ app is what the Denon DJ PRIME 4 / PRIME 4+ is built around.
+     check: Your device in the DVS column of rekordbox's Hardware Unlock list.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 3]
+   Mixxx — Depends on your model
+     price: Free — no licence fee
+     why: Genuinely free, including recording and four decks.
+     model: Mixxx depends on community mappings, so whether your exact unit works — and how complete the mapping is — has to be checked first.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   Traktor — Depends on your model
+     price: Traktor Pro 4 — $149 once
+     why: It can be owned outright rather than rented.
+     note: DVS is part of Pro 4.
+     model: Traktor's compatibility list is per model and does not verify this Engine OS unit here — check Traktor's controller list before expecting support.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+   djay — Depends on your model
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: DVS is a Pro feature and needs compatible timecode hardware.
+     note: There is no buy-once licence, so this is a subscription: $49.99/yr over three years.
+     model: djay's hardware support is per model — confirm your exact unit on djay's list before relying on it.
+     check: Whether djay supports your timecode interface on your platform.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Engine DJ | Free desktop | no licence | No licence fee
+   Serato DJ | DJ Suite | $499 once | $499
+   VirtualDJ | Pro | $199/yr | $597
+   rekordbox | Core | $120/yr | $360
+
+console errors: none
+==============================================================================
+CASE: PRIME GO / GO+ used as a laptop controller
+URL: /dj-software-hub.html?sw_mode=controller&sw_hardware=prime_go&sw_os=windows&sw_music=local&sw_budget=sub
+
+STATUS: 1 platform fits what you described · 5 depend on the exact model · 1 would need paying · 5 of 7 questions answered.
+
+ [Fits what you described 1]
+   Engine DJ — No licence cost
+     price: Free desktop — no licence fee
+     free tier: What the free tier covers: The desktop app is free. The software that actually plays is Engine OS, which is built into the hardware.
+     why: Engine DJ is the free prep side of your Denon DJ PRIME GO / PRIME GO+: the player runs Engine OS, and the app organises, analyses and exports the music it plays.
+     why: Engine DJ desktop is free and is the preparation tool your hardware is built around.
+     unverified: Which Engine OS features your specific player supports.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 1]
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: Denon documents Virtual DJ support for the PRIME GO and GO+ with a Pro licence, so Pro — not Home — is the tier for this unit.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 5]
+   djay — Depends on your model
+     price: Free app — no licence fee
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     model: djay's hardware support is per model — confirm your exact unit on djay's list before relying on it.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html
+   Mixxx — Depends on your model
+     price: Free — no licence fee
+     why: Genuinely free, including recording and four decks.
+     model: Mixxx depends on community mappings, so whether your exact unit works — and how complete the mapping is — has to be checked first.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html
+   rekordbox — Depends on your model
+     price: Free — no licence fee
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     model: rekordbox's Hardware Unlock list is Pioneer DJ gear, and Engine format is this player's native media — whether the two meet at all is per-model; the PRIME 4/4+ reads rekordbox drives, the GO line is not documented as doing so.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html
+   Serato DJ — Depends on your model
+     price: DJ Lite — no licence fee
+     why: A genuine buy-once Pro licence at $299 — cheaper than three years of subscription rivals.
+     model: Mixxx depends on community mappings, so whether your exact unit works — and how complete the mapping is — has to be checked first.
+     model: This Engine OS player is not on this page's verified Serato list — the PRIME 4/4+ is, and it unlocks DJ Pro while connected. If yours is, Serato's list names Lite or Pro, which decides $0 or $299.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html
+   Traktor — Depends on your model
+     price: Traktor Play — $49 once
+     why: One payment, owned: $149 for Pro 4 is the cheapest full-feature licence here.
+     note: A perpetual licence exists here and is the cheaper three-year route: $49 once.
+     model: Traktor's compatibility list is per model and does not verify this Engine OS unit here — check Traktor's controller list before expecting support.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Engine DJ | Free desktop | no licence | No licence fee
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+CASE: Turntables, timecode, prefers to buy once
+URL: /dj-software-hub.html?sw_mode=vinyl&sw_hardware=other&sw_os=windows&sw_music=local&sw_budget=once&sw_need=dvs
+
+STATUS: 1 platform fits what you described · 2 depend on the exact model · 4 would need paying · 6 of 7 questions answered.
+
+ [Fits what you described 1]
+   Mixxx — No licence cost
+     price: Free — no licence fee
+     free tier: What the free tier covers: Everything is free, including recording and four decks. No account, no licence key.
+     why: Genuinely free, including recording and four decks.
+     check: Whether a community mapping exists for your controller, and how complete it is.
+     next: best-free-dj-software-2026.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Works, but you would be paying 4]
+   Traktor — $149 / 3 yrs
+     price: Traktor Pro 4 — $149 once
+     why: It can be owned outright rather than rented.
+     note: DVS is part of Pro 4.
+     unverified: Which licence, if any, is bundled with the hardware you are looking at.
+     next: traktor-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   djay — $149.97 / 3 yrs
+     price: djay Pro — $49.99/yr or $6.99/mo
+     why: One $49.99/yr subscription covers Mac, iPad, iPhone, Android and Windows.
+     note: DVS is a Pro feature and needs compatible timecode hardware.
+     note: There is no buy-once licence, so this is a subscription: $49.99/yr over three years.
+     check: Whether djay supports your timecode interface on your platform.
+     unverified: Whether your controller appears in djay's hardware list, and that your streaming service is supported where you live.
+     next: djay-pro-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   rekordbox — $360 / 3 yrs
+     price: Core — $120/yr or $12/mo
+     why: The USB export format club CDJs read, so set preparation works even on the Free plan.
+     note: DVS needs a paid plan as well as a device on rekordbox's Hardware Unlock DVS list.
+     note: There is no buy-once licence, so this is a subscription: $120/yr over three years.
+     check: Your device in the DVS column of rekordbox's Hardware Unlock list.
+     unverified: Whether your exact controller appears on the Hardware Unlock list, and which features it unlocks.
+     next: rekordbox-review.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+   VirtualDJ — $597 / 3 yrs
+     price: Pro — $199/yr or $19/mo
+     why: The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.
+     note: Timecode control needs Pro.
+     note: Atomix still sells an Infinity licence, but its price is not published on the buy page and it excludes some newer AI features — ask the vendor rather than budgeting for it.
+     unverified: Which controllers Home supports, and whether your gigs count as commercial use under the licence.
+     next: virtual-dj-vs-serato.html · controller-software-compatibility-matrix.html · build-your-dj-setup.html
+
+ [Depends on the exact model or tier 2]
+   Engine DJ — Depends on your model
+     price: Free desktop — no licence fee
+     why: Free, and it is the tool your Denon or Numark hardware is designed around.
+     note: Engine is not a DVS system.
+     model: Engine DJ only matters if you go Denon DJ or Numark Mixstream — both Engine OS: it is then the free prep tool. On any other route it has no role.
+     next: best-standalone-dj-systems.html · controller-software-compatibility-matrix.html
+   Serato DJ — Depends on your model
+     price: DJ Suite — $499 once or $179.88/yr or $14.99/mo
+     why: It can be owned outright rather than rented.
+     note: DVS is a Suite feature, not part of Lite or Pro.
+     model: Serato's controller list decides the tier per model — Lite ($0), Pro ($299), or nothing at all.
+     check: Whether the hardware you own provides DVS without the Suite expansion.
+     next: serato-dj-pro-review.html · controller-software-compatibility-matrix.html
+
+THREE-YEAR LICENCE TABLE:
+   Mixxx | Free | no licence | No licence fee
+   Traktor | Traktor Pro 4 | $149 once | $149
+   djay | djay Pro | $49.99/yr | $149.97
+   rekordbox | Core | $120/yr | $360
+   VirtualDJ | Pro | $199/yr | $597
+
+console errors: none
+==============================================================================
+Scores, star ratings and rankings are deliberately absent: the page groups by the five outcomes,
+from fit, through cost and named gaps, to per-model checks and genuine incompatibilities.
