@@ -1,0 +1,85 @@
+{
+  "browser": "Chrome/149.0.7827.55",
+  "results": [
+    {
+      "file": "denon-sc6000-review.html",
+      "width": 390,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "denon-prime-go-review.html",
+      "width": 390,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "xdj-az-vs-denon-prime-4-plus.html",
+      "width": 390,
+      "status": 200,
+      "faqCount": 4,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "best-standalone-dj-systems.html",
+      "width": 390,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "denon-sc6000-review.html",
+      "width": 1440,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "denon-prime-go-review.html",
+      "width": 1440,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "xdj-az-vs-denon-prime-4-plus.html",
+      "width": 1440,
+      "status": 200,
+      "faqCount": 4,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    },
+    {
+      "file": "best-standalone-dj-systems.html",
+      "width": 1440,
+      "status": 200,
+      "faqCount": 5,
+      "overflow": false,
+      "brokenImages": 0,
+      "pageErrors": [],
+      "failedResponses": []
+    }
+  ]
+}
