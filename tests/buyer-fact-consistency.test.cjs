@@ -30,6 +30,7 @@ test("FLX4 software and predecessor claims match primary vendor facts", () => {
   assert.match(html, /DDJ-400 also had/);
   assert.match(html, /Traktor Play is officially supported/);
   assert.match(html, /compatible computer or supported mobile device/);
+  assert.match(html, /separately supplied 9V\/3A power source/);
   assert.doesNotMatch(html, /DDJ-400 needed external|Serato DJ Pro adds four decks, Stems|laptop is required for every set|\$9\.99\/month/);
   assert.match(html, /https:\/\/serato\.com\/dj\/lite/);
   assert.match(html, /https:\/\/www\.pioneerdj\.com\/en\/product\/dj-controllers\/ddj-flx4\//);
@@ -40,6 +41,7 @@ test("headphone comparison never equates sensitivity to max SPL", () => {
   faqPairs(html);
   assert.match(html, /99 dB\/mW sensitivity is not max SPL/);
   assert.match(html, /Audio-Technica ATH-M50x specification/);
+  assert.doesNotMatch(html, /Club-Ready Picks Tested/);
   assert.doesNotMatch(html, /SPL Max|low max SPL \(99 dB|106 dB max SPL|100\+ dB SPL for loud club/);
   const table = html.match(/<table class="comparison-table">([\s\S]*?)<\/table>/);
   assert.ok(table, "comparison table exists");
