@@ -521,6 +521,302 @@
       ]
     },
     {
+      "id": "alphatheta-xdj-az",
+      "category": "controllers",
+      "brand": "AlphaTheta",
+      "model": "XDJ-AZ",
+      "price": 3199,
+      "channels": 4,
+      "software_unlocks": [
+        "rekordbox Performance (Hardware Unlock)",
+        "Serato DJ Pro (Hardware Unlock)"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (1/4\" TRS)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Club-prep DJs, festival performers, and high-end mobile pros requiring 4-deck club continuity",
+      "tagline": "Flagship 4-deck all-in-one DJ system with club-standard layout, 10.1\" touchscreen, and Spotify StreamingDirectPlay.",
+      "image": "assets/img/products/alphatheta-xdj-az.svg",
+      "slug": "xdj-az-vs-denon-prime-4-plus.html",
+      "amazon_search": "AlphaTheta XDJ-AZ Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The flagship club-prep standalone system",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
+    },
+    {
+      "id": "denon-prime-4-g2",
+      "category": "controllers",
+      "brand": "Denon DJ",
+      "model": "PRIME 4 G2",
+      "price": 2599,
+      "channels": 4,
+      "software_unlocks": [
+        "Engine DJ 5.0 Standalone",
+        "Serato DJ Pro",
+        "VirtualDJ"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (XLR Balanced)",
+        "Zone XLR (Balanced)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Event pros, mobile DJs, and creative performers requiring onboard Stems rendering, 8\" jogs, and direct DMX lighting",
+      "tagline": "Next-generation 4-deck standalone system with onboard Stems rendering, MPCe 3D pads, and built-in 3-pin DMX output.",
+      "image": "assets/img/products/denon-prime-4-g2.svg",
+      "slug": "xdj-az-vs-denon-prime-4-plus.html",
+      "amazon_search": "Denon DJ Prime 4 G2 Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The 2026 flagship standalone for feature density, onboard Stems, and integrated lighting",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth XLR (balanced)"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "zone",
+          "label": "Zone XLR (balanced)"
+        }
+      ]
+    },
+    {
+      "id": "rane-system-one",
+      "category": "controllers",
+      "brand": "RANE",
+      "model": "SYSTEM ONE",
+      "price": 2499,
+      "channels": 2,
+      "software_unlocks": [
+        "Engine DJ 5.0 Standalone",
+        "Serato DJ Pro (Hardware Unlock)"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (1/4\" TRS)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Open-format DJs, turntablists, and scratch performers requiring standalone motorized platters and onboard Stems rendering",
+      "tagline": "The world's first motorized standalone DJ system with 7.2\" aluminum platters, Engine DJ 5.0, and onboard Stems rendering.",
+      "image": "assets/img/products/rane-system-one.svg",
+      "slug": "best-standalone-dj-systems.html",
+      "amazon_search": "Rane System One Motorized Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The premier standalone system for motorized vinyl feel and open-format performance",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
+    },
+    {
+      "id": "numark-mixtrack-go",
+      "category": "controllers",
+      "brand": "Numark",
+      "model": "MixTrack Go",
+      "price": 99,
+      "channels": 2,
+      "software_unlocks": [
+        "Serato DJ Lite",
+        "Algoriddim djay Pro (Mac/PC included)",
+        "Algoriddim djay (iOS/Android)"
+      ],
+      "master_outputs": [
+        "3.5mm (1/8\" Stereo Master)"
+      ],
+      "headphone_jack": "3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Ultra-portable travel mixing, budget beginners, and mobile practice with smartphone/tablet Bluetooth MIDI",
+      "tagline": "Ultra-compact 2-deck controller with Stems control, Fade FX, and Bluetooth MIDI at under $100.",
+      "image": "assets/img/products/numark-mixtrack-go.svg",
+      "slug": "best-dj-controllers-for-beginners.html",
+      "amazon_search": "Numark MixTrack Go DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The best ultra-compact sub-$100 travel and mobile practice controller",
+      "outputs": [
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm stereo master"
+        }
+      ]
+    },
+    {
+      "id": "numark-party-mix-3",
+      "category": "controllers",
+      "brand": "Numark",
+      "model": "Party Mix III",
+      "price": 149,
+      "channels": 2,
+      "software_unlocks": [
+        "Serato DJ Lite",
+        "Algoriddim djay Pro (Mac/PC included)",
+        "Algoriddim djay (iOS/Android)"
+      ],
+      "master_outputs": [
+        "3.5mm (1/8\" Stereo Master)"
+      ],
+      "headphone_jack": "3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Beginners wanting an engaging party controller with 8 pads per deck, built-in light show, and Stems control under $150",
+      "tagline": "Engaging beginner controller with 16 performance pads, beat-synced LED light show, Stems, and Bluetooth MIDI.",
+      "image": "assets/img/products/numark-party-mix-3.svg",
+      "slug": "best-dj-controllers-for-beginners.html",
+      "amazon_search": "Numark Party Mix III DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The most fun under-$150 starter controller with 8 pads per deck and built-in lights",
+      "outputs": [
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm stereo master"
+        }
+      ]
+    },
+    {
+      "id": "alphatheta-djm-v5",
+      "category": "controllers",
+      "brand": "AlphaTheta",
+      "model": "DJM-V5",
+      "price": 2199,
+      "channels": 3,
+      "software_unlocks": [
+        "rekordbox Performance (Hardware Unlock)",
+        "Serato DJ Pro (license needed)"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "Booth (1/4\" TRS)",
+        "SonicLink 2.4GHz Wireless"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Club and studio setups requiring compact 3-channel V10-grade sound, 4-band EQ, 6 Send FX, and ultra-low-latency SonicLink wireless monitoring",
+      "tagline": "Next-generation compact 3-channel mixer with 4-band EQ, 6 Send FX, and built-in SonicLink wireless monitoring.",
+      "image": "assets/img/products/alphatheta-djm-v5.svg",
+      "slug": "best-dj-mixers-2026.html",
+      "amazon_search": "AlphaTheta DJM-V5 3-Channel DJ Mixer",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The compact 3-channel club mixer with SonicLink wireless headphone monitoring",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ]
+    },
+    {
       "id": "sennheiser-hd25",
       "category": "headphones",
       "brand": "Sennheiser",

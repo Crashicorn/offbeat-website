@@ -88,6 +88,12 @@ function byName(list, name) {
     assert.strictEqual(data.hardware.xdj_az.pioneer, true, "XDJ-AZ is in the Pioneer/AlphaTheta hardware family");
     assert.strictEqual(data.hardware.prime4.unlocks.serato, "pro", "PRIME 4 / 4+ unlock Serato DJ Pro per Serato's own pages");
     assert.strictEqual(data.hardware.prime4.unlocks.virtualdj, "home", "PRIME 4 / 4+ are Denon-listed for Virtual DJ (entry tier)");
+    assert.strictEqual(data.hardware.prime4_g2.unlocks.serato, "pro", "PRIME 4 G2 unlocks Serato DJ Pro");
+    assert.strictEqual(data.hardware.prime4_g2.rekImport, true, "PRIME 4 G2 reads rekordbox drives natively");
+    assert.strictEqual(data.hardware.rane_system_one.unlocks.serato, "pro", "RANE SYSTEM ONE unlocks Serato DJ Pro");
+    assert.strictEqual(data.hardware.rane_system_one.standalone, true, "RANE SYSTEM ONE is standalone motorized");
+    assert.strictEqual(data.hardware.numark_entry.unlocks.serato, "lite", "Party Mix III / MixTrack Go unlock Serato DJ Lite");
+    assert.strictEqual(data.hardware.numark_entry.unlocks.djay, "pro", "Party Mix III / MixTrack Go bundle Algoriddim djay Pro for Mac/PC");
     assert.strictEqual(data.hardware.prime_go.unlocks.virtualdj, "pro", "Denon documents the GO / GO+ at Virtual DJ Pro");
     assert.strictEqual(data.hardware.prime_go.unlocks.serato, undefined,
       "the GO line's Serato tier is not verified, so the dataset leaves it out of the verified list");

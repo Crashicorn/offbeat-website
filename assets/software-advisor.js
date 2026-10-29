@@ -453,6 +453,12 @@
     if (answers.hardware === "xdj_az" && answers.mode === "standalone" && answers.music !== "local" && platform.id === "rekordbox") {
       notes.push("Direct standalone streaming: The XDJ-AZ supports direct Wi-Fi streaming on the unit itself via Spotify StreamingDirectPlay (Spotify Premium required), Apple Music, TIDAL, and Beatport Streaming without a laptop running.");
     }
+    if (answers.hardware === "prime4_g2" && answers.mode === "standalone" && answers.music !== "local" && platform.id === "engine") {
+      notes.push("Direct standalone streaming: PRIME 4 G2 streams Amazon Music Unlimited, Apple Music, Beatport, SoundCloud Go+, and TIDAL directly over built-in Wi-Fi.");
+    }
+    if (answers.hardware === "rane_system_one" && answers.mode === "standalone" && answers.music !== "local" && platform.id === "engine") {
+      notes.push("Direct standalone streaming: RANE SYSTEM ONE streams Apple Music, Amazon Music Unlimited, TIDAL, Beatport, Beatsource, SoundCloud Go+, and Dropbox directly over built-in Wi-Fi.");
+    }
     if (answers.music !== "local" && recordingRequested && needsStreamingCaveat(platform)) {
       notes.push("No platform can record streamed audio — recording needs files you own.");
     }
@@ -601,6 +607,15 @@
       } else if (answers.hardware === "prime4") {
         rsHref = "build-your-dj-setup.html?add=denon-prime-4-plus";
         rsLabel = "Plan your Prime 4+ rig in Rig Studio";
+      } else if (answers.hardware === "prime4_g2") {
+        rsHref = "build-your-dj-setup.html?add=denon-prime-4-g2";
+        rsLabel = "Plan your Prime 4 G2 rig in Rig Studio";
+      } else if (answers.hardware === "rane_system_one") {
+        rsHref = "build-your-dj-setup.html?add=rane-system-one";
+        rsLabel = "Plan your RANE SYSTEM ONE rig in Rig Studio";
+      } else if (answers.hardware === "numark_entry") {
+        rsHref = "build-your-dj-setup.html?add=numark-party-mix-3";
+        rsLabel = "Plan your beginner Numark rig in Rig Studio";
       } else if (platform.id === "traktor" || answers.hardware === "traktor") {
         rsHref = "build-your-dj-setup.html?preset=traktor-techno";
         rsLabel = "Plan your Traktor rig in Rig Studio";

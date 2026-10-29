@@ -73,11 +73,14 @@
           { value: "flx2", label: "Pioneer DDJ-FLX2" },
           { value: "flx10", label: "Pioneer DDJ-FLX10 / FLX6" },
           { value: "xdj_az", label: "AlphaTheta XDJ-AZ / Pioneer standalone (XDJ-XZ / RX3)" },
+          { value: "prime4_g2", label: "Denon DJ PRIME 4 G2 (2026)" },
           { value: "prime4", label: "Denon DJ PRIME 4 / PRIME 4+" },
+          { value: "rane_system_one", label: "RANE SYSTEM ONE (Motorized Standalone)" },
           { value: "prime_go", label: "Denon DJ PRIME GO / PRIME GO+" },
-          { value: "engine_other", label: "Other Engine OS player (Numark, SC LIVE, PRIME 4 G2…)" },
+          { value: "engine_other", label: "Other Engine OS player (Numark, SC LIVE…)" },
+          { value: "numark_entry", label: "Numark Party Mix III / MixTrack Go (2026)" },
           { value: "traktor", label: "Traktor Kontrol S2 / S3 / S4" },
-          { value: "other", label: "Numark, Hercules, Reloop or Rane" },
+          { value: "other", label: "Hercules, Reloop, or other controller" },
           { value: "unsure", label: "Not sure yet" }
         ]
       },
@@ -189,12 +192,28 @@
         unlocks: { rekordbox: "hu", serato: "pro" },
         note: "An all-in-one standalone flagship and laptop controller: unlocks rekordbox Performance mode and Serato DJ Pro for free while connected. In standalone mode, it plays prepared rekordbox USB drives, CloudDirectPlay, or direct streaming (XDJ-AZ confirms Spotify StreamingDirectPlay with Spotify Premium, Apple Music, TIDAL, and Beatport)."
       },
+      prime4_g2: {
+        label: "Denon DJ PRIME 4 G2 (2026)",
+        engineFamily: true,
+        rekImport: true,
+        standalone: true,
+        unlocks: { engine: "os", serato: "pro", virtualdj: "home" },
+        note: "The 2026 flagship 4-deck standalone system featuring onboard Stems rendering, 16 MPCe 3D performance pads, full-size 8-inch jog wheels, and built-in 3-pin DMX lighting control (SoundSwitch). Unlocks Serato DJ Pro in computer mode, runs Engine DJ 5.0 OS standalone with direct Wi-Fi streaming, and imports rekordbox USB drives natively."
+      },
       prime4: {
         label: "Denon DJ PRIME 4 / PRIME 4+",
         engineFamily: true,
         rekImport: true,
+        standalone: true,
         unlocks: { engine: "os", serato: "pro", virtualdj: "home" },
-        note: "A standalone player that also works as a laptop controller: Serato's own PRIME 4 and PRIME 4+ pages list both as unlocking Serato DJ Pro, and Denon's PRIME 4+ FAQ lists Virtual DJ compatibility. Serato's per-model page also names the DVS expansion for control vinyl/CDs. rekordbox is still useful: the PRIME 4+ reads rekordbox drives natively (music, playlists, hot cues) — that is an import, not a controller unlock. The PRIME 4 G2 is a different unit and has not been verified here, so it sits in the 'other Engine OS player' option."
+        note: "A standalone player that also works as a laptop controller: Serato's own PRIME 4 and PRIME 4+ pages list both as unlocking Serato DJ Pro, and Denon's PRIME 4+ FAQ lists Virtual DJ compatibility. Serato's per-model page also names the DVS expansion for control vinyl/CDs. rekordbox is still useful: the PRIME 4+ reads rekordbox drives natively (music, playlists, hot cues) — that is an import, not a controller unlock. The 2026 PRIME 4 G2 adds onboard Stems rendering, 8\" jogs, and built-in DMX hardware."
+      },
+      rane_system_one: {
+        label: "RANE SYSTEM ONE (Motorized Standalone)",
+        engineFamily: true,
+        standalone: true,
+        unlocks: { engine: "os", serato: "pro" },
+        note: "The world's first motorized standalone DJ system, pairing 7.2\" high-torque aluminum platters with embedded Engine DJ 5.0 OS. Features onboard 4-part Stems rendering, 7\" vertical touchscreen with RGB waveforms, and MAG FOUR crossfader. In computer mode, it unlocks Serato DJ Pro without an additional subscription."
       },
       prime_go: {
         label: "Denon DJ PRIME GO / PRIME GO+",
@@ -203,10 +222,15 @@
         note: "A battery-powered standalone player. Denon documents Virtual DJ support for the GO and GO+ with a Pro licence. GO+ adds Apple Music and Amazon Music Unlimited over the original GO (Engine DJ's streaming list), keeps the Ethernet port off while supporting USB-Ethernet adapters, and carries the manufacturer's ~25% better battery rating — so the model matters for streaming and networking. Serato, rekordbox, Traktor and djay are not verified for this unit here."
       },
       engine_other: {
-        label: "Other Engine OS player (Numark Mixstream, SC LIVE, PRIME 4 G2…)",
+        label: "Other Engine OS player (Numark Mixstream, SC LIVE…)",
         engineFamily: true,
         unlocks: { engine: "os" },
-        note: "Engine OS players are prepared by the free Engine DJ desktop app. Which performance software (if any) a specific unit works with as a controller is per-model — this page verifies the PRIME 4/4+ (Serato DJ Pro, Virtual DJ) and the GO/GO+ (Virtual DJ Pro) only."
+        note: "Engine OS players are prepared by the free Engine DJ desktop app. Which performance software (if any) a specific unit works with as a controller is per-model — this page verifies the PRIME 4/4+/G2 (Serato DJ Pro, Virtual DJ), RANE SYSTEM ONE (Serato DJ Pro), and the GO/GO+ (Virtual DJ Pro)."
+      },
+      numark_entry: {
+        label: "Numark Party Mix III / MixTrack Go (2026)",
+        unlocks: { serato: "lite", djay: "pro" },
+        note: "2026 entry controllers featuring dedicated Stems control, Fade FX, and Bluetooth MIDI for wireless mixing on iOS/Android. Both include free bundled access to Serato DJ Lite and Algoriddim djay Pro for Mac and Windows (plus djay on mobile), making them the lowest-cost stem-enabled controller path."
       },
       traktor: {
         label: "Traktor Kontrol controller",
@@ -214,7 +238,7 @@
         note: "Traktor Kontrol hardware is built around Traktor. Bundled-licence terms differ by model, so check the box or the retailer listing."
       },
       other: {
-        label: "Numark / Hercules / Reloop / Rane",
+        label: "Hercules, Reloop, or other controller",
         unlocks: {},
         note: "Entry controllers in this group usually unlock Serato DJ Lite or VirtualDJ Home, but it varies per model."
       },
@@ -434,7 +458,7 @@
         caps: {
           cdj: { plan: null, note: "Engine writes Engine-format media for Denon and Numark players, not rekordbox sticks for CDJs." },
           recording: { plan: "none", note: "Recording happens on the Engine hardware, not in the desktop app." },
-          stems: { plan: "none", note: "Stems are handled on the player, and only on models that support them." },
+          stems: { plan: "free", note: "Engine DJ 5.0 renders stems onboard RANE SYSTEM ONE and PRIME 4 G2 without a laptop, and the free desktop app pre-renders stems for other Engine OS players.", hardwareDependent: true, check: "Whether your player renders stems on-device (SYSTEM ONE, PRIME 4 G2) or uses desktop pre-rendered stems." },
           dvs: { plan: "none", note: "Engine is not a DVS system." },
           fourdecks: { plan: "free", note: "Deck count is a property of the hardware you buy." },
           video: { plan: null, note: "No video output." }

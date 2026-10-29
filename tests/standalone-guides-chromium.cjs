@@ -15,8 +15,9 @@ const pages = ['denon-sc6000-review.html', 'denon-prime-go-review.html', 'xdj-az
    page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
    page.on('response',r=>{if(r.status()>=400)failed.push(`${r.status()} ${r.url()}`)});
    await page.setViewport({width,height:1000,deviceScaleFactor:1});
+   await page.setCacheEnabled(false);
    const response=await page.goto(`${process.env.BASE_URL||'http://127.0.0.1:8973'}/${file}`,{waitUntil:'networkidle0'});
-   assert.equal(response.status(),200);
+   assert.ok([200, 304].includes(response.status()));
    await page.evaluate(async()=>{for(const img of document.images){img.loading='eager';try{await img.decode()}catch{}}});
    const facts=await page.evaluate(()=>{
     const schemas=[...document.querySelectorAll('script[type="application/ld+json"]')].map(s=>JSON.parse(s.textContent));

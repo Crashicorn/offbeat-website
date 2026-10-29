@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="100%" height="100%">
+  <defs>
+    <radialGradient id="platter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#333"/><stop offset="60%" stop-color="#181818"/><stop offset="85%" stop-color="#282828"/><stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+  </defs>
+  <rect x="10" y="10" width="580" height="340" rx="14" fill="#121216" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+  <!-- Central 7-inch Vertical Touchscreen -->
+  <rect x="235" y="25" width="130" height="150" rx="6" fill="#06060a" stroke="#fff" stroke-width="1.5"/>
+  <rect x="242" y="32" width="116" height="136" rx="4" fill="#0b1320"/>
+  <!-- Vertical RGB Waveforms on screen -->
+  <line x1="285" y1="35" x2="285" y2="165" stroke="#3b82f6" stroke-width="4"/>
+  <line x1="315" y1="35" x2="315" y2="165" stroke="#ef4444" stroke-width="4"/>
+  <text x="300" y="100" fill="#fff" font-size="8" font-family="sans-serif" font-weight="bold" text-anchor="middle">ENGINE DJ 5.0</text>
+  <!-- 2-Channel Battle Mixer Section with MAG FOUR fader -->
+  <rect x="230" y="185" width="140" height="150" rx="4" fill="#1a1a22" stroke="rgba(255,255,255,0.1)"/>
+  <line x1="260" y1="230" x2="260" y2="280" stroke="#444" stroke-width="3"/>
+  <rect x="252" y="245" width="16" height="10" rx="2" fill="#eee"/>
+  <line x1="340" y1="230" x2="340" y2="280" stroke="#444" stroke-width="3"/>
+  <rect x="332" y="245" width="16" height="10" rx="2" fill="#eee"/>
+  <!-- Crossfader -->
+  <line x1="255" y1="310" x2="345" y2="310" stroke="#444" stroke-width="4"/>
+  <rect x="294" y="303" width="12" height="14" rx="2" fill="#fff"/>
+  <!-- 7.2 inch High-Torque Motorized Platters -->
+  <circle cx="115" cy="180" r="85" fill="#0a0a0a" stroke="#444" stroke-width="2"/>
+  <circle cx="115" cy="180" r="78" fill="url(#platter)"/>
+  <circle cx="115" cy="180" r="24" fill="#fff"/>
+  <circle cx="115" cy="180" r="8" fill="#111"/>
+  <circle cx="485" cy="180" r="85" fill="#0a0a0a" stroke="#444" stroke-width="2"/>
+  <circle cx="485" cy="180" r="78" fill="url(#platter)"/>
+  <circle cx="485" cy="180" r="24" fill="#fff"/>
+  <circle cx="485" cy="180" r="8" fill="#111"/>
+  <!-- Performance Pads with OLED strips -->
+  <g fill="#252530" stroke="#fff" stroke-width="0.8">
+    <rect x="40" y="285" width="28" height="20" rx="2"/><rect x="75" y="285" width="28" height="20" rx="2"/>
+    <rect x="110" y="285" width="28" height="20" rx="2"/><rect x="145" y="285" width="28" height="20" rx="2"/>
+    <rect x="410" y="285" width="28" height="20" rx="2"/><rect x="445" y="285" width="28" height="20" rx="2"/>
+    <rect x="480" y="285" width="28" height="20" rx="2"/><rect x="515" y="285" width="28" height="20" rx="2"/>
+  </g>
+  <text x="300" y="342" fill="#fff" font-size="10" font-weight="bold" font-family="sans-serif" text-anchor="middle" letter-spacing="1">RANE SYSTEM ONE (MOTORIZED)</text>
+</svg>
