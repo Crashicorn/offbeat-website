@@ -72,6 +72,7 @@
           { value: "flx4", label: "Pioneer DDJ-FLX4" },
           { value: "flx2", label: "Pioneer DDJ-FLX2" },
           { value: "flx10", label: "Pioneer DDJ-FLX10 / FLX6" },
+          { value: "xdj_az", label: "AlphaTheta XDJ-AZ / Pioneer standalone (XDJ-XZ / RX3)" },
           { value: "prime4", label: "Denon DJ PRIME 4 / PRIME 4+" },
           { value: "prime_go", label: "Denon DJ PRIME GO / PRIME GO+" },
           { value: "engine_other", label: "Other Engine OS player (Numark, SC LIVE, PRIME 4 G2…)" },
@@ -180,6 +181,13 @@
         pioneer: true,
         unlocks: { rekordbox: "hu", serato: "pro" },
         note: "On rekordbox's Hardware Unlock list and unlocks Serato DJ Pro for free while it is connected; the Serato DVS expansion stays a separate purchase."
+      },
+      xdj_az: {
+        label: "AlphaTheta XDJ-AZ / Pioneer standalone (XDJ-XZ / RX3)",
+        pioneer: true,
+        standalone: true,
+        unlocks: { rekordbox: "hu", serato: "pro" },
+        note: "An all-in-one standalone flagship and laptop controller: unlocks rekordbox Performance mode and Serato DJ Pro for free while connected. In standalone mode, it plays prepared rekordbox USB drives, CloudDirectPlay, or direct streaming (XDJ-AZ confirms Spotify StreamingDirectPlay with Spotify Premium, Apple Music, TIDAL, and Beatport)."
       },
       prime4: {
         label: "Denon DJ PRIME 4 / PRIME 4+",

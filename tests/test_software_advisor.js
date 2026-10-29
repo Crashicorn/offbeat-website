@@ -83,6 +83,9 @@ function byName(list, name) {
     assert.strictEqual(data.hardware.flx10.unlocks.serato, "pro", "FLX10/FLX6 unlock Serato DJ Pro");
     assert.strictEqual(data.hardware.flx2.unlocks.serato, "lite", "FLX2 unlocks Serato DJ Lite");
     assert.strictEqual(data.hardware.flx4.unlocks.serato, "lite", "FLX4 unlocks Serato DJ Lite");
+    assert.strictEqual(data.hardware.xdj_az.unlocks.rekordbox, "hu", "XDJ-AZ is on rekordbox Hardware Unlock list");
+    assert.strictEqual(data.hardware.xdj_az.unlocks.serato, "pro", "XDJ-AZ unlocks Serato DJ Pro");
+    assert.strictEqual(data.hardware.xdj_az.pioneer, true, "XDJ-AZ is in the Pioneer/AlphaTheta hardware family");
     assert.strictEqual(data.hardware.prime4.unlocks.serato, "pro", "PRIME 4 / 4+ unlock Serato DJ Pro per Serato's own pages");
     assert.strictEqual(data.hardware.prime4.unlocks.virtualdj, "home", "PRIME 4 / 4+ are Denon-listed for Virtual DJ (entry tier)");
     assert.strictEqual(data.hardware.prime_go.unlocks.virtualdj, "pro", "Denon documents the GO / GO+ at Virtual DJ Pro");
@@ -361,6 +364,20 @@ function byName(list, name) {
     });
     primeGo.close();
 
+    /* AlphaTheta XDJ-AZ standalone: rekordbox is the free prep tool ($0),
+       Engine DJ is blocked, and Spotify StreamingDirectPlay is surfaced for streaming. */
+    const xdjAz = await openPage(server.base + PAGE + qs({
+      mode: "standalone", hardware: "xdj_az", os: "macos", music: "streaming", budget: "free"
+    }), { expectRig: false });
+    const azList = cards(xdjAz);
+    const rekAz = byName(azList, "rekordbox");
+    assert.strictEqual(rekAz.group, "fits", "rekordbox is the free prep tool for XDJ-AZ");
+    assert.ok(rekAz.notes.some((line) => /Spotify StreamingDirectPlay/i.test(line)),
+      "XDJ-AZ direct Wi-Fi streaming notes Spotify StreamingDirectPlay: " + JSON.stringify(rekAz.notes));
+    const engineAz = byName(azList, "Engine DJ");
+    assert.strictEqual(engineAz.group, "blocked", "Engine DJ cannot drive AlphaTheta/Pioneer players");
+    xdjAz.close();
+
     /* Same GO/GO+ as a laptop controller: Virtual DJ is verified at Pro, so it
        is a paid cost — not blocked, and not the Home tier. */
     const goVdj = await openPage(server.base + PAGE + qs({
@@ -505,7 +522,7 @@ function byName(list, name) {
     /* No result may promise recording from a streaming library. */
     a11y.close();
 
-    [page, club, record, ipad, linux, prime4, primeGo, goVdj, owner, bothLib, streamOnly].forEach((p) => {
+    [page, club, record, ipad, linux, prime4, primeGo, xdjAz, goVdj, owner, bothLib, streamOnly].forEach((p) => {
       if (p && p.consoleErrors && p.consoleErrors.length) {
         throw new Error("console errors: " + p.consoleErrors.join(" | "));
       }

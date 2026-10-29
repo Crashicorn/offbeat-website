@@ -413,6 +413,47 @@
 
 .swa-method p { margin: 8px 0; }
 
+.swa-next-steps {
+  margin-top: 24px;
+  padding: 20px 22px;
+  background: #141721;
+  border: 1px solid #282d3f;
+  border-radius: 12px;
+}
+
+.swa-next-steps h4 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: #f0f2f8;
+  font-family: var(--font-display, "Space Grotesk", sans-serif);
+}
+
+.swa-next-steps p {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #a0a6b8;
+}
+
+.swa-next-steps a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #4f46e5;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: background 0.15s ease;
+}
+
+.swa-next-steps a:hover {
+  background: #4338ca;
+  color: #ffffff;
+}
+
 /* --------------------------------------------------------------- narrower */
 
 @media (max-width: 760px) {

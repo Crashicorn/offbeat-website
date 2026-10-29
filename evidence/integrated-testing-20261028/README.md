@@ -2,11 +2,13 @@
 
 ## 1. Executive Summary
 
-This integration release consolidates the three isolated work streams from `Crashicorn/offbeat-website` without deploying to production or merging the upstream source branches:
+This integration release consolidates the work streams from `Crashicorn/offbeat-website` without deploying to production or merging the upstream source branches:
 
-1. **PR #12 (`5ec3095`):** Recovered interactive DJ Software Advisor on `dj-software-hub.html` with five-verdict recommendation engine (`fits`, `costs`, `partial`, `check`, `blocked`), three-year total cost of ownership calculator, deep-linking, and accessibility support.
-2. **PR #13 (`0b730a1`):** Corrected standalone hardware guides across four pages (`denon-sc6000-review.html`, `denon-prime-go-review.html`, `xdj-az-vs-denon-prime-4-plus.html`, `best-standalone-dj-systems.html`) removing hallucinated specifications, clarifying player vs. all-in-one categories, and validating connectivity and streaming services.
-3. **PR #14 (`5c502b6`):** Restored verified licensed editorial photography across three pages (`dj-laptop-setup-guide.html`, `dj-software-hub.html`, `midi-controllers-for-music-production.html`), replacing repetitive and inaccurate images with responsive 1200×750 Pexels assets and honest photographer attributions.
+1. **PR #11 (`6c0571d`):** Bedroom Starter preset card and starter budget reconciliation ($656 / 5 pieces, factoring in the DDJ-FLX4 in-box USB-C cable credit), with automated regression guard D1 in `tests/test_cable_plan.js`.
+2. **PR #12 (`5ec3095`):** Recovered interactive DJ Software Advisor on `dj-software-hub.html` with five-verdict recommendation engine (`fits`, `costs`, `partial`, `check`, `blocked`), three-year total cost of ownership calculator, deep-linking, and accessibility support.
+3. **PR #13 (`0b730a1`):** Corrected standalone hardware guides across four pages (`denon-sc6000-review.html`, `denon-prime-go-review.html`, `xdj-az-vs-denon-prime-4-plus.html`, `best-standalone-dj-systems.html`) removing hallucinated specifications, clarifying player vs. all-in-one categories, and validating connectivity and streaming services.
+4. **PR #14 (`5c502b6`):** Restored verified licensed editorial photography across three pages (`dj-laptop-setup-guide.html`, `dj-software-hub.html`, `midi-controllers-for-music-production.html`), replacing repetitive and inaccurate images with responsive 1200×750 Pexels assets and honest photographer attributions.
+5. **Cross-Journey Enhancements:** Bridged visitor journeys A (Software Selection), B (Rig Studio Setup Assembly), and C (Standalone Hardware Tradeoffs) with AlphaTheta XDJ-AZ hardware integration in the Software Advisor, Spotify StreamingDirectPlay support, contextual Rig Studio routing, and interactive bridge callouts on standalone comparison guides.
 
 **Common Base Commit:** `f580788397fc5836ffcb026cc7c0e0f74d7170c6` (branch `arena/849667ed-offbeat-website`).
 
@@ -24,12 +26,11 @@ Both PR #12 and PR #14 modified `dj-software-hub.html`. The integration cleanly 
   - Attribution: `<figcaption class="img-attribution">Photograph by <a href="..." target="_blank" rel="noopener">Erik Mclean</a> on Pexels. Illustrative live performance booth; not an endorsement of a single software platform.</figcaption>`.
 - **Hero Copy & Actions:** Features the "Find my software" jump-link button alongside "7 platforms compared".
 
-### Standalone Hardware Guides (PR #13)
-All four corrected standalone guides and reviews are preserved in full:
-- `denon-sc6000-review.html`: Clarifies that the SC6000 is a dedicated media player requiring a separate mixer; confirms 3 USB-A drive ports; notes that the SC6000 is an official accessory that does not unlock Serato DJ Pro by itself without supported mixer hardware. Erroneous claims (12.1-inch screen, 0% skipping, ~$1,799, 7.2 lbs) eliminated.
-- `denon-prime-go-review.html`: Distinguishes generation capabilities (Apple Music and Amazon Music Unlimited are listed for GO+, not original GO).
-- `xdj-az-vs-denon-prime-4-plus.html`: Confirms PRIME 4+ has dedicated XLR booth outputs while XDJ-AZ has 1/4" TRS booth; details 4-deck standalone vs link playback.
-- `best-standalone-dj-systems.html`: Accurate buying table and category breakdowns across AlphaTheta/Pioneer DJ and Engine DJ hardware.
+### Cross-Journey Bridges & Functional Improvements
+- **Journey A & C Bridge (Software Advisor):** Added AlphaTheta XDJ-AZ / Pioneer standalone flagship (`xdj_az`) to `assets/software-advisor-data.js` and `assets/software-advisor.js`. Evaluates standalone rekordbox export / CloudDirectPlay ($0 Free tier), direct Wi-Fi streaming via Spotify StreamingDirectPlay (Spotify Premium required), Apple Music, TIDAL, and Beatport, and Serato DJ Pro hardware unlock in computer mode.
+- **Journey A → B Bridge (Software to Rig Studio):** Transformed static links on software result cards into contextual Rig Studio preset and gear deep-links (e.g. FLX4 → `?preset=bedroom-starter`, FLX10/XDJ-AZ → `?preset=club-ready`, Prime 4+ → `?add=denon-prime-4-plus`, Traktor → `?preset=traktor-techno`, Engine → `?preset=mobile-pro`). Added `.swa-next-steps` banner in the Software Advisor results guiding visitors from software licenses into physical cabling, power allowances, and monitor pairing.
+- **Journey C → A & B Bridge (Standalone Guides to Tools):** Added interactive workflow bridge sections (`#standalone-workflow-tools` in `xdj-az-vs-denon-prime-4-plus.html` and `#standalone-decision-tools` in `best-standalone-dj-systems.html`) providing direct access to the Software Advisor preconfigured for standalone mode (`#software-advisor?sw_mode=standalone`) and Rig Studio preloaded with standalone hardware (`build-your-dj-setup.html?add=denon-prime-4-plus`).
+- **Journey B (Rig Studio Planning):** Automated end-to-end verification covering controller swaps, accessory additions (microphones, laptop stands, USB storage), owned equipment accounting, cable reconciliation, and shareable deep-link URL restoration.
 
 ---
 
@@ -79,6 +80,7 @@ Real headless Chromium browser tests were executed against all seven updated pag
   - Local internal link validation: 100% resolve to valid workspace files.
   - Interactive Software Advisor: Tested across 15 real user journeys, keyboard input, reset logic, 5-verdict rendering, and deep link URL queries.
   - FAQ Details toggles: Verified operable via keyboard navigation on all pages.
+- **Three Visitor Journeys Suite (`tests/test_three_visitor_journeys.js`):** 100% pass across all three visitor journeys (Software Advisor decision logic, Rig Studio equipment swap and accessory planning, and Standalone comparison with interactive bridge navigation).
 
 Visual evidence captures saved in `evidence/integrated-testing-20261028/`:
 - Desktop & mobile screenshots for all 7 updated pages.

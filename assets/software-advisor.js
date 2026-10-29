@@ -191,6 +191,9 @@
         if (platform.id === "virtualdj" && hw.engineFamily && hw.unlocks && hw.unlocks.virtualdj) {
           pairing = " With a computer it also works as a controller with Virtual DJ (licence required) — that is the laptop route, not this one.";
         }
+        if (platform.id === "serato" && hw.unlocks && hw.unlocks.serato === "pro") {
+          pairing = " With a computer it also works as a controller and unlocks Serato DJ Pro for free — that is the laptop route, not standalone playback.";
+        }
         blockers.push("It is a laptop program and cannot be installed on a standalone player" + playerLine + "." + pairing);
       }
     }
@@ -447,6 +450,9 @@
     if (answers.music !== "local" && platform.streaming.length) {
       notes.push("Streaming: " + platform.streamingNote);
     }
+    if (answers.hardware === "xdj_az" && answers.mode === "standalone" && answers.music !== "local" && platform.id === "rekordbox") {
+      notes.push("Direct standalone streaming: The XDJ-AZ supports direct Wi-Fi streaming on the unit itself via Spotify StreamingDirectPlay (Spotify Premium required), Apple Music, TIDAL, and Beatport Streaming without a laptop running.");
+    }
     if (answers.music !== "local" && recordingRequested && needsStreamingCaveat(platform)) {
       notes.push("No platform can record streamed audio — recording needs files you own.");
     }
@@ -583,7 +589,27 @@
 
     var next = ['<a href="' + esc(platform.review) + '">Read the ' + esc(platform.name) + ' review</a>'];
     next.push('<a href="controller-software-compatibility-matrix.html">Check controller compatibility</a>');
-    if (result.verdict !== "blocked" && result.verdict !== "check") next.push('<a href="build-your-dj-setup.html">Price the whole rig in Rig Studio</a>');
+    if (result.verdict !== "blocked" && result.verdict !== "check") {
+      var rsHref = "build-your-dj-setup.html";
+      var rsLabel = "Price the whole rig in Rig Studio";
+      if (answers.hardware === "flx4") {
+        rsHref = "build-your-dj-setup.html?preset=bedroom-starter";
+        rsLabel = "Plan your FLX4 bedroom rig in Rig Studio";
+      } else if (answers.hardware === "flx10" || answers.hardware === "xdj_az") {
+        rsHref = "build-your-dj-setup.html?preset=club-ready";
+        rsLabel = "Plan your club-ready rig in Rig Studio";
+      } else if (answers.hardware === "prime4") {
+        rsHref = "build-your-dj-setup.html?add=denon-prime-4-plus";
+        rsLabel = "Plan your Prime 4+ rig in Rig Studio";
+      } else if (platform.id === "traktor" || answers.hardware === "traktor") {
+        rsHref = "build-your-dj-setup.html?preset=traktor-techno";
+        rsLabel = "Plan your Traktor rig in Rig Studio";
+      } else if (platform.id === "engine") {
+        rsHref = "build-your-dj-setup.html?preset=mobile-pro";
+        rsLabel = "Plan your Engine standalone rig in Rig Studio";
+      }
+      next.push('<a href="' + esc(rsHref) + '">' + esc(rsLabel) + '</a>');
+    }
 
     return '<article class="swa-card swa-card--' + VERDICT[result.verdict].tone + '">' +
       '<header class="swa-card-head"><h4>' + esc(platform.name) + "</h4>" +
@@ -668,6 +694,12 @@
       html += '<div class="swa-note"><strong>Streaming is not a licence.</strong> Apple Music, Spotify, TIDAL and the rest bill you separately, ' +
         "are licensed for personal use, and cannot be recorded or stem-separated in any of these apps. Paid work needs files you own.</div>";
     }
+
+    html += '<aside class="swa-next-steps">' +
+      "<h4>Next step: Complete your physical setup</h4>" +
+      "<p>Software is only one half of the equation. Cable mismatches, missing ground pins, and unbalanced monitors cause 90% of first-gig problems. Use Rig Studio to verify audio cable routing, power allowances, and speaker pairs for your setup.</p>" +
+      '<a href="build-your-dj-setup.html">Open Rig Studio to plan cables & hardware →</a>' +
+      "</aside>";
 
     html += '<details class="swa-method"><summary>How these results were worked out</summary>' +
       "<p>Every platform is checked against your answers: whether it runs on your computer or device, whether it works with your hardware, " +
