@@ -48,7 +48,7 @@
         <div class="qs-input-row">
           <span class="qs-search-icon">🔍</span>
           <input type="search" id="quick-search-input" class="qs-input" placeholder="Search guides, DJ gear, software, tools, or Camelot keys..." autocomplete="off" spellcheck="false">
-          <span class="qs-kbd-hint">ESC to close</span>
+          <button type="button" id="qs-close-btn" class="qs-kbd-hint" aria-label="Close search">Close ×</button>
         </div>
         <div class="qs-filter-pills" id="qs-filter-bar">
           <button type="button" class="qs-pill is-active" data-qs-filter="all" aria-pressed="true">All</button>
@@ -89,6 +89,7 @@
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) closeQuickSearch();
     });
+    document.getElementById("qs-close-btn").addEventListener("click", closeQuickSearch);
 
     var filterBar = document.getElementById("qs-filter-bar");
     filterBar.addEventListener("click", function (e) {
@@ -165,7 +166,7 @@
         return false;
       }
       if (tokens.length === 0) return true;
-      var text = (item.title + " " + item.desc + " " + item.category).toLowerCase();
+      var text = (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase();
       return tokens.every(function (t) { return text.indexOf(t) !== -1; });
     });
 
