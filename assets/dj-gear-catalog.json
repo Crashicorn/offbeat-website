@@ -594,6 +594,27 @@
       "visual_type": "Technical Vector Schematic"
     },
     {
+      "id": "existing-mobile-device",
+      "category": "laptops",
+      "brand": "Existing Device (Not Sold)",
+      "model": "Your Compatible Phone / Tablet (rekordbox Mobile)",
+      "price": 0,
+      "no_purchase": true,
+      "host_type": "existing-mobile",
+      "os": "Supported iOS/Android version; verify rekordbox mobile device requirements",
+      "audio_subsystem": "FLX4 USB: controller master and headphone outputs; Bluetooth: audio stays on mobile device",
+      "ports": "Compatible USB cable and separate 9V/3A USB power for FLX4 mobile use",
+      "ideal_for": "DDJ-FLX4 beginners who already own a compatible phone or tablet; not a free device",
+      "tagline": "Use your existing compatible phone/tablet. Verify rekordbox mobile, USB connection, 9V/3A power and available audio outputs before buying.",
+      "image": "assets/img/products/mobile-rekordbox-host.svg",
+      "slug": "beginner-dj-setup-guide-2026.html",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026); Pioneer DJ DDJ-FLX4 official setup",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic"
+    },
+    {
       "id": "standalone-usb-only",
       "category": "laptops",
       "brand": "No Laptop Required",
@@ -756,14 +777,13 @@
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "Est. $1,625 total",
-      "desc": "Beginner bundle with controller, headphones, monitors, laptop and stand. The DM-40D pair already includes the matching audio lead.",
+      "badge": "Est. $597 total",
+      "desc": "DDJ-FLX4, HD 25 and DM-40D with included speaker cable. Assumes you already own a compatible phone/tablet; verify rekordbox mobile, USB connection and separate 9V/3A power (not priced). No laptop purchase is required for this supported route.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
         "speakers": "pioneer-dm40d",
-        "laptops": "macbook-air-m2",
-        "stands": "laptop-stand-pyle"
+        "laptops": "existing-mobile-device"
       }
     },
     {
