@@ -500,6 +500,23 @@
             fixCableId: null
           });
           warnings++;
+        } else if (controller.id === "pioneer-ddj-flx2") {
+          // AlphaTheta explicitly supports rekordbox/djay mobile on FLX2.
+          // Unlike FLX4, compatible USB-C hosts can bus-power FLX2; some
+          // Android devices cannot. Bluetooth MIDI needs separate USB power.
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "FLX2 Mobile Host, USB Audio and Power Need Verification",
+            desc: "The $0 host assumes you ALREADY own a compatible phone or tablet. " +
+              "DDJ-FLX2 supports rekordbox/djay mobile with the included USB-C cable on supported devices. " +
+              "Compatible USB-C devices may supply bus power, but some Android devices cannot; " +
+              "the rekordbox built-in-phone-speaker route is iOS-only. Bluetooth MIDI control " +
+              "requires separate USB-C power and does not itself route audio through the controller. " +
+              "Verify your exact phone, app, USB audio, headphone/master routing and power before purchasing. " +
+              "Any external power accessory is not priced here.",
+            fixCableId: null
+          });
+          warnings++;
         } else {
           checks.push({
             type: "error", statusLevel: "incompatible",
