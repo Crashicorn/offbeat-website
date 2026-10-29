@@ -92,7 +92,7 @@ function visibleCount(page) {
       await page.click("[data-search-open]");
       await page.waitForSelector("#quick-search-backdrop:not([hidden])");
       await page.type("#quick-search-input", "pcpartpicker");
-      const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
+      const keywordHits = await page.$$eval("#qs-results-list .qs-result-item",
         links => Array.from(links, link => link.getAttribute("href")));
       assert.ok(keywordHits.includes("build-your-dj-setup.html"),
         "Spotlight keyword discovery: input=" + await page.$eval("#quick-search-input", el => el.value) +
