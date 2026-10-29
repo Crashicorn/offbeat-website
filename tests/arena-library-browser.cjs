@@ -124,6 +124,27 @@ function visibleCount(page) {
         el => el.textContent.trim());
       assert.ok(sourceSummary.length >= 20,
         "desktop/mobile search must display a real summary for an originally blank guide");
+      // Keyboard users must activate Close and category buttons without
+      // the document-wide Enter shortcut hijacking the first result.
+      const searchPageUrl = page.url();
+      await page.focus("#qs-close-btn");
+      await page.keyboard.press("Enter");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
+        "Enter on the focused Close button must dismiss Spotlight");
+      assert.equal(page.url(), searchPageUrl,
+        "Enter on Close must not navigate to a highlighted search result");
+      await page.click("[data-search-open]");
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])");
+      await page.type("#quick-search-input", "dj");
+      await page.focus('.qs-pill[data-qs-filter="controllers"]');
+      await page.keyboard.press("Enter");
+      assert.equal(await page.$eval('.qs-pill[data-qs-filter="controllers"]',
+        el => el.getAttribute("aria-pressed")), "true",
+        "Enter on a focused filter must activate that filter");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), false,
+        "Enter on a filter must not close or navigate away from Spotlight");
+      assert.equal(page.url(), searchPageUrl,
+        "Enter on a filter must not navigate to a highlighted result");
       await page.click("#qs-close-btn");
 
       if (width < 600) {
