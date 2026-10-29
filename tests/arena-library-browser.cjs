@@ -77,6 +77,18 @@ function visibleCount(page) {
       );
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
+      const guideEntries = index.filter(item => /^[^?]+\.html$/.test(item.u));
+      assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
+      for (const entry of guideEntries) {
+        assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
+          entry.u + " must have a useful, source-grounded Spotlight summary");
+        assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
+      }
+      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
+      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
+        "buyer search must match the actual Classic 5 catalog product");
+      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
+        "buyer search must not advertise a different monitor model");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")
@@ -92,7 +104,7 @@ function visibleCount(page) {
       await page.click("[data-search-open]");
       await page.waitForSelector("#quick-search-backdrop:not([hidden])");
       await page.type("#quick-search-input", "pcpartpicker");
-      const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
+      const keywordHits = await page.$$eval("#qs-results-list .qs-result-item",
         links => Array.from(links, link => link.getAttribute("href")));
       assert.ok(keywordHits.includes("build-your-dj-setup.html"),
         "Spotlight keyword discovery: input=" + await page.$eval("#quick-search-input", el => el.value) +
@@ -102,6 +114,38 @@ function visibleCount(page) {
       await page.click("#qs-close-btn");
       assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
         "visible close button must dismiss Spotlight without a keyboard");
+      // Previously 107 of 118 page records had empty descriptions, making
+      // the visitor search result title-only even though page metadata existed.
+      await page.click("[data-search-open]");
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])");
+      await page.type("#quick-search-input", "royalty splits");
+      const sourceSummary = await page.$eval(
+        '#qs-results-list a[href="amuse-vs-distrokid.html"] .qs-item-desc',
+        el => el.textContent.trim());
+      assert.ok(sourceSummary.length >= 20,
+        "desktop/mobile search must display a real summary for an originally blank guide");
+      // Keyboard users must activate Close and category buttons without
+      // the document-wide Enter shortcut hijacking the first result.
+      const searchPageUrl = page.url();
+      await page.focus("#qs-close-btn");
+      await page.keyboard.press("Enter");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
+        "Enter on the focused Close button must dismiss Spotlight");
+      assert.equal(page.url(), searchPageUrl,
+        "Enter on Close must not navigate to a highlighted search result");
+      await page.click("[data-search-open]");
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])");
+      await page.type("#quick-search-input", "dj");
+      await page.focus('.qs-pill[data-qs-filter="controllers"]');
+      await page.keyboard.press("Enter");
+      assert.equal(await page.$eval('.qs-pill[data-qs-filter="controllers"]',
+        el => el.getAttribute("aria-pressed")), "true",
+        "Enter on a focused filter must activate that filter");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), false,
+        "Enter on a filter must not close or navigate away from Spotlight");
+      assert.equal(page.url(), searchPageUrl,
+        "Enter on a filter must not navigate to a highlighted result");
+      await page.click("#qs-close-btn");
 
       if (width < 600) {
         await page.click(".nav-toggle");

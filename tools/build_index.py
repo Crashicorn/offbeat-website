@@ -147,13 +147,25 @@ def main():
             for entry in existing
         ):
             raise ValueError("Curated search index is invalid; refusing overwrite")
+        # Existing curated/deep-link titles and keywords are intentional, but
+        # missing snippets must be restored from the actual page metadata.
+        # Otherwise Spotlight renders title-only results for most guides.
+        page_by_url = {item["u"]: item for item in items}
+        repaired = 0
+        for entry in existing:
+            page = page_by_url.get(entry["u"])
+            if page and not entry.get("d") and page["d"]:
+                entry["d"] = page["d"]
+                entry["desc"] = page["d"]
+                entry["k"] = (entry.get("k", "") + " " + page["d"].lower()).strip()
+                repaired += 1
         urls = {entry["u"] for entry in existing}
         added = [item for item in items if item["u"] not in urls]
-        if added:
+        if added or repaired:
             with open(index_path, "w", encoding="utf-8") as handle:
                 json.dump(existing + added, handle, ensure_ascii=False, separators=(",", ":"))
         print("search index entries:", len(existing) + len(added),
-              "(curated entries preserved; new pages:", len(added), ")")
+              "(curated entries preserved; missing snippets restored:", repaired, "; new pages:", len(added), ")")
     else:
         with open(index_path, "w", encoding="utf-8") as handle:
             json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))

@@ -255,6 +255,11 @@
           updateSelectionVisual();
         }
       } else if (e.key === "Enter") {
+        // Native Enter activation must win on filter pills, Close and links.
+        // Only Enter in the query input should follow the highlighted result.
+        // Previously the document listener hijacked Enter on Close/filters
+        // and unexpectedly navigated away from the visitor's current page.
+        if (e.target !== document.getElementById("quick-search-input")) return;
         if (selectedIndex >= 0 && currentFilteredResults[selectedIndex]) {
           e.preventDefault();
           window.location.href = currentFilteredResults[selectedIndex].url;
