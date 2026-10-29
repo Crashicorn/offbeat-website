@@ -96,7 +96,9 @@ function visibleCount(page) {
         links => Array.from(links, link => link.getAttribute("href")));
       assert.ok(keywordHits.includes("build-your-dj-setup.html"),
         "Spotlight keyword discovery: input=" + await page.$eval("#quick-search-input", el => el.value) +
-        " hits=" + JSON.stringify(keywordHits) + " index=" + index.filter(i => (i.k || "").includes("pcpartpicker")).map(i => i.url).join(","));
+        " hits=" + JSON.stringify(keywordHits) + " index=" + index.filter(i => (i.k || "").includes("pcpartpicker")).map(i => i.url).join(",") +
+        " resultHtml=" + (await page.$eval("#qs-results-list", el => el.innerHTML)).slice(0,350) +
+        " activePill=" + await page.$eval(".qs-pill.is-active", el => el.getAttribute("data-qs-filter")));
       await page.click("#qs-close-btn");
       assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
         "visible close button must dismiss Spotlight without a keyboard");
