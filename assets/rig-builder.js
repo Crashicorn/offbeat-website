@@ -26,8 +26,7 @@
       { slotId: "core-ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false },
       { slotId: "core-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
       { slotId: "core-spk", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
-      { slotId: "core-host", category: "laptops", itemId: "macbook-air-m2", qty: 1, owned: false },
-      { slotId: "core-stand", category: "stands", itemId: "laptop-stand-pyle", qty: 1, owned: false }
+      { slotId: "core-host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
     ]
   };
 
@@ -214,7 +213,7 @@
       items.push({
         slotId: id, category: item.category, itemId: item.id,
         qty: Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1,
-        owned: slot.owned === true
+        owned: item.no_purchase === true || slot.owned === true
       });
     });
     if (!items.length) return null;
@@ -489,7 +488,31 @@
 
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
-      if (laptop.id === "standalone-usb-only" && !controller.standalone) {
+      if (laptop.id === "existing-mobile-device" && !controller.standalone) {
+        if (controller.id === "pioneer-ddj-flx4") {
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Mobile Host, USB Audio and Power Need Verification",
+            desc: "The $0 host assumes you ALREADY own a compatible iOS/Android phone or tablet. " +
+              "Verify current rekordbox mobile support, a suitable USB cable and separate 9V/3A " +
+              "power for DDJ-FLX4. USB can route master/headphone audio through the controller; " +
+              "Bluetooth control leaves audio on the mobile device. Power is not priced here.",
+            fixCableId: null
+          });
+          warnings++;
+        } else {
+          checks.push({
+            type: "error", statusLevel: "incompatible",
+            title: "Mobile Host Not Verified for This Controller",
+            desc: "This existing-phone option is qualified only for a conditional DDJ-FLX4 route. " +
+              "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
+            fixSlotId: laptopSlot ? laptopSlot.slotId : null,
+            fixItemId: "macbook-air-m2",
+            fixActionText: "Compare with a computer host"
+          });
+          fatalErrors++;
+        }
+      } else if (laptop.id === "standalone-usb-only" && !controller.standalone) {
         checks.push({
           type: "error",
           statusLevel: "incompatible",
@@ -634,7 +657,7 @@
       }
     }
 
-    if (!standSlot && laptopSlot && !controller.standalone) {
+    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).id !== "existing-mobile-device" && !controller.standalone) {
       var standUpgrade = offer("laptop-stand-pyle", "Optional Laptop Stand",
         "A laptop stand may improve visibility and desk space. Check your laptop size and booth clearance before purchasing.",
         "core-stand");
@@ -864,7 +887,7 @@
 
   function renderBoothSlot(slot, label, icon, isMain) {
     var item = getSlotItem(slot);
-    var isOwned = Boolean(slot.owned);
+    var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
 
     if (!item) {
       return `
@@ -884,7 +907,7 @@
       <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
         <div class="booth-card-top">
           <span class="booth-card-role">${icon} ${escapeHtml(label)}${qtyStr}</span>
-          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle already owned">
+          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${item.no_purchase === true ? 'disabled aria-disabled="true"' : ''} title="Toggle already owned">
             ${isOwned ? '✓ Owned' : '🛒 Need'}
           </button>
         </div>
@@ -914,7 +937,7 @@
 
   function renderModularTableRow(slot) {
     var item = getSlotItem(slot);
-    var isOwned = Boolean(slot.owned);
+    var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
     var catMeta = CATALOG.categories.find(function (c) { return c.id === slot.category; });
     var qty = slot.qty || 1;
 
@@ -929,7 +952,7 @@
     }
 
     var linePrice = item.price * qty;
-    var isPlatformPlaceholder = item.id === "standalone-usb-only";
+    var isPlatformPlaceholder = item.no_purchase === true || item.id === "standalone-usb-only";
     var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
@@ -960,8 +983,8 @@
           </div>
         </td>
         <td class="cell-status">
-          <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}">
-            ${isPlatformPlaceholder ? 'No laptop purchase' : (isOwned ? '🟢 I Own This' : '🔵 Need to Buy')}
+          <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
+            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "🟢 I Own This" : "🔵 Need to Buy")}
           </button>
         </td>
         <td class="cell-price">
@@ -973,7 +996,7 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
-            ${isPlatformPlaceholder ? '<span class="owned-sub">Setup mode — no hardware purchase</span>' : `
+            ${isPlatformPlaceholder ? '<span class="owned-sub">Existing host or standalone mode — no item purchase</span>' : `
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
@@ -1435,7 +1458,7 @@
         category: cat,
         itemId: preset.slots[cat],
         qty: 1,
-        owned: false
+        owned: preset.slots[cat] === "existing-mobile-device"
       });
     });
     return items;
@@ -1730,7 +1753,7 @@
       var item = getSlotItem(slot);
       if (item) {
         var qty = slot.qty || 1;
-        var statusStr = slot.owned ? "[ALREADY OWNED]" : "[NEED TO BUY]";
+        var statusStr = item.no_purchase === true ? "[EXISTING DEVICE / MODE — VERIFY]" : slot.owned ? "[ALREADY OWNED]" : "[NEED TO BUY]";
         lines.push(statusStr + " (" + qty + "x) " + item.brand + " " + item.model + " - $" + (item.price * qty));
       }
     });
