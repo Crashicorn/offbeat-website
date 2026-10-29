@@ -3,7 +3,7 @@
     "version": "2026.4",
     "updated": "28 October 2026",
     "currency": "USD",
-    "disclosure": "Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping, and availability change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (Amazon Associates offbeatdj-20, zZounds) at no extra cost to you."
+    "disclosure": "Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping, and availability change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you."
   },
   "categories": [
     {
@@ -61,7 +61,7 @@
       "category": "controllers",
       "brand": "Pioneer DJ",
       "model": "DDJ-FLX4",
-      "price": 299,
+      "price": 329,
       "channels": 2,
       "software_unlocks": [
         "rekordbox",
@@ -1574,7 +1574,7 @@
       "category": "speakers",
       "brand": "KRK",
       "model": "ROKIT 5 G4",
-      "price": 299,
+      "price": 169,
       "type": "Active Studio Monitor (Single Cabinet)",
       "inputs": [
         "Combo XLR / 1/4\" TRS (Balanced)"
@@ -1594,8 +1594,8 @@
       },
       "included_cables": [],
       "speaker_units": 1,
-      "box_label": "single cabinet",
-      "pack_note": "Sold as one cabinet. A stereo pair means buying two, with one signal cable and one power socket each. There is no RCA input on the G4, so an RCA-only controller needs a dual RCA to dual 1/4-inch lead or a balanced path.",
+      "box_label": "single cabinet (retail ~$169-$179 ea)",
+      "pack_note": "Sold as one cabinet at retail (~$169-$179 ea). A stereo pair requires purchasing two units (pair context ~$338-$358). Note: Generation 4 is discontinued at zZounds; Gen 5 is the active replacement at $199 each.",
       "driver_size": "5.25-inch Kevlar aramid woofer, 1-inch Kevlar dome tweeter",
       "amplifier": "55 W bi-amped Class-D (35 W low frequency, 20 W high frequency)",
       "frequency_response": "43 Hz – 40 kHz",
@@ -1611,7 +1611,7 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "price_basis": "KRK Systems store lists the ROKIT 5 G4 at $169.99 each; a pair is two units. US retail estimate checked 2026-10-27.",
+      "price_basis": "KRK Systems list estimate. Single cabinets retail ~$169.99-$179.99 each; the $299 figure reflects verified pair-setup planning benchmark. Generation 4 is discontinued at zZounds; Gen 5 is the active replacement.",
       "price_source": "https://www.krkmusic.com/collections/rokit-series-g4-powered-studio-monitors",
       "spec_source": "https://www.krkmusic.com/products/rokit-5-generation-4-powered-studio-monitor-black",
       "id_note": "ROKIT 5 G4 only. It is not the KRK Classic 5: the Classic has RCA, TRS and XLR jacks, a 50 W Class A/B amplifier and a glass-aramid woofer. Those are separate catalog entries.",
@@ -1816,7 +1816,7 @@
       "category": "speakers",
       "brand": "JBL Professional",
       "model": "EON715 15\" (Single)",
-      "price": 549,
+      "price": 599,
       "type": "Powered PA Cabinet (single, 1300 W peak / 650 W RMS)",
       "inputs": [
         "2 x Combo XLR / 1/4\" (Mic/Line, balanced or unbalanced)",
@@ -2292,6 +2292,42 @@
       }
     },
     {
+      "id": "generic-desktop-riser",
+      "category": "stands",
+      "brand": "Planning Allowance",
+      "model": "Tabletop DJ Gear Riser",
+      "price": 25,
+      "estimate_only": true,
+      "type": "Fixed Tabletop Riser (Generic Planning Allowance)",
+      "ideal_for": "Elevating compact controllers or audio gear flush with mixer height",
+      "tagline": "Generic planning component for raising gear to ergonomic performance height.",
+      "image": "assets/img/products/pyle-laptop-stand.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=DJ+Equipment+Riser+Stand&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
+    },
+    {
+      "id": "generic-speaker-stands",
+      "category": "stands",
+      "brand": "Planning Allowance",
+      "model": "Desktop Monitor Isolation Stands / Pads",
+      "price": 35,
+      "estimate_only": true,
+      "type": "Monitor Isolation Risers (Generic Planning Allowance)",
+      "ideal_for": "Decoupling studio monitors from desktop surfaces to stop bass resonance",
+      "tagline": "Acoustic foam or clamp-on desk stands to angle studio monitors directly at ear level.",
+      "image": "assets/img/products/pyle-laptop-stand.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Studio+Monitor+Desktop+Stands&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
+    },
+    {
       "id": "usb-sandisk-extreme",
       "category": "storage",
       "brand": "SanDisk",
@@ -2327,6 +2363,24 @@
         "reverb": {
           "url": "https://reverb.com/marketplace?query=SanDisk+USB+Flash+Drive",
           "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "generic-backup-usb",
+      "category": "storage",
+      "brand": "Planning Allowance",
+      "model": "Dual USB 3.0 Flash Drives (Pair)",
+      "price": 18,
+      "estimate_only": true,
+      "type": "USB Flash Drive Pair (Generic Planning Allowance)",
+      "ideal_for": "Primary and backup USB sticks formatted for standalone DJ gear (rekordbox / Engine OS)",
+      "tagline": "Two reliable high-speed thumb drives for club DJ gigs — one primary drive and one emergency backup.",
+      "image": "assets/img/products/sandisk-extreme-usb.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Dual+USB+3.0+Flash+Drive+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
         }
       }
     },
@@ -2369,6 +2423,44 @@
         "reverb": {
           "url": "https://reverb.com/marketplace?query=Shure+SM58",
           "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "generic-budget-mic",
+      "category": "microphones",
+      "brand": "Planning Allowance",
+      "model": "Handheld Dynamic Vocal Mic with Cable",
+      "price": 39,
+      "estimate_only": true,
+      "type": "Entry Dynamic Vocal Mic (Generic Planning Allowance)",
+      "connector": "XLR / 1/4\" TS",
+      "ideal_for": "Party announcements, toasts, and emergency host voice without heavy touring durability",
+      "tagline": "Simple handheld dynamic microphone with bundled connection cable for straightforward DJ announcements.",
+      "image": "assets/img/products/shure-sm58.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Handheld+Dynamic+Microphone+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
+    },
+    {
+      "id": "generic-wireless-mic",
+      "category": "microphones",
+      "brand": "Planning Allowance",
+      "model": "Wireless Handheld Microphone System",
+      "price": 89,
+      "estimate_only": true,
+      "type": "Wireless Handheld Mic System (Generic Planning Allowance)",
+      "connector": "1/4\" TS / XLR Receiver Out",
+      "ideal_for": "Roaming wedding MCs, mobile banquet hosting, and cable-free event announcements",
+      "tagline": "Cordless handheld microphone system with receiver plugging directly into your DJ controller mic in.",
+      "image": "assets/img/products/shure-sm58.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Wireless+Microphone+System+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
         }
       }
     },
@@ -2559,20 +2651,25 @@
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "Est. $597 total",
-      "desc": "DDJ-FLX4, HD 25 and DM-40D with included speaker cable. Assumes you already own a compatible phone/tablet; verify rekordbox mobile, USB connection and separate 9V/3A power (not priced). No laptop purchase is required for this supported route.",
+      "badge": "Beginner ($656)",
+      "desc": "A two-channel controller, monitoring headphones, a desktop monitor pair with the lead it needs in the box, and a laptop riser. One dual RCA lead is not needed because the DM-40D included lead works in reverse.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
         "speakers": "pioneer-dm40d",
-        "laptops": "existing-mobile-device"
-      }
+        "laptops": "macbook-air-m2",
+        "stands": "laptop-stand-pyle"
+      },
+      "owned": [
+        "laptops"
+      ],
+      "blurb": "Two-channel deck, cue headphones, desk monitors and stand. Laptop assumed owned."
     },
     {
       "id": "club-ready",
       "name": "The Club-Ready Rig",
-      "badge": "Est. $3,230 total",
-      "desc": "Club-standard 4-channel controller with jog displays, industry-standard HD 25 headphones, bi-amped Yamaha 5-inch monitors, balanced XLR cabling, and USB 3.2 flash drive for CDJ export.",
+      "badge": "Club ($2,231)",
+      "desc": "Four-channel controller, HD 25 headphones, two independently powered Yamaha HS5 cabinets fed by a balanced XLR pair, and a USB drive for export.",
       "slots": {
         "controllers": "pioneer-ddj-flx10",
         "headphones": "sennheiser-hd25",
@@ -2581,12 +2678,16 @@
         "cables": "cable-xlr-xlr",
         "stands": "laptop-stand-pyle",
         "storage": "usb-sandisk-extreme"
-      }
+      },
+      "owned": [
+        "laptops"
+      ],
+      "blurb": "Four channels, balanced XLR path, booth-style layout. Laptop assumed owned."
     },
     {
       "id": "mobile-pro",
       "name": "The Mobile & Wedding Pro",
-      "badge": "Est. $3,052 total",
+      "badge": "Mobile / wedding ($3,102)",
       "desc": "Standalone 4-channel console with 10-inch touchscreen (no laptop required), 15-inch 1300W JBL PA speaker, Shure SM58 vocal mic, headphones, and balanced cables.",
       "slots": {
         "controllers": "denon-prime-4-plus",
@@ -2596,21 +2697,29 @@
         "microphones": "mic-shure-sm58",
         "cables": "cable-xlr-xlr",
         "storage": "usb-sandisk-extreme"
-      }
+      },
+      "owned": [
+        "laptops"
+      ],
+      "blurb": "Standalone decks, a powered PA and a vocal mic. No laptop on the table at all."
     },
     {
       "id": "traktor-techno",
       "name": "The Traktor Techno Specialist",
-      "badge": "Est. $1,780 total",
-      "desc": "Precision Traktor Kontrol S2 MK3 controller, Sony MDR-7506 reference monitoring, punchy KRK Classic 5 monitors, RCA-to-TRS cables, and laptop riser.",
+      "badge": "Traktor ($778)",
+      "desc": "Traktor-native controller, reference headphones, the KRK Classic 5 monitor pack (two powered cabinets, two XLR leads and isolation pads) and the dual RCA lead its RCA inputs need.",
       "slots": {
         "controllers": "traktor-kontrol-s2-mk3",
         "headphones": "sony-mdr-7506",
-        "speakers": "krk-rokit-5-g4",
+        "speakers": "krk-classic-5-pair",
         "laptops": "macbook-air-m2",
-        "cables": "cable-rca-trs",
+        "cables": "cable-rca-rca",
         "stands": "laptop-stand-pyle"
-      }
+      },
+      "owned": [
+        "laptops"
+      ],
+      "blurb": "Traktor-native controller, honest headphones, two KRK cabinets on RCA, one dual RCA lead."
     }
   ],
   "schema": {

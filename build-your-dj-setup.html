@@ -2,33 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>My DJ Rig — build it, check it, price it | Offbeat</title>
+<meta content="Plan a real DJ setup piece by piece: controllers, headphones, monitors, PA, mics, stands and the cables everyone forgets. Cable checks, ownership tracking and a shopping list containing only what you still need." name="description">
 <link href="https://offbeatinc.com/build-your-dj-setup.html" rel="canonical">
-<meta content="width=device-width,initial-scale=1" name="viewport">
-<title>My DJ Rig: Interactive Setup Architect &amp; Gear Planner | Offbeat</title>
 <link href="assets/favicon.svg" rel="icon" type="image/svg+xml">
-<meta content="The PCPartPicker of DJ equipment: customize controllers, headphones, monitors, and laptops, check audio signal compatibility, mark owned gear, and generate shopping lists." name="description">
-<meta content="dj rig builder, dj setup planner, dj equipment compatibility, pcpartpicker for djs, build dj setup, beginner dj equipment" name="keywords">
-<link href="assets/style.css" rel="stylesheet"><script defer src="assets/offbeat-analytics.js"></script>
-<meta content="article" property="og:type"><meta content="https://offbeatinc.com/build-your-dj-setup.html" property="og:url"><meta content="My DJ Rig: Interactive Setup Architect &amp; Gear Planner | Offbeat" property="og:title"><meta content="The PCPartPicker of DJ equipment: customize controllers, headphones, monitors, and laptops, check audio signal compatibility, mark owned gear, and generate shopping lists." property="og:description"><meta content="https://offbeatinc.com/assets/img/editorial/gear-flatlay.jpg" property="og:image"><meta content="summary_large_image" name="twitter:card"><meta content="My DJ Rig: Interactive Setup Architect &amp; Gear Planner | Offbeat" name="twitter:title"><meta content="The PCPartPicker of DJ equipment: customize controllers, headphones, monitors, and laptops, check audio signal compatibility, mark owned gear, and generate shopping lists." name="twitter:description"><meta content="https://offbeatinc.com/assets/img/editorial/gear-flatlay.jpg" name="twitter:image"><script type="application/ld+json">
+<link href="assets/style.css" rel="stylesheet">
+<link href="assets/rig-studio.css" rel="stylesheet">
+<meta content="#08080b" name="theme-color">
+<link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<meta content="My DJ Rig — build it, check it, price it | Offbeat" property="og:title">
+<meta content="Start with a deck, end with a shopping list. The Offbeat rig studio checks your cables, counts what you already own and only prices what is missing." property="og:description">
+<meta content="website" property="og:type">
+<meta content="https://offbeatinc.com/build-your-dj-setup.html" property="og:url">
+<meta content="https://offbeatinc.com/assets/img/editorial/gear-flatlay.jpg" property="og:image">
+<meta content="summary_large_image" name="twitter:card">
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "WebPage",
-      "@id": "https://offbeatinc.com/build-your-dj-setup.html",
-      "name": "My DJ Rig: Interactive Setup Architect & Gear Planner",
-      "description": "An interactive gear architect that lets DJs assemble modular setups across controllers, headphones, monitors, and laptops with real-time audio compatibility checks.",
+      "@type": "WebApplication",
+      "@id": "https://offbeatinc.com/build-your-dj-setup.html#app",
+      "name": "Offbeat Rig Studio",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any modern browser",
       "url": "https://offbeatinc.com/build-your-dj-setup.html",
+      "description": "An interactive DJ rig planner: choose a controller, add monitoring, speakers, mics and cables, check signal compatibility, track what you already own and generate a shopping list.",
       "isPartOf": { "@id": "https://offbeatinc.com/#site" },
       "publisher": { "@id": "https://offbeatinc.com/#org" },
-      "inLanguage": "en-US"
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://offbeatinc.com/" },
         { "@type": "ListItem", "position": 2, "name": "Start Here", "item": "https://offbeatinc.com/beginner-dj-hub.html" },
-        { "@type": "ListItem", "position": 3, "name": "My DJ Rig Planner" }
+        { "@type": "ListItem", "position": 3, "name": "My DJ Rig" }
       ]
     },
     {
@@ -37,148 +48,187 @@
         {
           "@type": "Question",
           "name": "How much does a complete beginner DJ setup cost in 2026?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The planner's DDJ-FLX4, HD 25 and DM-40D example is estimated at $597 for new equipment only if you already own a compatible phone or tablet. Verify rekordbox mobile support, a suitable USB connection and separate 9V/3A power; power accessories and a new computer are not included in this estimate."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "A reliable first bedroom setup lands between $450 and $650 all in: a two-channel controller such as the Pioneer DDJ-FLX4 ($329), closed-back headphones ($50-$150), a pair of desktop monitors ($100-$150) and, only if the monitors arrive without a lead that fits, one cable. A DM-40D pair ships with a passive 3.5 mm-to-dual-RCA lead that also fits the FLX4 master the other way round, so that pairing needs no extra cable and totals $527. Monitors whose only inputs are RCA or 1/4-inch still need a dual RCA lead. The planner on this page totals it for the exact pieces you choose, and removes anything you already own." }
         },
         {
           "@type": "Question",
           "name": "Do I need a separate audio interface to DJ?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No. Modern DJ controllers contain a built-in multi-channel USB sound card (audio interface) that routes the main stereo mix to your speakers and independent cue audio to your headphones simultaneously."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Every current DJ controller contains a multi-channel USB sound card that sends the master mix to your speakers and a separate cue channel to your headphones at the same time. A separate interface only becomes useful when you add a microphone that needs its own preamp or you are recording an external source." }
+        },
+        {
+          "@type": "Question",
+          "name": "Which cables connect my controller to my speakers?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Match the controller's master output to the speaker's input. RCA out to RCA in takes a dual RCA cable. RCA out to balanced 1/4-inch inputs takes a dual RCA to dual 1/4-inch TS cable (Yamaha HS5, KRK ROKIT). XLR out to XLR in takes a balanced XLR pair. One stereo run covers a pair of monitors; two single PA speakers need two runs. Check the box first: a DM-40D or DM-50D pair already contains a passive 3.5 mm-to-dual-RCA lead. No cable fixes a deck with only one stereo master trying to feed two pairs: that needs a second output or a distribution box, and Offbeat has no verified splitter, so the planner marks such a rig unresolved." }
         },
         {
           "@type": "Question",
           "name": "What is the difference between a DJ controller and a standalone system?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "A DJ controller acts as a control surface and audio interface connected to compatible DJ software on a computer or, for supported models such as DDJ-FLX4, a mobile device. A standalone system (like Denon Prime 4+ or Pioneer XDJ) has its own internal computer, screen, and operating system, allowing you to mix directly from USB flash drives without bringing a laptop."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "A controller is a control surface and sound card: it needs a laptop running rekordbox, Serato, Traktor or djay. A standalone system such as the Denon Prime 4+ has its own computer, screen and operating system, so it plays from USB drives with no laptop in the booth." }
         },
         {
           "@type": "Question",
-          "name": "How do I know which audio cables connect my controller to speakers?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Match the controller's Master Output jacks to the speaker inputs. The Pioneer DM-40D speaker pair includes a 3.5mm-to-dual-RCA cable that can match a DDJ-FLX4 RCA master output or a compatible 3.5mm master output; verify package contents and cable length. If your monitors only have balanced 1/4\" TRS inputs (like Yamaha HS5), use a Dual RCA to Dual 1/4\" TS cable. For pro club controllers with XLR outputs, use balanced XLR cables."
-          }
+          "name": "Does the rig planner store my build?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Saved builds live in your browser's local storage, not on a server. Sharing works by encoding the whole rig into the link, so nothing is uploaded anywhere and nothing follows you around the site." }
         }
       ]
     }
   ]
 }
-</script><meta name="theme-color" content="#08080b"><link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin></head>
-<body class="category-gear category-beginner offbeat-page"><a class="skip-link" href="#main-content">Skip to content</a><nav aria-label="Primary navigation"><div class="nav-inner"><a class="nav-brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Offbeat<em>.</em></span></a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button><div class="nav-links" id="primary-nav"><a href="beginner-dj-hub.html">Start here</a><a class="is-current" href="build-your-dj-setup.html">Rig planner</a><a href="beatmatch-trainer.html">Trainer</a><a href="dj-glossary.html">Glossary</a><a href="dj-controllers-hub.html">Controllers</a><a href="dj-software-hub.html">Software</a><a href="dj-gear-hub.html">Gear</a><a href="dj-skills-performance-hub.html">Skills</a><a href="all-dj-guides.html">All guides</a><button class="nav-search" type="button" data-search-open aria-label="Search guides"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6"/><path d="M10.6 10.6 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Search<kbd>/</kbd></button></div></div></nav><main class="main-content" id="main-content">
-<section class="hero" id="top"><div class="hero-inner has-media">
-<div class="hero-copy">
-<nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a></li><li><a href="beginner-dj-hub.html">Start Here</a></li><li>My DJ Rig Planner</li></ol></nav>
-<span class="hero-eyebrow">Interactive Gear Architect</span>
-<h1>My DJ Rig: build, customize &amp; price your dream setup</h1>
-<p class="hero-sub">The PCPartPicker for DJ equipment. Customize your setup across controllers, headphones, monitors, and laptops, verify audio cabling compatibility, mark gear you already own, and generate an itemized shopping list.</p>
-<div class="hero-meta"><span>Interactive Web Tool</span><span>Updated October 2026</span><span>Free &amp; No Account Required</span></div>
-<div class="hero-ctas" data-cta="varied"><a class="btn" href="#rig-app-root">Launch Rig Architect</a><a class="btn btn-secondary" href="controller-software-compatibility-matrix.html">Software matrix</a></div>
+</script>
+<script defer src="assets/offbeat-analytics.js"></script>
+</head>
+<body class="category-gear category-beginner offbeat-page page-rig">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<nav aria-label="Primary navigation"><div class="nav-inner">
+<a class="nav-brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Offbeat<em>.</em></span></a>
+<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+<div class="nav-links" id="primary-nav">
+<a href="beginner-dj-hub.html">Start</a>
+<a href="dj-controllers-hub.html">Controllers</a>
+<a href="dj-gear-hub.html">Gear</a>
+<a href="dj-software-hub.html">Software</a>
+<a href="dj-skills-performance-hub.html">Skills</a>
+<a href="all-dj-guides.html#tools">Tools</a>
+<a href="all-dj-guides.html">Explore</a>
+<button class="nav-search" type="button" data-search-open aria-label="Search guides"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6"></circle><path d="M10.6 10.6 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>Search<kbd>/</kbd></button>
 </div>
-<figure class="hero-figure"><img src="assets/img/editorial/gear-flatlay.jpg" alt="Headphones, audio cables, USB flash drive and DJ equipment neatly arranged on a dark studio table" width="1408" height="768" loading="eager" decoding="async"><figcaption>Offbeat gear architect. Interactive hardware matching and budget planning.</figcaption></figure>
-</div></section>
+</div></nav>
 
-<div class="content-wrap">
-  <!-- Interactive Rig Architect Root App -->
-  <div id="rig-app-root">
-    <div class="highlight-box">
-      <p>Loading My DJ Rig Architect…</p>
+<main class="main-content" id="main-content">
+
+<header class="rig-masthead" id="top">
+  <div class="rig-masthead-inner">
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a></li><li><a href="beginner-dj-hub.html">Start here</a></li><li>My DJ Rig</li></ol></nav>
+    <div class="rig-masthead-grid">
+      <div>
+        <span class="hero-eyebrow">Rig studio · interactive</span>
+        <h1>The whole rig, <em>priced and checked</em> before you buy a thing.</h1>
+        <p class="rig-masthead-sub">Pick a deck, add the monitoring and speakers, and let the studio work out what actually connects to what. Mark the gear you already own and the shopping list shrinks to just the pieces you still need — cables included.</p>
+        <ul class="rig-masthead-facts">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 12.6l4.6 4.6L19.5 6.8"/></svg>Cable matching, not guesswork</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/></svg>31 components, checked Oct 2026</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 12h16M12 4v16"/></svg>Saved in your browser</li>
+        </ul>
+      </div>
+      <figure class="rig-masthead-art">
+        <img src="assets/img/editorial/gear-flatlay.jpg" alt="Headphones, cables, USB drives and a flight case laid out on a dark table" width="1408" height="768" loading="eager" decoding="async">
+        <figcaption>Offbeat editorial photography, illustrative — not a photo of a specific product.</figcaption>
+      </figure>
     </div>
   </div>
+</header>
 
-  <!-- Editorial Companion Guide -->
-  <section class="article-section">
-    <h2>How to plan your DJ setup: the 4 core tiers</h2>
-    <p>Building a DJ rig is not about buying the most expensive gear on the market; it is about assembling balanced equipment that matches where and how you actually play. Here is how working DJs structure their rigs across common stages:</p>
+<div class="rig-page-wrap">
+  <div id="rig-app-root" class="rig-app-root">
+    <div class="rs-loading" aria-live="polite">
+      <div class="rs-skel" style="height:76px"></div>
+      <div class="rs-skel" style="height:200px"></div>
+      <div class="rs-skel" style="height:120px"></div>
+      <p>Loading the gear catalog…</p>
+    </div>
+  </div>
+  <noscript><p class="rs-note">The rig studio needs JavaScript. The <a href="dj-equipment-checklist.html">printable equipment checklist</a> covers the same ground on paper.</p></noscript>
+</div>
+
+<div class="content-wrap rig-guide">
+  <section class="article-section" id="how-to-plan">
+    <h2>How to plan a rig without overbuying</h2>
+    <p>A DJ setup is not a shopping list of impressive logos. It is a signal chain: source, control, monitoring, output. When a rig disappoints, it is usually because one link in that chain is missing or mismatched — headphones with no cue knob, monitors with no matching cable, a four-channel controller and a two-channel budget.</p>
+    <p>The planner above is built around those four stages. If speakers are the uncertain part, start with the <a href="best-dj-monitor-speakers.html#speaker-finder">room-first monitor and PA finder</a>, then bring the exact model back here to check its cable path and budget.</p>
+    <p>If you would rather read first, these are the four shapes a working rig tends to take.</p>
 
     <div class="spec-grid spec-grid--six">
       <article class="spec-card">
-        <span class="spec-kicker">Stage 1 · Est. $597 + any needed power</span>
-        <h3>The Bedroom Starter</h3>
-        <p>The $597 example combines DDJ-FLX4, HD 25 headphones and DM-40D monitors, using a compatible phone/tablet you already own. Confirm rekordbox mobile, USB audio and separate 9V/3A power (not included in the estimate). A new laptop is optional, not mandatory for this supported route.</p>
+        <span class="spec-kicker">Stage 1 · $400–$650</span>
+        <h3>The bedroom starter</h3>
+        <p>A two-channel controller (DDJ-FLX4, Traktor S2 MK3, Inpulse 500), closed-back headphones and compact 4-inch monitors. The point is manual beatmatching, EQ blending and phrase transitions with nothing in the way.</p>
       </article>
-
       <article class="spec-card">
-        <article class="spec-kicker">Stage 2 · $800–$1,400</article>
-        <h3>The House Party Rig</h3>
-        <p>A sturdy controller with balanced 1/4" TRS or XLR outputs (like Hercules Inpulse 500 or DDJ-GRV6), industry-standard Sennheiser HD 25 headphones, and 5-inch monitors or a portable PA speaker for loud rooms.</p>
+        <span class="spec-kicker">Stage 2 · $800–$1,400</span>
+        <h3>The house-party rig</h3>
+        <p>A sturdier deck with balanced outputs (Inpulse 500, DDJ-GRV6), HD 25-class headphones and 5-inch monitors or a single powered PA speaker for a loud front room.</p>
       </article>
-
       <article class="spec-card">
         <span class="spec-kicker">Stage 3 · $1,600–$2,400</span>
-        <h3>The Club-Ready Rig</h3>
-        <p>A 4-channel club-layout controller (Pioneer DDJ-FLX10 or Rane Four) with dedicated hardware Stem buttons, dual USB laptop ports, and balanced booth/master outputs that mirror Pioneer CDJ festival booths.</p>
+        <h3>The club-ready rig</h3>
+        <p>Four channels, club layout, XLR or booth outputs and a deck that mirrors a CDJ booth (DDJ-FLX10, Rane Four). Balanced cabling stops being optional here.</p>
       </article>
-
       <article class="spec-card">
         <span class="spec-kicker">Stage 4 · $2,200–$3,500</span>
-        <h3>The Standalone Mobile Pro</h3>
-        <p>An all-in-one standalone console (Denon Prime 4+ or AlphaTheta XDJ-AZ) that plays music directly from USB drives or internal SSDs without requiring a laptop, paired with high-output powered PA speakers and wireless mics.</p>
+        <h3>The standalone mobile rig</h3>
+        <p>An all-in-one console (Denon Prime 4+, XDJ-AZ) that plays from USB, a powered PA speaker and a vocal mic. No laptop means one fewer thing to fail on the day.</p>
       </article>
     </div>
   </section>
 
-  <section class="article-section">
-    <h2>Audio cabling &amp; signal flow fundamentals</h2>
-    <p>One of the most frequent beginner mistakes is ordering speakers and a controller only to realize they lack the right connecting cables on unboxing day. Here is how audio signal routing works:</p>
+  <section class="article-section" id="cables">
+    <h2>Cables and signal flow, in plain terms</h2>
+    <p>The most common first-week mistake is ordering speakers and a controller, then discovering nothing connects them. Here is what each cable actually does.</p>
     <div class="format-action-table">
-      <div class="format-action-row"><strong>Unbalanced RCA (Consumer standard)</strong><span>Dual red-and-white RCA cables carry stereo line audio. Ideal for short runs under 10 feet on a bedroom studio desk. If run over 15 feet near power bricks, RCA lines can pick up electrical 60Hz hum.</span></div>
-      <div class="format-action-row"><strong>Balanced 1/4" TRS &amp; XLR (Pro audio standard)</strong><span>Balanced lines carry three conductors (hot, cold, ground) that cancel electromagnetic interference. Essential for gigging in clubs, wedding venues, and connecting to powered PA speakers.</span></div>
-      <div class="format-action-row"><strong>Headphone Cue Splitting</strong><span>Your controller's internal sound card separates Deck A/B headphone cueing from Master audio out. Always keep a gold-plated 3.5mm to 1/4" screw-on jack adapter in your headphone bag.</span></div>
+      <div class="format-action-row"><strong>Unbalanced RCA</strong><span>Dual red-and-white cable carrying stereo line audio. Perfect for a desk under ten feet. Past fifteen feet, next to power bricks, it can pick up mains hum.</span></div>
+      <div class="format-action-row"><strong>Balanced 1/4" TRS and XLR</strong><span>Three conductors per channel that cancel interference over longer runs. The standard for club booths, wedding venues and powered PA speakers.</span></div>
+      <div class="format-action-row"><strong>One run per stereo pair</strong><span>A pair of monitors takes one stereo run. Two separate PA speakers usually need two runs — one XLR each. The planner counts this for you.</span></div>
+      <div class="format-action-row"><strong>Cue, not master</strong><span>The controller's sound card splits headphone cue from master output. Keep a 3.5 mm to 1/4" adapter in the bag; it costs $8 and saves an evening.</span></div>
     </div>
   </section>
 
-  <section class="article-section">
-    <h2>Software licensing &amp; hardware unlocks</h2>
-    <p>When selecting your controller, check how it unlocks your chosen DJ software ecosystem:</p>
+  <section class="article-section" id="software">
+    <h2>Software, licensing and hardware unlocks</h2>
+    <p>Your controller decides which software you can run for free. Check this before you fall in love with a deck.</p>
     <ul class="polished-list">
-      <li><strong>Hardware Unlock:</strong> Plugging the controller into your laptop automatically unlocks full performance software (e.g. Pioneer DDJ-FLX4 unlocks rekordbox Core and Serato DJ Lite for free).</li>
-      <li><strong>Paid Upgrade Required:</strong> Controllers bundled with Serato DJ Lite require a $149 one-time license (or $11.99/mo subscription) to access 4-deck mixing, recording, and advanced Serato Stems FX.</li>
-      <li><strong>Included Full License:</strong> Native Instruments Traktor controllers (S2 MK3, S4 MK3) include a full Traktor Pro 4 software license key in the box at no added cost.</li>
+      <li><strong>Hardware unlock:</strong> plugging the controller in unlocks a full edition — the DDJ-FLX4 unlocks rekordbox and Serato DJ Lite, the Traktor Kontrol S2 MK3 includes Traktor Pro 4.</li>
+      <li><strong>Lite editions:</strong> Serato DJ Lite and rekordbox's free tier cannot record or run four decks. That upgrade is a real cost, and the planner does not hide it — the controller picker names what each deck unlocks.</li>
+      <li><strong>Standalone systems:</strong> Engine DJ on a Prime 4+ needs no laptop and no subscription, but it does need your library exported to USB before the gig.</li>
     </ul>
+    <p>If the pairing still feels unclear, <a href="controller-software-compatibility-matrix.html">the compatibility matrix</a> lists the combinations we have confirmed, and <a href="controller-buying-journey.html">the first-controller guide</a> explains the order to buy things in.</p>
   </section>
 
-  <section class="article-section">
-    <h2>Frequently Asked Questions</h2>
+  <section class="article-section" id="faq">
+    <h2>Frequently asked questions</h2>
     <details>
       <summary>How much does a complete beginner DJ setup cost in 2026?</summary>
-      <p>The planner's DDJ-FLX4, HD 25 and DM-40D example is estimated at $597 for new equipment only if you already own a compatible phone or tablet. Verify rekordbox mobile support, a suitable USB connection and separate 9V/3A power; power accessories and a new computer are not included in this estimate.</p>
+      <p>A reliable first bedroom setup lands between $450 and $650 all in: a two-channel controller ($200–$329), closed-back headphones ($50–$150), a pair of desktop monitors ($100–$150) and, only when the monitors do not ship with a lead that fits, one cable. The common pairing of a Pioneer DDJ-FLX4 and a DM-40D pair is $527 with no cable line, because that pair includes a passive 3.5&nbsp;mm-to-dual-RCA lead that also fits the FLX4 master the other way round. The planner totals the exact pieces you pick and removes anything you already own.</p>
     </details>
     <details>
       <summary>Do I need a separate audio interface to DJ?</summary>
-      <p>No. Modern DJ controllers contain a built-in multi-channel USB sound card (audio interface) that routes the main stereo mix to your speakers and independent cue audio to your headphones simultaneously.</p>
+      <p>No. Every current DJ controller contains a multi-channel USB sound card that sends the master mix to your speakers and a separate cue channel to your headphones at the same time. A separate interface only becomes useful when you add a microphone that needs its own preamp, or when you are recording an external source.</p>
     </details>
     <details>
-      <summary>What is the difference between a DJ controller and a standalone system?</summary>
-      <p>A DJ controller acts as a control surface and audio interface connected to compatible DJ software on a computer or, for supported models such as DDJ-FLX4, a mobile device. A standalone system (like Denon Prime 4+ or Pioneer XDJ) has its own internal computer, screen, and operating system, allowing you to mix directly from USB flash drives without bringing a laptop.</p>
+      <summary>Which cables connect my controller to my speakers?</summary>
+      <p>Match the controller's master output to the speaker's input. RCA out to RCA in takes a dual RCA cable. RCA out to balanced 1/4-inch inputs takes a dual RCA to dual 1/4-inch TS cable. XLR out to XLR in takes a balanced XLR pair. One stereo run covers a pair of monitors; two single PA speakers need two runs. Check the box first: a DM-40D or DM-50D pair already contains a passive 3.5&nbsp;mm-to-dual-RCA lead.</p>
+      <p>One thing no cable fixes: a controller with a single stereo master cannot feed two pairs of monitors. Two pairs need two outputs or a distribution box, and Offbeat has no verified splitter, so the planner marks that rig as unresolved rather than selling you a lead with nowhere to plug in.</p>
     </details>
     <details>
-      <summary>How do I know which audio cables connect my controller to speakers?</summary>
-      <p>Match the controller's Master Output jacks to the speaker inputs. The Pioneer DM-40D speaker pair includes a 3.5mm-to-dual-RCA cable that can match a DDJ-FLX4 RCA master output or a compatible 3.5mm master output; verify package contents and cable length. If your monitors only have balanced 1/4" TRS inputs (like Yamaha HS5), use a Dual RCA to Dual 1/4" TS cable. For pro club controllers with XLR outputs, use balanced XLR cables.</p>
+      <summary>What is the difference between a controller and a standalone system?</summary>
+      <p>A controller is a control surface and sound card: it needs a laptop running rekordbox, Serato, Traktor or djay. A standalone system has its own computer, screen and operating system, so it plays from USB drives with no laptop in the booth.</p>
+    </details>
+    <details>
+      <summary>Does the rig planner store my build?</summary>
+      <p>Saved builds live in your browser's local storage, not on a server. Sharing works by encoding the whole rig into the link, so nothing is uploaded anywhere.</p>
     </details>
   </section>
 
   <section class="related-articles funnel-related">
-    <h3>Related guides &amp; interactive practice tools</h3>
+    <h3>Keep going</h3>
     <ul>
-      <li><a href="controller-software-compatibility-matrix.html">Controller &amp; Software Compatibility Matrix</a></li>
-      <li><a href="beatmatch-trainer.html">Interactive Beatmatch Trainer (Web Audio)</a></li>
-      <li><a href="dj-skills-learning-path.html">DJ Skills Learning Path &amp; Harmonic Key Wheel</a></li>
-      <li><a href="best-dj-controllers-for-beginners.html">Best DJ Controllers for Beginners (2026)</a></li>
-      <li><a href="best-dj-headphones-2026.html">Best DJ Headphones Ranked &amp; Tested</a></li>
-      <li><a href="how-to-connect-dj-controller-to-speakers.html">How to Connect Any Controller to Speakers</a></li>
+      <li><a href="controller-software-compatibility-matrix.html">Controller and software compatibility matrix</a></li>
+      <li><a href="how-to-connect-dj-controller-to-speakers.html">How to connect any controller to speakers</a></li>
+      <li><a href="best-dj-controllers-for-beginners.html">Best controllers for beginners (2026)</a></li>
+      <li><a href="best-dj-headphones-2026.html">DJ headphones ranked</a></li>
+      <li><a href="dj-equipment-checklist.html">Printable equipment checklist</a></li>
+      <li><a href="beatmatch-trainer.html">Beatmatching trainer — the other half of the rig</a></li>
     </ul>
   </section>
 </div>
-</main><footer><div class="footer-nav-grid footer-nav-grid--compact"><div class="footer-col footer-brand-col"><a class="nav-brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Offbeat<em>.</em></span></a><p>Independent DJ gear, software and skills guides for people who care how a set actually sounds. We research manufacturer documentation, software support pages and retailer listings — then say plainly what we know and what we do not.</p></div><div class="footer-col"><h3 class="footer-heading">Start</h3><ul><li><a href="beginner-dj-hub.html">Start DJing</a></li><li><a href="how-to-start-djing.html">How to start</a></li>
+</main>
+<footer><div class="footer-nav-grid footer-nav-grid--compact"><div class="footer-col footer-brand-col"><a class="nav-brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-word">Offbeat<em>.</em></span></a><p>Independent DJ gear, software and skills guides for people who care how a set actually sounds. We research manufacturer documentation, software support pages and retailer listings — then say plainly what we know and what we do not.</p></div><div class="footer-col"><h3 class="footer-heading">Start</h3><ul><li><a href="beginner-dj-hub.html">Start DJing</a></li><li><a href="how-to-start-djing.html">How to start</a></li>
 <li><a href="build-your-dj-setup.html">Rig planner</a></li><li><a href="dj-glossary.html">DJ glossary</a></li><li><a href="beginner-dj-setup-guide-2026.html">First setup</a></li><li><a href="best-budget-dj-equipment.html">Budget rigs</a></li><li><a href="dj-equipment-checklist.html">Gear checklist</a></li></ul></div><div class="footer-col"><h3 class="footer-heading">Controllers</h3><ul><li><a href="best-dj-controllers-2026.html">Best controllers</a></li><li><a href="best-dj-controllers-for-beginners.html">For beginners</a></li><li><a href="best-dj-controllers-under-500-2026.html">Under $500</a></li><li><a href="best-standalone-dj-systems.html">Standalone systems</a></li><li><a href="controller-software-compatibility-matrix.html">Compatibility matrix</a></li></ul></div><div class="footer-col"><h3 class="footer-heading">Software</h3><ul><li><a href="best-dj-software.html">Best DJ software</a></li><li><a href="best-free-dj-software-2026.html">Free options</a></li><li><a href="serato-vs-rekordbox-vs-traktor.html">Serato vs rekordbox</a></li><li><a href="rekordbox-review.html">rekordbox review</a></li><li><a href="how-to-dj-with-spotify.html">DJ with Spotify</a></li></ul></div><div class="footer-col"><h3 class="footer-heading">Gear</h3><ul><li><a href="best-dj-headphones-2026.html">Headphones</a></li><li><a href="best-dj-mixers-2026.html">Mixers</a></li><li><a href="best-dj-turntables-2026.html">Turntables</a></li><li><a href="best-dj-laptop-2026.html">Laptops</a></li><li><a href="best-dj-monitor-speakers.html">Speakers</a></li></ul></div><div class="footer-col"><h3 class="footer-heading">Skills</h3><ul><li><a href="how-to-mix-music-beginners.html">Learn to mix</a></li><li><a href="how-to-beatmatch-manually.html">Beatmatch by ear</a></li><li><a href="beatmatch-trainer.html">Trainer drill</a></li><li><a href="how-to-record-dj-mix.html">Record a mix</a></li><li><a href="how-to-get-dj-gigs.html">Get gigs</a></li><li><a href="how-to-dj-at-a-wedding.html">Wedding DJing</a></li></ul></div><div class="footer-col"><h3 class="footer-heading">Offbeat</h3><ul><li><a href="about.html">About</a></li><li><a href="editorial-standards.html">Editorial standards</a></li><li><a href="disclosure.html">Affiliate disclosure</a></li><li><a href="contact.html">Contact</a></li><li><a href="privacy.html">Privacy</a></li>
-<li><button type="button" class="footer-privacy-btn" data-reopen-consent>Cookie Preferences</button></li></ul></div></div><div class="footer-bottom"><p>© 2026 Offbeat Inc. Independent DJ and music-production publishing. Some links are affiliate links — this never changes the price you pay. <a href="disclosure.html">How that works</a>.</p></div></footer><script defer src="assets/site.js"></script><script defer src="assets/rig-builder.js"></script><div class="search-overlay" id="site-search" hidden><div class="search-panel" role="dialog" aria-modal="true" aria-label="Search Offbeat guides"><div class="search-head"><input type="search" placeholder="Search controllers, software, setup guides…" aria-label="Search guides" data-search-input autocomplete="off"><button class="search-close" type="button" data-search-close>Esc</button></div><p class="search-status" data-search-status>Popular guides</p>
-<div class="search-groups" data-search-groups aria-label="Filter by area"></div><ul class="search-results" data-search-results></ul></div></div>  <script src="assets/quick-search.js" defer></script>
+<li><button type="button" class="footer-privacy-btn" data-reopen-consent>Cookie Preferences</button></li></ul></div></div><div class="footer-bottom"><p>© 2026 Offbeat Inc. Independent DJ and music-production publishing. Some links are affiliate links — this never changes the price you pay. <a href="disclosure.html">How that works</a>.</p></div></footer>
+<script defer src="assets/site.js"></script>
+<script defer src="assets/gear-connections.js"></script>
+<script defer src="assets/rig-studio.js"></script>
+<div class="search-overlay" id="site-search" hidden><div class="search-panel" role="dialog" aria-modal="true" aria-label="Search Offbeat guides"><div class="search-head"><input type="search" placeholder="Search controllers, software, setup guides…" aria-label="Search guides" data-search-input autocomplete="off"><button class="search-close" type="button" data-search-close>Esc</button></div><p class="search-status" data-search-status>Popular guides</p>
+<div class="search-groups" data-search-groups aria-label="Filter by area"></div><ul class="search-results" data-search-results></ul></div></div>
+<script src="assets/quick-search.js" defer></script>
 </body>
 </html>

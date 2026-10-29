@@ -109,7 +109,7 @@
   /* Three years, because that is the horizon over which a $149 licence and a
      $120/yr subscription stop looking similar. Only the vendor's own USD list
      prices are used: nothing is converted, discounted or averaged. */
-  function threeYearCost(plan) {
+  function threeYearCost(plan, budget) {
     if (!plan || plan.kind === "free" || plan.kind === "lite") {
       return { total: 0, label: "no licence", basis: "free" };
     }
@@ -117,7 +117,23 @@
     if (plan.buyOnce) options.push({ total: plan.buyOnce, label: money(plan.buyOnce) + " once", basis: "perpetual" });
     if (plan.yearly) options.push({ total: Math.round(plan.yearly * 3 * 100) / 100, label: money(plan.yearly) + "/yr", basis: "yearly" });
     if (plan.monthly) options.push({ total: Math.round(plan.monthly * 36 * 100) / 100, label: money(plan.monthly) + "/mo", basis: "monthly" });
-    options.sort(function (a, b) { return a.total - b.total; });
+    if (budget === "once") {
+      options.sort(function (a, b) {
+        if (a.basis === "perpetual" && b.basis !== "perpetual") return -1;
+        if (b.basis === "perpetual" && a.basis !== "perpetual") return 1;
+        return a.total - b.total;
+      });
+    } else if (budget === "sub") {
+      options.sort(function (a, b) {
+        var aSub = a.basis === "yearly" || a.basis === "monthly";
+        var bSub = b.basis === "yearly" || b.basis === "monthly";
+        if (aSub && !bSub) return -1;
+        if (bSub && !aSub) return 1;
+        return a.total - b.total;
+      });
+    } else {
+      options.sort(function (a, b) { return a.total - b.total; });
+    }
     return options[0] || { total: 0, label: "no licence", basis: "free" };
   }
 
@@ -369,7 +385,7 @@
         reasons.push("The free edition stops being free the moment a controller is connected, so this is priced at Home, the cheapest licence that allows one.");
       }
     }
-    cost = threeYearCost(plan);
+    cost = threeYearCost(plan, answers.budget);
 
     /* FLX10/FLX6-class hardware unlocks the Pro licence itself while it is
        connected (Serato's own hardware page), so Pro-tier needs carry no
@@ -488,9 +504,23 @@
       }
     }
 
+    /* Budget / payment model preference bonus */
+    var budgetScore = 0;
+    if (answers.budget === "free") {
+      if (cost.total === 0) budgetScore = 4;
+      else budgetScore = -2;
+    } else if (answers.budget === "once") {
+      if (cost.basis === "perpetual" || hasPaidPerpetual(platform)) budgetScore = 4;
+      else if (cost.total === 0) budgetScore = 2;
+      else budgetScore = -1;
+    } else if (answers.budget === "sub") {
+      if (cost.basis === "yearly" || cost.basis === "monthly" || platform.plans.some(function (p) { return p.yearly || p.monthly; })) budgetScore = 4;
+      else budgetScore = -1;
+    }
+
     /* Affinity only ranks inside a group — it never crosses verdicts. */
     var affinity = (SCENE_AFFINITY[answers.scene] || {})[platform.id] || 0;
-    var score = affinity + (unlock && unlock !== "unknown" ? 2 : 0);
+    var score = affinity + (unlock && unlock !== "unknown" ? 2 : 0) + budgetScore;
 
     /* Notes can repeat across capabilities; the reader only needs each once. */
     var seen = {};

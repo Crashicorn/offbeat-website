@@ -723,7 +723,7 @@
           <div class="rig-title-block">
             <span class="hero-eyebrow">Interactive DJ Rig Architect</span>
             <h2 class="rig-main-title" contenteditable="true" data-rig-name title="Click to rename your setup">${escapeHtml(currentRig.name)}</h2>
-            <p class="rig-subtitle">Assemble modular equipment, toggle gear you already own, verify audio signal connections, and generate an itemized shopping list.</p>
+            <p class="rig-subtitle">Assemble your dream DJ rig, verify live audio signal routing, toggle gear you already own, and generate an itemized shopping list.</p>
           </div>
           <div class="rig-dash-actions">
             <!-- Sound FX Toggle -->
@@ -750,7 +750,10 @@
           }).join("")}
         </div>
 
-        <!-- Metric Cards -->
+        <!-- CENTERPIECE: Visual DJ Booth Studio Layout (Appears FIRST!) -->
+        ${renderBooth(stats)}
+
+        <!-- Financial Summary & Setup Readiness -->
         <div class="rig-metrics-grid">
           <div class="rig-metric-card">
             <span class="metric-label">Total Rig Valuation</span>
@@ -790,39 +793,6 @@
             </button>
           </div>
         ` : ''}
-      </section>
-
-      <!-- Visual DJ Booth Studio Layout -->
-      <section class="rig-booth-section">
-        <div class="section-head">
-          <h3>DJ Studio Booth &amp; Signal Routing</h3>
-          <p>Interactive 2D booth layout. Click any piece of gear to swap components, adjust quantities, or toggle owned gear.</p>
-        </div>
-        <div class="rig-booth-stage">
-          <!-- Top Row: Monitors, Host Platform, Stands/Media -->
-          <div class="booth-top-row">
-            ${renderBoothSlot(findSlot("speakers") || { slotId: "core-spk", category: "speakers", itemId: null }, "Monitors / Speakers", "🔊")}
-            ${renderBoothSlot(findSlot("laptops") || { slotId: "core-host", category: "laptops", itemId: null }, "Host Platform / OS", "💻")}
-            ${renderBoothSlot(findSlot("stands") || findSlot("storage") || findSlot("microphones") || { slotId: "core-stand", category: "stands", itemId: null }, "Stands, Mics & Media", "🏗️")}
-          </div>
-
-          <!-- Signal Cables Hub Indicator -->
-          <div class="booth-cables-row">
-            <div class="cable-pulse-line cable-pulse--left"></div>
-            <div class="cable-node-hub" data-action="pick" data-slot-id="${(findSlot('cables') || {}).slotId || 'core-cable'}" data-category="cables">
-              <span class="cable-icon">🔌</span>
-              <span class="cable-title">${getCableSummaryText()}</span>
-              <span class="cable-change">Change Cables →</span>
-            </div>
-            <div class="cable-pulse-line cable-pulse--right"></div>
-          </div>
-
-          <!-- Bottom Row: Controller & Headphones -->
-          <div class="booth-bottom-row">
-            ${renderBoothSlot(findSlot("controllers") || { slotId: "core-ctrl", category: "controllers", itemId: null }, "DJ Controller / Decks & Mixer", "🎛️", true)}
-            ${renderBoothSlot(findSlot("headphones") || { slotId: "core-hp", category: "headphones", itemId: null }, "DJ Headphones", "🎧")}
-          </div>
-        </div>
       </section>
 
       <!-- Compatibility Engine Alerts -->
@@ -901,7 +871,7 @@
 
         <!-- Commercial Disclosure Notice -->
         <p class="table-note">
-          ${CATALOG.meta.disclosure} <a href="disclosure.html">Read our full affiliate disclosure</a>.
+          Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
@@ -921,6 +891,223 @@
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
 
+  /* ------------------------------------------------- Interactive DJ Booth */
+  function renderBooth(stats) {
+    var controllerSlot = findSlot("controllers") || { slotId: "core-ctrl", category: "controllers", itemId: null };
+    var headphonesSlot = findSlot("headphones") || { slotId: "core-hp", category: "headphones", itemId: null };
+    var hostSlot = findSlot("laptops") || { slotId: "core-host", category: "laptops", itemId: null };
+
+    var speakerSlots = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    if (speakerSlots.length === 0) {
+      speakerSlots = [{ slotId: "core-spk", category: "speakers", itemId: null }];
+    }
+    var primarySpeakerSlot = speakerSlots[0];
+    var secondarySpeakerSlot = speakerSlots.length > 1 ? speakerSlots[1] : null;
+
+    var micSlot = findSlot("microphones");
+    var standSlot = findSlot("stands");
+    var storageSlot = findSlot("storage");
+
+    var ctrlItem = getSlotItem(controllerSlot);
+    var spkItem = getSlotItem(primarySpeakerSlot);
+    var isPA = spkItem && (spkItem.id === "jbl-eon-715" || /PA/i.test(spkItem.type));
+    var isStereoPair = spkItem && (spkItem.speaker_units === 2 || /pair/i.test(spkItem.model));
+
+    var cableSlots = currentRig.items.filter(function (s) { return s.category === "cables"; });
+    var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
+    var cableItem = getSlotItem(primaryCableSlot);
+
+    var cableMatched = ctrlItem && spkItem && includedSpeakerCableMatches(ctrlItem, spkItem);
+    var cableClass = "unbalanced";
+    if (cableItem) {
+      if (/xlr|balanced/i.test(cableItem.model) || /trs/i.test(cableItem.model)) cableClass = "balanced";
+      else cableClass = "unbalanced";
+    } else if (cableMatched) {
+      cableClass = "included";
+    } else if (ctrlItem && ctrlItem.outputs && ctrlItem.outputs.some(function (o) { return o.balanced; })) {
+      cableClass = "balanced";
+    }
+
+    var outText = ctrlItem ? (ctrlItem.master_outputs ? ctrlItem.master_outputs.join(" / ") : "Master Out") : "No Master Out";
+    var inText = spkItem ? (spkItem.inputs ? spkItem.inputs.join(" / ") : "Audio In") : "No Speaker In";
+
+    return `
+      <section class="rig-booth-section" id="interactive-booth-stage">
+        <div class="booth-stage-header">
+          <div class="booth-title-group">
+            <span class="booth-kicker">Interactive Setup Builder · Real Signal Flow</span>
+            <h3 class="booth-main-heading">DJ Studio Booth &amp; Cable Routing</h3>
+            <p class="booth-lead-desc">Click any component to swap models or inspect specs. Mark gear you already own to calculate out-of-pocket costs.</p>
+          </div>
+          <div class="booth-stage-badges">
+            <span class="booth-badge ${isPA ? 'badge--pa' : 'badge--studio'}">
+              ${isPA ? '📢 Live PA Loudspeaker Setup' : (isStereoPair ? '🔊 Studio Nearfield Stereo Pair' : '🔊 Studio Nearfield Monitoring')}
+            </span>
+            <span class="booth-badge ${stats.compatibility.fatalErrors === 0 ? 'badge--signal-ok' : 'badge--signal-warn'}">
+              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? '⚡ Signal Path Verified' : '⚠️ Routing Review Recommended'}
+            </span>
+          </div>
+        </div>
+
+        <div class="rig-booth-stage">
+          <!-- TOP ROW: Speakers and Host System -->
+          <div class="booth-top-row">
+            <!-- Left Speaker -->
+            <div class="booth-col booth-col--spk">
+              ${renderSpeakerCard(primarySpeakerSlot, isPA ? "PA Cabinet (Left)" : "Monitor (Left)", "🔊", false)}
+            </div>
+
+            <!-- Center: Host Computer / Smart Device -->
+            <div class="booth-col booth-col--host">
+              ${renderBoothSlot(hostSlot, "Host Platform & Library", "💻", false)}
+            </div>
+
+            <!-- Right Speaker or Secondary Booth Speaker -->
+            <div class="booth-col booth-col--spk">
+              ${secondarySpeakerSlot
+                ? renderSpeakerCard(secondarySpeakerSlot, "Secondary / Booth Monitor", "🔊", false)
+                : renderSpeakerCard(primarySpeakerSlot, isPA ? "PA Cabinet (Right)" : "Monitor (Right)", "🔊", false, true)
+              }
+            </div>
+          </div>
+
+          <!-- DYNAMIC SIGNAL FLOW & CABLE ROUTING HUB -->
+          <div class="booth-cables-row">
+            <div class="cable-pulse-line cable-pulse--left cable-pulse--${cableClass}">
+              <span class="signal-dot signal-dot--left"></span>
+            </div>
+
+            <div class="cable-node-hub" data-action="pick" data-slot-id="${primaryCableSlot.slotId || 'core-cable'}" data-category="cables" title="Click to view connection details or swap audio cables">
+              <span class="cable-icon">🔌</span>
+              <span class="cable-title">${getCableSummaryText()}</span>
+              <span class="cable-route-hint">${escapeHtml(outText)} → ${escapeHtml(inText)}</span>
+              <span class="cable-change">Change Cables →</span>
+            </div>
+
+            <div class="cable-pulse-line cable-pulse--right cable-pulse--${cableClass}">
+              <span class="signal-dot signal-dot--right"></span>
+            </div>
+          </div>
+
+          <!-- BOTTOM ROW: Performance Core (Headphones, Main Controller, Studio Accessories) -->
+          <div class="booth-bottom-row">
+            <!-- Left: Headphones -->
+            <div class="booth-col booth-col--hp">
+              ${renderBoothSlot(headphonesSlot, "Cue Headphones", "🎧", false)}
+            </div>
+
+            <!-- Center: Main DJ Controller / Mixer & Decks -->
+            <div class="booth-col booth-col--ctrl">
+              ${renderBoothSlot(controllerSlot, "DJ Controller / Decks & Mixer", "🎛️", true)}
+            </div>
+
+            <!-- Right: Studio Accessories (Mic, Stand, Media) -->
+            <div class="booth-col booth-col--acc">
+              <div class="booth-acc-container">
+                <span class="acc-container-label">Studio Accessories</span>
+                ${renderAccessoryCard(micSlot, "microphones", "core-mic", "Vocal / MC Mic", "🎤")}
+                ${renderAccessoryCard(standSlot, "stands", "core-stand", "DJ Laptop Stand", "🏗️")}
+                ${renderAccessoryCard(storageSlot, "storage", "core-storage", "USB Flash Media", "💾")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderSpeakerCard(slot, label, icon, isSecondary, isRightChannel) {
+    var item = getSlotItem(slot);
+    var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
+
+    if (!item) {
+      return `
+        <div class="booth-card booth-card--spk booth-card--empty" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
+          <span class="booth-card-role">${icon} ${escapeHtml(label)}</span>
+          <div class="booth-empty-content">
+            <span class="booth-plus">+</span>
+            <strong>Select Speakers</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    var qty = slot.qty || 1;
+    var linePrice = item.price * qty;
+    var isPair = item.speaker_units === 2 || /pair/i.test(item.model);
+
+    return `
+      <div class="booth-card booth-card--spk ${isOwned ? 'booth-card--owned' : ''}">
+        <div class="booth-card-top">
+          <span class="booth-card-role">${icon} ${escapeHtml(label)}</span>
+          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle already owned">
+            ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
+          </button>
+        </div>
+        <div class="booth-card-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
+          <div class="booth-thumb-wrap">
+            <img src="${item.image}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
+          </div>
+          <div class="booth-info">
+            <span class="booth-brand">${escapeHtml(item.brand)}</span>
+            <strong class="booth-model">${escapeHtml(item.model)}</strong>
+            <span class="booth-price ${isOwned ? 'price--owned' : ''}">
+              ${isOwned ? '<s>$' + linePrice + '</s> <span class="owned-sub">✓ Owned (Saved $' + linePrice + ')</span>' : '$' + linePrice}
+            </span>
+            <span class="booth-pack-note">${escapeHtml(item.box_label || (isPair ? 'Sold as stereo pair' : 'Sold as individual cabinet'))}</span>
+          </div>
+        </div>
+        <div class="booth-card-footer">
+          <div class="booth-qty-inline">
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>-</button>
+            <span class="qty-display">Qty: ${qty}</span>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+          </div>
+          <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
+            Swap →
+          </button>
+          <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed hardware specs">
+            Specs ℹ️
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAccessoryCard(slot, category, defaultSlotId, label, icon) {
+    if (slot && slot.itemId) {
+      var item = getSlotItem(slot);
+      var isOwned = Boolean(slot.owned);
+      var linePrice = item ? item.price * (slot.qty || 1) : 0;
+      return `
+        <div class="booth-acc-chip ${isOwned ? 'booth-acc-chip--owned' : ''}">
+          <span class="acc-icon">${icon}</span>
+          <div class="acc-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="${category}">
+            <span class="acc-role">${escapeHtml(label)}</span>
+            <strong class="acc-name">${escapeHtml(item ? item.model : label)}</strong>
+            <span class="acc-price ${isOwned ? 'price--owned' : ''}">${isOwned ? '✓ Owned' : '$' + linePrice}</span>
+          </div>
+          <div class="acc-actions">
+            <button type="button" class="btn-acc-toggle ${isOwned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle owned">
+              ${isOwned ? '✓' : '🛒'}
+            </button>
+            <button type="button" class="btn-acc-swap" data-action="pick" data-slot-id="${slot.slotId}" data-category="${category}" title="Swap component">✎</button>
+            <button type="button" class="btn-acc-del" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this accessory">✕</button>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="booth-acc-chip booth-acc-chip--empty" data-action="pick" data-slot-id="${defaultSlotId}" data-category="${category}">
+        <span class="acc-icon">${icon}</span>
+        <div class="acc-body">
+          <span class="acc-role">${escapeHtml(label)}</span>
+          <strong class="acc-add-text">+ Add ${escapeHtml(label)}</strong>
+        </div>
+      </div>
+    `;
+  }
+
   function renderBoothSlot(slot, label, icon, isMain) {
     var item = getSlotItem(slot);
     var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
@@ -937,14 +1124,16 @@
       `;
     }
 
-    var qtyStr = slot.qty > 1 ? ` <span class="booth-qty-badge">x${slot.qty}</span>` : '';
+    var qty = slot.qty || 1;
+    var linePrice = item.price * qty;
+    var qtyStr = qty > 1 ? ` <span class="booth-qty-badge">x${qty}</span>` : '';
 
     return `
       <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
         <div class="booth-card-top">
           <span class="booth-card-role">${icon} ${escapeHtml(label)}${qtyStr}</span>
-          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${item.no_purchase === true ? 'disabled aria-disabled="true"' : ''} title="Toggle already owned">
-            ${isOwned ? '✓ Owned' : '🛒 Need'}
+          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${item.no_purchase === true ? 'disabled aria-disabled="true"' : ''} title="Toggle whether you already own this gear">
+            ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
           </button>
         </div>
         <div class="booth-card-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">
@@ -955,8 +1144,9 @@
             <span class="booth-brand">${escapeHtml(item.brand)}</span>
             <strong class="booth-model">${escapeHtml(item.model)}</strong>
             <span class="booth-price ${isOwned ? 'price--owned' : ''}">
-              ${isOwned ? '<s>$' + (item.price * (slot.qty || 1)) + '</s> (Owned)' : '$' + (item.price * (slot.qty || 1))}
+              ${isOwned ? '<s>$' + linePrice + '</s> <span class="owned-sub">✓ Owned (Saved $' + linePrice + ')</span>' : '$' + linePrice}
             </span>
+            ${item.pack_note ? `<span class="booth-pack-note">${escapeHtml(item.box_label || '')}</span>` : ''}
           </div>
         </div>
         <div class="booth-card-footer">
@@ -999,6 +1189,8 @@
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
 
+    var isCore = ["controllers", "headphones", "speakers", "laptops"].indexOf(slot.category) !== -1 && slot.slotId.indexOf("core-") === 0;
+
     return `
       <tr class="rig-row ${isOwned ? 'rig-row--owned' : ''}">
         <td class="cell-cat">
@@ -1013,6 +1205,7 @@
                 <button type="button" class="btn-item-info" data-action="inspect-item" data-item-id="${item.id}">Specs</button>
               </div>
               <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+              ${item.pack_note ? `<span class="unit-pack-note">${escapeHtml(item.pack_note)}</span>` : ''}
               ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
             </div>
           </div>
@@ -1026,7 +1219,7 @@
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
-            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "🟢 I Own This" : "🔵 Need to Buy")}
+            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
           </button>
         </td>
         <td class="cell-price">
@@ -1044,7 +1237,7 @@
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
             `}
-            <button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>
+            ${!isCore ? `<button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>` : ''}
           </div>
         </td>
       </tr>
