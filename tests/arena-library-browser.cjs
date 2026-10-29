@@ -77,7 +77,7 @@ function visibleCount(page) {
       );
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
-      const guideEntries = index.filter(item => /^[^?]+\\.html$/.test(item.u));
+      const guideEntries = index.filter(item => /^[^?]+\.html$/.test(item.u));
       assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
       for (const entry of guideEntries) {
         assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
@@ -85,7 +85,7 @@ function visibleCount(page) {
         assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
       }
       const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
-      assert.match(krk.title, /KRK Classic 5 \\(Pair\\)/,
+      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
         "buyer search must match the actual Classic 5 catalog product");
       assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
         "buyer search must not advertise a different monitor model");
