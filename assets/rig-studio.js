@@ -1683,7 +1683,7 @@
             '<button type="button" class="rs-btn rs-btn--sm" data-rs="share">' + icon("share") + "Share rig</button>" +
           "</div>" +
         "</div>" +
-        '<p class="rs-shop-note">Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Some merchant links are sponsored affiliate links (such as Amazon and zZounds) — these never change the price you pay. Always verify current pricing, live availability, exact model numbers, and included accessories on the retailer site before ordering.</p>' +
+        '<p class="rs-shop-note">Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Some merchant links are sponsored affiliate links (such as Amazon Associates) — these never change the price you pay. Always verify current pricing, live availability, exact model numbers, and included accessories on the retailer site before ordering.</p>' +
       "</div></section>";
   }
 

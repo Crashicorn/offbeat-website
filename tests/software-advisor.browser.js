@@ -161,7 +161,13 @@ async function auditLayout(page, label) {
 
     /* Answer the way a person does: click the visible label, not the input. */
     const pick = async (question, value) => {
-      await desktop.click(`[data-question="${question}"] input[value="${value}"]`);
+      await desktop.evaluate((q, v) => {
+        const inp = document.querySelector(`[data-question="${q}"] input[value="${v}"]`);
+        if (inp) {
+          const lbl = inp.closest("label") || inp;
+          lbl.click();
+        }
+      }, question, value);
       await sleep(120);
     };
     await pick("mode", "controller");

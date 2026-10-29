@@ -3,7 +3,7 @@ const assert = require("assert");
 
 (async () => {
   const browser = await puppeteer.launch({
-    executablePath: process.env.CHROME_BIN,
+    executablePath: process.env.CHROME_BIN || "/usr/local/bin/chromium",
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"]
   });

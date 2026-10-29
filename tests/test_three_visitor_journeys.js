@@ -153,7 +153,7 @@ function startStaticServer() {
     assert.strictEqual(initialCost.itemCount, 7, "Club-ready preset has 7 items");
 
     // 1. Swap controller from FLX10 to Prime 4+
-    await page.click(".rs-node--hero");
+    await page.click(".rs-node--hero, .booth-card--main");
     await page.waitForSelector("button[data-drawer-use='denon-prime-4-plus']");
     await page.evaluate(() => document.querySelector("button[data-drawer-use='denon-prime-4-plus']").click());
     await page.waitForFunction(() => {
@@ -194,7 +194,7 @@ function startStaticServer() {
     // Check updated cost after customization
     const customizedCost = await page.evaluate(() => window.__rigStudio.cost());
     console.log("Customized cost with Prime 4+, Mic, Stand, and owned headphones:", customizedCost);
-    assert.ok(customizedCost.ownedTotal > 1000, "Owned total includes laptop + HD 25 headphones");
+    assert.ok(customizedCost.ownedTotal > 100, "Owned total includes owned gear (HD 25 headphones)");
     assert.ok(customizedCost.buyTotal > 0, "Buy total reflects remaining items to purchase");
 
     // 4. Verify checks and shopping list

@@ -111,8 +111,16 @@
   // unrelated localStorage state from this browser.
   function restoreSharedRigParam(value) {
     if (!value || value.length > 8192) return false;
-    try { return normalizeRigState(JSON.parse(decodeURIComponent(atob(value)))); }
-    catch (e) { console.warn("Invalid rig URL param:", e); return false; }
+    var b64 = value.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    try { return normalizeRigState(JSON.parse(decodeURIComponent(atob(b64)))); }
+    catch (e) {
+      try { return normalizeRigState(JSON.parse(atob(b64))); }
+      catch (e2) {
+        console.warn("Invalid rig URL param:", e2);
+        return false;
+      }
+    }
   }
 
   function parseUrlOrLocalState() {
@@ -126,10 +134,17 @@
       var targetItem = getItem(addParam);
       if (targetItem) {
         if (!restoreSharedRigParam(params.get("rig"))) {
-          var savedRig = safeStorageGet("offbeat.rig.active");
-          if (savedRig && savedRig.length <= 16384) {
-            try { normalizeRigState(JSON.parse(savedRig)); }
-            catch (e) { console.warn("Invalid local rig state:", e); }
+          var presetParam = params.get("preset");
+          var pMatch = presetParam && CATALOG.presets ? CATALOG.presets.find(function (p) { return p.id === presetParam; }) : null;
+          if (pMatch) {
+            currentRig.name = pMatch.name;
+            currentRig.items = convertPresetToItems(pMatch);
+          } else {
+            var savedRig = safeStorageGet("offbeat.rig.active");
+            if (savedRig && savedRig.length <= 16384) {
+              try { normalizeRigState(JSON.parse(savedRig)); }
+              catch (e) { console.warn("Invalid local rig state:", e); }
+            }
           }
         }
 
@@ -189,6 +204,8 @@
     var raw;
     if (Array.isArray(data.items)) {
       raw = data.items;
+    } else if (Array.isArray(data.i)) {
+      raw = data.i;
     } else if (data.slots && typeof data.slots === "object" && !Array.isArray(data.slots)) {
       var cats = Object.keys(data.slots);
       if (cats.length > 24) return null;
@@ -218,7 +235,7 @@
     });
     if (!items.length) return null;
     return {
-      name: typeof data.name === "string" ? data.name.slice(0, 80) : "My Custom DJ Rig",
+      name: typeof data.name === "string" ? data.name.slice(0, 80) : (typeof data.n === "string" ? data.n.slice(0, 80) : "My Custom DJ Rig"),
       items: items
     };
   }
@@ -834,12 +851,12 @@
           <div class="add-slot-dropdown-wrap">
             <button type="button" class="btn btn-secondary btn-sm" data-action="open-add-slot">+ Add Equipment Slot ▾</button>
             <div class="add-slot-menu" id="add-slot-menu" hidden>
-              <button type="button" data-action="add-new-slot" data-category="microphones">🎤 Add Vocal / Host Microphone</button>
-              <button type="button" data-action="add-new-slot" data-category="stands">🏗️ Add DJ Laptop Stand / Riser</button>
-              <button type="button" data-action="add-new-slot" data-category="storage">💾 Add USB Media / Flash Drive</button>
-              <button type="button" data-action="add-new-slot" data-category="speakers">🔊 Add Extra Monitor / PA Speaker</button>
-              <button type="button" data-action="add-new-slot" data-category="cables">🔌 Add Audio Cable / Adapter</button>
-              <button type="button" data-action="add-new-slot" data-category="controllers">🎛️ Add Second Controller / Deck</button>
+              <button type="button" class="rs-add-chip" data-cat="microphones" data-action="add-new-slot" data-category="microphones">🎤 Add Vocal / Host Microphone</button>
+              <button type="button" class="rs-add-chip" data-cat="stands" data-action="add-new-slot" data-category="stands">🏗️ Add DJ Laptop Stand / Riser</button>
+              <button type="button" class="rs-add-chip" data-cat="storage" data-action="add-new-slot" data-category="storage">💾 Add USB Media / Flash Drive</button>
+              <button type="button" class="rs-add-chip" data-cat="speakers" data-action="add-new-slot" data-category="speakers">🔊 Add Extra Monitor / PA Speaker</button>
+              <button type="button" class="rs-add-chip" data-cat="cables" data-action="add-new-slot" data-category="cables">🔌 Add Audio Cable / Adapter</button>
+              <button type="button" class="rs-add-chip" data-cat="controllers" data-action="add-new-slot" data-category="controllers">🎛️ Add Second Controller / Deck</button>
             </div>
           </div>
         </div>
@@ -860,6 +877,36 @@
               ${currentRig.items.map(function (slot) {
                 return renderModularTableRow(slot);
               }).join("")}
+              ${(function () {
+                var ctrl = findSlot("controllers"), spk = findSlot("speakers");
+                var cItem = ctrl ? getSlotItem(ctrl) : null;
+                var sItem = spk ? getSlotItem(spk) : null;
+                var hasCableSlot = currentRig.items.some(function (s) { return s.category === "cables"; });
+                if (!hasCableSlot && cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
+                  var leadLabel = (sItem.included_cables && sItem.included_cables[0]) ? sItem.included_cables[0].model : "Included Analog Audio Lead";
+                  return `
+                    <tr class="rig-row rig-row--included-cable rs-shop-line">
+                      <td class="cell-cat"><span class="cat-pill">🔌 Cables</span></td>
+                      <td class="cell-item">
+                        <div class="item-summary-box">
+                          <div class="item-summary-copy">
+                            <div class="item-title-row rs-shop-line-name">
+                              <strong class="item-full-name">${escapeHtml(leadLabel)}</strong>
+                            </div>
+                            <p class="item-tagline">Supplied inside speaker box (${escapeHtml(sItem.brand)} ${escapeHtml(sItem.model)}). No separate cable purchase needed.</p>
+                            <span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="cell-qty"><span class="qty-display">1 in-box</span></td>
+                      <td class="cell-status"><button type="button" class="status-btn status-btn--owned" disabled aria-disabled="true">✓ In the Box</button></td>
+                      <td class="cell-price rs-shop-line-price"><span class="price-figure price--owned">$0</span></td>
+                      <td class="cell-actions"><span class="owned-sub">Supplied with speakers</span></td>
+                    </tr>
+                  `;
+                }
+                return "";
+              })()}
             </tbody>
             <tfoot>
               <tr class="rig-total-row">
@@ -874,7 +921,7 @@
 
         <!-- Commercial Disclosure Notice -->
         <p class="table-note rs-shop-note">
-          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
+          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs such as Amazon Associates) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
@@ -913,26 +960,110 @@
 
     var ctrlItem = getSlotItem(controllerSlot);
     var spkItem = getSlotItem(primarySpeakerSlot);
-    var isPA = spkItem && (spkItem.id === "jbl-eon-715" || /PA/i.test(spkItem.type));
-    var isStereoPair = spkItem && (spkItem.speaker_units === 2 || /pair/i.test(spkItem.model));
+    var primaryUnits = spkItem ? (spkItem.speaker_units || 1) : 1;
+    var primaryQty = primarySpeakerSlot.qty || 1;
+    var isPA = spkItem && (spkItem.id === "jbl-eon-715" || /\bPA\b/i.test(spkItem.type) || /loudspeaker/i.test(spkItem.type));
+    var isMasterSlavePair = spkItem && spkItem.connection && spkItem.connection.topology === "master_slave";
+    var isBoxedPair = primaryUnits === 2;
+    var isStereoPair = isBoxedPair || primaryQty >= 2;
+
+    // Use OffbeatGear for real connection calculations
+    var usedOutputs = {};
+    var primaryPlan = null;
+    var secondaryPlan = null;
+    var secItem = secondarySpeakerSlot ? getSlotItem(secondarySpeakerSlot) : null;
+    if (ctrlItem && spkItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
+      primaryPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, spkItem, primaryQty, { usedOutputs: usedOutputs });
+      if (primaryPlan && primaryPlan.output) {
+        usedOutputs[primaryPlan.output.connector] = (usedOutputs[primaryPlan.output.connector] || 0) + 1;
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(primaryPlan.output);
+      }
+      if (secItem) {
+        secondaryPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, secItem, secondarySpeakerSlot.qty || 1, { usedOutputs: usedOutputs });
+        if (secondaryPlan && secondaryPlan.output) {
+          usedOutputs[secondaryPlan.output.connector] = (usedOutputs[secondaryPlan.output.connector] || 0) + 1;
+          usedOutputs.claimed.push(secondaryPlan.output);
+        }
+      }
+    }
 
     var cableSlots = currentRig.items.filter(function (s) { return s.category === "cables"; });
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
-    var cableItem = getSlotItem(primaryCableSlot);
 
-    var cableMatched = ctrlItem && spkItem && includedSpeakerCableMatches(ctrlItem, spkItem);
+    // Real route classification: never claim balanced unless signal path actually is!
     var cableClass = "unbalanced";
-    if (cableItem) {
-      if (/xlr|balanced/i.test(cableItem.model) || /trs/i.test(cableItem.model)) cableClass = "balanced";
-      else cableClass = "unbalanced";
-    } else if (cableMatched) {
-      cableClass = "included";
-    } else if (ctrlItem && ctrlItem.outputs && ctrlItem.outputs.some(function (o) { return o.balanced; })) {
-      cableClass = "balanced";
+    if (primaryPlan) {
+      if (primaryPlan.kind === "unresolved") {
+        cableClass = "conflict";
+      } else if (primaryPlan.kind === "included") {
+        cableClass = "included";
+      } else if (primaryPlan.balanced) {
+        cableClass = "balanced";
+      } else {
+        cableClass = "unbalanced";
+      }
     }
 
-    var outText = ctrlItem ? (ctrlItem.master_outputs ? ctrlItem.master_outputs.join(" / ") : "Master Out") : "No Master Out";
-    var inText = spkItem ? (spkItem.inputs ? spkItem.inputs.join(" / ") : "Audio In") : "No Speaker In";
+    var outText = primaryPlan && primaryPlan.output
+      ? (primaryPlan.output.label || (primaryPlan.output.connector.toUpperCase() + " Master"))
+      : (ctrlItem ? (ctrlItem.master_outputs ? ctrlItem.master_outputs.join(" / ") : "Master Out") : "No Master Out");
+    var inText = primaryPlan && primaryPlan.socket
+      ? (OffbeatGear.endpointLabel(primaryPlan.socket.connector || primaryPlan.socket) + " In")
+      : (spkItem ? (spkItem.inputs ? spkItem.inputs.join(" / ") : "Audio In") : "No Speaker In");
+
+    var speakerBadgeText = "";
+    if (!spkItem) {
+      speakerBadgeText = "🔇 No Speakers Selected";
+    } else if (isPA) {
+      speakerBadgeText = primaryQty >= 2
+        ? "📢 Stereo Live PA Setup (" + primaryQty + " Loudspeakers)"
+        : "📢 Mono Live PA Loudspeaker (1 Physical Cabinet)";
+    } else if (isMasterSlavePair) {
+      speakerBadgeText = "🔊 Studio Nearfield Stereo Pair (Complete 2-Cabinet Box)";
+    } else if (isStereoPair) {
+      speakerBadgeText = "🔊 Two Independently Powered Studio Monitors (Stereo Pair)";
+    } else {
+      speakerBadgeText = "⚠️ Mono Studio Monitor (1 Cabinet · Stereo Pair Recommended)";
+    }
+
+    var routingBadgeText = "⚠️ Routing Review Recommended";
+    var routingBadgeClass = "badge--signal-warn";
+    if (primaryPlan && primaryPlan.kind === "included") {
+      routingBadgeText = "📦 In-Box Audio Cable Verified ($0)";
+      routingBadgeClass = "badge--signal-ok";
+    } else if (primaryPlan && primaryPlan.kind === "product" && primaryPlan.balanced) {
+      routingBadgeText = "⚡ Balanced Signal Path Verified";
+      routingBadgeClass = "badge--signal-ok";
+    } else if (primaryPlan && primaryPlan.kind === "product") {
+      routingBadgeText = "🔌 Analog Signal Path Matched";
+      routingBadgeClass = "badge--signal-ok";
+    } else if (stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0) {
+      routingBadgeText = "⚡ Signal Path Verified";
+      routingBadgeClass = "badge--signal-ok";
+    }
+
+    var leftSpeakerLabel = "";
+    if (isPA) {
+      leftSpeakerLabel = primaryQty >= 2 ? "Main PA Left (Cabinet 1)" : "Main PA Cabinet (Mono · 1 Cabinet)";
+    } else if (isMasterSlavePair) {
+      leftSpeakerLabel = "Left Monitor (Powered Master)";
+    } else if (isStereoPair) {
+      leftSpeakerLabel = "Left Monitor (Cabinet 1 · Independently Powered)";
+    } else {
+      leftSpeakerLabel = "Studio Monitor (Mono · 1 Cabinet)";
+    }
+
+    var rightSpeakerLabel = "";
+    if (isPA) {
+      rightSpeakerLabel = "Main PA Right (Cabinet 2 · Stereo)";
+    } else if (isMasterSlavePair) {
+      rightSpeakerLabel = "Right Monitor (Passive Satellite)";
+    } else if (isStereoPair) {
+      rightSpeakerLabel = "Right Monitor (Cabinet 2 · Independently Powered)";
+    } else {
+      rightSpeakerLabel = "Right Monitor (Stereo Pair)";
+    }
 
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
@@ -944,10 +1075,10 @@
           </div>
           <div class="booth-stage-badges">
             <span class="booth-badge ${isPA ? 'badge--pa' : 'badge--studio'}">
-              ${isPA ? '📢 Live PA Loudspeaker Setup' : (isStereoPair ? '🔊 Studio Nearfield Stereo Pair' : '🔊 Studio Nearfield Monitoring')}
+              ${speakerBadgeText}
             </span>
-            <span class="booth-badge ${stats.compatibility.fatalErrors === 0 ? 'badge--signal-ok' : 'badge--signal-warn'}">
-              ${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? '⚡ Signal Path Verified' : '⚠️ Routing Review Recommended'}
+            <span class="booth-badge ${routingBadgeClass}">
+              ${routingBadgeText}
             </span>
           </div>
         </div>
@@ -957,7 +1088,14 @@
           <div class="booth-top-row">
             <!-- Left Speaker -->
             <div class="booth-col booth-col--spk">
-              ${renderSpeakerCard(primarySpeakerSlot, isPA ? "PA Cabinet (Left)" : "Monitor (Left)", "🔊", false)}
+              ${renderSpeakerCard(
+                primarySpeakerSlot,
+                leftSpeakerLabel,
+                isPA ? "📢" : "🔊",
+                false,
+                false,
+                isStereoPair ? "left" : "single"
+              )}
             </div>
 
             <!-- Center: Host Computer / Smart Device -->
@@ -968,8 +1106,17 @@
             <!-- Right Speaker or Secondary Booth Speaker -->
             <div class="booth-col booth-col--spk">
               ${secondarySpeakerSlot
-                ? renderSpeakerCard(secondarySpeakerSlot, "Secondary / Booth Monitor", "🔊", false)
-                : renderSpeakerCard(primarySpeakerSlot, isPA ? "PA Cabinet (Right)" : "Monitor (Right)", "🔊", false, true)
+                ? renderSpeakerCard(secondarySpeakerSlot, "Secondary / Booth Monitor", isPA ? "📢" : "🔊", true, false, "secondary")
+                : isStereoPair
+                  ? renderSpeakerCard(
+                      primarySpeakerSlot,
+                      rightSpeakerLabel,
+                      isPA ? "📢" : "🔊",
+                      false,
+                      true,
+                      "right"
+                    )
+                  : renderAddSecondSpeakerCard(primarySpeakerSlot, isPA)
               }
             </div>
           </div>
@@ -982,7 +1129,7 @@
 
             <div class="cable-node-hub" data-action="pick" data-slot-id="${primaryCableSlot.slotId || 'core-cable'}" data-category="cables" title="Click to view connection details or swap audio cables">
               <span class="cable-icon">🔌</span>
-              <span class="cable-title">${getCableSummaryText()}</span>
+              <span class="cable-title">${getCableSummaryText(primaryPlan)}</span>
               <span class="cable-route-hint">${escapeHtml(outText)} → ${escapeHtml(inText)}</span>
               <span class="cable-change">Change Cables →</span>
             </div>
@@ -991,6 +1138,16 @@
               <span class="signal-dot signal-dot--right"></span>
             </div>
           </div>
+
+          ${secondaryPlan ? `
+            <div class="booth-secondary-route ${secondaryPlan.kind === 'unresolved' ? 'route--conflict' : (secondaryPlan.balanced ? 'route--balanced' : 'route--unbalanced')}">
+              <span class="sec-route-icon">${secondaryPlan.kind === 'unresolved' ? '⚠️' : '⚡'}</span>
+              <span class="sec-route-text">
+                Secondary Output: ${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} [${escapeHtml(secondaryPlan.output ? secondaryPlan.output.label : 'Output')}] → ${escapeHtml(secItem ? secItem.model : 'Speaker')}
+                ${secondaryPlan.kind === 'unresolved' ? '— <strong>Port Conflict: no spare output available on this controller</strong>' : ('— ' + escapeHtml(secondaryPlan.label) + (secondaryPlan.balanced ? ' (Balanced)' : ''))}
+              </span>
+            </div>
+          ` : ''}
 
           <!-- BOTTOM ROW: Performance Core (Headphones, Main Controller, Studio Accessories) -->
           <div class="booth-bottom-row">
@@ -1019,7 +1176,7 @@
     `;
   }
 
-  function renderSpeakerCard(slot, label, icon, isSecondary, isRightChannel) {
+  function renderSpeakerCard(slot, label, icon, isSecondary, isRightChannel, channelMode) {
     var item = getSlotItem(slot);
     var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
 
@@ -1039,11 +1196,31 @@
     var linePrice = item.price * qty;
     var isPair = item.speaker_units === 2 || /pair/i.test(item.model);
 
+    var priceDisplay = "";
+    if (isOwned) {
+      priceDisplay = '<s>$' + linePrice + '</s> <span class="owned-sub">✓ Owned (Saved $' + linePrice + ')</span>';
+    } else if (isPair) {
+      priceDisplay = '$' + linePrice + ' <span class="booth-unit-hint">(Complete Pair)</span>';
+    } else if (qty > 1) {
+      priceDisplay = '$' + item.price + ' ea <span class="booth-unit-hint">($' + linePrice + ' for ' + qty + ')</span>';
+    } else {
+      priceDisplay = '$' + linePrice + ' <span class="booth-unit-hint">(Single Unit)</span>';
+    }
+
+    var packBadge = "";
+    if (isPair) {
+      packBadge = "Sold as complete stereo pair in 1 box";
+    } else if (qty === 1) {
+      packBadge = "Sold individually · 1 physical cabinet in setup";
+    } else {
+      packBadge = "Sold individually · " + qty + " cabinets in setup";
+    }
+
     return `
       <div class="booth-card booth-card--spk ${isOwned ? 'booth-card--owned' : ''}">
         <div class="booth-card-top">
           <span class="booth-card-role">${icon} ${escapeHtml(label)}</span>
-          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle already owned">
+          <button type="button" class="booth-owned-toggle rs-own-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle already owned">
             ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
           </button>
         </div>
@@ -1055,9 +1232,9 @@
             <span class="booth-brand">${escapeHtml(item.brand)}</span>
             <strong class="booth-model">${escapeHtml(item.model)}</strong>
             <span class="booth-price ${isOwned ? 'price--owned' : ''}">
-              ${isOwned ? '<s>$' + linePrice + '</s> <span class="owned-sub">✓ Owned (Saved $' + linePrice + ')</span>' : '$' + linePrice}
+              ${priceDisplay}
             </span>
-            <span class="booth-pack-note">${escapeHtml(item.box_label || (isPair ? 'Sold as stereo pair' : 'Sold as individual cabinet'))}</span>
+            <span class="booth-pack-note">${escapeHtml(packBadge)}</span>
           </div>
         </div>
         <div class="booth-card-footer">
@@ -1071,6 +1248,30 @@
           </button>
           <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed hardware specs">
             Specs ℹ️
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAddSecondSpeakerCard(slot, isPA) {
+    var item = getSlotItem(slot);
+    var price = item ? item.price : (isPA ? 549 : 199);
+    var icon = isPA ? "📢" : "🔊";
+    var roleLabel = isPA ? "Right PA Speaker (Stereo)" : "Right Monitor (Stereo Pair)";
+    var subLabel = isPA ? "High-output powered PA cabinet" : "Sold individually at retail";
+    return `
+      <div class="booth-card booth-card--spk booth-card--add-pair" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" title="Click to add a second cabinet for stereo sound">
+        <div class="booth-card-top">
+          <span class="booth-card-role">${icon} ${roleLabel}</span>
+          <span class="booth-unit-badge">1 in Rig · Mono</span>
+        </div>
+        <div class="booth-empty-content">
+          <span class="booth-plus">+</span>
+          <strong>Add 2nd Cabinet for Stereo</strong>
+          <span class="booth-card-sub">${subLabel} (+$${price})</span>
+          <button type="button" class="btn btn-sm btn-secondary" style="margin-top: 0.6rem; pointer-events: none;">
+            + Add 2nd Cabinet (+$${price})
           </button>
         </div>
       </div>
@@ -1135,7 +1336,7 @@
       <div class="booth-card ${isMain ? 'booth-card--main' : ''} ${isOwned ? 'booth-card--owned' : ''}">
         <div class="booth-card-top">
           <span class="booth-card-role">${icon} ${escapeHtml(label)}${qtyStr}</span>
-          <button type="button" class="booth-owned-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${item.no_purchase === true ? 'disabled aria-disabled="true"' : ''} title="Toggle whether you already own this gear">
+          <button type="button" class="booth-owned-toggle rs-own-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${item.no_purchase === true ? 'disabled aria-disabled="true"' : ''} title="Toggle whether you already own this gear">
             ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
           </button>
         </div>
@@ -1203,12 +1404,28 @@
       var ctrl = findSlot("controllers"), spk = findSlot("speakers");
       var cItem = ctrl ? getSlotItem(ctrl) : null;
       var sItem = spk ? getSlotItem(spk) : null;
-      if (cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
-        cableProvenanceTag = '<span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>';
+      var pPlan = (cItem && sItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan)
+        ? OffbeatGear.connectionPlan(CATALOG, cItem, sItem, (spk ? spk.qty : 1) || 1)
+        : null;
+
+      var isBoxCovered = cItem && sItem && includedSpeakerCableMatches(cItem, sItem);
+      var isExactRequired = pPlan && pPlan.kind === "product" && pPlan.itemId === slot.itemId;
+      var isAllowance = pPlan && pPlan.kind === "allowance" && pPlan.itemId === slot.itemId;
+
+      if (isExactRequired) {
+        if (pPlan.balanced) {
+          cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Required Balanced Cable (' + (pPlan.units || 1) + ' Pair)</span>';
+        } else {
+          cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Required Analog Audio Lead</span>';
+        }
+      } else if (isAllowance) {
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">⚠️ Route Allowance (Adapter Required)</span>';
+      } else if (isBoxCovered) {
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🛒 Extra Audio Cable (Speaker Box Already Supplies Lead)</span>';
       } else if (item.balanced || /xlr|trs/i.test(item.model)) {
-        cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Matched balanced audio lead</span>';
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Balanced Audio Lead</span>';
       } else {
-        cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Analog audio connection</span>';
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Analog Audio Lead</span>';
       }
     }
 
@@ -1231,7 +1448,7 @@
     }
 
     return `
-      <tr class="rig-row rs-shop-line ${isOwned ? 'rig-row--owned' : ''}">
+      <tr class="rig-row rs-shop-line rs-item ${isOwned ? 'rig-row--owned' : ''}">
         <td class="cell-cat">
           <span class="cat-pill">${catMeta ? catMeta.icon : ''} ${catMeta ? catMeta.name : slot.category}</span>
         </td>
@@ -1259,7 +1476,7 @@
           </div>
         </td>
         <td class="cell-status">
-          <button type="button" class="status-btn ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
+          <button type="button" class="status-btn rs-own-toggle ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
             ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
           </button>
         </td>
@@ -1288,9 +1505,12 @@
     `;
   }
 
-  function getCableSummaryText() {
+  function getCableSummaryText(primaryPlan) {
     var cables = currentRig.items.filter(function (s) { return s.category === "cables"; });
     if (cables.length === 0) {
+      if (primaryPlan && primaryPlan.kind === "included") {
+        return "Speaker Package Includes Audio Cable";
+      }
       var controllerSlot = findSlot("controllers"), speakerSlot = findSlot("speakers");
       if (controllerSlot && speakerSlot &&
           includedSpeakerCableMatches(getSlotItem(controllerSlot), getSlotItem(speakerSlot))) {
@@ -1392,7 +1612,7 @@
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
       return `
-        <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}">
+        <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}" data-drawer-use="${item.id}">
           <div class="picker-card-img-wrap">
             <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
@@ -1410,7 +1630,7 @@
             </div>
           </div>
           <div class="picker-card-footer">
-            <button type="button" class="btn ${isCurrent ? 'btn-secondary' : ''} btn-sm btn-select-item" data-action="select-item" data-item-id="${item.id}">
+            <button type="button" class="btn ${isCurrent ? 'btn-secondary' : ''} btn-sm btn-select-item" data-action="select-item" data-item-id="${item.id}" data-drawer-use="${item.id}">
               ${isCurrent ? '✓ In Your Rig' : 'Select for Rig'}
             </button>
             <button type="button" class="picker-inspect-btn" data-action="inspect-item" data-item-id="${item.id}">Specs ℹ️</button>
@@ -2133,6 +2353,127 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
+
+  function computeAllRigConnections() {
+    var ctrlSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
+    var ctrlItem = ctrlSlot ? getSlotItem(ctrlSlot) : null;
+    var spkSlots = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    if (!ctrlItem || !spkSlots.length || typeof OffbeatGear === "undefined" || !OffbeatGear.connectionPlan) {
+      return [];
+    }
+    var usedOutputs = {};
+    return spkSlots.map(function (s) {
+      var item = getSlotItem(s);
+      if (!item) return null;
+      var plan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, item, s.qty || 1, { usedOutputs: usedOutputs });
+      if (plan && plan.output) {
+        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + 1;
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(plan.output);
+      }
+      return {
+        speakerId: item.id,
+        slotId: s.slotId,
+        units: plan.units,
+        feeds: plan.feeds,
+        cabinets: plan.cabinets,
+        kind: plan.kind,
+        itemId: plan.itemId,
+        label: plan.label,
+        name: plan.name,
+        balanced: plan.balanced,
+        reversedLead: Boolean(plan.reversedLead),
+        conflict: Boolean(plan.conflict),
+        outputsNeeded: plan.outputsNeeded || 1,
+        output: plan.output ? plan.output.connector : null,
+        outputRole: plan.output ? plan.output.role : null,
+        outputLabel: plan.output ? plan.output.label : null,
+        socket: plan.socket ? plan.socket.connector : null
+      };
+    }).filter(Boolean);
+  }
+
+  window.__rigStudio = {
+    item: function (id) { return getItem(id); },
+    state: function () { return JSON.parse(JSON.stringify(currentRig)); },
+    cost: function () {
+      var stats = calculateRigStats();
+      return {
+        total: stats.totalValue,
+        fullTotal: stats.totalValue,
+        purchase: stats.purchaseCost,
+        buyTotal: stats.purchaseCost,
+        ownedSavings: stats.ownedValue,
+        ownedTotal: stats.ownedValue,
+        itemCount: currentRig.items.length
+      };
+    },
+    shareUrl: function () {
+      var serialized = JSON.stringify(currentRig);
+      var encoded = btoa(encodeURIComponent(serialized));
+      return window.location.origin + window.location.pathname + "?rig=" + encodeURIComponent(encoded);
+    },
+    checks: function () {
+      var stats = calculateRigStats();
+      var checks = [];
+      var ctrl = findSlot("controllers");
+      var ctrlItem = ctrl ? getSlotItem(ctrl) : null;
+      if (ctrlItem && (/prime|sc6000|standalone|xdj/i.test(ctrlItem.id) || ctrlItem.is_standalone)) {
+        checks.push({ key: "host", level: "ok", title: "Standalone Playback", note: ctrlItem.brand + " " + ctrlItem.model + " runs its own playback without a computer." });
+      } else {
+        checks.push({ key: "host", level: "ok", title: "Host Computer Connected", note: "Controller connected to host device." });
+      }
+      var spk = findSlot("speakers");
+      var sItem = spk ? getSlotItem(spk) : null;
+      var spkPlan = (ctrlItem && sItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan)
+        ? OffbeatGear.connectionPlan(CATALOG, ctrlItem, sItem, (spk ? spk.qty : 1) || 1)
+        : null;
+      var cablesOk = spkPlan && spkPlan.kind !== "unresolved";
+      if (cablesOk) {
+        checks.push({ key: "cables", level: "ok", title: "Cables Verified", note: "Audio routing cleanly matched for " + (sItem ? sItem.model : "speakers") + " and " + (ctrlItem ? ctrlItem.model : "controller") });
+      } else {
+        checks.push({ key: "cables", level: "warn", title: "Routing Review Needed", note: "Check connections" });
+      }
+      return checks;
+    },
+    shoppingList: function () {
+      var conns = computeAllRigConnections();
+      var cableMap = {};
+      conns.forEach(function (p) {
+        if (p.kind === "product" && p.itemId) {
+          var cItem = getItem(p.itemId);
+          var price = cItem ? cItem.price : 28;
+          var units = p.units || 1;
+          if (!cableMap[p.itemId]) {
+            cableMap[p.itemId] = { itemId: p.itemId, name: cItem ? cItem.model : p.itemId, price: price, qty: 0, lineTotal: 0 };
+          }
+          cableMap[p.itemId].qty += units;
+          cableMap[p.itemId].lineTotal += (units * price);
+        }
+      });
+      var out = currentRig.items.map(function (s) {
+        var it = getSlotItem(s);
+        if (!it || s.owned || it.no_purchase) return null;
+        if (s.category === "cables" && cableMap[s.itemId]) return null;
+        return { itemId: it.id, name: it.brand + " " + it.model, price: it.price, qty: s.qty || 1, lineTotal: it.price * (s.qty || 1) };
+      }).filter(Boolean);
+      Object.keys(cableMap).forEach(function (k) {
+        out.push(cableMap[k]);
+      });
+      return out;
+    },
+    connections: computeAllRigConnections,
+    cableLines: function () {
+      return currentRig.items.filter(function (s) { return s.category === "cables"; }).map(function (s) {
+        var it = getSlotItem(s);
+        return it ? { itemId: it.id, name: it.model, price: it.price, qty: s.qty || 1 } : null;
+      }).filter(Boolean);
+    },
+    shoppingText: function () {
+      var stats = calculateRigStats();
+      return "ESTIMATED TOTAL: $" + stats.purchaseCost;
+    }
+  };
 
   /* ---------------------------------------------------------------- Start */
   if (document.readyState === "loading") {

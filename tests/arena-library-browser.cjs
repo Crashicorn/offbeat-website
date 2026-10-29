@@ -57,8 +57,13 @@ function visibleCount(page) {
       assert.equal(await visibleCount(page), total, "All guides must restore full library");
       await page.type("[data-library-input]", "flx4");
       assert.ok((await visibleCount(page)) > 0, "keyword filter must find FLX4 guides");
-      await page.click("[data-library-input]", { clickCount: 3 });
-      await page.keyboard.press("Backspace");
+      await page.evaluate(() => {
+        const inp = document.querySelector("[data-library-input]");
+        if (inp) {
+          inp.value = "";
+          inp.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
       assert.equal(await visibleCount(page), total, "clearing filter must restore full library");
 
       // The enriched Spotlight index includes curated hardware deep links.

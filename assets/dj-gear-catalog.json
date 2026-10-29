@@ -3,7 +3,7 @@
     "version": "2026.4",
     "updated": "28 October 2026",
     "currency": "USD",
-    "disclosure": "Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping, and availability change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you."
+    "disclosure": "Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping, and availability change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (such as via Amazon Associates) at no extra cost to you."
   },
   "categories": [
     {
@@ -1574,7 +1574,7 @@
       "category": "speakers",
       "brand": "KRK",
       "model": "ROKIT 5 G4",
-      "price": 299,
+      "price": 169,
       "type": "Active Studio Monitor (Single Cabinet)",
       "inputs": [
         "Combo XLR / 1/4\" TRS (Balanced)"
@@ -1594,8 +1594,8 @@
       },
       "included_cables": [],
       "speaker_units": 1,
-      "box_label": "single cabinet (retail ~$169-$179 ea; ~$299 pair planning context)",
-      "pack_note": "Sold as one cabinet at retail (~$169-$179 ea). A stereo pair requires purchasing two units (pair context ~$299-$358). Note: Generation 4 is discontinued at zZounds; Gen 5 is the active replacement at $199 each.",
+      "box_label": "single cabinet (retail ~$169 ea)",
+      "pack_note": "Sold as one cabinet at retail (~$169 ea). A stereo pair requires purchasing two units (pair total $338). Note: Generation 4 is discontinued at zZounds; Gen 5 is the active replacement at $199 each.",
       "driver_size": "5.25-inch Kevlar aramid woofer, 1-inch Kevlar dome tweeter",
       "amplifier": "55 W bi-amped Class-D (35 W low frequency, 20 W high frequency)",
       "frequency_response": "43 Hz – 40 kHz",
@@ -2698,7 +2698,7 @@
       "slots": {
         "controllers": "traktor-kontrol-s2-mk3",
         "headphones": "sony-mdr-7506",
-        "speakers": "krk-rokit-5-g4",
+        "speakers": "krk-classic-5-pair",
         "laptops": "macbook-air-m2",
         "cables": "cable-rca-trs",
         "stands": "laptop-stand-pyle"

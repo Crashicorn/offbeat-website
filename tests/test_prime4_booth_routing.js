@@ -146,25 +146,19 @@ async function runTests() {
       try {
         const page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 900 });
-        await page.goto(`${BASE_URL}/build-your-dj-setup.html?add=denon-prime-4-plus`, { waitUntil: "networkidle0" });
-
-        // Add Line 1: Yamaha HS5
-        await page.evaluate(() => document.querySelector(".rs-add-chip[data-cat=\"speakers\"]").click());
-        await page.waitForSelector("button[data-drawer-use=\"yamaha-hs5\"]");
-        await page.evaluate(() => document.querySelector("button[data-drawer-use=\"yamaha-hs5\"]").click());
-        await new Promise(r => setTimeout(r, 200));
-
-        // Add Line 2: Yamaha HS5 (Booth)
-        await page.evaluate(() => document.querySelector(".rs-add-chip[data-cat=\"speakers\"]").click());
-        await page.waitForSelector("button[data-drawer-use=\"yamaha-hs5\"]");
-        await page.evaluate(() => document.querySelector("button[data-drawer-use=\"yamaha-hs5\"]").click());
-        await new Promise(r => setTimeout(r, 200));
-
-        // Add Line 3: JBL EON 715 (Zone)
-        await page.evaluate(() => document.querySelector(".rs-add-chip[data-cat=\"speakers\"]").click());
-        await page.waitForSelector("button[data-drawer-use=\"jbl-eon-715\"]");
-        await page.evaluate(() => document.querySelector("button[data-drawer-use=\"jbl-eon-715\"]").click());
-        await new Promise(r => setTimeout(r, 200));
+        const encode = (payload) => Buffer.from(JSON.stringify(payload), "utf8").toString("base64")
+          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, category, itemId, qty: 1, owned: false }, extra || {});
+        const url = `${BASE_URL}/build-your-dj-setup.html?rig=${encode({
+          n: "Prime 4+ Multi-Route",
+          i: [
+            slot("ctl", "controllers", "denon-prime-4-plus"),
+            slot("spk1", "speakers", "yamaha-hs5"),
+            slot("spk2", "speakers", "yamaha-hs5"),
+            slot("spk3", "speakers", "jbl-eon-715")
+          ]
+        })}`;
+        await page.goto(url, { waitUntil: "networkidle0" });
 
         const conns = await page.evaluate(() => window.__rigStudio.connections());
         assert.strictEqual(conns.length, 3, "Must have 3 connections planned");

@@ -2545,6 +2545,39 @@ h3.mini {
 .booth-card--spk {
   background: radial-gradient(120% 120% at 50% 0%, rgba(56, 189, 248, .07), var(--panel));
 }
+.booth-card--add-pair {
+  border: 1px dashed rgba(56, 189, 248, .45);
+  background: rgba(56, 189, 248, .03);
+  cursor: pointer;
+}
+.booth-card--add-pair:hover {
+  border-color: rgba(56, 189, 248, .85);
+  background: rgba(56, 189, 248, .08);
+  box-shadow: 0 8px 24px -6px rgba(56, 189, 248, .25);
+  transform: translateY(-2px);
+}
+.booth-unit-badge {
+  font-size: .72rem; font-weight: 700; color: var(--muted);
+  background: rgba(255, 255, 255, .06); padding: .15rem .45rem; border-radius: var(--r-pill);
+}
+.booth-card-sub {
+  font-size: .75rem; color: var(--muted); margin-top: .3rem; text-align: center; display: block;
+}
+.booth-secondary-route {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .5rem .85rem; border-radius: var(--r-sm); font-size: .78rem;
+  background: var(--panel-2); border: 1px solid var(--line); margin-top: .6rem; width: 100%;
+}
+.booth-secondary-route.route--balanced {
+  border-color: rgba(52, 211, 153, .35); color: #6ee7b7;
+}
+.booth-secondary-route.route--unbalanced {
+  border-color: rgba(251, 191, 36, .35); color: #fbbf24;
+}
+.booth-secondary-route.route--conflict {
+  border-color: rgba(248, 113, 113, .45); color: #f87171;
+  background: rgba(248, 113, 113, .07);
+}
 .booth-card--owned {
   border-color: rgba(52, 211, 153, .45);
   background: linear-gradient(180deg, rgba(52, 211, 153, .07), var(--panel));
@@ -2649,6 +2682,10 @@ h3.mini {
   background: linear-gradient(90deg, transparent, rgba(56, 189, 248, .65), transparent);
   box-shadow: 0 0 10px rgba(56, 189, 248, .4);
 }
+.cable-pulse--conflict {
+  background: linear-gradient(90deg, transparent, rgba(248, 113, 113, .65), transparent);
+  box-shadow: 0 0 10px rgba(248, 113, 113, .4);
+}
 .signal-dot {
   position: absolute; top: -3px; width: 9px; height: 9px; border-radius: 50%;
   background: #fff; box-shadow: 0 0 8px #fff;
@@ -2742,6 +2779,7 @@ h3.mini {
 }
 
 .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; border-radius: var(--r-md); border: 1px solid var(--line); }
+tr.rs-item { display: table-row !important; }
 .rig-spec-table { width: 100%; min-width: 680px; border-collapse: collapse; }
 .rig-spec-table th { background: var(--panel-2); color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; padding: .85rem 1rem; text-align: left; }
 .rig-row td { padding: 1rem; vertical-align: middle; border-bottom: 1px solid var(--line); }

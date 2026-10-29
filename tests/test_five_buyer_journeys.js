@@ -58,10 +58,10 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
     const starterCost = await page.evaluate(() => window.__rigStudio.cost());
     const starterConnections = await page.evaluate(() => window.__rigStudio.connections());
 
-    // Bedroom starter has 5 items: FLX4 ($329), HD 25 ($149), DM-40D ($149), Stand ($29), Existing laptop ($999 owned)
-    assert.strictEqual(starterCost.itemCount, 5, "Bedroom Starter preset has 5 items");
-    assert.strictEqual(starterCost.buyTotal, 656, "Bedroom starter buy total is $656 ($329 + $149 + $149 + $29)");
-    assert.strictEqual(starterCost.ownedTotal, 999, "Existing laptop is owned ($999)");
+    // Bedroom starter has 4 items: FLX4 ($299), HD 25 ($149), DM-40D ($149), Existing phone ($0 owned)
+    assert.strictEqual(starterCost.itemCount, 4, "Bedroom Starter preset has 4 items");
+    assert.strictEqual(starterCost.buyTotal, 597, "Bedroom starter buy total is $597 ($299 + $149 + $149 + $0)");
+    assert.strictEqual(starterCost.ownedTotal, 0, "Existing phone is zero purchase ($0)");
 
     // In-box cable check: DM-40D lead feeds FLX4's RCA master in reverse, so 0 cables bought
     assert.strictEqual(starterConnections.length, 1, "One speaker connection");
@@ -73,8 +73,8 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
     const mixtrackCost = await page.evaluate(() => window.__rigStudio.cost());
     const mixtrackConn = await page.evaluate(() => window.__rigStudio.connections());
 
-    // MixTrack Go ($99) replaces FLX4 ($329): buyTotal drops by $230 ($656 - $230 = $426)
-    assert.strictEqual(mixtrackCost.buyTotal, 426, "MixTrack Go bedroom rig costs $426 ($99 + $149 + $149 + $29)");
+    // MixTrack Go ($99) replaces FLX4 ($299): buyTotal drops by $200 ($597 - $200 = $397)
+    assert.strictEqual(mixtrackCost.buyTotal, 397, "MixTrack Go bedroom rig costs $397 ($99 + $149 + $149 + $0)");
     assert.strictEqual(mixtrackConn[0].kind, "included", "MixTrack Go / DM-40D connection uses in-box cable");
     assert.strictEqual(mixtrackConn[0].units, 0, "0 extra cable units charged");
 
@@ -185,7 +185,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
         const price = line.querySelector(".rs-shop-line-price")?.textContent.trim();
         const packaging = line.querySelector(".rs-shop-line-packaging")?.textContent.trim();
         const stockAlert = line.querySelector(".rs-shop-line-stock")?.textContent.trim();
-        const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
+        const retailers = [...line.querySelectorAll(".btn-retail, .rs-retail")].map(r => ({
           text: r.textContent.trim(),
           href: r.getAttribute("href"),
           rel: r.getAttribute("rel"),
@@ -261,7 +261,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
       const line = [...document.querySelectorAll(".rs-shop-line")].find(l => /Prime 4\+/i.test(l.textContent));
       if (!line) return null;
       const stockAlert = line.querySelector(".rs-shop-line-stock")?.textContent.trim();
-      const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
+      const retailers = [...line.querySelectorAll(".btn-retail, .rs-retail")].map(r => ({
         text: r.textContent.trim(),
         href: r.getAttribute("href"),
         status: r.getAttribute("data-status"),
