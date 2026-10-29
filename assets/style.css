@@ -2713,6 +2713,34 @@ h3.mini {
 
 /* PCPartPicker Component Table */
 .rig-table-section { margin: 2.5rem 0; }
+/* Cable provenance tags in shopping list */
+.cable-provenance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  margin-top: 0.25rem;
+  width: fit-content;
+}
+.cable-provenance-tag.prov--included {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.cable-provenance-tag.prov--matched {
+  background: rgba(6, 182, 212, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+.cable-provenance-tag.prov--unbalanced {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
 .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 1rem; border-radius: var(--r-md); border: 1px solid var(--line); }
 .rig-spec-table { width: 100%; min-width: 680px; border-collapse: collapse; }
 .rig-spec-table th { background: var(--panel-2); color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; padding: .85rem 1rem; text-align: left; }

@@ -824,11 +824,12 @@
       </section>
 
       <!-- Itemized PCPartPicker Table -->
-      <section class="rig-table-section">
+      <section class="rig-table-section" id="rs-shop" aria-labelledby="checklist-title">
         <div class="section-head-split">
           <div>
-            <h3>Component Breakdown &amp; Shopping List</h3>
+            <h3 id="checklist-title">Component Breakdown &amp; Shopping List</h3>
             <p>Every piece in your setup with dated 2026 price estimates, quantities, and direct retailer links.</p>
+            <div class="rs-shop-head-total">Estimated Remaining Spend: <b>To buy (est.) $${stats.purchaseCost.toLocaleString()}</b></div>
           </div>
           <div class="add-slot-dropdown-wrap">
             <button type="button" class="btn btn-secondary btn-sm" data-action="open-add-slot">+ Add Equipment Slot ▾</button>
@@ -869,9 +870,11 @@
           </table>
         </div>
 
+        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Offbeat benchmark total: estimated equipment expenditure across verified vendors</div>
+
         <!-- Commercial Disclosure Notice -->
-        <p class="table-note">
-          Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
+        <p class="table-note rs-shop-note">
+          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs like Amazon Associates and zZounds) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
@@ -1169,7 +1172,7 @@
 
     if (!item) {
       return `
-        <tr class="rig-row rig-row--empty">
+        <tr class="rig-row rig-row--empty rs-shop-line">
           <td><span class="cat-pill">${catMeta ? catMeta.icon : ''} ${catMeta ? catMeta.name : slot.category}</span></td>
           <td colspan="4"><span class="empty-slot-msg">No item selected</span></td>
           <td><button type="button" class="btn btn-sm" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Select Component</button></td>
@@ -1182,17 +1185,53 @@
     var dests = (typeof OffbeatGear !== "undefined" && OffbeatGear.itemRetailerDestinations)
       ? OffbeatGear.itemRetailerDestinations(item)
       : null;
-    var zzoundsUrl = (dests && dests.zzounds)
+    var zzoundsUrl = (dests && dests.zzounds && dests.zzounds.url)
       ? dests.zzounds.url
       : "https://www.zzounds.com/prodsearch?q=" + encodeURIComponent(item.brand + " " + item.model);
+    var zzSku = (dests && dests.zzounds && dests.zzounds.sku) ? dests.zzounds.sku : "";
+    var zzStatus = (dests && dests.zzounds && dests.zzounds.status) ? dests.zzounds.status : (zzSku ? "verified_in_stock" : "search_fallback");
+    var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
+
     var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
 
     var isCore = ["controllers", "headphones", "speakers", "laptops"].indexOf(slot.category) !== -1 && slot.slotId.indexOf("core-") === 0;
 
+    var cableProvenanceTag = "";
+    if (slot.category === "cables") {
+      var ctrl = findSlot("controllers"), spk = findSlot("speakers");
+      var cItem = ctrl ? getSlotItem(ctrl) : null;
+      var sItem = spk ? getSlotItem(spk) : null;
+      if (cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>';
+      } else if (item.balanced || /xlr|trs/i.test(item.model)) {
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Matched balanced audio lead</span>';
+      } else {
+        cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Analog audio connection</span>';
+      }
+    }
+
+    var packagingHtml = "";
+    if (item.id === "pioneer-dm40d") {
+      packagingHtml = '<span class="unit-pack-note rs-shop-line-packaging">Sold as complete pair in one retail box · Includes speaker audio cable</span>';
+    } else if (item.id === "yamaha-hs5") {
+      packagingHtml = '<span class="unit-pack-note rs-shop-line-packaging">Sold individually · Need 2 units for stereo pair</span>';
+    } else if (item.id === "jbl-eon-715") {
+      packagingHtml = '<span class="unit-pack-note rs-shop-line-packaging">Sold as single powered PA cabinet</span>';
+    } else if (item.category === "speakers" && item.speaker_units === 1) {
+      packagingHtml = '<span class="unit-pack-note rs-shop-line-packaging">Sold individually (1 cabinet) · Order 2 units for stereo pair</span>';
+    } else if (item.pack_note) {
+      packagingHtml = '<span class="unit-pack-note rs-shop-line-packaging">' + escapeHtml(item.pack_note) + '</span>';
+    }
+
+    var stockAlertHtml = "";
+    if (item.id === "denon-prime-4-plus" || (dests && dests.zzounds && dests.zzounds.status === "verified_unavailable")) {
+      stockAlertHtml = '<span class="stock-alert rs-shop-line-stock" style="display:block; color:#f87171; font-size:0.8rem; margin-top:0.25rem;">Discontinued / Out of stock at zZounds · In-stock alternative: Denon DJ PRIME 4 G2</span>';
+    }
+
     return `
-      <tr class="rig-row ${isOwned ? 'rig-row--owned' : ''}">
+      <tr class="rig-row rs-shop-line ${isOwned ? 'rig-row--owned' : ''}">
         <td class="cell-cat">
           <span class="cat-pill">${catMeta ? catMeta.icon : ''} ${catMeta ? catMeta.name : slot.category}</span>
         </td>
@@ -1200,12 +1239,14 @@
           <div class="item-summary-box">
             <img src="${item.image}" alt="${escapeHtml(item.model)}" class="table-thumb" loading="lazy">
             <div class="item-summary-copy">
-              <div class="item-title-row">
+              <div class="item-title-row rs-shop-line-name">
                 <strong class="item-full-name">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</strong>
                 <button type="button" class="btn-item-info" data-action="inspect-item" data-item-id="${item.id}">Specs</button>
               </div>
               <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
-              ${item.pack_note ? `<span class="unit-pack-note">${escapeHtml(item.pack_note)}</span>` : ''}
+              ${cableProvenanceTag}
+              ${packagingHtml}
+              ${stockAlertHtml}
               ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
             </div>
           </div>
@@ -1223,7 +1264,7 @@
           </button>
         </td>
         <td class="cell-price">
-          <span class="price-figure ${isOwned ? 'price--owned' : ''}">
+          <span class="price-figure rs-shop-line-price ${isOwned ? 'price--owned' : ''}">
             ${isOwned ? '<s>$' + linePrice + '</s>' : '$' + linePrice}
           </span>
           ${isOwned ? '<span class="owned-sub">($0 out of pocket)</span>' : (qty > 1 ? '<span class="unit-sub">($' + item.price + ' ea)</span>' : '')}
@@ -1232,10 +1273,13 @@
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
             ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.id === "existing-mobile-device" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
-            <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" title="Check on zZounds">zZounds ↗</a>
-            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
-            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
-            <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
+            <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
+            ${item.id === "denon-prime-4-plus" ? `
+            <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="verified_in_stock" data-sku="DENPRIME4G2" title="In-stock alternative at zZounds">In-stock alternative: PRIME 4 G2</a>
+            ` : ''}
+            <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon</a>
+            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
+            <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb</a>
             `}
             ${!isCore ? `<button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>` : ''}
           </div>
@@ -1944,6 +1988,22 @@
       if (preset) {
         playClickSfx("preset");
         loadPresetData(preset);
+      }
+    });
+
+    // Educational tier preset buttons click
+    document.addEventListener("click", function (e) {
+      var tierBtn = e.target.closest("[data-tier-preset]");
+      if (!tierBtn) return;
+      var pId = tierBtn.getAttribute("data-tier-preset");
+      var preset = CATALOG.presets.find(function (p) { return p.id === pId; });
+      if (preset) {
+        playClickSfx("preset");
+        loadPresetData(preset);
+        var boothStage = document.getElementById("interactive-booth-stage");
+        if (boothStage && typeof boothStage.scrollIntoView === "function") {
+          boothStage.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
     });
 

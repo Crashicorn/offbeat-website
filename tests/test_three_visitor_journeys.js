@@ -103,6 +103,8 @@ function startStaticServer() {
     await page.click('input[name="sw_mode"][value="standalone"]');
     await page.click('input[name="sw_hardware"][value="xdj_az"]');
     await page.click('input[name="sw_os"][value="macos"]');
+    const toggleRefine = await page.$('[data-swa-toggle-refine]');
+    if (toggleRefine) await toggleRefine.click();
     await page.click('input[name="sw_music"][value="streaming"]');
     await page.click('input[name="sw_budget"][value="free"]');
 

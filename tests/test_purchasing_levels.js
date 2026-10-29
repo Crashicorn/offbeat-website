@@ -8,7 +8,12 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
+let puppeteer;
+try {
+  puppeteer = require(process.env.PUPPETEER_CORE || "puppeteer-core");
+} catch (e) {
+  puppeteer = require("/tmp/browser/node_modules/puppeteer-core");
+}
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080";
 const CHROMIUM_PATH = process.env.CHROMIUM_PATH || "/usr/local/bin/chromium";
@@ -107,7 +112,7 @@ const EVIDENCE_DIR = path.resolve(__dirname, "../evidence/purchasing-levels-2026
         const name = line.querySelector(".rs-shop-line-name strong")?.textContent.trim();
         const price = line.querySelector(".rs-shop-line-price")?.textContent.trim();
         const packaging = line.querySelector(".rs-shop-line-packaging")?.textContent.trim();
-        const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
+        const retailers = [...line.querySelectorAll(".btn-retail, .rs-retail")].map(r => ({
           text: r.textContent.trim(),
           href: r.getAttribute("href"),
           rel: r.getAttribute("rel"),
@@ -192,7 +197,7 @@ const EVIDENCE_DIR = path.resolve(__dirname, "../evidence/purchasing-levels-2026
         const name = line.querySelector(".rs-shop-line-name strong")?.textContent.trim();
         const stockAlert = line.querySelector(".rs-shop-line-stock")?.textContent.trim();
         const packaging = line.querySelector(".rs-shop-line-packaging")?.textContent.trim();
-        const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
+        const retailers = [...line.querySelectorAll(".btn-retail, .rs-retail")].map(r => ({
           text: r.textContent.trim(),
           href: r.getAttribute("href"),
           status: r.getAttribute("data-status"),
@@ -247,7 +252,7 @@ const EVIDENCE_DIR = path.resolve(__dirname, "../evidence/purchasing-levels-2026
       const line = [...document.querySelectorAll(".rs-shop-line")].find(l => /DM-40D/i.test(l.textContent));
       if (!line) return null;
       const packaging = line.querySelector(".rs-shop-line-packaging")?.textContent.trim();
-      const zZounds = line.querySelector(".rs-retail[data-sku='PIODM40D']")?.getAttribute("href");
+      const zZounds = line.querySelector(".btn-retail[data-sku='PIODM40D'], .rs-retail[data-sku='PIODM40D']")?.getAttribute("href");
       return { packaging, zZounds };
     });
 
