@@ -28,10 +28,11 @@ test("FLX4 software and predecessor claims match primary vendor facts", () => {
   faqPairs(html);
   assert.match(html, /Serato DJ Lite already includes basic Stems/);
   assert.match(html, /DDJ-400 also had/);
+  assert.match(html, /DDJ-400 already had Beat FX controls/);
   assert.match(html, /Traktor Play is officially supported/);
   assert.match(html, /compatible computer or supported mobile device/);
   assert.match(html, /separately supplied 9V\/3A power source/);
-  assert.doesNotMatch(html, /DDJ-400 needed external|Serato DJ Pro adds four decks, Stems|laptop is required for every set|\$9\.99\/month/);
+  assert.doesNotMatch(html, /DDJ-400 needed external|Serato DJ Pro adds four decks, Stems|laptop is required for every set|\$9\.99\/month|absent on the DDJ-400|a built-in audio interface, a Beat FX section, and a licence/);
   assert.match(html, /https:\/\/serato\.com\/dj\/lite/);
   assert.match(html, /https:\/\/www\.pioneerdj\.com\/en\/product\/dj-controllers\/ddj-flx4\//);
 });
