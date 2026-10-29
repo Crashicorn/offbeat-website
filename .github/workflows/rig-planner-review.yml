@@ -65,13 +65,14 @@ jobs:
           node --check tests/rig-builder-security.test.js
           node --check tests/rig-builder-browser.cjs
           node --check tests/arena-library-browser.cjs
+          node --check tests/buyer-fact-consistency.test.cjs
       - name: Validate all site pages, links, media, structure and metadata
         run: |
           python3 tools/check_site.py
           python3 tests/check_site_structure.py
           python3 -m py_compile tools/build_index.py
       - name: Execute committed regression suite
-        run: node --test tests/rig-builder-security.test.js tests/beatmatch-cue.test.js
+        run: node --test tests/rig-builder-security.test.js tests/beatmatch-cue.test.js tests/buyer-fact-consistency.test.cjs
       - name: Browser-check real planner, library and trainer at desktop and mobile sizes
         shell: bash
         run: |
