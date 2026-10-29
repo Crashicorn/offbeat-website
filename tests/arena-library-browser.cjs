@@ -79,7 +79,7 @@ function visibleCount(page) {
         "curated hardware deep links must remain in the search index");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
-        (item.title + " " + item.desc + " " + item.category).toLowerCase().includes("dj")
+        (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")
       ).length);
       assert.ok(expected > 0, "curated controller index must have DJ matches");
       const results = await page.$$eval("#qs-results-list .qs-result-item", els => els.length);
@@ -87,6 +87,19 @@ function visibleCount(page) {
       await page.keyboard.press("Escape");
       assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
         "Escape closes Spotlight search");
+      // Visitors search by the curated keyword field, not just guide titles.
+      // A phone visitor also needs a visible tap target to dismiss the modal.
+      await page.keyboard.press("Control+k");
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])");
+      await page.type("#quick-search-input", "pcpartpicker");
+      const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
+        links => links.map(link => link.getAttribute("href")));
+      assert.ok(keywordHits.includes("build-your-dj-setup.html"),
+        "Spotlight must use curated index keywords for rig-planner discovery");
+      await page.click("#qs-close-btn");
+      assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
+        "visible close button must dismiss Spotlight without a keyboard");
+
       if (width < 600) {
         await page.click(".nav-toggle");
       }
