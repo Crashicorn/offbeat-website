@@ -56,8 +56,9 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
         "default must not upsell a separate audio cable");
       const includedLabel = await page.$eval(".cable-title", el => el.textContent.trim());
       assert.match(includedLabel, /Speaker Package Includes Audio Cable/);
-      // First-time buyers must not be assigned an imaginary owned laptop.
-      assert.equal(metrics.spend, "$1,625", "default includes the full $999 laptop but no redundant speaker cable");
+      // Starter assumes a compatible phone already owned, not a forced laptop purchase.
+      assert.equal(metrics.spend, "$597", "starter excludes a new laptop and stand");
+      assert.match(initialAlerts, /Mobile Host, USB Audio and Power Need Verification/);
       const initialOwned = await page.$eval(".metric-val--owned", el => el.textContent.trim());
       assert.match(initialOwned, /\$0$/, "default ownership deduction must be zero");
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
@@ -71,7 +72,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // Every preset button must quote the same full total displayed after
       // selecting it, including host laptop, speakers, cables and accessories.
       const expectedPresets = [
-        ["bedroom-starter", "$1,625"],
+        ["bedroom-starter", "$597"],
         ["club-ready", "$3,230"],
         ["mobile-pro", "$3,052"],
         ["traktor-techno", "$1,780"]
