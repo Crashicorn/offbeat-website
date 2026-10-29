@@ -736,9 +736,13 @@
     }
 
     var linePrice = item.price * qty;
-    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
-    var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
-    var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
+    var dests = (typeof OffbeatGear !== "undefined" && OffbeatGear.itemRetailerDestinations)
+      ? OffbeatGear.itemRetailerDestinations(item)
+      : null;
+    var amazonUrl = (dests && dests.amazon && dests.amazon.url) || ("https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20");
+    var zzoundsUrl = (dests && dests.zzounds && dests.zzounds.url) || ("https://www.zzounds.com/prodsearch?q=" + encodeURIComponent(item.brand + " " + item.model));
+    var sweetwaterUrl = (dests && dests.sweetwater && dests.sweetwater.url) || ("https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model));
+    var reverbUrl = (dests && dests.reverb && dests.reverb.url) || ("https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model));
 
     return `
       <tr class="rig-row ${isOwned ? 'rig-row--owned' : ''}">
@@ -779,8 +783,9 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
-            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
+            <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" title="Check on zZounds">zZounds ↗</a>
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon ↗</a>
+            <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater ↗</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb ↗</a>
             <button type="button" class="btn-del-slot" data-action="remove-slot" data-slot-id="${slot.slotId}" title="Remove this component">✕</button>
           </div>

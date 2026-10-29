@@ -174,41 +174,75 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
     // =========================================================================
     // JOURNEY 5: Visitor purchasing exact products & required accessories
+    // Level 3 (exact product destinations) & Level 4 (packaging, availability & compliance)
     // =========================================================================
-    console.log("\n--- Testing Journey 5: Purchasing Exact Products & Clean Retailers ---");
+    console.log("\n--- Testing Journey 5: Purchasing Exact Products, Packaging & Clean Retailers ---");
     await page.goto(`${BASE_URL}/build-your-dj-setup.html?preset=club-ready`, { waitUntil: "networkidle0" });
 
     const shopDetails = await page.evaluate(() => {
       const lines = [...document.querySelectorAll(".rs-shop-line")].map(line => {
         const name = line.querySelector(".rs-shop-line-name strong")?.textContent.trim();
         const price = line.querySelector(".rs-shop-line-price")?.textContent.trim();
+        const packaging = line.querySelector(".rs-shop-line-packaging")?.textContent.trim();
+        const stockAlert = line.querySelector(".rs-shop-line-stock")?.textContent.trim();
         const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
           text: r.textContent.trim(),
           href: r.getAttribute("href"),
-          rel: r.getAttribute("rel")
+          rel: r.getAttribute("rel"),
+          destType: r.getAttribute("data-destination-type"),
+          status: r.getAttribute("data-status"),
+          sku: r.getAttribute("data-sku")
         }));
         const noLink = line.querySelector(".rs-shop-retailers--none")?.textContent.trim();
-        return { name, price, retailers, noLink };
+        return { name, price, packaging, stockAlert, retailers, noLink };
       });
       const buyTotal = document.querySelector(".rs-shop-head-total b")?.textContent.trim();
-      return { lines, buyTotal };
+      const shopNote = document.querySelector(".rs-shop-note")?.textContent.trim();
+      return { lines, buyTotal, shopNote };
     });
 
     assert.ok(shopDetails.lines.length >= 4, "Shopping list contains hardware and cable lines");
+
+    // Level 3 proof: Exact SKU destinations for club-ready gear
+    const flx10Line = shopDetails.lines.find(l => /DDJ-FLX10/i.test(l.name));
+    assert.ok(flx10Line, "DDJ-FLX10 line present in club-ready shopping list");
+    const flx10Zzounds = flx10Line.retailers.find(r => r.text === "zZounds");
+    assert.ok(flx10Zzounds, "zZounds link present for DDJ-FLX10");
+    assert.strictEqual(flx10Zzounds.href, "https://www.zzounds.com/item--PIODDJFLX10", "DDJ-FLX10 links to exact verified SKU page PIODDJFLX10");
+    assert.strictEqual(flx10Zzounds.destType, "exact", "DDJ-FLX10 flagged with exact destination type");
+
+    const hd25Line = shopDetails.lines.find(l => /HD 25/i.test(l.name));
+    assert.ok(hd25Line, "HD 25 line present in shopping list");
+    const hd25Zzounds = hd25Line.retailers.find(r => r.text === "zZounds");
+    assert.ok(hd25Zzounds, "zZounds link present for HD 25");
+    assert.strictEqual(hd25Zzounds.href, "https://www.zzounds.com/item--SENHD25", "HD 25 links to exact verified SKU page SENHD25");
+
+    // Level 4 proof: Packaging requirements on monitors sold individually (Yamaha HS5)
+    const hs5Line = shopDetails.lines.find(l => /HS5/i.test(l.name));
+    assert.ok(hs5Line, "HS5 line present in shopping list");
+    const hs5Zzounds = hs5Line.retailers.find(r => r.text === "zZounds");
+    assert.ok(hs5Zzounds, "zZounds link present for HS5");
+    assert.strictEqual(hs5Zzounds.href, "https://www.zzounds.com/item--YAMHS5", "HS5 links to exact verified SKU page YAMHS5");
+    assert.ok(hs5Line.packaging, "HS5 line contains packaging notice");
+    assert.ok(/Sold individually/i.test(hs5Line.packaging) && /Need 2 units for stereo pair/i.test(hs5Line.packaging),
+      "HS5 packaging notice clarifies single unit pricing and stereo pair requirement");
+
+    // Level 2 & affiliate compliance checks across all retailer buttons
     shopDetails.lines.forEach(line => {
       if (line.retailers.length) {
         line.retailers.forEach(r => {
           assert.ok(r.href.startsWith("https://"), `Retailer link is secure https: ${r.href}`);
           assert.ok(r.rel.includes("noopener"), `Retailer link includes noopener: ${r.rel}`);
-          if (r.text === "Amazon") {
+          if (r.text.includes("Amazon")) {
             assert.ok(r.href.includes("tag=offbeatdj-20"), "Amazon link uses approved offbeatdj-20 affiliate tag");
             assert.ok(r.rel.includes("sponsored"), "Amazon sponsored rel present");
           }
-          if (r.text === "zZounds") {
-            assert.ok(r.href.includes("zzounds.com/itemsearch"), "zZounds link targets itemsearch");
+          if (r.text.startsWith("zZounds")) {
+            assert.ok(r.href.includes("zzounds.com/item--") || r.href.includes("zzounds.com/prodsearch"),
+              `zZounds link targets exact product page or working prodsearch: ${r.href}`);
             assert.ok(r.rel.includes("sponsored"), "zZounds sponsored rel present");
           }
-          if (r.text === "Sweetwater") {
+          if (r.text.includes("Sweetwater")) {
             assert.ok(r.href.includes("sweetwater.com/store/search"), "Sweetwater link targets search");
             assert.ok(!r.href.includes("tag=") && !r.href.includes("partner="), "Sweetwater does not invent unapproved affiliate tags");
           }
@@ -216,7 +250,68 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
       }
     });
 
-    console.log("✓ Journey 5 passed: clean retailer destinations, verified affiliate tags, and secure shopping links verified.");
+    // Affiliate disclosure compliance: no stale prices labeled as live merchant quotes
+    assert.ok(/planning estimates.*not real-time merchant quotes/i.test(shopDetails.shopNote),
+      "Shopping note clearly separates Offbeat benchmark estimates from live merchant quotes");
+
+    // Level 4 proof: Unavailable hardware listing & alternative routing (PRIME 4+)
+    console.log("  * Testing Level 4 availability proof on discontinued PRIME 4+...");
+    await page.goto(`${BASE_URL}/build-your-dj-setup.html?preset=mobile-pro`, { waitUntil: "networkidle0" });
+    const prime4pShop = await page.evaluate(() => {
+      const line = [...document.querySelectorAll(".rs-shop-line")].find(l => /Prime 4\+/i.test(l.textContent));
+      if (!line) return null;
+      const stockAlert = line.querySelector(".rs-shop-line-stock")?.textContent.trim();
+      const retailers = [...line.querySelectorAll(".rs-retail")].map(r => ({
+        text: r.textContent.trim(),
+        href: r.getAttribute("href"),
+        status: r.getAttribute("data-status"),
+        sku: r.getAttribute("data-sku")
+      }));
+      return { stockAlert, retailers };
+    });
+
+    assert.ok(prime4pShop, "PRIME 4+ line found in shopping list");
+    assert.ok(/Discontinued \/ Out of stock at zZounds/i.test(prime4pShop.stockAlert),
+      "Discontinued notice displayed on PRIME 4+ shopping line");
+    assert.ok(/In-stock alternative: Denon DJ PRIME 4 G2/i.test(prime4pShop.stockAlert),
+      "Alternative recommendation displayed on PRIME 4+ shopping line");
+
+    const prime4pZzounds = prime4pShop.retailers.find(r => r.status === "verified_unavailable");
+    assert.ok(prime4pZzounds, "Unavailable zZounds link present for PRIME 4+");
+    assert.strictEqual(prime4pZzounds.href, "https://www.zzounds.com/item--DENPRIME4PLUS", "Discontinued page targeted");
+
+    const prime4pAlt = prime4pShop.retailers.find(r => r.text.includes("PRIME 4 G2"));
+    assert.ok(prime4pAlt, "Alternative link for PRIME 4 G2 present on shopping line");
+    assert.strictEqual(prime4pAlt.href, "https://www.zzounds.com/item--DENPRIME4G2", "Alternative links directly to PRIME 4 G2 (DENPRIME4G2)");
+    assert.strictEqual(prime4pAlt.status, "verified_in_stock", "Alternative flagged as in stock");
+
+    // Level 3 verified SKUs proof across all major 2026 hardware models
+    console.log("  * Verifying Level 3 exact catalog destinations for 2026 core hardware...");
+    const verifiedHardwareSKUs = await page.evaluate(() => {
+      const items = ["pioneer-ddj-flx4", "denon-prime-4-g2", "rane-system-one", "numark-mixtrack-go", "numark-party-mix-3", "alphatheta-xdj-az"];
+      return items.map(id => {
+        const item = window.__rigStudio.item(id);
+        const dests = window.OffbeatGear.itemRetailerDestinations(item);
+        return { id, sku: dests?.zzounds?.sku, url: dests?.zzounds?.url, status: dests?.zzounds?.status };
+      });
+    });
+
+    const expectedSKUs = {
+      "pioneer-ddj-flx4": "PIODDJFLX4",
+      "denon-prime-4-g2": "DENPRIME4G2",
+      "rane-system-one": "RNESYSTEMONE",
+      "numark-mixtrack-go": "NUMMIXTRACKGO",
+      "numark-party-mix-3": "NUMPARTYMIXIII",
+      "alphatheta-xdj-az": "APTXDJAZ"
+    };
+
+    verifiedHardwareSKUs.forEach(hw => {
+      assert.strictEqual(hw.sku, expectedSKUs[hw.id], `Hardware ${hw.id} has exact SKU ${expectedSKUs[hw.id]}`);
+      assert.strictEqual(hw.url, `https://www.zzounds.com/item--${expectedSKUs[hw.id]}`, `Hardware ${hw.id} URL is exact`);
+      assert.strictEqual(hw.status, "verified_in_stock", `Hardware ${hw.id} status is verified_in_stock`);
+    });
+
+    console.log("✓ Journey 5 passed: Level 3 exact destinations, Level 4 packaging & availability routing, and clean retailer disclosures verified.");
 
     assert.strictEqual(consoleErrors.length, 0, `No console errors encountered: ${consoleErrors.join("; ")}`);
     console.log("\nALL FIVE BUYER JOURNEYS VALIDATED AND PASSING 100%!");

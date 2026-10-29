@@ -2519,6 +2519,8 @@ h3.mini {
   padding: .3rem .6rem; font-size: .78rem; font-weight: 600; border-radius: var(--r-xs);
   text-decoration: none; display: inline-flex; align-items: center; transition: all .15s ease;
 }
+.btn-retail--zz { background: rgba(52, 211, 153, .15); border: 1px solid rgba(52, 211, 153, .4); color: #6ee7b7 !important; }
+.btn-retail--zz:hover { background: rgba(52, 211, 153, .3); color: #fff !important; text-decoration: none; }
 .btn-retail--amz { background: rgba(255, 153, 0, .15); border: 1px solid rgba(255, 153, 0, .4); color: #ffb84d !important; }
 .btn-retail--amz:hover { background: rgba(255, 153, 0, .3); color: #fff !important; text-decoration: none; }
 .btn-retail--sw { background: rgba(0, 102, 204, .18); border: 1px solid rgba(0, 102, 204, .4); color: #80bfff !important; }

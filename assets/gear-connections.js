@@ -415,6 +415,100 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   return plan;
 }
 
+function itemRetailerDestinations(item) {
+  if (!item || isEstimateItem(item)) return null;
+  var dests = item.retailer_destinations || {};
+  var brandModel = (item.brand ? item.brand + " " : "") + (item.model || "");
+  var qAmazon = encodeURIComponent(item.amazon_search || brandModel);
+  var qPlain = encodeURIComponent(brandModel);
+
+  var zz = dests.zzounds || {};
+  var zzSku = zz.sku || null;
+  var zzStatus = zz.status || (zzSku ? "verified_in_stock" : "search_fallback");
+  var zzType = zz.type || (zzSku ? "exact" : "search_fallback");
+  var zzUrl = zz.url || (zzSku ? "https://www.zzounds.com/item--" + zzSku : "https://www.zzounds.com/prodsearch?q=" + qPlain);
+
+  var soldAs = zz.sold_as || (item.category === "speakers" ? (item.speaker_units === 1 ? "unit" : "pair") : "unit");
+  var requiresPair = Boolean(zz.requires_pair_qty !== undefined ? zz.requires_pair_qty : (item.category === "speakers" && (item.id === "yamaha-hs5" || item.speaker_units === 1)));
+
+  return {
+    zzounds: {
+      sku: zzSku,
+      url: zzUrl,
+      status: zzStatus,
+      type: zzType,
+      sold_as: soldAs,
+      requires_pair_qty: requiresPair,
+      quantity_note: zz.quantity_note || null,
+      alternative_sku: zz.alternative_sku || null,
+      alternative_url: zz.alternative_url || null,
+      alternative_name: zz.alternative_name || null,
+      note: zz.note || null
+    },
+    amazon: {
+      url: (dests.amazon && dests.amazon.url) || ("https://www.amazon.com/s?k=" + qAmazon + "&tag=offbeatdj-20"),
+      affiliate_tag: "offbeatdj-20",
+      status: (dests.amazon && dests.amazon.status) || "verified_search",
+      type: "search"
+    },
+    sweetwater: {
+      url: (dests.sweetwater && dests.sweetwater.url) || ("https://www.sweetwater.com/store/search?s=" + qPlain),
+      status: "search_fallback",
+      type: "search"
+    },
+    reverb: {
+      url: (dests.reverb && dests.reverb.url) || ("https://reverb.com/marketplace?query=" + qPlain),
+      status: "search_fallback",
+      type: "search"
+    }
+  };
+}
+
+function speakerPackagingInfo(item) {
+  if (!item || item.category !== "speakers") return null;
+  var isPair = item.speaker_units === 2 && (!item.box_label || item.box_label.indexOf("single") === -1);
+  if (item.id === "yamaha-hs5") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: true,
+      note: "Sold individually at retailers (MPN: HS5, ~$199 each). Need 2 units for stereo pair ($398 total)."
+    };
+  }
+  if (item.id === "krk-rokit-5-g4") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: true,
+      note: "Sold individually at retailers. Need 2 units for stereo pair (G4 discontinued at zZounds; Gen 5 is active)."
+    };
+  }
+  if (item.id === "jbl-eon-715") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: false,
+      note: "Sold as single powered PA cabinet."
+    };
+  }
+  if (item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d") {
+    return {
+      sold_as: "pair",
+      requires_pair_qty: false,
+      note: "Sold as complete pair in one retail box (active left + passive right)."
+    };
+  }
+  if (item.id === "krk-classic-5-pair") {
+    return {
+      sold_as: "pair",
+      requires_pair_qty: false,
+      note: "Sold as complete pair (monitor pack with 2 cabinets)."
+    };
+  }
+  return {
+    sold_as: isPair ? "pair" : "unit",
+    requires_pair_qty: !isPair,
+    note: isPair ? "Sold as complete pair in one box." : "Sold as single cabinet."
+  };
+}
+
   root.OffbeatGear = {
     CONNECTOR_LABEL: CONNECTOR_LABEL,
     endpointLabel: endpointLabel,
@@ -434,6 +528,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
     leadOrientations: leadOrientations,
     describeOutputs: describeOutputs,
     outputCapacity: outputCapacity,
-    connectionPlan: connectionPlan
+    connectionPlan: connectionPlan,
+    itemRetailerDestinations: itemRetailerDestinations,
+    speakerPackagingInfo: speakerPackagingInfo
   };
 })(typeof window !== "undefined" ? window : this);

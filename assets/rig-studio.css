@@ -835,6 +835,8 @@
 .rs-shop-line-name { min-width: 0; }
 .rs-shop-line-name strong { color: #fff; font-weight: 600; display: block; font-size: .87rem; }
 .rs-shop-line-name span { font-size: .74rem; color: var(--muted-2); }
+.rs-shop-line-packaging { display: block; margin-top: .22rem; font-size: .72rem; color: #a7f3d0; line-height: 1.4; }
+.rs-shop-line-stock--unavailable { display: block; margin-top: .22rem; font-size: .72rem; color: #fca5a5; line-height: 1.4; }
 .rs-shop-line-price { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); white-space: nowrap; }
 .rs-shop-retailers { display: flex; gap: .3rem; flex-wrap: wrap; }
 .rs-retail {
@@ -847,6 +849,11 @@
   white-space: nowrap;
 }
 .rs-retail:hover { background: rgba(139, 92, 246, .2); border-color: var(--line-accent); color: #fff; text-decoration: none; }
+.rs-retail--exact { border-color: rgba(52, 211, 153, .35); color: #a7f3d0; }
+.rs-retail--exact:hover { background: rgba(52, 211, 153, .18); border-color: #34d399; color: #fff; }
+.rs-retail--unavailable { border-color: rgba(248, 113, 113, .35); color: #fca5a5; text-decoration: line-through; opacity: .75; }
+.rs-retail--alt { border-color: rgba(167, 139, 250, .45); color: #c4b5fd; background: rgba(139, 92, 246, .12); }
+.rs-retail--alt:hover { background: rgba(139, 92, 246, .28); border-color: #a78bfa; color: #fff; text-decoration: none; }
 .rs-shop-foot {
   display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
   padding: .85rem 1rem;
