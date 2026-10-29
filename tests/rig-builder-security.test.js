@@ -432,10 +432,11 @@ test("FLX4 mobile host is conditional and never validates other USB-only control
     { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1 },
     { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
     { slotId: "s", category: "speakers", itemId: "pioneer-dm40d", qty: 1 },
-    { slotId: "m", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: false }
+    { slotId: "m", category: "laptops", itemId: "existing-mobile-device", qty: 4, owned: false }
   ];
   assert.equal(api.normalizeRigState({ items }), true);
   assert.equal(api.getRig().items[3].owned, true, "a zero-cost placeholder cannot be sold as a phone");
+  assert.equal(api.getRig().items[3].qty, 1, "shared links cannot add four free existing devices");
   const mobile = api.runDeepCompatibilityChecks();
   assert.equal(mobile.fatalErrors, 0);
   assert.ok(mobile.warnings > 0, "software, power and audio must be verified");
