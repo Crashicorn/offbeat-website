@@ -89,7 +89,7 @@ function visibleCount(page) {
         "Escape closes Spotlight search");
       // Visitors search by the curated keyword field, not just guide titles.
       // A phone visitor also needs a visible tap target to dismiss the modal.
-      await page.keyboard.press("Control+k");
+      await page.click("[data-search-open]");
       await page.waitForSelector("#quick-search-backdrop:not([hidden])");
       await page.type("#quick-search-input", "pcpartpicker");
       const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
