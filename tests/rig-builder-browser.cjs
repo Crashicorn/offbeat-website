@@ -88,6 +88,28 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       console.log("PASS: " + width + "px real catalog/render/owned-budget/no-overflow");
     }
 
+    // A cheaper FLX2 with an already-owned compatible phone must not be
+    // falsely rejected or force a laptop purchase. Verify real mobile DOM.
+    const flx2Mobile = {
+      name: "FLX2 mobile starter",
+      items: [
+        { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx2", qty: 1, owned: false },
+        { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false },
+        { slotId: "s", category: "speakers", itemId: "pioneer-dm40d", qty: 1, owned: false },
+        { slotId: "m", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+      ]
+    };
+    const flx2Query = "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(flx2Mobile)), "binary").toString("base64")
+    );
+    const flx2Visit = await visit(browser, 390, flx2Query);
+    const flx2Alerts = await flx2Visit.page.$eval(".compat-items-grid", el => el.textContent);
+    assert.equal(flx2Visit.metrics.spend, "$497", "FLX2 mobile route does not force a laptop");
+    assert.match(flx2Alerts, /FLX2 Mobile Host, USB Audio and Power Need Verification/);
+    assert.match(flx2Alerts, /some Android devices cannot/);
+    assert.doesNotMatch(flx2Alerts, /Mobile Host Not Verified for This Controller/);
+    await flx2Visit.context.close();
+
     // Accessories-only shared rigs must never show a green "Preliminary Match".
     const noController = {
       name: "Accessory-only rig",
