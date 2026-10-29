@@ -105,7 +105,7 @@ jobs:
             if curl -fsS http://127.0.0.1:8099/all-dj-guides.html -o /dev/null; then break; fi
             sleep 0.25
           done
-          CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs
+          CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
       - name: Browser-check beatmatch trainer
         shell: bash
@@ -120,4 +120,4 @@ jobs:
             if curl -fsS http://127.0.0.1:8099/beatmatch-trainer.html -o /dev/null; then break; fi
             sleep 0.25
           done
-          CHROME_BIN="$CHROME_BIN" node tests/test_trainer_e2e.js
+          CHROME_BIN="$CHROME_BIN" node tests/test_trainer_e2e.js 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
