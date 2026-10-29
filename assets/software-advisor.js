@@ -549,7 +549,10 @@
   }
 
   function renderQuestions() {
-    form.innerHTML = DATA.questions.map(function (item) {
+    var hasRefine = !!(answers.music || answers.budget || answers.scene || (answers.needs && answers.needs.length));
+    var html = "";
+
+    DATA.questions.forEach(function (item, idx) {
       var current = answers[item.id];
       var options = item.options.map(function (option) {
         var checked = item.multi ? current.indexOf(option.value) !== -1 : current === option.value;
@@ -558,11 +561,26 @@
           (checked ? " checked" : "") + ">" +
           "<span>" + esc(option.label) + "</span></label>";
       }).join("");
-      return '<fieldset class="swa-question" data-question="' + item.id + '">' +
+
+      var fieldset = '<fieldset class="swa-question" data-question="' + item.id + '">' +
         "<legend>" + esc(item.label) + "</legend>" +
         '<p class="swa-help">' + esc(item.help) + "</p>" +
         '<div class="swa-options">' + options + "</div></fieldset>";
-    }).join("");
+
+      if (idx === 3) {
+        html += '<div class="swa-refine-header">' +
+          '<button type="button" class="swa-refine-toggle" data-swa-toggle-refine aria-expanded="' + (hasRefine ? 'true' : 'false') + '">' +
+          '<span>' + (hasRefine ? '⚙️ Hide optional filters' : '⚙️ Fine-tune: music source, budget, DVS & features (+4 optional)') + '</span>' +
+          '</button></div>' +
+          '<div class="swa-refine-panel' + (hasRefine ? ' is-open' : '') + '" data-swa-refine-panel>';
+      }
+      html += fieldset;
+    });
+
+    if (DATA.questions.length > 3) {
+      html += '</div>';
+    }
+    form.innerHTML = html;
   }
 
   function priceLine(result) {
@@ -751,6 +769,20 @@
     syncFromDom();
     writeUrl();
     render();
+  });
+
+  form.addEventListener("click", function (e) {
+    var toggle = e.target.closest("[data-swa-toggle-refine]");
+    if (toggle) {
+      var panel = form.querySelector("[data-swa-refine-panel]");
+      if (panel) {
+        var isOpen = panel.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        toggle.querySelector("span").textContent = isOpen ?
+          "⚙️ Hide optional filters" :
+          "⚙️ Fine-tune: music source, budget, DVS & features (+4 optional)";
+      }
+    }
   });
 
   if (resetBtn) {
