@@ -521,7 +521,7 @@
           checks.push({
             type: "error", statusLevel: "incompatible",
             title: "Mobile Host Not Verified for This Controller",
-            desc: "This existing-phone option is qualified only for a conditional DDJ-FLX4 route. " +
+            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4 or DDJ-FLX2 routes. " +
               "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
             fixSlotId: laptopSlot ? laptopSlot.slotId : null,
             fixItemId: "macbook-air-m2",
