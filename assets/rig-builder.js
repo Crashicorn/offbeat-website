@@ -517,11 +517,29 @@
             fixCableId: null
           });
           warnings++;
+        } else if (controller.id === "alphatheta-ddj-grv6") {
+          // AlphaTheta confirms mobile rekordbox support, but only decks 1
+          // and 2 work on iOS/Android. No Bluetooth; USB-C and sufficient
+          // power are required. Do not reject a real two-deck mobile route
+          // or imply the desktop four-deck workflow transfers to a phone.
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "GRV6 Mobile: Two Decks Only, USB-C and Power Required",
+            desc: "DDJ-GRV6 supports rekordbox for iOS/Android, but mobile playback " +
+              "is limited to channels 1 and 2, not all four hardware channels. " +
+              "The controller has no Bluetooth connection. Confirm a compatible " +
+              "phone/tablet, USB-C data/audio routing and adequate power " +
+              "(9V/3A adapter or a suitable 5V/1.5A USB host). " +
+              "External power accessories are not included in this estimate. " +
+              "Use a compatible computer for the full four-deck workflow.",
+            fixCableId: null
+          });
+          warnings++;
         } else {
           checks.push({
             type: "error", statusLevel: "incompatible",
             title: "Mobile Host Not Verified for This Controller",
-            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4 or DDJ-FLX2 routes. " +
+            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4, DDJ-FLX2, or DDJ-GRV6 routes. " +
               "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
             fixSlotId: laptopSlot ? laptopSlot.slotId : null,
             fixItemId: "macbook-air-m2",
