@@ -733,3 +733,40 @@ test("manufacturer-supplied DM-40D lead connects FLX2 and FLX4 without another p
     "existing optional cable must remain in the rig but be flagged");
   assert.equal(api.getRig().items.length, 3, "do not delete user-selected equipment");
 });
+
+// Real catalog and executed compatibility verdict: the GRV6 mobile path is
+// valid but limited to two decks, while unrelated controllers stay blocked.
+test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  const prime = catalog.items.find(item => item.id === "denon-prime-4-plus");
+  assert.deepEqual(prime.master_outputs, [
+    "XLR (Balanced)", "RCA (Unbalanced)", "Booth XLR (Balanced)", "Zone XLR (Balanced)"
+  ]);
+  assert.equal(prime.spec_source, "https://www.denondj.com/prime-4-plus");
+  const grv = catalog.items.find(item => item.id === "alphatheta-ddj-grv6");
+  assert.match(grv.spec_source, /pioneerdj\\.com.*ddj-grv6/);
+
+  const { api } = harness(false);
+  api.setCatalog(catalog);
+  const rig = { name: "GRV6 phone route", items: [
+    { slotId: "ctrl", category: "controllers", itemId: "alphatheta-ddj-grv6", qty: 1, owned: false },
+    { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
+    { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+  ] };
+  assert.equal(api.normalizeRigState(rig), true);
+  const result = api.runDeepCompatibilityChecks();
+  assert.equal(result.fatalErrors, 0, "official GRV6 mobile route must not be falsely blocked");
+  const mobile = result.checks.find(check => /GRV6 Mobile/.test(check.title));
+  assert.ok(mobile, "limited mobile route must remain visible");
+  assert.equal(mobile.type, "warning");
+  assert.match(mobile.desc, /channels 1 and 2/);
+  assert.match(mobile.desc, /no Bluetooth/);
+  assert.match(mobile.desc, /9V\\/3A/);
+  assert.ok(result.warnings > 0, "mobile mode must not be labelled fully verified");
+
+  rig.items[0].itemId = "pioneer-ddj-flx10";
+  assert.equal(api.normalizeRigState(rig), true);
+  const unsupported = api.runDeepCompatibilityChecks();
+  assert.ok(unsupported.fatalErrors > 0, "unverified controller mobile route remains fail-closed");
+  assert.ok(unsupported.checks.some(check => check.title === "Mobile Host Not Verified for This Controller"));
+});
