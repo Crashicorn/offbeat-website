@@ -1566,10 +1566,12 @@
 
   function retailerLinks(item) {
     var q = encodeURIComponent(item.amazon_search || (item.brand + " " + item.model));
+    var qPlain = encodeURIComponent(item.brand + " " + item.model);
     return '<span class="rs-shop-retailers">' +
-      '<a class="rs-retail" href="https://www.amazon.com/s?k=' + q + '&tag=offbeatdj-20" rel="nofollow sponsored noopener" target="_blank">Amazon</a>' +
-      '<a class="rs-retail" href="https://www.sweetwater.com/store/search?s=' + q + '" rel="nofollow noopener" target="_blank">Sweetwater</a>' +
-      '<a class="rs-retail" href="https://reverb.com/marketplace?query=' + q + '" rel="nofollow noopener" target="_blank">Reverb</a>' +
+      '<a class="rs-retail rs-retail--amazon" href="https://www.amazon.com/s?k=' + q + '&tag=offbeatdj-20" rel="nofollow sponsored noopener" target="_blank">Amazon</a>' +
+      '<a class="rs-retail rs-retail--zzounds" href="https://www.zzounds.com/itemsearch?form=search&q=' + qPlain + '" rel="nofollow sponsored noopener" target="_blank">zZounds</a>' +
+      '<a class="rs-retail rs-retail--sweetwater" href="https://www.sweetwater.com/store/search?s=' + qPlain + '" rel="nofollow noopener" target="_blank">Sweetwater</a>' +
+      '<a class="rs-retail rs-retail--reverb" href="https://reverb.com/marketplace?query=' + qPlain + '" rel="nofollow noopener" target="_blank">Reverb</a>' +
     "</span>";
   }
 
@@ -2912,6 +2914,15 @@
       }
     }
 
+    if (preset) {
+      var p = presets().filter(function (x) { return x.id === preset; })[0];
+      if (p) {
+        state.name = p.name;
+        state.items = presetItems(p);
+        state.view = "studio";
+      }
+    }
+
     if (add) {
       var item = byId(add);
       if (item) {
@@ -2949,14 +2960,8 @@
       }
     }
 
-    if (preset) {
-      var p = presets().filter(function (x) { return x.id === preset; })[0];
-      if (p) {
-        state.name = p.name;
-        state.items = presetItems(p);
-        state.view = "studio";
-        return true;
-      }
+    if (preset && state.items.length) {
+      return true;
     }
 
     if (start === "guide") {

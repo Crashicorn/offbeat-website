@@ -583,9 +583,9 @@
       "channels": 4,
       "software_unlocks": [
         "Engine DJ 5.0 Standalone",
-        "Serato DJ Pro",
-        "VirtualDJ"
+        "Engine Lighting (SoundSwitch DMX)"
       ],
+      "software_notes": "Operates standalone with Engine DJ 5.0 and native SoundSwitch DMX lighting. Computer-mode controller support for Serato DJ Pro, Algoriddim djay, and VirtualDJ is anticipated in future updates, not currently available at launch (unlike PRIME 4+ which unlocks Serato DJ Pro today).",
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
@@ -595,8 +595,8 @@
       "headphone_jack": "1/4\" and 3.5mm",
       "standalone": true,
       "stems_support": true,
-      "ideal_for": "Event pros, mobile DJs, and creative performers requiring onboard Stems rendering, 8\" jogs, and direct DMX lighting",
-      "tagline": "Next-generation 4-deck standalone system with onboard Stems rendering, MPCe 3D pads, and built-in 3-pin DMX output.",
+      "ideal_for": "Event pros, mobile DJs, and creative performers requiring standalone onboard Stems rendering, 8\" jogs, and direct DMX lighting without a laptop",
+      "tagline": "Next-generation 4-deck standalone system with onboard Stems rendering, MPCe 3D pads, and built-in 3-pin DMX output (Engine DJ OS standalone; computer mode anticipated in future updates).",
       "image": "assets/img/products/denon-prime-4-g2.svg",
       "slug": "xdj-az-vs-denon-prime-4-plus.html",
       "amazon_search": "Denon DJ Prime 4 G2 Standalone DJ System",
@@ -646,8 +646,10 @@
       "channels": 2,
       "software_unlocks": [
         "Engine DJ 5.0 Standalone",
-        "Serato DJ Pro (Hardware Unlock)"
+        "Serato DJ Pro (Hardware Unlock)",
+        "Algoriddim djay Pro (Engine DJ 5.2.0+)"
       ],
+      "software_notes": "Serato DJ Pro requires Engine DJ 4.6.0+ and Serato DJ Pro 4.0.3+ (includes Serato Pitch 'n Time download card with serial number). Algoriddim djay Pro requires Engine DJ 5.2.0 and djay Pro 5.6.9. VirtualDJ support is anticipated in a future update.",
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
@@ -657,7 +659,7 @@
       "standalone": true,
       "stems_support": true,
       "ideal_for": "Open-format DJs, turntablists, and scratch performers requiring standalone motorized platters and onboard Stems rendering",
-      "tagline": "The world's first motorized standalone DJ system with 7.2\" aluminum platters, Engine DJ 5.0, and onboard Stems rendering.",
+      "tagline": "The world's first motorized standalone DJ system with 7.2\" aluminum platters, Engine DJ 5.0, onboard Stems rendering, and Serato DJ Pro unlock.",
       "image": "assets/img/products/rane-system-one.svg",
       "slug": "best-standalone-dj-systems.html",
       "amazon_search": "Rane System One Motorized Standalone DJ System",
@@ -700,8 +702,19 @@
       "channels": 2,
       "software_unlocks": [
         "Serato DJ Lite",
-        "Algoriddim djay Pro (Mac/PC included)",
+        "Algoriddim djay Pro (Hardware-unlocked features)",
         "Algoriddim djay (iOS/Android)"
+      ],
+      "software_notes": "Algoriddim djay Pro hardware-unlocked features include Neural Mix™ stems, headphone cueing, Instant FX, and Crossfader FX. Advanced features (recording, automix, video mixing, 4 decks) require a paid subscription ($49.99/yr). Serato DJ Pro and VirtualDJ require separate paid licenses. When using Bluetooth MIDI, audio outputs are disabled on the controller (monitor directly from the phone/tablet).",
+      "included_cables": [
+        {
+          "from": "jack35",
+          "to": "rca",
+          "feeds_covered": 1,
+          "label": "1/8\" (3.5 mm) to stereo RCA adapter cable",
+          "note": "Included in the box with MixTrack Go for direct connection to RCA monitors without buying an adapter.",
+          "passive": true
+        }
       ],
       "master_outputs": [
         "3.5mm (1/8\" Stereo Master)"
@@ -739,9 +752,10 @@
       "channels": 2,
       "software_unlocks": [
         "Serato DJ Lite",
-        "Algoriddim djay Pro (Mac/PC included)",
+        "Algoriddim djay Pro (Hardware-unlocked features)",
         "Algoriddim djay (iOS/Android)"
       ],
+      "software_notes": "Includes Serato DJ Lite and Algoriddim djay Pro (hardware-unlocked features: Neural Mix™ stems, headphone cueing, Instant FX, Crossfader FX; recording, video, and automix require paid subscription). Serato DJ Pro and VirtualDJ require paid licenses. When using Bluetooth MIDI, audio outputs are disabled on the controller (monitor directly from the phone/tablet).",
       "master_outputs": [
         "3.5mm (1/8\" Stereo Master)"
       ],

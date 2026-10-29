@@ -197,8 +197,8 @@
         engineFamily: true,
         rekImport: true,
         standalone: true,
-        unlocks: { engine: "os", serato: "pro", virtualdj: "home" },
-        note: "The 2026 flagship 4-deck standalone system featuring onboard Stems rendering, 16 MPCe 3D performance pads, full-size 8-inch jog wheels, and built-in 3-pin DMX lighting control (SoundSwitch). Unlocks Serato DJ Pro in computer mode, runs Engine DJ 5.0 OS standalone with direct Wi-Fi streaming, and imports rekordbox USB drives natively."
+        unlocks: { engine: "os" },
+        note: "The 2026 flagship 4-deck standalone system featuring onboard Stems rendering, 16 MPCe 3D performance pads, full-size 8-inch jog wheels, and built-in 3-pin DMX lighting control (SoundSwitch). Runs Engine DJ 5.0 OS standalone with direct Wi-Fi streaming, and imports rekordbox USB drives natively. Note: Unlike the PRIME 4+ (which unlocks Serato DJ Pro today), PRIME 4 G2 launches as an Engine DJ standalone and SoundSwitch system; support for Serato DJ Pro, Algoriddim djay, and VirtualDJ is anticipated in future updates."
       },
       prime4: {
         label: "Denon DJ PRIME 4 / PRIME 4+",
@@ -212,8 +212,8 @@
         label: "RANE SYSTEM ONE (Motorized Standalone)",
         engineFamily: true,
         standalone: true,
-        unlocks: { engine: "os", serato: "pro" },
-        note: "The world's first motorized standalone DJ system, pairing 7.2\" high-torque aluminum platters with embedded Engine DJ 5.0 OS. Features onboard 4-part Stems rendering, 7\" vertical touchscreen with RGB waveforms, and MAG FOUR crossfader. In computer mode, it unlocks Serato DJ Pro without an additional subscription."
+        unlocks: { engine: "os", serato: "pro", djay: "pro" },
+        note: "The world's first motorized standalone DJ system, pairing 7.2\" high-torque aluminum platters with embedded Engine DJ 5.0 OS and onboard 4-part Stems rendering. In computer mode, it unlocks Serato DJ Pro (requires Engine DJ 4.6.0+ and Serato DJ Pro 4.0.3+; includes Serato Pitch 'n Time card with serial number) and supports Algoriddim djay Pro (Engine DJ 5.2.0+ and djay Pro 5.6.9+). VirtualDJ is anticipated in a future update."
       },
       prime_go: {
         label: "Denon DJ PRIME GO / PRIME GO+",
@@ -225,12 +225,12 @@
         label: "Other Engine OS player (Numark Mixstream, SC LIVE…)",
         engineFamily: true,
         unlocks: { engine: "os" },
-        note: "Engine OS players are prepared by the free Engine DJ desktop app. Which performance software (if any) a specific unit works with as a controller is per-model — this page verifies the PRIME 4/4+/G2 (Serato DJ Pro, Virtual DJ), RANE SYSTEM ONE (Serato DJ Pro), and the GO/GO+ (Virtual DJ Pro)."
+        note: "Engine OS players are prepared by the free Engine DJ desktop app. Which performance software (if any) a specific unit works with as a controller is per-model — this page verifies the PRIME 4/4+ (Serato DJ Pro, Virtual DJ), RANE SYSTEM ONE (Serato DJ Pro, djay Pro), and the GO/GO+ (Virtual DJ Pro)."
       },
       numark_entry: {
         label: "Numark Party Mix III / MixTrack Go (2026)",
         unlocks: { serato: "lite", djay: "pro" },
-        note: "2026 entry controllers featuring dedicated Stems control, Fade FX, and Bluetooth MIDI for wireless mixing on iOS/Android. Both include free bundled access to Serato DJ Lite and Algoriddim djay Pro for Mac and Windows (plus djay on mobile), making them the lowest-cost stem-enabled controller path."
+        note: "2026 entry controllers featuring dedicated Stems control, Fade FX, and Bluetooth MIDI for wireless mixing on iOS/Android. Includes Serato DJ Lite and bundled Algoriddim djay Pro for Mac and Windows. Pro features unlocked with hardware include Neural Mix™ real-time stems, headphone cueing, Instant FX, and Crossfader FX. Advanced features (recording, video mixing, automix, and 4 decks) require a paid djay Pro subscription ($49.99/yr). Serato DJ Pro and VirtualDJ require paid licenses. When using Bluetooth MIDI, audio outputs are disabled on the controller (monitor directly from the phone/tablet)."
       },
       traktor: {
         label: "Traktor Kontrol controller",

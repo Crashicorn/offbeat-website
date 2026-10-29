@@ -88,9 +88,11 @@ function byName(list, name) {
     assert.strictEqual(data.hardware.xdj_az.pioneer, true, "XDJ-AZ is in the Pioneer/AlphaTheta hardware family");
     assert.strictEqual(data.hardware.prime4.unlocks.serato, "pro", "PRIME 4 / 4+ unlock Serato DJ Pro per Serato's own pages");
     assert.strictEqual(data.hardware.prime4.unlocks.virtualdj, "home", "PRIME 4 / 4+ are Denon-listed for Virtual DJ (entry tier)");
-    assert.strictEqual(data.hardware.prime4_g2.unlocks.serato, "pro", "PRIME 4 G2 unlocks Serato DJ Pro");
+    assert.strictEqual(data.hardware.prime4_g2.unlocks.serato, undefined, "PRIME 4 G2 launches without Serato DJ Pro unlock; computer mode is anticipated in future updates");
+    assert.strictEqual(data.hardware.prime4_g2.unlocks.engine, "os", "PRIME 4 G2 runs Engine DJ OS standalone");
     assert.strictEqual(data.hardware.prime4_g2.rekImport, true, "PRIME 4 G2 reads rekordbox drives natively");
     assert.strictEqual(data.hardware.rane_system_one.unlocks.serato, "pro", "RANE SYSTEM ONE unlocks Serato DJ Pro");
+    assert.strictEqual(data.hardware.rane_system_one.unlocks.djay, "pro", "RANE SYSTEM ONE supports Algoriddim djay Pro with Engine DJ 5.2.0+");
     assert.strictEqual(data.hardware.rane_system_one.standalone, true, "RANE SYSTEM ONE is standalone motorized");
     assert.strictEqual(data.hardware.numark_entry.unlocks.serato, "lite", "Party Mix III / MixTrack Go unlock Serato DJ Lite");
     assert.strictEqual(data.hardware.numark_entry.unlocks.djay, "pro", "Party Mix III / MixTrack Go bundle Algoriddim djay Pro for Mac/PC");
@@ -460,6 +462,23 @@ function byName(list, name) {
     assert.ok(seratoDvs.notes.some((line) => /unlocks Serato DJ Pro/.test(line)),
       "while still naming the Pro unlock: " + JSON.stringify(seratoDvs.notes));
     prime4Dvs.close();
+
+    /* PRIME 4 G2 standalone vs controller mode: G2 runs Engine DJ standalone with
+       $0 license, but does NOT unlock Serato DJ Pro at launch (future update). */
+    const g2Standalone = await openPage(server.base + PAGE + qs({
+      mode: "standalone", hardware: "prime4_g2", os: "windows", music: "local", budget: "free"
+    }), { expectRig: false });
+    const g2Engine = byName(cards(g2Standalone), "Engine DJ");
+    assert.strictEqual(g2Engine.group, "fits", "Engine DJ fits PRIME 4 G2 standalone");
+    assert.ok(/Free|No licence/i.test(g2Engine.price), "Engine DJ is free on standalone hardware: " + g2Engine.price);
+    g2Standalone.close();
+
+    const g2Controller = await openPage(server.base + PAGE + qs({
+      mode: "controller", hardware: "prime4_g2", os: "windows", music: "local", budget: "free"
+    }), { expectRig: false });
+    const g2Serato = byName(cards(g2Controller), "Serato DJ");
+    assert.notStrictEqual(g2Serato.group, "fits", "Serato DJ is not an unlocked fit for PRIME 4 G2 at launch");
+    g2Controller.close();
 
     /* ------------------------------------------- reset, deep link, focus -- */
     const state = await openPage(server.base + PAGE + qs({

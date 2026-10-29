@@ -201,9 +201,11 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   }
 
   /* 1. Does a lead in the box already carry this signal? Passive assemblies
-        work in either direction, so both orientations count. */
+        work in either direction, so both orientations count. Check cables
+        included with the speaker or the controller. */
   var includedRoute = null;
-  (speaker.included_cables || []).forEach(function (inc) {
+  var allIncluded = (speaker.included_cables || []).concat(controller.included_cables || []);
+  allIncluded.forEach(function (inc) {
     leadOrientations(inc).forEach(function (orient) {
       outs.forEach(function (out) {
         if (!outputFeedsPlug(out.connector, orient.from)) return;
@@ -396,7 +398,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
         : shape.feeds + " independently powered cabinets need " + plan.units + " leads: one plug into each cabinet.";
   /* A box can include leads that are the wrong shape for this output. Say so,
      otherwise the buyer cannot tell a spare from a substitute. */
-  var boxLabels = (speaker.included_cables || []).map(function (inc) {
+  var allBoxCables = (speaker.included_cables || []).concat(controller.included_cables || []);
+  var boxLabels = allBoxCables.map(function (inc) {
     return inc.label || (endpointLabel(inc.from) + " to " + endpointLabel(inc.to));
   });
   var boxNote = (!plan.alsoIncluded && boxLabels.length)
