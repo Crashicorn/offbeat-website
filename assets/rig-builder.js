@@ -212,7 +212,7 @@
       used[id] = true;
       items.push({
         slotId: id, category: item.category, itemId: item.id,
-        qty: Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1,
+        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1),
         owned: item.no_purchase === true || slot.owned === true
       });
     });
@@ -977,9 +977,9 @@
         </td>
         <td class="cell-qty">
           <div class="qty-stepper-wrap">
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>-</button>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 || isPlatformPlaceholder ? 'disabled' : ''}>-</button>
             <span class="qty-display">${qty}</span>
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 || isPlatformPlaceholder ? 'disabled' : ''}>+</button>
           </div>
         </td>
         <td class="cell-status">
