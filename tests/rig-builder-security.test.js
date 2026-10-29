@@ -424,7 +424,7 @@ test("starter explicitly assumes an existing phone, not a $999 laptop", () => {
   assert.ok(!api.getRig().items.some(s => s.category === "stands"));
 });
 
-test("FLX4 mobile host is conditional and never validates other USB-only controllers", () => {
+test("FLX4 and FLX2 mobile routes are conditional; unsupported controllers fail closed", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
   api.setCatalog(catalog);
@@ -443,6 +443,19 @@ test("FLX4 mobile host is conditional and never validates other USB-only control
   assert.ok(mobile.checks.some(c => /Mobile Host, USB Audio and Power/.test(c.title) && /9V\/3A/.test(c.desc)));
   assert.equal(api.calculateRigStats().purchaseCost, 597);
   assert.equal(api.recommendNextUpgrade(), null, "do not upsell a laptop stand to phone users");
+
+  // Manufacturer explicitly lists FLX2 USB-C mobile support, unlike FLX10.
+  // Its conditional phone route is $100 cheaper and must not be rejected.
+  items[0].itemId = "pioneer-ddj-flx2";
+  assert.equal(api.normalizeRigState({ items }), true);
+  const flx2 = api.runDeepCompatibilityChecks();
+  assert.equal(flx2.fatalErrors, 0);
+  assert.ok(flx2.warnings > 0);
+  assert.ok(flx2.checks.some(c => /FLX2 Mobile Host, USB Audio and Power/.test(c.title) &&
+    /some Android devices cannot/.test(c.desc) && /Bluetooth MIDI/.test(c.desc)));
+  assert.equal(api.calculateRigStats().purchaseCost, 497);
+  assert.equal(api.recommendNextUpgrade(), null, "FLX2 mobile users need no laptop stand");
+
   items[0].itemId = "pioneer-ddj-flx10";
   assert.equal(api.normalizeRigState({ items }), true);
   const other = api.runDeepCompatibilityChecks();
