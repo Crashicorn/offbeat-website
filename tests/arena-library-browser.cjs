@@ -95,7 +95,8 @@ function visibleCount(page) {
       const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
         links => Array.from(links, link => link.getAttribute("href")));
       assert.ok(keywordHits.includes("build-your-dj-setup.html"),
-        "Spotlight must use curated index keywords for rig-planner discovery");
+        "Spotlight keyword discovery: input=" + await page.$eval("#quick-search-input", el => el.value) +
+        " hits=" + JSON.stringify(keywordHits) + " index=" + index.filter(i => (i.k || "").includes("pcpartpicker")).map(i => i.url).join(","));
       await page.click("#qs-close-btn");
       assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
         "visible close button must dismiss Spotlight without a keyboard");
