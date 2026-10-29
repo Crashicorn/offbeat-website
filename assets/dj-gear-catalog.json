@@ -298,6 +298,7 @@
       "image": "assets/img/products/alphatheta-ddj-grv6.svg",
       "slug": "ddj-grv6-review.html",
       "amazon_search": "AlphaTheta DDJ-GRV6 4-Channel Controller",
+      "spec_source": "https://www.pioneerdj.com/hi-in/product/controller/ddj-grv6/black/overview/",
       "image_type": "schematic_vector",
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
@@ -433,7 +434,7 @@
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
-        "Booth (XLR Balanced)",
+        "Booth XLR (Balanced)",
         "Zone XLR (Balanced)"
       ],
       "headphone_jack": "1/4\" and 3.5mm",
@@ -444,6 +445,7 @@
       "image": "assets/img/products/denon-prime-4-plus.svg",
       "slug": "xdj-az-vs-denon-prime-4-plus.html",
       "amazon_search": "Denon DJ Prime 4 Plus Standalone DJ System",
+      "spec_source": "https://www.denondj.com/prime-4-plus",
       "image_type": "schematic_vector",
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
@@ -1409,6 +1411,8 @@
         "RCA (Unbalanced)",
         "3.5 mm Stereo Mini"
       ],
+      "included_audio_cable_3_5mm_to_rca": true,
+      "included_cable_source": "https://pioneernz.co.nz/pages/specifications-dm40d",
       "connection": {
         "topology": "master_slave",
         "feeds_per_box": 1,
@@ -1989,6 +1993,27 @@
       "image_type": "illustrative_vector",
       "provenance": "Original Offbeat interface illustration (2026)",
       "license": "Original Offbeat vector artwork"
+    },
+    {
+      "id": "existing-mobile-device",
+      "category": "laptops",
+      "brand": "Existing Device (Not Sold)",
+      "model": "Your Compatible Phone / Tablet (rekordbox Mobile)",
+      "price": 0,
+      "no_purchase": true,
+      "host_type": "existing-mobile",
+      "os": "Supported iOS/Android version; verify rekordbox mobile device requirements",
+      "audio_subsystem": "FLX4 USB: controller master and headphone outputs; Bluetooth: audio stays on mobile device",
+      "ports": "Compatible USB cable and separate 9V/3A USB power for FLX4 mobile use",
+      "ideal_for": "DDJ-FLX4 beginners who already own a compatible phone or tablet; not a free device",
+      "tagline": "Use your existing compatible phone/tablet. Verify rekordbox mobile, USB connection, 9V/3A power and available audio outputs before buying.",
+      "image": "assets/img/products/mobile-rekordbox-host.svg",
+      "slug": "beginner-dj-setup-guide-2026.html",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026); Pioneer DJ DDJ-FLX4 official setup",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic"
     },
     {
       "id": "standalone-usb-only",

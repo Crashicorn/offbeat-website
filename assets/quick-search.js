@@ -8,6 +8,7 @@
 
   var searchIndex = null;
   var selectedIndex = -1;
+  var activeCategoryFilter = "all";
   var currentFilteredResults = [];
 
   function initQuickSearch() {
@@ -50,14 +51,15 @@
         <div class="qs-input-row">
           <span class="qs-search-icon">🔍</span>
           <input type="search" id="quick-search-input" class="qs-input" placeholder="Search guides, DJ gear, software, tools, or Camelot keys..." autocomplete="off" spellcheck="false">
-          <span class="qs-kbd-hint">ESC to close</span>
+          <button type="button" id="qs-close-btn" class="qs-kbd-hint" aria-label="Close search">Close ×</button>
         </div>
         <div class="qs-filter-pills" id="qs-filter-bar">
-          <button type="button" class="qs-pill is-active" data-qs-filter="all">All (140+)</button>
-          <button type="button" class="qs-pill" data-qs-filter="DJ Hardware">🎛️ Hardware</button>
-          <button type="button" class="qs-pill" data-qs-filter="Interactive Tool">⚡ Tools</button>
-          <button type="button" class="qs-pill" data-qs-filter="Comparison">⚖️ Comparisons</button>
-          <button type="button" class="qs-pill" data-qs-filter="Buyer Guide">📖 Guides</button>
+          <button type="button" class="qs-pill is-active" data-qs-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="qs-pill" data-qs-filter="controllers" aria-pressed="false">Controllers</button>
+          <button type="button" class="qs-pill" data-qs-filter="gear" aria-pressed="false">Gear</button>
+          <button type="button" class="qs-pill" data-qs-filter="software" aria-pressed="false">Software</button>
+          <button type="button" class="qs-pill" data-qs-filter="tools" aria-pressed="false">Tools</button>
+          <button type="button" class="qs-pill" data-qs-filter="guides" aria-pressed="false">Guides &amp; skills</button>
         </div>
         <div class="qs-results-container" id="qs-results-list" role="listbox">
           <div class="qs-placeholder-state">
@@ -83,8 +85,6 @@
     document.body.appendChild(backdrop);
 
     var input = document.getElementById("quick-search-input");
-    var activeCategoryFilter = "all";
-
     input.addEventListener("input", function () {
       renderResults(input.value.trim(), activeCategoryFilter);
     });
@@ -92,13 +92,17 @@
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) closeQuickSearch();
     });
+    document.getElementById("qs-close-btn").addEventListener("click", closeQuickSearch);
 
     var filterBar = document.getElementById("qs-filter-bar");
     filterBar.addEventListener("click", function (e) {
       var pill = e.target.closest("[data-qs-filter]");
       if (!pill) return;
-      filterBar.querySelectorAll(".qs-pill").forEach(function (p) { p.classList.remove("is-active"); });
-      pill.classList.add("is-active");
+      filterBar.querySelectorAll(".qs-pill").forEach(function (p) {
+        var active = p === pill;
+        p.classList.toggle("is-active", active);
+        p.setAttribute("aria-pressed", active ? "true" : "false");
+      });
       activeCategoryFilter = pill.getAttribute("data-qs-filter");
       renderResults(input.value.trim(), activeCategoryFilter);
     });
@@ -109,6 +113,12 @@
     if (!backdrop) return;
     loadSearchIndex().then(function () {
       backdrop.hidden = false;
+      activeCategoryFilter = "all";
+      backdrop.querySelectorAll(".qs-pill").forEach(function (p) {
+        var active = p.getAttribute("data-qs-filter") === "all";
+        p.classList.toggle("is-active", active);
+        p.setAttribute("aria-pressed", active ? "true" : "false");
+      });
       document.body.classList.add("modal-open");
       var input = document.getElementById("quick-search-input");
       if (input) {
@@ -153,11 +163,13 @@
     var tokens = query ? query.toLowerCase().split(/\s+/) : [];
 
     var filtered = searchIndex.filter(function (item) {
-      if (categoryFilter !== "all" && item.category !== categoryFilter) {
+      // The index groups are tools/controllers/gear/guides/software.
+      // Display categories (e.g. "Controllers", "Headphones") are not filters.
+      if (categoryFilter !== "all" && item.g !== categoryFilter) {
         return false;
       }
       if (tokens.length === 0) return true;
-      var text = (item.title + " " + item.desc + " " + item.category).toLowerCase();
+      var text = (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase();
       return tokens.every(function (t) { return text.indexOf(t) !== -1; });
     });
 

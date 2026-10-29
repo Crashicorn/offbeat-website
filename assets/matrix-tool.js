@@ -445,16 +445,60 @@
     } else {
       html += '<div class="matrix-cards">';
       list.forEach(function (c) {
-        var catalogId = catalogIds[c.id] || "";
-        var addToRig = catalogId ? '?add=' + encodeURIComponent(catalogId) : '';
-        var short = state.compare.indexOf(c.id) !== -1;
-        html += '<article class="matrix-card" id="mat-' + esc(c.id) + '" data-product-id="' + esc(catalogId) + '">';
-        html += '<div class="mat-head"><div class="matrix-media-slot"></div><div class="mat-identity"><span class="mat-brand">' + esc(c.brand) + ' · ' + esc(c.channels) + '</span><h3 class="mat-title">' + esc(c.name) + '</h3><p class="mat-primary">' + esc(c.primary) + '</p></div><span class="mat-price">' + esc(c.price) + '</span></div>';
-        html += '<div class="mat-quick-facts"><span>' + esc(c.format === "standalone" ? "Standalone · no laptop" : "Controller · compatible app required") + '</span><span>' + esc(c.outputs.split(",")[0]) + '</span></div>';
-        html += '<div class="mat-software-grid" aria-label="Core software compatibility"><div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div><div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div><div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div><div class="mat-soft-cell"><span>Traktor Play</span>' + renderStatusBadge(c.traktorplay || "none") + '</div><div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div></div>';
-        html += '<details class="mat-more"><summary>Streaming, connections &amp; the fine print</summary><div class="mat-more-grid"><p><strong>Best for</strong>' + esc(c.buyer) + '</p><p><strong>Trade-off</strong>' + esc(c.caveat) + '</p><p><strong>Outputs</strong>' + esc(c.outputs) + '</p><p><strong>Microphone</strong>' + esc(c.mic) + '</p><p><strong>Streaming</strong>' + esc(c.streaming.join(", ")) + '</p><p><strong>Stems / performance</strong>' + esc(c.stems) + '</p><p><strong>VirtualDJ</strong>' + esc(statusLabel(c.virtualdj)) + '</p><p><strong>Engine DJ</strong>' + esc(statusLabel(c.engine)) + '</p><p><strong>Platforms</strong>' + esc(c.mobile) + '</p></div></details>';
-        html += '<div class="mat-actions-row"><button type="button" class="mat-compare-toggle' + (short ? ' is-selected' : '') + '" data-mat-compare="' + esc(c.id) + '" aria-pressed="' + (short ? 'true' : 'false') + '">' + (short ? '✓ Added to compare' : '+ Add to compare') + '</button>' + (c.guide ? '<a class="mat-link" href="' + esc(c.guide) + '">Read guide</a>' : '') + '<a class="mat-plan-btn" href="build-your-dj-setup.html' + addToRig + '">' + (catalogId ? 'Add to Rig Studio' : 'Open Rig Studio') + '</a></div>';
-        html += '</article>';
+        html += '<div class="matrix-card" id="mat-' + c.id + '">';
+        html += '<div class="mat-head">';
+        html += '<div><span class="mat-brand">' + esc(c.brand) + ' · ' + esc(c.channels) + '</span>';
+        html += '<h3 class="mat-title">' + esc(c.name) + '</h3></div>';
+        html += '<span class="mat-price">' + esc(c.price) + '</span>';
+        html += '</div>';
+
+        html += '<div class="mat-software-grid">';
+        html += '<div class="mat-soft-cell"><span>rekordbox</span>' + renderStatusBadge(c.rekordbox) + '</div>';
+        html += '<div class="mat-soft-cell"><span>Serato DJ</span>' + renderStatusBadge(c.serato) + '</div>';
+        html += '<div class="mat-soft-cell"><span>Traktor Pro</span>' + renderStatusBadge(c.traktor) + '</div>';
+        html += '<div class="mat-soft-cell"><span>djay Pro</span>' + renderStatusBadge(c.djay) + '</div>';
+        html += '</div>';
+
+        html += '<div class="mat-specs">';
+        html += '<p><strong>Stems:</strong> ' + esc(c.stems) + '</p>';
+        html += '<p><strong>Outputs:</strong> ' + esc(c.outputs) + '</p>';
+        html += '<p><strong>Streaming:</strong> ' + esc(c.streaming.join(", ")) + '</p>';
+        html += '</div>';
+
+        html += '<div class="mat-verdict">';
+        html += '<p class="mat-buyer"><strong>Best For:</strong> ' + esc(c.buyer) + '</p>';
+        html += '<p class="mat-caveat"><strong>Caveat:</strong> ' + esc(c.caveat) + '</p>';
+        html += '</div>';
+
+        var catalogMap = {
+          "flx4": "pioneer-ddj-flx4",
+          "flx2": "pioneer-ddj-flx2",
+          "flx10": "pioneer-ddj-flx10",
+          "grv6": "alphatheta-ddj-grv6",
+          "s2mk3": "traktor-kontrol-s2-mk3",
+          "prime4plus": "denon-prime-4-plus",
+          "primego": "denon-prime-go",
+          "inpulse500": "hercules-inpulse-500",
+          "ranefour": "rane-four"
+        };
+        // Never substitute an unrelated controller when this model is absent from the rig catalog.
+        var targetCatId = catalogMap[c.id];
+
+        html += '<div class="mat-actions-row">';
+        if (c.guide) {
+          html += '<a class="mat-link" href="' + esc(c.guide) + '">Read Guide →</a>';
+        }
+        if (targetCatId) {
+          html += '<a class="mat-plan-btn" href="build-your-dj-setup.html?add=' +
+            encodeURIComponent(targetCatId) + '">Plan with ' + esc(c.name) + ' →</a>';
+        } else {
+          html += '<a class="mat-plan-btn" href="build-your-dj-setup.html" ' +
+            'title="This model is not in the rig catalog; select available gear manually">' +
+            'Explore Rig Architect (select gear manually) →</a>';
+        }
+        html += '</div>';
+
+        html += '</div>';
       });
       html += '</div>';
     }
