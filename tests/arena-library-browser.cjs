@@ -93,7 +93,7 @@ function visibleCount(page) {
       await page.waitForSelector("#quick-search-backdrop:not([hidden])");
       await page.type("#quick-search-input", "pcpartpicker");
       const keywordHits = await page.$eval("#qs-results-list .qs-result-item",
-        links => links.map(link => link.getAttribute("href")));
+        links => Array.from(links, link => link.getAttribute("href")));
       assert.ok(keywordHits.includes("build-your-dj-setup.html"),
         "Spotlight must use curated index keywords for rig-planner discovery");
       await page.click("#qs-close-btn");
