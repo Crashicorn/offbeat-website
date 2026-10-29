@@ -744,7 +744,7 @@ test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
   ]);
   assert.equal(prime.spec_source, "https://www.denondj.com/prime-4-plus");
   const grv = catalog.items.find(item => item.id === "alphatheta-ddj-grv6");
-  assert.match(grv.spec_source, /pioneerdj\\.com.*ddj-grv6/);
+  assert.ok(grv.spec_source.includes("pioneerdj.com") && grv.spec_source.includes("ddj-grv6"));
 
   const { api } = harness(false);
   api.setCatalog(catalog);
@@ -761,7 +761,7 @@ test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
   assert.equal(mobile.type, "warning");
   assert.match(mobile.desc, /channels 1 and 2/);
   assert.match(mobile.desc, /no Bluetooth/);
-  assert.match(mobile.desc, /9V\\/3A/);
+  assert.ok(mobile.desc.includes("9V/3A"));
   assert.ok(result.warnings > 0, "mobile mode must not be labelled fully verified");
 
   rig.items[0].itemId = "pioneer-ddj-flx10";
