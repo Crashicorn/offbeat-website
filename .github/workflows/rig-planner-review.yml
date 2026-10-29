@@ -76,7 +76,7 @@ jobs:
           python3 -m py_compile tools/build_index.py
       - name: Execute committed regression suite
         run: node --test tests/rig-builder-security.test.js tests/beatmatch-cue.test.js tests/buyer-fact-consistency.test.cjs
-      - name: Browser-check real planner, library and trainer at desktop and mobile sizes
+      - name: Browser-check rig planner
         shell: bash
         run: |
           set -euo pipefail
@@ -91,5 +91,33 @@ jobs:
             sleep 0.25
           done
           CHROME_BIN="$CHROME_BIN" node tests/rig-builder-browser.cjs
+
+      - name: Browser-check library and search
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME_BIN="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -x "$CHROME_BIN"
+          python3 -m http.server 8099 --bind 127.0.0.1 >/tmp/rig-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8099/all-dj-guides.html -o /dev/null; then break; fi
+            sleep 0.25
+          done
           CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs
+
+      - name: Browser-check beatmatch trainer
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME_BIN="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -x "$CHROME_BIN"
+          python3 -m http.server 8099 --bind 127.0.0.1 >/tmp/rig-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8099/beatmatch-trainer.html -o /dev/null; then break; fi
+            sleep 0.25
+          done
           CHROME_BIN="$CHROME_BIN" node tests/test_trainer_e2e.js
