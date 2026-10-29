@@ -416,11 +416,37 @@ test("a controller without headphones or speakers is not declared ready", () => 
   assert.equal(listening.fatalErrors, 0, "headphones-only practice remains supported");
 });
 
-test("default rig does not assume a buyer already owns the $999 laptop", () => {
+test("starter explicitly assumes an existing phone, not a $999 laptop", () => {
   const { api } = harness(false);
   const host = api.getRig().items.find(s => s.category === "laptops");
-  assert.equal(host.itemId, "macbook-air-m2");
-  assert.equal(host.owned, false, "unverified ownership must not lower the shopping budget");
+  assert.equal(host.itemId, "existing-mobile-device");
+  assert.equal(host.owned, true);
+  assert.ok(!api.getRig().items.some(s => s.category === "stands"));
+});
+
+test("FLX4 mobile host is conditional and never validates other USB-only controllers", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const items = [
+    { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1 },
+    { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+    { slotId: "s", category: "speakers", itemId: "pioneer-dm40d", qty: 1 },
+    { slotId: "m", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: false }
+  ];
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.getRig().items[3].owned, true, "a zero-cost placeholder cannot be sold as a phone");
+  const mobile = api.runDeepCompatibilityChecks();
+  assert.equal(mobile.fatalErrors, 0);
+  assert.ok(mobile.warnings > 0, "software, power and audio must be verified");
+  assert.ok(mobile.checks.some(c => /Mobile Host, USB Audio and Power/.test(c.title) && /9V\/3A/.test(c.desc)));
+  assert.equal(api.calculateRigStats().purchaseCost, 597);
+  assert.equal(api.recommendNextUpgrade(), null, "do not upsell a laptop stand to phone users");
+  items[0].itemId = "pioneer-ddj-flx10";
+  assert.equal(api.normalizeRigState({ items }), true);
+  const other = api.runDeepCompatibilityChecks();
+  assert.ok(other.fatalErrors > 0 && other.readiness <= 40);
+  assert.ok(other.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
 });
 
 test("all four preset badges equal full current catalog totals", () => {
@@ -428,7 +454,7 @@ test("all four preset badges equal full current catalog totals", () => {
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
   api.setCatalog(catalog);
   const expected = {
-    "bedroom-starter": 1625,
+    "bedroom-starter": 597,
     "club-ready": 3230,
     "mobile-pro": 3052,
     "traktor-techno": 1780
