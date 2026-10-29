@@ -105,7 +105,12 @@ jobs:
             if curl -fsS http://127.0.0.1:8099/all-dj-guides.html -o /dev/null; then break; fi
             sleep 0.25
           done
-          CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs 2>&1 | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
+          if ! CHROME_BIN="$CHROME_BIN" node tests/arena-library-browser.cjs > /tmp/lib-err.log 2>&1; then
+            cat /tmp/lib-err.log
+            err_msg=$(tail -n 10 /tmp/lib-err.log | tr '\n' ' ')
+            echo "::error title=Library Browser Test Failed::$err_msg"
+            exit 1
+          fi
 
       - name: Browser-check beatmatch trainer
         shell: bash
