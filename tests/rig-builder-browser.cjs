@@ -327,6 +327,39 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await handoff.context.close();
     console.log("PASS: guide-to-planner preserves rig, ownership, quantities and accessory purchases");
 
+    // A real buyer selecting DDJ-GRV6 with a phone must see the supported
+    // two-deck path and its limits, not a false "incompatible" verdict.
+    // The same mobile host remains blocked for a controller not qualified here.
+    function mobileRigLink(controllerId) {
+      const state = { name: "Mobile host check", items: [
+        { slotId: "ctrl", category: "controllers", itemId: controllerId, qty: 1, owned: false },
+        { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
+        { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+      ] };
+      return "?rig=" + encodeURIComponent(Buffer.from(
+        encodeURIComponent(JSON.stringify(state)), "binary").toString("base64"));
+    }
+    for (const width of [1440, 390]) {
+      const mobileGRV6 = await visit(browser, width, mobileRigLink("alphatheta-ddj-grv6"));
+      const shown = await mobileGRV6.page.evaluate(() => ({
+        status: document.querySelector(".compat-status-tag")?.textContent.trim(),
+        alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+      }));
+      assert.match(shown.alerts, /GRV6 Mobile: Two Decks Only/);
+      assert.match(shown.alerts, /channels 1 and 2/);
+      assert.match(shown.alerts, /USB-C and Power Required/);
+      assert.doesNotMatch(shown.alerts, /Mobile Host Not Verified for This Controller/);
+      assert.doesNotMatch(shown.status, /Incompatible/);
+      assert.deepEqual(mobileGRV6.errors, [], "GRV6 mobile UI must not throw");
+      await mobileGRV6.context.close();
+    }
+    const mobileUnsupported = await visit(browser, 390, mobileRigLink("pioneer-ddj-flx10"));
+    const blocked = await mobileUnsupported.page.$eval(".compat-items-grid", el => el.textContent);
+    assert.match(blocked, /Mobile Host Not Verified for This Controller/);
+    assert.deepEqual(mobileUnsupported.errors, [], "unverified mobile host UI must not throw");
+    await mobileUnsupported.context.close();
+    console.log("PASS: GRV6 supported two-deck mobile journey; unverified controller blocked");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
