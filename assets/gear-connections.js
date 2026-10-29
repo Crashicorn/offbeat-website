@@ -99,6 +99,7 @@ function routeScore(output, socket, cable, socketIsNative) {
   if (socketIsNative) score += 2;
   if (socket.connector === "combo_xlr_trs" && (cable.b === "xlr" || cable.b === "trs")) score += 2;
   if (output.role === "master") score += 2;
+  if (output.role === "booth") score += 1;
   if (!output.balanced) score -= 1;
   if (!cable.balanced) score -= 1;
   /* An XLR plug is the balanced format. Sending an unbalanced signal down XLR
@@ -226,6 +227,23 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   var coveredFeeds = Math.min(shape.feeds, includedLeadsUsed * leadFeeds);
   var remainingFeeds = shape.feeds - coveredFeeds;
 
+  var capacity = outputCapacity(controller, options);
+  var used = (options && options.usedOutputs) || {};
+  function freeSockets(connector) {
+    return (capacity[connector] || 0) - (used[connector] || 0);
+  }
+  function isOutputAvailable(out, needed) {
+    if (freeSockets(out.connector) < (needed || 1)) return false;
+    if (used.claimed && used.claimed.indexOf(out) !== -1) return false;
+    var sameConnectorOuts = outs.filter(function (o) { return o.connector === out.connector; });
+    if (sameConnectorOuts.length > 1) {
+      var currentUsed = used[out.connector] || 0;
+      var rank = sameConnectorOuts.indexOf(out);
+      if (rank < currentUsed) return false;
+    }
+    return true;
+  }
+
   /* 2. Build every route the catalogue can actually make: a verified product
         first, then a priced allowance for socket pairs with no verified SKU. */
   var candidates = [];
@@ -253,8 +271,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
       });
     });
   }
-  var verified = candidates.slice();
-  if (!verified.length && remainingFeeds > 0) {
+  var fitsVerified = candidates.filter(function (c) { return isOutputAvailable(c.output, c.socketsNeeded); });
+  if (!fitsVerified.length && remainingFeeds > 0) {
     cableAllowances(catalog).forEach(function (item) {
       cableOrientations(item.cable).forEach(function (raw) {
         var balanced = isBalancedConnector(raw.a) && isBalancedConnector(raw.b);
@@ -275,12 +293,6 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
         otherwise the best-scoring purchasable route is preferred. */
   candidates.sort(function (a, b) { return b.score - a.score; });
 
-  var capacity = outputCapacity(controller, options);
-  var used = (options && options.usedOutputs) || {};
-  function freeSockets(connector) {
-    return (capacity[connector] || 0) - (used[connector] || 0);
-  }
-
   var includedCandidate = includedRoute ? {
     score: includedRoute.score + 3, item: null, cable: null,
     output: includedRoute.output, socket: includedRoute.socket,
@@ -293,7 +305,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   if (includedCandidate) pool.push(includedCandidate);
   candidates.forEach(function (c) { pool.push(c); });
 
-  var fits = pool.filter(function (c) { return freeSockets(c.output.connector) >= c.socketsNeeded; });
+  var fits = pool.filter(function (c) { return isOutputAvailable(c.output, c.socketsNeeded); });
   /* When nothing fits we still want to explain the best route's socket path. */
   var chosen = fits[0] || null;
   var blocked = chosen ? null : (pool[0] || null);

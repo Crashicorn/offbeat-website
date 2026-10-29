@@ -324,6 +324,36 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     assert.strictEqual(twoLineBill, 1599 + 398 + 398 + 28 + 15,
       `both leads are real purchases, got $${twoLineBill}`);
 
+    /* A deck with booth output can feed a third pair: FLX10 resolves the third line on Booth TRS allowance. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx10"),
+      slot("pair1", "speakers", "yamaha-hs5"),
+      slot("pair2", "speakers", "yamaha-hs5"),
+      slot("pair3", "speakers", "yamaha-hs5")
+    ]));
+    const threeLines = await page.connections();
+    assert.strictEqual(threeLines.length, 3);
+    assert.deepStrictEqual(threeLines.map((l) => l.output), ["xlr", "rca", "trs"]);
+    assert.strictEqual(threeLines[2].outputRole, "booth");
+    assert.strictEqual(threeLines[2].outputLabel, "Booth 1/4-inch TRS");
+
+    /* Denon PRIME 4+ multi-line routing: Master XLR, Booth XLR, and Zone XLR. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "denon-prime-4-plus"),
+      slot("main", "speakers", "yamaha-hs5"),
+      slot("booth", "speakers", "yamaha-hs5"),
+      slot("zone", "speakers", "jbl-eon-715")
+    ]));
+    const p4Conns = await page.connections();
+    assert.strictEqual(p4Conns.length, 3);
+    assert.deepStrictEqual(p4Conns.map((l) => l.outputRole), ["master", "booth", "zone"]);
+    assert.deepStrictEqual(p4Conns.map((l) => l.output), ["xlr", "xlr", "xlr"]);
+    assert.strictEqual(p4Conns[1].outputLabel, "Booth XLR (balanced)");
+    assert.strictEqual(p4Conns[2].outputLabel, "Zone XLR (balanced)");
+    const p4Cables = await page.cableLines();
+    const p4XlrLead = p4Cables.find((l) => l.itemId === "cable-xlr-xlr");
+    assert.strictEqual(p4XlrLead.qty, 3, "3 pairs of cable-xlr-xlr for Master, Booth, Zone");
+
     /* Ownership must not smuggle a second pair past the output budget: marking
        a pair owned still leaves the second line unfeedable. */
     await open(rigUrl(server.base, [

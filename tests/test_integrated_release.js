@@ -337,7 +337,10 @@ async function run() {
           assert.ok(flx4Verdict.partial.length > 0, "Partial verdicts should be populated for FLX4");
 
           // Scenario B: Test Reset button
-          await page.click("[data-swa-reset]");
+          await page.evaluate(() => {
+            const btn = document.querySelector("[data-swa-reset]");
+            if (btn) btn.click();
+          });
           await new Promise(r => setTimeout(r, 150));
           const resetStatus = await page.evaluate(() => document.querySelector("[data-swa-status]").textContent);
           assert.equal(resetStatus.trim(), "Answer the first three questions to see which software fits.", "Reset button must restore initial prompt");

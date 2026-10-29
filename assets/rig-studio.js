@@ -335,6 +335,8 @@
       var plan = connectionPlan(controller, item, slot.qty || 1, { usedOutputs: usedOutputs });
       if (plan.output && plan.kind !== "unresolved") {
         usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(plan.output);
       }
       return { slot: slot, speaker: item, plan: plan, conflict: plan.kind === "unresolved" };
     });
@@ -2713,6 +2715,8 @@
       var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1, { usedOutputs: usedOutputs });
       if (plan.output && plan.kind !== "unresolved") {
         usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(plan.output);
       }
       if (plan.kind === "included" || plan.kind === "unresolved" || !plan.itemId || plan.units <= 0) return;
       var existing = slotsOf("cables").filter(function (s) { return s.itemId === plan.itemId; })[0];
@@ -3342,6 +3346,8 @@
             conflict: Boolean(p.conflict),
             outputsNeeded: p.plan.outputsNeeded || 1,
             output: p.plan.output ? p.plan.output.connector : null,
+            outputRole: p.plan.output ? p.plan.output.role : null,
+            outputLabel: p.plan.output ? p.plan.output.label : null,
             socket: p.plan.socket ? p.plan.socket.connector : null
           };
         });

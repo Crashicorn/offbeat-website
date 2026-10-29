@@ -320,8 +320,8 @@
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
-        "Zone XLR (Balanced)",
-        "Booth (1/4\" TRS)"
+        "Booth (XLR Balanced)",
+        "Zone XLR (Balanced)"
       ],
       "headphone_jack": "1/4\" and 3.5mm",
       "standalone": true,
@@ -353,11 +353,18 @@
           "label": "RCA master"
         },
         {
-          "connector": "trs",
+          "connector": "xlr",
           "channels": 2,
           "balanced": true,
           "role": "booth",
-          "label": "Booth 1/4-inch TRS"
+          "label": "Booth XLR (balanced)"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "zone",
+          "label": "Zone XLR (balanced)"
         }
       ]
     },
