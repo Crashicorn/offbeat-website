@@ -118,7 +118,7 @@ function visibleCount(page) {
       // the visitor search result title-only even though page metadata existed.
       await page.click("[data-search-open]");
       await page.waitForSelector("#quick-search-backdrop:not([hidden])");
-      await page.type("#quick-search-input", "amuse");
+      await page.type("#quick-search-input", "royalty splits");
       const sourceSummary = await page.$eval(
         '#qs-results-list a[href="amuse-vs-distrokid.html"] .qs-item-desc',
         el => el.textContent.trim());
