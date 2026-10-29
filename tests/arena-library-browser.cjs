@@ -77,6 +77,18 @@ function visibleCount(page) {
       );
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
+      const guideEntries = index.filter(item => /^[^?]+\\.html$/.test(item.u));
+      assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
+      for (const entry of guideEntries) {
+        assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
+          entry.u + " must have a useful, source-grounded Spotlight summary");
+        assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
+      }
+      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
+      assert.match(krk.title, /KRK Classic 5 \\(Pair\\)/,
+        "buyer search must match the actual Classic 5 catalog product");
+      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
+        "buyer search must not advertise a different monitor model");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")
@@ -102,6 +114,17 @@ function visibleCount(page) {
       await page.click("#qs-close-btn");
       assert.equal(await page.$eval("#quick-search-backdrop", el => el.hidden), true,
         "visible close button must dismiss Spotlight without a keyboard");
+      // Previously 107 of 118 page records had empty descriptions, making
+      // the visitor search result title-only even though page metadata existed.
+      await page.click("[data-search-open]");
+      await page.waitForSelector("#quick-search-backdrop:not([hidden])");
+      await page.type("#quick-search-input", "amuse");
+      const sourceSummary = await page.$eval(
+        '#qs-results-list a[href="amuse-vs-distrokid.html"] .qs-item-desc',
+        el => el.textContent.trim());
+      assert.ok(sourceSummary.length >= 20,
+        "desktop/mobile search must display a real summary for an originally blank guide");
+      await page.click("#qs-close-btn");
 
       if (width < 600) {
         await page.click(".nav-toggle");
