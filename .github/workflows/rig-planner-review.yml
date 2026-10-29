@@ -7,10 +7,13 @@ on:
     branches:
       - fix/arena-rig-share-safety-20261026
       - review/arena-relaunch-safety-integrated-20261027
+      - arena/4eafba31-offbeat-website
   pull_request:
     branches:
       - review/arena-rig-original-20261026
       - main
+      - arena/849667ed-offbeat-website
+      - arena/4eafba31-offbeat-website
     paths:
       - assets/rig-builder.js
       - assets/beatmatch-trainer.js
