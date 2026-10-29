@@ -12,9 +12,6 @@
   var currentFilteredResults = [];
 
   function initQuickSearch() {
-    // The publication's native search dialog is the canonical experience. Do not
-    // mount a second competing modal on pages that already have it.
-    if (document.getElementById("site-search")) return;
     injectSearchModalHtml();
     setupKeyListeners();
   }
