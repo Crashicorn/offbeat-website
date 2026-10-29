@@ -49,9 +49,9 @@ All licensing, pricing, and compatibility claims were checked against vendor doc
 | **Denon SC6000** | Requires external audio mixer; 3 USB-A ports; dual-layer playback; Serato accessory. | [Denon SC6000](https://www.denondj.com/sc6000-prime.html) & [Serato listing](https://serato.com/dj/hardware/denon-dj-sc6000-prime) | Verified |
 | **PRIME GO / GO+** | Built-in rechargeable battery; GO+ adds Apple Music and Amazon Music. | [Engine DJ Streaming Matrix](https://enginedj.com/streaming) | Verified |
 | **XDJ-AZ / PRIME 4+** | PRIME 4+ XLR booth, AZ TRS booth; AZ 4-deck link/standalone architecture. | [AlphaTheta XDJ-AZ](https://alphatheta.com/en/product/all-in-one-dj-system/xdj-az/black/) & [Denon PRIME 4+](https://www.denondj.com/prime-4-plus.html) | Verified |
+| **AlphaTheta XDJ-AZ Spotify** | Confirmed standalone StreamingDirectPlay with Spotify Premium over Wi-Fi/Ethernet; requires firmware update (independent reports cite v2.00); no stream recording. | [AlphaTheta XDJ-AZ](https://alphatheta.com/en/product/all-in-one-dj-system/xdj-az/black/) | Verified |
 
 ### Explicitly Flagged Unresolved / Ambiguous Claims
-- **AlphaTheta XDJ-AZ Spotify Standalone Support:** The XDJ-AZ marketing page lists Spotify integration, whereas the AN/AZ comparison matrix omits it and firmware v1.30 does not establish a Spotify standalone minimum. The copy explicitly tells buyers to verify with AlphaTheta before purchasing specifically for standalone Spotify playback.
 - **Engine OS Standalone Spotify:** Not available natively on Engine OS hardware; users must prepare tracks or use supported services (TIDAL, Beatport, Beatsource, Amazon Music, Apple Music on GO+).
 - **VirtualDJ Infinity Non-Commercial License Pricing:** VirtualDJ does not publish a standardized fixed web price for older one-time controller unlocks without logging into specific account serials. The advisor marks this as requiring direct check rather than guessing a number.
 

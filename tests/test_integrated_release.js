@@ -103,6 +103,9 @@ const PAGES_TO_TEST = [
     type: "hardware",
     asserts: (facts, text) => {
       assert.match(text, /PRIME 4\+ has XLR booth outputs/i, "PRIME 4+ XLR booth vs AZ TRS must be noted");
+      assert.match(text, /Spotify StreamingDirectPlay/i, "XDJ-AZ must explicitly mention confirmed Spotify StreamingDirectPlay");
+      assert.match(text, /Spotify Premium/i, "Must specify Spotify Premium requirement");
+      assert.doesNotMatch(text, /Spotify availability and its minimum firmware remain uncertain here/i, "Uncertainty claim must be removed");
     }
   },
   {
@@ -111,6 +114,8 @@ const PAGES_TO_TEST = [
     type: "hardware",
     asserts: (facts, text) => {
       assert.match(text, /Engine DJ/i, "Engine DJ standalone ecosystem must be covered");
+      assert.match(text, /Spotify StreamingDirectPlay/i, "Best Standalone must explicitly mention confirmed Spotify StreamingDirectPlay");
+      assert.doesNotMatch(text, /confirm Spotify availability and firmware with AlphaTheta/i, "Uncertainty claim must be removed");
     }
   },
   // Editorial Photography Restoration (PR #14)
