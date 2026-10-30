@@ -171,7 +171,10 @@
     if (UI && UI_IN_BODY) return UI;
     if (UI && UI.parentNode) { try { UI.parentNode.removeChild(UI); } catch (e) { } }
     UI = el('div', { 'class': 'ob-consent', role: 'region', 'aria-label': 'Offbeat analytics consent', 'aria-live': 'polite' });
-    document.body.appendChild(UI);
+    // On the rig page the prompt can flow above the builder on narrow screens,
+    // rather than covering equipment controls. Other pages retain their placement.
+    var rigMasthead = document.querySelector('body.page-rig .rig-masthead');
+    (rigMasthead || document.body).appendChild(UI);
     UI_IN_BODY = true;
     return UI;
   }

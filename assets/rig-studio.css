@@ -1418,3 +1418,13 @@
   .visual-secondary { grid-template-columns:1fr; gap:0; }
   .visual-headphones .visual-pick img, .visual-host .visual-pick img { width:48px; height:38px; }
 }
+
+/* Keep the privacy choice visible without covering mobile equipment controls. */
+@media (max-width:700px) {
+  .page-rig .rig-masthead .ob-consent {
+    position: static;
+    margin: 0 var(--gutter) 12px;
+    max-width: none;
+    box-shadow: none;
+  }
+}

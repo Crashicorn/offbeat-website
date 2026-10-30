@@ -49,6 +49,51 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
   });
   try {
+    // An unanswered consent choice must remain visible, not cover mobile gear,
+    // and must never start analytics. Exercise both consent and withdrawal.
+    {
+      const context = await browser.createBrowserContext();
+      const page = await context.newPage();
+      await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+      let googleRequests = 0;
+      await page.setRequestInterception(true);
+      page.on("request", request => {
+        if (/googletagmanager\.com|google-analytics\.com/.test(request.url())) {
+          googleRequests++;
+          request.abort();
+        } else request.continue();
+      });
+      await page.goto(base + "/build-your-dj-setup.html?preset=mobile-pro", { waitUntil: "load" });
+      await page.waitForSelector(".visual-controller .visual-pick");
+      assert.equal(await page.evaluate(() => window.offbeatConsentState()), "unknown");
+      assert.equal(googleRequests, 0, "no analytics requests before a choice");
+      assert.equal(await page.$eval(".ob-consent", el => getComputedStyle(el).position), "static");
+      assert.equal(await page.$eval(".ob-consent-link", el => el.getAttribute("href")), "privacy.html");
+      // Click the actual controller while the banner remains unanswered.
+      await page.click(".visual-controller .visual-pick");
+      await page.waitForSelector(".picker-dialog", { visible: true });
+      await page.click(".picker-close");
+      assert.equal(await page.evaluate(() => window.offbeatConsentState()), "unknown");
+      await page.click(".ob-consent-btn:nth-child(2)");
+      assert.equal(await page.evaluate(() => window.offbeatConsentState()), "denied");
+      await page.reload({ waitUntil: "load" });
+      assert.equal(googleRequests, 0, "denied choice must persist without analytics");
+      assert.equal(await page.$(".ob-consent"), null);
+      await page.click("[data-reopen-consent]");
+      await page.click(".ob-consent-btn:nth-child(1)");
+      await page.waitForFunction(() => window.offbeatConsentState() === "granted" && window.__obGtagBooted);
+      assert.equal(googleRequests, 0, "preview hosts must not load Google even when allowed");
+      await page.click("[data-reopen-consent]");
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "load" }),
+        page.click(".ob-consent-btn:nth-child(2)")
+      ]);
+      assert.equal(await page.evaluate(() => window.offbeatConsentState()), "denied");
+      assert.equal(await page.$('script[src*="googletagmanager.com/gtag/js"]'), null,
+        "withdrawal must tear down the analytics tag");
+      await context.close();
+      console.log("PASS: mobile consent is non-overlapping and analytics remains opt-in and withdrawable");
+    }
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
