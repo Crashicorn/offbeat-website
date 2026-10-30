@@ -1155,6 +1155,7 @@
       <section class="rig-booth-section" id="interactive-booth-stage">
         <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
         <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
+        ${stats.compatibility.fatalErrors ? `<p class="visual-critical" role="alert">${stats.compatibility.checks.filter(function(c) { return c.type === 'error' || c.statusLevel === 'incompatible'; }).map(function(c) { return escapeHtml(c.title); }).join(' · ')}</p>` : ''}
         <div class="visual-stage">
           ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
           ${renderVisualEquipment(controllerSlot, 'controllers', '', 'Controller / decks', 'core-ctrl', 'visual-controller')}
@@ -1200,7 +1201,7 @@
                 <div class="route-node route-node--source">
                   <span class="node-sub">Source Output:</span>
                   <strong class="node-name">${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')}</strong>
-                  <span class="node-port">[${escapeHtml(paPlan && paPlan.output ? paPlan.output.label : 'Master Out')}]</span>
+                  <span class="node-port">[${escapeHtml(paPlan && paPlan.output ? paPlan.output.label : 'Output not determined')}]</span>
                 </div>
 
                 <div class="route-pipe ${paCableConfirmed ? 'pipe--active' : 'pipe--standby'}">
@@ -1210,14 +1211,14 @@
                   <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                     <span class="pill-icon">${paCableConfirmed ? '🔌' : '🛒'}</span>
                     <span class="pill-name">${escapeHtml(paPlan ? paPlan.name : 'Audio Cable')}</span>
-                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced XLR' : 'Analog Line')) : '+ Add to Rig'}</span>
+                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced Line' : 'Analog Line')) : '+ Add to Rig'}</span>
                   </div>
                 </div>
 
                 <div class="route-node route-node--dest">
                   <span class="node-sub">Destination:</span>
                   <strong class="node-name">${escapeHtml(paItem ? paItem.model : 'Crowd PA')}</strong>
-                  <span class="node-port">[${escapeHtml(paPlan && paPlan.socket ? OffbeatGear.endpointLabel(paPlan.socket.connector || paPlan.socket) : 'Line In')}]</span>
+                  <span class="node-port">[${escapeHtml(paPlan && paPlan.socket ? OffbeatGear.endpointLabel(paPlan.socket.connector || paPlan.socket) : 'Input not determined')}]</span>
                 </div>
               </div>
             </div>
@@ -1253,24 +1254,24 @@
                   <div class="route-node route-node--source">
                     <span class="node-sub">Source Output:</span>
                     <strong class="node-name">${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')}</strong>
-                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.output ? monitorPlan.output.label : (paSlot ? 'Booth Out' : 'Master Out'))}]</span>
+                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.output ? monitorPlan.output.label : 'Output not determined')}]</span>
                   </div>
 
                   <div class="route-pipe ${monCableConfirmed ? 'pipe--active' : 'pipe--blocked'}">
                     <div class="pipe-track">
                       ${monCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                     </div>
-                    <div class="pipe-cable-pill" data-action="pick" data-slot-id="core-cable" data-category="cables">
+                    <div class="pipe-cable-pill ${monCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!monCableConfirmed && monitorPlan && monitorPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${monitorPlan.itemId}"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                       <span class="pill-icon">🔌</span>
                       <span class="pill-name">${escapeHtml(monitorPlan ? monitorPlan.name : 'Audio Cable')}</span>
-                      <span class="pill-badge">${monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')}</span>
+                      <span class="pill-badge">${monCableConfirmed ? (monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')) : 'Cable needed'}</span>
                     </div>
                   </div>
 
                   <div class="route-node route-node--dest">
                     <span class="node-sub">Destination:</span>
                     <strong class="node-name">${escapeHtml(monItem ? monItem.model : 'DJ Monitors')}</strong>
-                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.socket ? OffbeatGear.endpointLabel(monitorPlan.socket.connector || monitorPlan.socket) : 'Input')}]</span>
+                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.socket ? OffbeatGear.endpointLabel(monitorPlan.socket.connector || monitorPlan.socket) : 'Input not determined')}]</span>
                   </div>
                 </div>
               </div>
@@ -1410,7 +1411,7 @@
         </td>
         <td class="cell-actions">
           <div class="retail-btn-stack">
-            <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Swap</button>
+            <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}" ${slot.category === 'speakers' ? `data-speaker-role="${getSpeakerRole(slot)}"` : ''}>Swap</button>
             ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.id === "existing-mobile-device" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
             <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
             ${item.id === "denon-prime-4-plus" ? `

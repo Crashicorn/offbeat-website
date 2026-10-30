@@ -21,6 +21,9 @@ on:
       - tests/test_trainer_e2e.js
       - tests/rig-builder-security.test.js
       - tests/rig-builder-browser.cjs
+      - tests/rig-visual-interactions.cjs
+      - tests/test_role_based_booth_journeys.js
+      - tests/test_owner_design_recovery.cjs
       - tests/arena-library-browser.cjs
       - assets/matrix-tool.js
       - controller-software-compatibility-matrix.html
@@ -91,6 +94,9 @@ jobs:
             sleep 0.25
           done
           CHROME_BIN="$CHROME_BIN" node tests/rig-builder-browser.cjs
+          CHROME_BIN="$CHROME_BIN" BASE_URL=http://127.0.0.1:8099 node tests/rig-visual-interactions.cjs
+          CHROME_BIN="$CHROME_BIN" BASE_URL=http://127.0.0.1:8099 node tests/test_role_based_booth_journeys.js
+          CHROME_BIN="$CHROME_BIN" node tests/test_owner_design_recovery.cjs
 
       - name: Browser-check library and search
         shell: bash

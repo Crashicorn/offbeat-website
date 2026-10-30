@@ -100,6 +100,43 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
+      // One visual editor only; secondary views are optional and exclusive.
+      const structure = await page.evaluate(() => ({
+        canvas: document.querySelectorAll('.visual-stage').length,
+        controllers: document.querySelectorAll('.visual-controller img').length,
+        oldBooths: document.querySelectorAll('.rig-booth-stage, #zone-crowd-pa, #zone-monitors').length,
+        tiers: document.querySelectorAll('.spec-card--tier, [data-tier-preset]').length,
+        spend: document.querySelectorAll('.quick-spend-card').length,
+        height: document.documentElement.scrollHeight,
+        photo: !!document.querySelector('.rig-hero-photo img'),
+        controllerTop: document.querySelector('.visual-controller').getBoundingClientRect().top
+      }));
+      assert.equal(structure.canvas, 1);
+      assert.equal(structure.controllers, 1);
+      assert.equal(structure.oldBooths, 0);
+      assert.equal(structure.tiers, 0);
+      assert.equal(structure.spend, 1);
+      assert.ok(structure.photo, 'editorial hero includes contextual photography');
+      assert.ok(structure.height < (width < 600 ? 6500 : 4000), 'collapsed page should be substantially shorter');
+      assert.ok(structure.controllerTop < 900, 'controller begins in the first viewport');
+      await page.click('.visual-route-link');
+      assert.equal(await page.$eval('#rig-connections', el => el.open), true);
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
+      await page.click('#rig-shopping > summary');
+      assert.equal(await page.$eval('#rig-connections', el => el.open), false);
+      const controllerSlot = await page.$eval('.visual-controller .visual-own', el => el.dataset.slotId);
+      const plus = '#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="' + controllerSlot + '"]';
+      await page.click(plus);
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$896', 'quantity updates the single spend summary');
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'editing keeps shopping view open');
+      const minus = '#rig-shopping [data-action="step-qty"][data-step="-1"][data-slot-id="' + controllerSlot + '"]';
+      await page.click(minus);
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$597');
+      assert.ok(await page.$('#rig-shopping a.btn-retail'), 'retailer destinations remain available');
+      await page.click('#rig-manage > summary');
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
+      assert.equal(await page.$eval('#rig-manage', el => el.open), true);
+      await page.click('#rig-manage > summary');
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
       const initialAlerts = await page.$eval(".compat-items-grid", el => el.textContent);
       assert.doesNotMatch(initialAlerts, /Headphone Connector Adapter Needed|Headphone Jack Adapter Advisory/);
@@ -180,11 +217,12 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const missingController = await visit(browser, 390, noControllerQuery);
     const missingState = await missingController.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
+      readiness: window.__rigStudio.compatibility().readiness,
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(missingState.tag, /Incompatible Configuration/);
     assert.match(missingState.alerts, /DJ Controller or Mixer Required/);
+    assert.match(await missingController.page.$eval('.visual-critical', el => el.textContent), /DJ Controller or Mixer Required/, 'critical incompatibility remains visible without opening details');
     assert.ok(missingState.readiness <= 40);
     await missingController.context.close();
     console.log("PASS: accessory-only shared rig visibly blocked as incomplete");
@@ -200,11 +238,12 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const silentRig = await visit(browser, 390, noAudioQuery);
     const silentState = await silentRig.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
+      readiness: window.__rigStudio.compatibility().readiness,
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(silentState.tag, /Incompatible Configuration/);
     assert.match(silentState.alerts, /Headphones or Speakers Required/);
+    assert.match(await silentRig.page.$eval('.visual-critical', el => el.textContent), /Headphones or Speakers Required/);
     assert.ok(silentState.readiness <= 40);
     await silentRig.context.close();
     console.log("PASS: standalone controller with no listening device is incomplete");
@@ -227,7 +266,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const multi = await visit(browser, 390, multiQuery);
     const multiState = await multi.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
+      readiness: window.__rigStudio.compatibility().readiness,
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(multiState.tag, /Manual Routing Review Required/);
@@ -236,6 +275,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.deepEqual(multi.errors, []);
     // The compare modal must show every controller and actual unowned spend,
     // not just the first controller's unit price or the full owned valuation.
+    await multi.page.click('#rig-manage > summary');
     await multi.page.click('[data-action="open-compare"]');
     await multi.page.waitForSelector("#compare-content-grid");
     const compareText = await multi.page.$eval("#compare-content-grid", el => el.textContent);
@@ -262,7 +302,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const quantity = await visit(browser, 390, quantityQuery);
     const quantityState = await quantity.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
+      readiness: window.__rigStudio.compatibility().readiness,
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(quantityState.tag, /Manual Routing Review Required/);
@@ -292,6 +332,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       Number(el.textContent.replace(/[^\d.]/g, "")));
     const fixSelector = '.compat-items-grid [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
     assert.ok(await cableFix.page.$(fixSelector), "XLR suggestion must be available");
+    await cableFix.page.click('#rig-connections > summary');
     await cableFix.page.click(fixSelector);
     const cableFixResult = await cableFix.page.evaluate(() => ({
       state: JSON.parse(localStorage.getItem("offbeat.rig.active")),

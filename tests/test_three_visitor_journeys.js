@@ -153,7 +153,7 @@ function startStaticServer() {
     assert.strictEqual(initialCost.itemCount, 7, "Club-ready preset has 7 items");
 
     // 1. Swap controller from FLX10 to Prime 4+
-    await page.click(".rs-node--hero, .booth-card--main");
+    await page.click(".visual-controller .visual-pick");
     await page.waitForSelector("button[data-drawer-use='denon-prime-4-plus']");
     await page.evaluate(() => document.querySelector("button[data-drawer-use='denon-prime-4-plus']").click());
     await page.waitForFunction(() => {
@@ -162,34 +162,15 @@ function startStaticServer() {
       return ctrl && ctrl.itemId === "denon-prime-4-plus";
     });
 
-    // 2. Add accessories: Microphone, Laptop Stand, Storage Drive
-    // Add microphone
-    await page.evaluate(() => {
-      const btn = document.querySelector(".rs-add-chip[data-cat='microphones']");
-      if (btn) btn.click();
-    });
-    await page.waitForSelector("button[data-drawer-use='mic-shure-sm58']");
-    await page.evaluate(() => document.querySelector("button[data-drawer-use='mic-shure-sm58']").click());
-    await new Promise(r => setTimeout(r, 200));
-
-    // Add stand
-    await page.evaluate(() => {
-      const btn = document.querySelector(".rs-add-chip[data-cat='stands']");
-      if (btn) btn.click();
-    });
-    await page.waitForSelector("button[data-drawer-use='laptop-stand-pyle']");
-    await page.evaluate(() => document.querySelector("button[data-drawer-use='laptop-stand-pyle']").click());
-    await new Promise(r => setTimeout(r, 200));
-
-    // 3. Mark headphones (HD 25) as owned
-    await page.evaluate(() => {
-      const hpToggle = Array.from(document.querySelectorAll(".rs-own-toggle")).find(b => {
-        const item = b.closest(".rs-item");
-        return item && item.textContent.includes("HD 25");
-      });
-      if (hpToggle) hpToggle.click();
-    });
-    await new Promise(r => setTimeout(r, 200));
+    // 2. Add accessories through the shopping view, then mark headphones owned.
+    await page.click('#rig-shopping > summary');
+    for (const [category, id] of [['microphones', 'mic-shure-sm58'], ['stands', 'laptop-stand-pyle']]) {
+      await page.click('[data-action="open-add-slot"]');
+      await page.click(`[data-action="add-new-slot"][data-category="${category}"]`);
+      await page.waitForSelector(`button[data-drawer-use="${id}"]`, {visible: true});
+      await page.click(`button[data-drawer-use="${id}"]`);
+    }
+    await page.click('.visual-headphones .visual-own');
 
     // Check updated cost after customization
     const customizedCost = await page.evaluate(() => window.__rigStudio.cost());

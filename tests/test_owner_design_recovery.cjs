@@ -103,40 +103,37 @@ test("Owner Design Recovery - Browser Acceptance Across Setups A, B, C, D & Mobi
 
     // Criteria A: Bedroom Starter Setup above fold at 1440x900
     await page.goto(`${baseUrl}/build-your-dj-setup.html?preset=bedroom-starter`, { waitUntil: "networkidle0" });
-    const boxesA = await page.evaluate(() => {
-      const stage = document.getElementById("interactive-booth-stage");
-      const bottomRow = document.querySelector(".visual-controller");
-      const paZone = document.getElementById("zone-crowd-pa");
-      const monZone = document.getElementById("zone-monitors");
-      const linkWire = monZone?.querySelector(".cabinet-link-wire");
-      const passiveSat = monZone?.querySelector(".cabinet-body--satellite");
-      return {
-        stageTop: stage ? Math.round(stage.getBoundingClientRect().top) : null,
-        bottomRowTop: bottomRow ? Math.round(bottomRow.getBoundingClientRect().top) : null,
-        paZoneEmpty: paZone?.classList.contains("booth-speaker-zone--empty"),
-        hasLinkWire: Boolean(linkWire),
-        hasPassiveSat: Boolean(passiveSat)
-      };
-    });
-
-    assert.ok(boxesA.stageTop !== null && boxesA.stageTop < 450, `Setup A stage must begin above Y=450 (actual: ${boxesA.stageTop}px)`);
-    assert.ok(boxesA.bottomRowTop !== null && boxesA.bottomRowTop < 900, `Setup A visual controller must start above 900px fold (actual: ${boxesA.bottomRowTop}px)`);
-    assert.strictEqual(boxesA.paZoneEmpty, true, "Setup A Crowd PA must be empty without conflict");
-    assert.strictEqual(boxesA.hasLinkWire, true, "Setup A DM-40D must render link wire");
-    assert.strictEqual(boxesA.hasPassiveSat, true, "Setup A DM-40D must render passive satellite");
+    const boxesA = await page.evaluate(() => ({
+      stageTop: Math.round(document.querySelector("#interactive-booth-stage").getBoundingClientRect().top),
+      controllerTop: Math.round(document.querySelector(".visual-controller").getBoundingClientRect().top),
+      paEmpty: document.querySelector(".visual-pa").textContent.includes("Add Crowd PA"),
+      monitor: window.__rigStudio.item("pioneer-dm40d"),
+      routes: window.__rigStudio.connections(),
+      count: document.querySelectorAll('.visual-stage').length,
+      duplicate: document.querySelectorAll('.rig-booth-stage, #zone-crowd-pa, #zone-monitors').length
+    }));
+    assert.ok(boxesA.stageTop < 500, `Stage must begin above Y=500 (actual: ${boxesA.stageTop}px)`);
+    assert.ok(boxesA.controllerTop < 900, `Controller must be above fold (actual: ${boxesA.controllerTop}px)`);
+    assert.equal(boxesA.paEmpty, true);
+    assert.equal(boxesA.monitor.connection.topology, 'master_slave');
+    assert.match(boxesA.monitor.connection.note, /passive.*supplied speaker cord/i);
+    assert.equal(boxesA.monitor.speaker_units, 2);
+    assert.equal(boxesA.routes.length, 1);
+    assert.equal(boxesA.routes[0].kind, 'included');
+    assert.equal(boxesA.count, 1);
+    assert.equal(boxesA.duplicate, 0);
     console.log("✓ Criteria A passed: Bedroom starter visible above fold with verified master/satellite DM-40D.");
 
     // Criteria B: Mobile Rig with Crowd PA and Monitors
     await page.goto(`${baseUrl}/build-your-dj-setup.html?preset=mobile-pro`, { waitUntil: "networkidle0" });
-    const boxesB = await page.evaluate(() => {
-      const paCabs = document.querySelectorAll("#zone-crowd-pa .cabinet-unit--pa").length;
-      const paSpread = document.querySelector("#zone-crowd-pa .cabinet-spread-indicator");
-      return {
-        paCabs,
-        hasSpread: Boolean(paSpread)
-      };
-    });
-    assert.strictEqual(boxesB.paCabs, 1, "Mobile pro preset must render exactly 1 physical PA cabinet by default");
+    const boxesB = await page.evaluate(() => ({
+      images: document.querySelectorAll('.visual-pa .visual-images img').length,
+      text: document.querySelector('.visual-pa').textContent,
+      routes: window.__rigStudio.connections()
+    }));
+    assert.equal(boxesB.images, 1, "Mobile pro renders exactly 1 physical PA cabinet by default");
+    assert.match(boxesB.text, /1 cabinet/);
+    assert.equal(boxesB.routes.length, 1);
     console.log("✓ Criteria B passed: Mobile rig renders genuine PA cabinet with dedicated feed.");
 
     // Criteria C: Hard Rejection of KRK / Yamaha in Crowd PA picker
