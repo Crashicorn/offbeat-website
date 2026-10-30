@@ -100,7 +100,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
-      // One visual editor only; secondary views are optional and exclusive.
+      // One visual editor; supporting sections remain independently expandable.
       const structure = await page.evaluate(() => ({
         canvas: document.querySelectorAll('.visual-stage').length,
         controllers: document.querySelectorAll('.visual-controller img').length,
@@ -117,13 +117,14 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.equal(structure.tiers, 0);
       assert.equal(structure.spend, 1);
       assert.ok(structure.photo, 'editorial hero includes contextual photography');
-      assert.ok(structure.height < (width < 600 ? 6500 : 4000), 'collapsed page should be substantially shorter');
+      assert.ok(structure.height > 0, 'page renders with supporting views');
       assert.ok(structure.controllerTop < 900, 'controller begins in the first viewport');
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'shopping is open by default');
+      assert.equal(await page.$eval('#rig-connections', el => el.open), width >= 700, 'connections opens on desktop');
+      await page.$eval('.visual-route-link', el => el.scrollIntoView({block:'center',behavior:'instant'}));
       await page.click('.visual-route-link');
       assert.equal(await page.$eval('#rig-connections', el => el.open), true);
-      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
-      await page.click('#rig-shopping > summary');
-      assert.equal(await page.$eval('#rig-connections', el => el.open), false);
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'both views can remain open');
       const controllerSlot = await page.$eval('.visual-controller .visual-own', el => el.dataset.slotId);
       const plus = '#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="' + controllerSlot + '"]';
       await page.click(plus);
@@ -134,7 +135,8 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$627');
       assert.ok(await page.$('#rig-shopping a.btn-retail'), 'retailer destinations remain available');
       await page.click('#rig-manage > summary');
-      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true);
+      assert.equal(await page.$eval('#rig-connections', el => el.open), true);
       assert.equal(await page.$eval('#rig-manage', el => el.open), true);
       await page.click('#rig-manage > summary');
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
@@ -168,7 +170,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
         ["traktor-techno", "$1,780"]
       ];
       for (const [id, expectedPrice] of expectedPresets) {
-        if (width < 600) await page.click('.mobile-presets summary');
+        if (width < 600) { await page.$eval('.mobile-presets summary', el => el.scrollIntoView({block:'center', behavior:'instant'})); await page.click('.mobile-presets summary'); }
         const presetSelector = (width < 600 ? '.mobile-presets ' : '.rig-preset-strip ') + '[data-preset-id="' + id + '"]';
         const badge = await page.$eval(presetSelector + ' .preset-badge', el => el.textContent.trim());
         assert.equal(badge, "Est. " + expectedPrice + " total", id + " badge");

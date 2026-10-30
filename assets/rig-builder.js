@@ -104,6 +104,11 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         CATALOG = data;
+        var starter = CATALOG.presets && CATALOG.presets.find(function (p) { return p.id === "bedroom-starter"; });
+        if (starter) {
+          currentRig.name = starter.name;
+          currentRig.items = convertPresetToItems(starter);
+        }
         parseUrlOrLocalState();
       });
   }
@@ -805,7 +810,13 @@
   /* ---------------------------------------------------------------- Render */
   function renderApp() {
     var stats = calculateRigStats();
-    var openView = builderRoot.querySelector('details[name="rig-views"][open]')?.id || '';
+    var viewIds = ["rig-connections", "rig-shopping", "rig-manage"];
+    var previousViews = {};
+    var hadViews = false;
+    viewIds.forEach(function (id) {
+      var view = builderRoot.querySelector("#" + id);
+      if (view) { hadViews = true; previousViews[id] = view.open; }
+    });
 
     var html = `
       <!-- Builder Top Dashboard -->
@@ -844,7 +855,7 @@
       </section>
 
       <!-- Itemized shopping and saved builds share the same rig state. -->
-      <details name="rig-views" id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
+      <details id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
       <section class="rig-table-section" id="rs-shop" aria-labelledby="checklist-title">
         <div class="section-head-split">
           <div>
@@ -894,7 +905,7 @@
       </section>
 
       </details>
-      <details name="rig-views" id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
+      <details id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
       <section class="rig-manage-dock" id="rig-actions-dock">
         <div class="manage-dock-inner">
           <div class="manage-dock-info">
@@ -922,7 +933,11 @@
     `;
 
     builderRoot.innerHTML = html;
-    if (openView) { var view = document.getElementById(openView); if (view) view.open = true; }
+    viewIds.forEach(function (id) {
+      var view = document.getElementById(id);
+      if (view) view.open = hadViews ? Boolean(previousViews[id]) :
+        (id === "rig-shopping" || (id === "rig-connections" && window.innerWidth > 700));
+    });
   }
 
   function renderCompatibility(stats) {
@@ -1049,6 +1064,17 @@
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
 
+  function usableProductPhoto(item) {
+    var photo = item && item.product_photo;
+    return photo && photo.src && photo.source && photo.license && photo.license_url && (photo.attribution || photo.credit) ? photo : null;
+  }
+
+  function productPhotoCredit(item) {
+    var photo = usableProductPhoto(item);
+    if (!photo) return "";
+    return `<span class="rig-photo-credit">Photo: <a href="${escapeHtml(photo.source)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.attribution || photo.credit)}</a> · <a href="${escapeHtml(photo.license_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.license)}</a>${photo.modification ? ' · modified' : ''}</span>`;
+  }
+
   /* ------------------------------------------------- Interactive DJ Booth (Purpose-Based) */
   // The stage uses the same slots and actions as the detailed editor below.
   function renderVisualEquipment(slot, category, role, label, defaultId, extraClass, routeLabel) {
@@ -1058,14 +1084,16 @@
     var pick = item || !role
       ? `data-action="pick" data-slot-id="${id}" data-category="${category}"${roleAttr}`
       : `data-action="add-speaker-role" data-speaker-role="${role}"`;
+    var photo = usableProductPhoto(item);
     var owned = item && (slot.owned || item.no_purchase);
     var count = item && role ? (item.speaker_units || 1) * (slot.qty || 1) : 0;
     return `<div class="visual-equipment ${extraClass || ''}">
       <span class="visual-role">${label}</span>
       ${routeLabel ? `<span class="visual-port-status">${escapeHtml(routeLabel)}</span>` : ''}
       <button type="button" class="visual-pick" ${pick} aria-label="${item ? 'Change ' : 'Add '}${label}">
-        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
+        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
       </button>
+      ${item && photo ? productPhotoCredit(item) : ''}
       ${item ? `<button type="button" class="visual-own ${owned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${id}" ${item.no_purchase ? 'disabled' : ''}>${owned ? '✓ Owned' : 'Mark owned'}</button>` : ''}
     </div>`;
   }
@@ -1149,7 +1177,7 @@
             ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
           </div>
         </div>
-        <details name="rig-views" id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
+        <details id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
           ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot, paCableConfirmed, monCableConfirmed)}
           ${renderCompatibility(stats)}
         </details>
@@ -1540,17 +1568,19 @@
 
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
+      var photo = usableProductPhoto(item);
       return `
         <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}" data-drawer-use="${item.id}">
           <div class="picker-card-img-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
-            <span class="picker-provenance-tag">Vector Schematic</span>
+            <span class="picker-provenance-tag">${photo ? 'Photo' : 'Vector Schematic'}</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
             <h4 class="picker-card-title">${escapeHtml(item.model)}</h4>
             <p class="picker-card-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+            ${photo ? productPhotoCredit(item) : ''}
             <div class="picker-specs-list">
               ${item.channels ? `<span>${item.channels} Channels</span>` : ''}
               ${item.master_outputs ? `<span>Outputs: ${item.master_outputs.join(", ")}</span>` : ''}
@@ -1962,7 +1992,15 @@
 
   /* ------------------------------------------------------------- Actions */
   function setupGlobalListeners() {
+    document.addEventListener("error", function (e) {
+      var image = e.target;
+      if (image && image.dataset && image.dataset.photoFallback) {
+        image.src = image.dataset.photoFallback;
+        delete image.dataset.photoFallback;
+      }
+    }, true);
     document.addEventListener("click", function (e) {
+      if (e.target.closest(".rig-photo-credit a")) return;
       // 1. Modal backdrop close
       if (e.target.classList.contains("picker-backdrop")) {
         closeModal();

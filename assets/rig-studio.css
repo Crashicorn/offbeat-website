@@ -1501,3 +1501,15 @@
   .page-rig .picker-price-badge { right:3px; bottom:3px; font-size:.7rem; }
   .page-rig .picker-provenance-tag { display:none; }
 }
+/* Product photos remain credited beside each appearance, with room for the
+   compact selector layout. Source artwork is never stretched or upscaled. */
+.rig-photo-credit { display:block; color:#c2c6d3; font-size:.65rem; line-height:1.35; }
+.rig-photo-credit a { color:#b9dfff; text-decoration:underline; }
+.visual-equipment > .rig-photo-credit { max-width:95%; }
+.visual-pick img[data-photo-fallback] { border-radius:8px; }
+.picker-card-body .rig-photo-credit { margin:0 0 .5rem; }
+@media (max-width:700px) {
+  .visual-headphones, .visual-host { flex-wrap:wrap; }
+  .visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
+  .page-rig .picker-card-body .rig-photo-credit { grid-column:1 / -1; }
+}
