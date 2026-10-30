@@ -5016,3 +5016,721 @@ tr.rs-item { display: table-row !important; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ==========================================================================
+   Purpose-Based Booth Restructuring & Dynamic Signal Flow Styles
+   ========================================================================== */
+
+/* Full-Width Purpose Zones */
+.booth-purpose-zone {
+  width: 100%;
+}
+
+.booth-speaker-zone {
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all .2s ease;
+  position: relative;
+}
+
+.booth-speaker-zone--pa {
+  background: radial-gradient(ellipse at 50% 0%, rgba(251, 146, 60, .14) 0%, rgba(16, 16, 24, .95) 80%);
+  border-color: rgba(251, 146, 60, .35);
+  box-shadow: 0 10px 30px -10px rgba(251, 146, 60, .15);
+}
+
+.booth-speaker-zone--monitors {
+  background: radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, .12) 0%, rgba(16, 16, 24, .95) 80%);
+  border-color: rgba(56, 189, 248, .35);
+  box-shadow: 0 10px 30px -10px rgba(56, 189, 248, .15);
+}
+
+.booth-speaker-zone--empty {
+  border: 1px dashed rgba(255, 255, 255, .2);
+  background: rgba(255, 255, 255, .02);
+  padding: 1.5rem;
+  text-align: center;
+  align-items: center;
+}
+
+.zone-empty-header {
+  margin-bottom: .25rem;
+}
+
+.zone-empty-text {
+  font-size: .86rem;
+  color: var(--text-2);
+  max-width: 60ch;
+  margin: 0 auto 1rem;
+  line-height: 1.45;
+}
+
+.zone-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  padding-bottom: .75rem;
+}
+
+.zone-role-tag {
+  display: block;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--cyan);
+  margin-bottom: .15rem;
+}
+
+.zone-role-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-family: var(--display);
+  color: #fff;
+}
+
+.zone-role-sub {
+  font-size: .78rem;
+  color: var(--muted);
+  display: block;
+  margin-top: .15rem;
+}
+
+.zone-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Physical Cabinets Stage */
+.zone-cabinets-stage {
+  padding: 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cabinet-stage-mono, .cabinet-stage-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.cabinet-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  text-align: center;
+}
+
+.cabinet-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cabinet-sub {
+  font-size: .72rem;
+  color: var(--muted);
+}
+
+/* PA Cabinet Vector Graphic */
+.cabinet-body--pa {
+  width: 86px;
+  height: 126px;
+  background: linear-gradient(180deg, #1c1c28 0%, #0e0e14 100%);
+  border: 2px solid #2d2d3e;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, .1), 0 8px 20px rgba(0, 0, 0, .6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px;
+  position: relative;
+}
+
+.pa-horn {
+  width: 58px;
+  height: 26px;
+  background: radial-gradient(ellipse at 50% 50%, #050508 0%, #151520 100%);
+  border: 1px solid #3b3b4f;
+  border-radius: 4px;
+}
+
+.pa-woofer-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pa-woofer-cone {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #1c1c24 0%, #08080c 80%, #2a2a38 100%);
+  border: 2px solid #333348;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, .8);
+}
+
+.pa-dust-cap {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #3a3a4c 0%, #111116 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .6);
+}
+
+.pa-reflex-ports {
+  display: flex;
+  gap: 16px;
+}
+
+.pa-reflex-ports span {
+  width: 12px;
+  height: 6px;
+  border-radius: 3px;
+  background: #06060a;
+  border: 1px solid #222230;
+}
+
+/* Sound Wave Rings */
+.sound-wave-rings {
+  position: absolute;
+  pointer-events: none;
+}
+
+.sound-wave-rings span {
+  position: absolute;
+  border: 1px solid rgba(251, 146, 60, .4);
+  border-radius: 50%;
+  animation: pulse-wave 2s infinite ease-out;
+}
+
+.sound-wave-rings span:nth-child(1) { width: 70px; height: 70px; top: -6px; left: -6px; animation-delay: 0s; }
+.sound-wave-rings span:nth-child(2) { width: 90px; height: 90px; top: -16px; left: -16px; animation-delay: .6s; }
+.sound-wave-rings span:nth-child(3) { width: 110px; height: 110px; top: -26px; left: -26px; animation-delay: 1.2s; }
+
+@keyframes pulse-wave {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Studio Monitor Vector Graphic */
+.cabinet-body--monitor {
+  width: 76px;
+  height: 104px;
+  background: linear-gradient(180deg, #181822 0%, #0d0d12 100%);
+  border: 2px solid #282836;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, .08), 0 8px 18px rgba(0, 0, 0, .5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px;
+  position: relative;
+}
+
+.mon-tweeter {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 45%, #2a2a3a 0%, #08080c 100%);
+  border: 1px solid #38384a;
+}
+
+.mon-woofer-cone {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, .8);
+}
+
+.mon-woofer-cone.cone--white {
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #e2e8f0 70%, #94a3b8 100%);
+  border: 2px solid #475569;
+}
+
+.mon-woofer-cone.cone--yellow {
+  background: radial-gradient(circle at 50% 50%, #facc15 0%, #eab308 75%, #a16207 100%);
+  border: 2px solid #713f12;
+}
+
+.mon-woofer-cone.cone--black {
+  background: radial-gradient(circle at 50% 50%, #2d2d3c 0%, #111116 80%, #3f3f52 100%);
+  border: 2px solid #333344;
+}
+
+.mon-led {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+}
+
+.mon-led--on {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.cabinet-role-tag {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-top: .2rem;
+}
+
+/* Interconnect Link Wire (Between DM-40D pair) */
+.cabinet-link-wire {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.link-wire-line {
+  width: 24px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, #38bdf8 0, #38bdf8 4px, transparent 4px, transparent 8px);
+}
+
+.link-wire-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: var(--r-pill);
+  background: rgba(56, 189, 248, .12);
+  border: 1px solid rgba(56, 189, 248, .35);
+  color: #7dd3fc;
+  white-space: nowrap;
+}
+
+.cabinet-spread-indicator {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.spread-line {
+  width: 32px;
+  height: 1px;
+  background: rgba(255, 255, 255, .2);
+}
+
+.spread-text {
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* Product Card Inside Zone */
+.zone-product-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(0, 0, 0, .25);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: var(--r-sm);
+  padding: .85rem 1.1rem;
+}
+
+.zone-product-body {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  cursor: pointer;
+  flex: 1 1 280px;
+}
+
+.zone-product-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-xs);
+  object-fit: cover;
+  background: var(--panel-2);
+}
+
+.zone-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.zone-product-brand {
+  font-size: .72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.zone-product-name {
+  font-size: .96rem;
+  font-family: var(--display);
+  color: #fff;
+}
+
+.zone-product-pack-note {
+  font-size: .76rem;
+  color: #38bdf8;
+}
+
+.zone-product-price {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.zone-product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+.booth-qty-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .8rem;
+  background: var(--panel-2);
+  padding: .2rem .4rem;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--line);
+}
+
+.btn-qty {
+  background: none;
+  border: 1px solid var(--line);
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-qty:hover:not(:disabled) {
+  background: rgba(139, 92, 246, .2);
+  border-color: var(--flame);
+}
+
+.btn-qty:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+.qty-num {
+  font-weight: 700;
+  min-width: 14px;
+  text-align: center;
+}
+
+.booth-del-btn {
+  background: none;
+  border: 1px solid rgba(248, 113, 113, .3);
+  color: #f87171;
+  padding: .25rem .55rem;
+  border-radius: var(--r-pill);
+  font-size: .74rem;
+  cursor: pointer;
+}
+
+.booth-del-btn:hover {
+  background: rgba(248, 113, 113, .15);
+}
+
+/* Audio Signal Flow Highway */
+.booth-cables-hub {
+  padding: 1rem 1.25rem;
+  background: rgba(10, 10, 16, .75);
+  border: 1px solid rgba(139, 92, 246, .25);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, .4);
+}
+
+.cables-hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: .85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  padding-bottom: .5rem;
+}
+
+.hub-tag {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--flame-2);
+}
+
+.hub-title {
+  margin: 0;
+  font-size: 1rem;
+  font-family: var(--display);
+  color: #fff;
+}
+
+.cables-routes-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+
+.cable-route-card {
+  padding: .85rem 1.15rem;
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.cable-route-card--pa {
+  border-color: rgba(251, 146, 60, .25);
+}
+
+.cable-route-card--monitors {
+  border-color: rgba(56, 189, 248, .25);
+}
+
+.route-role-badge {
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.route-flow-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.route-node {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 140px;
+}
+
+.node-sub {
+  font-size: .7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.node-name {
+  font-size: .88rem;
+  color: #fff;
+}
+
+.node-port {
+  font-size: .74rem;
+  color: var(--cyan);
+  font-family: monospace;
+}
+
+.route-pipe {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  position: relative;
+}
+
+.pipe-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, .1);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipe--active .pipe-track {
+  background: rgba(56, 189, 248, .2);
+}
+
+.signal-dot {
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 4px;
+  background: var(--cyan);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--cyan);
+  animation: flow-pulse 2s infinite linear;
+}
+
+@keyframes flow-pulse {
+  0% { left: -10%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+.pipe-cable-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .65rem;
+  border-radius: var(--r-pill);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.pipe-cable-pill:hover {
+  border-color: var(--cyan);
+  transform: scale(1.02);
+}
+
+.pill-name {
+  font-size: .78rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pill-badge {
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .1rem .4rem;
+  border-radius: var(--r-pill);
+  background: rgba(52, 211, 153, .12);
+  color: var(--mint);
+}
+
+/* Routing Limitation Box (High-Contrast Alert) */
+.cable-route-card--conflict {
+  border-color: rgba(248, 113, 113, .5);
+  background: rgba(248, 113, 113, .05);
+}
+
+.route-role-badge--conflict {
+  color: #f87171;
+}
+
+.conflict-content {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.conflict-head {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: #f87171;
+  font-size: .9rem;
+}
+
+.conflict-desc {
+  margin: 0;
+  font-size: .84rem;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+
+.conflict-solutions {
+  font-size: .8rem;
+  color: var(--text-2);
+  margin-top: .3rem;
+  padding-top: .3rem;
+  border-top: 1px solid rgba(248, 113, 113, .2);
+}
+
+.conflict-solutions ul {
+  margin: .3rem 0 0 1.2rem;
+  padding: 0;
+}
+
+.conflict-solutions li {
+  margin-bottom: .2rem;
+}
+
+/* Dedicated Post-Build Action Dock */
+.rig-manage-dock {
+  margin: 2.5rem 0 1.5rem;
+  padding: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.manage-dock-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.manage-dock-info {
+  max-width: 540px;
+}
+
+.manage-dock-eyebrow {
+  display: block;
+  font-size: .74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--flame-2);
+  margin-bottom: .2rem;
+}
+
+.manage-dock-title {
+  margin: 0 0 .25rem;
+  font-size: 1.2rem;
+  font-family: var(--display);
+  color: #fff;
+}
+
+.manage-dock-desc {
+  margin: 0;
+  font-size: .84rem;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.manage-dock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+}

@@ -33,6 +33,7 @@
   // Active slot being edited in modal
   var activeModalSlotId = null;
   var activeModalCategory = null;
+  var activeModalSpeakerRole = null;
 
   // DOM Mount Root
   var builderRoot = document.getElementById("rig-app-root");
@@ -504,6 +505,33 @@
       });
     }
 
+    // Check for hardware routing limitations on multi-line speaker setups
+    var spkGroup = getRigSpeakerSlots();
+    if (spkGroup.paSlot && spkGroup.monitorSlot && controller) {
+      var paItem = getSlotItem(spkGroup.paSlot);
+      var monItem = getSlotItem(spkGroup.monitorSlot);
+      if (paItem && monItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
+        var usedOuts = {};
+        var pPlan = OffbeatGear.connectionPlan(CATALOG, controller, paItem, spkGroup.paSlot.qty || 1, { usedOutputs: usedOuts });
+        if (pPlan && pPlan.output) {
+          usedOuts[pPlan.output.connector] = (usedOuts[pPlan.output.connector] || 0) + 1;
+          usedOuts.claimed = [pPlan.output];
+        }
+        var mPlan = OffbeatGear.connectionPlan(CATALOG, controller, monItem, spkGroup.monitorSlot.qty || 1, { usedOutputs: usedOuts });
+        if (mPlan && mPlan.conflict) {
+          fatalErrors++;
+          checks.unshift({
+            type: "warning",
+            statusLevel: "incompatible",
+            title: "Hardware Limitation: Secondary Speaker Route Cannot Be Fed",
+            desc: controller.model + " only provides one stereo master output and lacks an independent booth output. " +
+              "It cannot simultaneously drive crowd PA and DJ monitors without an external DJ mixer or powered distribution box.",
+            fixCableId: null
+          });
+        }
+      }
+    }
+
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
       if (laptop.id === "existing-mobile-device" && !controller.standalone) {
@@ -740,20 +768,7 @@
           <div class="rig-title-block">
             <span class="hero-eyebrow">Interactive DJ Rig Architect</span>
             <h2 class="rig-main-title" contenteditable="true" data-rig-name title="Click to rename your setup">${escapeHtml(currentRig.name)}</h2>
-            <p class="rig-subtitle">Assemble your dream DJ rig, verify live audio signal routing, toggle gear you already own, and generate an itemized shopping list.</p>
-          </div>
-          <div class="rig-dash-actions">
-            <!-- Sound FX Toggle -->
-            <button type="button" class="btn-sfx-toggle ${soundEnabled ? 'is-on' : 'is-muted'}" data-action="toggle-sound" title="Toggle audio feedback sounds">
-              ${soundEnabled ? '🔊 Audio FX: ON' : '🔇 Audio FX: OFF'}
-            </button>
-
-            <!-- Export / Share Actions -->
-            <button type="button" class="btn btn-secondary btn-sm" data-action="open-export-modal">📤 Share &amp; Export</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="copy-checklist">📋 Checklist</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="save-rig">💾 Save</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="open-compare">⚖️ Compare</button>
-            <button type="button" class="btn btn-sm" data-action="random-rig">🎲 Preset</button>
+            <p class="rig-subtitle">Assemble your dream DJ rig with dedicated crowd-facing PA and DJ-facing booth monitoring, verify physical signal routing, toggle gear you already own, and generate an itemized shopping list.</p>
           </div>
         </div>
 
@@ -813,7 +828,7 @@
       </section>
 
       <!-- Compatibility Engine Alerts -->
-      <section class="rig-compat-section">
+      <section class="rig-compat-section" id="rs-compatibility">
         <div class="compat-box">
           <div class="compat-header">
             <h4>⚡ Hardware &amp; Signal Compatibility Assistant</h4>
@@ -925,8 +940,25 @@
         </p>
       </section>
 
-      <!-- Saved Rigs & Comparison Section -->
-      <section class="rig-saved-section" id="saved-rigs-drawer">
+      <!-- Dedicated Management Dock: Save, Share, Export, Compare -->
+      <section class="rig-manage-dock" id="rig-actions-dock">
+        <div class="manage-dock-inner">
+          <div class="manage-dock-info">
+            <span class="manage-dock-eyebrow">Rig Management &amp; Export</span>
+            <h3 class="manage-dock-title">Save, Share &amp; Export Your Setup</h3>
+            <p class="manage-dock-desc">Generate shareable links, export markdown checklists for Reddit and Discord communities, or compare this build side-by-side with club benchmarks.</p>
+          </div>
+          <div class="manage-dock-actions">
+            <button type="button" class="btn btn-primary btn-sm" data-action="open-export-modal">📤 Share &amp; Export</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="copy-checklist">📋 Checklist</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="save-rig">💾 Save</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="open-compare">⚖️ Compare</button>
+            <button type="button" class="btn btn-sm" data-action="random-rig">🎲 Preset</button>
+            <button type="button" class="btn-sfx-toggle ${soundEnabled ? 'is-on' : 'is-muted'}" data-action="toggle-sound" title="Toggle audio feedback sounds">
+              ${soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF'}
+            </button>
+          </div>
+        </div>
         ${renderSavedRigsList()}
       </section>
 
@@ -937,53 +969,108 @@
     builderRoot.innerHTML = html;
   }
 
+  function isPAItem(item) {
+    if (!item) return false;
+    return item.id === "jbl-eon-715" ||
+      /\bPA\b/i.test(item.type || "") ||
+      /loudspeaker/i.test(item.type || "") ||
+      item.is_pa === true ||
+      (item.box_label && /single cabinet/i.test(item.box_label) && item.speaker_units === 1 && item.price >= 400);
+  }
+
+  function getSpeakerRole(slot) {
+    if (!slot) return "dj_monitor";
+    if (slot.role === "crowd_pa" || slot.role === "dj_monitor") return slot.role;
+    var item = getItem(slot.itemId);
+    if (isPAItem(item)) return "crowd_pa";
+    return "dj_monitor";
+  }
+
+  function getRigSpeakerSlots() {
+    var speakerSlots = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    var paSlot = null;
+    var monitorSlot = null;
+    var extra = [];
+
+    speakerSlots.forEach(function (slot) {
+      var role = getSpeakerRole(slot);
+      if (role === "crowd_pa") {
+        if (!paSlot) paSlot = slot;
+        else extra.push(slot);
+      } else {
+        if (!monitorSlot) monitorSlot = slot;
+        else extra.push(slot);
+      }
+    });
+
+    if (!paSlot && extra.length > 0) {
+      paSlot = extra.shift();
+      paSlot.role = "crowd_pa";
+    } else if (!monitorSlot && extra.length > 0) {
+      monitorSlot = extra.shift();
+      monitorSlot.role = "dj_monitor";
+    }
+
+    return {
+      paSlot: paSlot,
+      monitorSlot: monitorSlot,
+      all: speakerSlots,
+      extra: extra
+    };
+  }
+
   function findSlot(category) {
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
 
-  /* ------------------------------------------------- Interactive DJ Booth */
+  /* ------------------------------------------------- Interactive DJ Booth (Purpose-Based) */
   function renderBooth(stats) {
     var controllerSlot = findSlot("controllers") || { slotId: "core-ctrl", category: "controllers", itemId: null };
     var headphonesSlot = findSlot("headphones") || { slotId: "core-hp", category: "headphones", itemId: null };
     var hostSlot = findSlot("laptops") || { slotId: "core-host", category: "laptops", itemId: null };
 
-    var speakerSlots = currentRig.items.filter(function (s) { return s.category === "speakers"; });
-    if (speakerSlots.length === 0) {
-      speakerSlots = [{ slotId: "core-spk", category: "speakers", itemId: null }];
-    }
-    var primarySpeakerSlot = speakerSlots[0];
-    var secondarySpeakerSlot = speakerSlots.length > 1 ? speakerSlots[1] : null;
-
     var micSlot = findSlot("microphones");
     var standSlot = findSlot("stands");
     var storageSlot = findSlot("storage");
 
+    var spkGroup = getRigSpeakerSlots();
+    var paSlot = spkGroup.paSlot;
+    var monitorSlot = spkGroup.monitorSlot;
+
     var ctrlItem = getSlotItem(controllerSlot);
-    var spkItem = getSlotItem(primarySpeakerSlot);
-    var primaryUnits = spkItem ? (spkItem.speaker_units || 1) : 1;
-    var primaryQty = primarySpeakerSlot.qty || 1;
-    var isPA = spkItem && (spkItem.id === "jbl-eon-715" || /\bPA\b/i.test(spkItem.type) || /loudspeaker/i.test(spkItem.type));
-    var isMasterSlavePair = spkItem && spkItem.connection && spkItem.connection.topology === "master_slave";
-    var isBoxedPair = primaryUnits === 2;
-    var isStereoPair = isBoxedPair || primaryQty >= 2;
+    var paItem = paSlot ? getSlotItem(paSlot) : null;
+    var monItem = monitorSlot ? getSlotItem(monitorSlot) : null;
+
+    var paQty = paSlot ? (paSlot.qty || 1) : 0;
+    var monQty = monitorSlot ? (monitorSlot.qty || 1) : 0;
+
+    var isStereoPA = paQty >= 2;
+    var isBoxedPair = monItem && (monItem.id === "pioneer-dm40d" || monItem.speaker_units === 2);
+    var isStereoMonitors = isBoxedPair || monQty >= 2;
 
     // Use OffbeatGear for real connection calculations
     var usedOutputs = {};
-    var primaryPlan = null;
-    var secondaryPlan = null;
-    var secItem = secondarySpeakerSlot ? getSlotItem(secondarySpeakerSlot) : null;
-    if (ctrlItem && spkItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
-      primaryPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, spkItem, primaryQty, { usedOutputs: usedOutputs });
-      if (primaryPlan && primaryPlan.output) {
-        usedOutputs[primaryPlan.output.connector] = (usedOutputs[primaryPlan.output.connector] || 0) + 1;
-        if (!usedOutputs.claimed) usedOutputs.claimed = [];
-        usedOutputs.claimed.push(primaryPlan.output);
+    var paPlan = null;
+    var monitorPlan = null;
+
+    if (ctrlItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
+      // 1. Crowd PA takes priority for Master Output
+      if (paSlot && paItem) {
+        paPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, paItem, paQty, { usedOutputs: usedOutputs });
+        if (paPlan && paPlan.output) {
+          usedOutputs[paPlan.output.connector] = (usedOutputs[paPlan.output.connector] || 0) + 1;
+          if (!usedOutputs.claimed) usedOutputs.claimed = [];
+          usedOutputs.claimed.push(paPlan.output);
+        }
       }
-      if (secItem) {
-        secondaryPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, secItem, secondarySpeakerSlot.qty || 1, { usedOutputs: usedOutputs });
-        if (secondaryPlan && secondaryPlan.output) {
-          usedOutputs[secondaryPlan.output.connector] = (usedOutputs[secondaryPlan.output.connector] || 0) + 1;
-          usedOutputs.claimed.push(secondaryPlan.output);
+
+      // 2. DJ Monitors take Booth output (or Master output if PA is absent)
+      if (monitorSlot && monItem) {
+        monitorPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, monItem, monQty, { usedOutputs: usedOutputs });
+        if (monitorPlan && monitorPlan.output) {
+          usedOutputs[monitorPlan.output.connector] = (usedOutputs[monitorPlan.output.connector] || 0) + 1;
+          if (!usedOutputs.claimed) usedOutputs.claimed = [];
+          usedOutputs.claimed.push(monitorPlan.output);
         }
       }
     }
@@ -991,78 +1078,24 @@
     var cableSlots = currentRig.items.filter(function (s) { return s.category === "cables"; });
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
 
-    // Real route classification: never claim balanced unless signal path actually is!
-    var cableClass = "unbalanced";
-    if (primaryPlan) {
-      if (primaryPlan.kind === "unresolved") {
-        cableClass = "conflict";
-      } else if (primaryPlan.kind === "included") {
-        cableClass = "included";
-      } else if (primaryPlan.balanced) {
-        cableClass = "balanced";
-      } else {
-        cableClass = "unbalanced";
-      }
-    }
+    var paBadgeText = !paSlot ? "📢 Crowd PA: Not in Setup (Practice Mode)" : (isStereoPA ? "📢 Crowd PA: Stereo Array (" + paQty + " Loudspeakers)" : "📢 Crowd PA: Mono PA Cabinet (1 Loudspeaker)");
+    var monBadgeText = !monitorSlot ? "🔊 DJ Monitors: None (Headphones Cue Only)" : (isBoxedPair ? "🔊 DJ Monitors: Stereo Pair (2 Cabinets in 1 Box)" : (monQty >= 2 ? "🔊 DJ Monitors: Stereo Dual Monitors (" + monQty + " Units)" : "⚠️ DJ Monitors: Mono (1 Unit · 2 Recommended)"));
 
-    var outText = primaryPlan && primaryPlan.output
-      ? (primaryPlan.output.label || (primaryPlan.output.connector.toUpperCase() + " Master"))
-      : (ctrlItem ? (ctrlItem.master_outputs ? ctrlItem.master_outputs.join(" / ") : "Master Out") : "No Master Out");
-    var inText = primaryPlan && primaryPlan.socket
-      ? (OffbeatGear.endpointLabel(primaryPlan.socket.connector || primaryPlan.socket) + " In")
-      : (spkItem ? (spkItem.inputs ? spkItem.inputs.join(" / ") : "Audio In") : "No Speaker In");
+    var routingBadgeText = "⚡ Signal Path Verified";
+    var routingBadgeClass = "badge--signal-ok";
 
-    var speakerBadgeText = "";
-    if (!spkItem) {
-      speakerBadgeText = "🔇 No Speakers Selected";
-    } else if (isPA) {
-      speakerBadgeText = primaryQty >= 2
-        ? "📢 Stereo Live PA Setup (" + primaryQty + " Loudspeakers)"
-        : "📢 Mono Live PA Loudspeaker (1 Physical Cabinet)";
-    } else if (isMasterSlavePair) {
-      speakerBadgeText = "🔊 Studio Nearfield Stereo Pair (Complete 2-Cabinet Box)";
-    } else if (isStereoPair) {
-      speakerBadgeText = "🔊 Two Independently Powered Studio Monitors (Stereo Pair)";
-    } else {
-      speakerBadgeText = "⚠️ Mono Studio Monitor (1 Cabinet · Stereo Pair Recommended)";
-    }
-
-    var routingBadgeText = "⚠️ Routing Review Recommended";
-    var routingBadgeClass = "badge--signal-warn";
-    if (primaryPlan && primaryPlan.kind === "included") {
+    if ((monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict)) {
+      routingBadgeText = "⚠️ Hardware Routing Limitation (No Spare Output)";
+      routingBadgeClass = "badge--signal-warn";
+    } else if (monitorPlan && monitorPlan.kind === "included") {
       routingBadgeText = "📦 In-Box Audio Cable Verified ($0)";
       routingBadgeClass = "badge--signal-ok";
-    } else if (primaryPlan && primaryPlan.kind === "product" && primaryPlan.balanced) {
+    } else if ((paPlan && paPlan.balanced) || (monitorPlan && monitorPlan.balanced)) {
       routingBadgeText = "⚡ Balanced Signal Path Verified";
-      routingBadgeClass = "badge--signal-ok";
-    } else if (primaryPlan && primaryPlan.kind === "product") {
-      routingBadgeText = "🔌 Analog Signal Path Matched";
       routingBadgeClass = "badge--signal-ok";
     } else if (stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0) {
       routingBadgeText = "⚡ Signal Path Verified";
       routingBadgeClass = "badge--signal-ok";
-    }
-
-    var leftSpeakerLabel = "";
-    if (isPA) {
-      leftSpeakerLabel = primaryQty >= 2 ? "Main PA Left (Cabinet 1)" : "Main PA Cabinet (Mono · 1 Cabinet)";
-    } else if (isMasterSlavePair) {
-      leftSpeakerLabel = "Left Monitor (Powered Master)";
-    } else if (isStereoPair) {
-      leftSpeakerLabel = "Left Monitor (Cabinet 1 · Independently Powered)";
-    } else {
-      leftSpeakerLabel = "Studio Monitor (Mono · 1 Cabinet)";
-    }
-
-    var rightSpeakerLabel = "";
-    if (isPA) {
-      rightSpeakerLabel = "Main PA Right (Cabinet 2 · Stereo)";
-    } else if (isMasterSlavePair) {
-      rightSpeakerLabel = "Right Monitor (Passive Satellite)";
-    } else if (isStereoPair) {
-      rightSpeakerLabel = "Right Monitor (Cabinet 2 · Independently Powered)";
-    } else {
-      rightSpeakerLabel = "Right Monitor (Stereo Pair)";
     }
 
     return `
@@ -1071,11 +1104,14 @@
           <div class="booth-title-group">
             <span class="booth-kicker">Interactive Setup Builder · Real Signal Flow</span>
             <h3 class="booth-main-heading">DJ Studio Booth &amp; Cable Routing</h3>
-            <p class="booth-lead-desc">Click any component to swap models or inspect specs. Mark gear you already own to calculate out-of-pocket costs.</p>
+            <p class="booth-lead-desc">Purpose-based audio routing separating crowd-facing PA systems from performer booth monitors. Animated signals represent verified physical hardware routes.</p>
           </div>
           <div class="booth-stage-badges">
-            <span class="booth-badge ${isPA ? 'badge--pa' : 'badge--studio'}">
-              ${speakerBadgeText}
+            <span class="booth-badge ${paSlot ? 'badge--pa' : 'badge--neutral'}">
+              ${paBadgeText}
+            </span>
+            <span class="booth-badge ${monitorSlot ? 'badge--studio' : 'badge--neutral'}">
+              ${monBadgeText}
             </span>
             <span class="booth-badge ${routingBadgeClass}">
               ${routingBadgeText}
@@ -1084,84 +1120,33 @@
         </div>
 
         <div class="rig-booth-stage">
-          <!-- TOP ROW: Speakers and Host System -->
-          <div class="booth-top-row">
-            <!-- Left Speaker -->
-            <div class="booth-col booth-col--spk">
-              ${renderSpeakerCard(
-                primarySpeakerSlot,
-                leftSpeakerLabel,
-                isPA ? "📢" : "🔊",
-                false,
-                false,
-                isStereoPair ? "left" : "single"
-              )}
-            </div>
-
-            <!-- Center: Host Computer / Smart Device -->
-            <div class="booth-col booth-col--host">
-              ${renderBoothSlot(hostSlot, "Host Platform & Library", "💻", false)}
-            </div>
-
-            <!-- Right Speaker or Secondary Booth Speaker -->
-            <div class="booth-col booth-col--spk">
-              ${secondarySpeakerSlot
-                ? renderSpeakerCard(secondarySpeakerSlot, "Secondary / Booth Monitor", isPA ? "📢" : "🔊", true, false, "secondary")
-                : isStereoPair
-                  ? renderSpeakerCard(
-                      primarySpeakerSlot,
-                      rightSpeakerLabel,
-                      isPA ? "📢" : "🔊",
-                      false,
-                      true,
-                      "right"
-                    )
-                  : renderAddSecondSpeakerCard(primarySpeakerSlot, isPA)
-              }
-            </div>
+          <!-- TOP ZONE: Crowd-Facing PA System (Front-of-House / Audience) -->
+          <div class="booth-purpose-zone booth-purpose-zone--pa">
+            ${renderCrowdPASection(paSlot, ctrlItem, paPlan)}
           </div>
 
-          <!-- DYNAMIC SIGNAL FLOW & CABLE ROUTING HUB -->
-          <div class="booth-cables-row">
-            <div class="cable-pulse-line cable-pulse--left cable-pulse--${cableClass}">
-              <span class="signal-dot signal-dot--left"></span>
-            </div>
-
-            <div class="cable-node-hub" data-action="pick" data-slot-id="${primaryCableSlot.slotId || 'core-cable'}" data-category="cables" title="Click to view connection details or swap audio cables">
-              <span class="cable-icon">🔌</span>
-              <span class="cable-title">${getCableSummaryText(primaryPlan)}</span>
-              <span class="cable-route-hint">${escapeHtml(outText)} → ${escapeHtml(inText)}</span>
-              <span class="cable-change">Change Cables →</span>
-            </div>
-
-            <div class="cable-pulse-line cable-pulse--right cable-pulse--${cableClass}">
-              <span class="signal-dot signal-dot--right"></span>
-            </div>
+          <!-- MIDDLE ZONE: Dynamic Signal Flow Routing Highway -->
+          <div class="booth-purpose-zone booth-purpose-zone--highway">
+            ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot)}
           </div>
 
-          ${secondaryPlan ? `
-            <div class="booth-secondary-route ${secondaryPlan.kind === 'unresolved' ? 'route--conflict' : (secondaryPlan.balanced ? 'route--balanced' : 'route--unbalanced')}">
-              <span class="sec-route-icon">${secondaryPlan.kind === 'unresolved' ? '⚠️' : '⚡'}</span>
-              <span class="sec-route-text">
-                Secondary Output: ${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} [${escapeHtml(secondaryPlan.output ? secondaryPlan.output.label : 'Output')}] → ${escapeHtml(secItem ? secItem.model : 'Speaker')}
-                ${secondaryPlan.kind === 'unresolved' ? '— <strong>Port Conflict: no spare output available on this controller</strong>' : ('— ' + escapeHtml(secondaryPlan.label) + (secondaryPlan.balanced ? ' (Balanced)' : ''))}
-              </span>
-            </div>
-          ` : ''}
-
-          <!-- BOTTOM ROW: Performance Core (Headphones, Main Controller, Studio Accessories) -->
-          <div class="booth-bottom-row">
-            <!-- Left: Headphones -->
-            <div class="booth-col booth-col--hp">
-              ${renderBoothSlot(headphonesSlot, "Cue Headphones", "🎧", false)}
+          <!-- BOTTOM ZONE: Performance Core & DJ-Facing Monitors -->
+          <div class="booth-bottom-row booth-workstation-row">
+            <!-- Col 1: DJ-Facing Monitors (Booth Reference) -->
+            <div class="booth-col booth-col--monitors">
+              ${renderDJMonitorsSection(monitorSlot, ctrlItem, monitorPlan)}
             </div>
 
-            <!-- Center: Main DJ Controller / Mixer & Decks -->
-            <div class="booth-col booth-col--ctrl">
-              ${renderBoothSlot(controllerSlot, "DJ Controller / Decks & Mixer", "🎛️", true)}
+            <!-- Col 2: Performance Core (Host + Controller + Headphones) -->
+            <div class="booth-col booth-col--core">
+              <div class="booth-core-stack">
+                ${renderBoothSlot(hostSlot, "Host Platform & Library", "💻", false)}
+                ${renderBoothSlot(controllerSlot, "DJ Controller / Decks & Mixer", "🎛️", true)}
+                ${renderBoothSlot(headphonesSlot, "Cue Headphones", "🎧", false)}
+              </div>
             </div>
 
-            <!-- Right: Studio Accessories (Mic, Stand, Media) -->
+            <!-- Col 3: Studio Accessories (Mic, Stand, Media) -->
             <div class="booth-col booth-col--acc">
               <div class="booth-acc-container">
                 <span class="acc-container-label">Studio Accessories</span>
@@ -1176,103 +1161,405 @@
     `;
   }
 
-  function renderSpeakerCard(slot, label, icon, isSecondary, isRightChannel, channelMode) {
-    var item = getSlotItem(slot);
-    var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
-
-    if (!item) {
+  /* ------------------------------------------------------------- Zone 1: Crowd PA */
+  function renderCrowdPASection(paSlot, ctrlItem, paPlan) {
+    if (!paSlot || !paSlot.itemId) {
       return `
-        <div class="booth-card booth-card--spk booth-card--empty" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
-          <span class="booth-card-role">${icon} ${escapeHtml(label)}</span>
-          <div class="booth-empty-content">
-            <span class="booth-plus">+</span>
-            <strong>Select Speakers</strong>
+        <div class="booth-speaker-zone booth-speaker-zone--empty booth-speaker-zone--pa-empty" id="zone-crowd-pa">
+          <div class="zone-empty-header">
+            <span class="zone-role-tag">Audience &amp; Venue Sound</span>
+            <h4 class="zone-role-title">📢 Crowd-Facing PA Sound System</h4>
           </div>
+          <p class="zone-empty-text">No crowd PA in this setup. Perfect for bedroom mixing, home streaming, or private practice. If performing for an audience at a house party, wedding, or live venue, add PA loudspeakers.</p>
+          <button type="button" class="btn btn-sm btn-primary btn-add-pa" data-action="add-speaker-role" data-speaker-role="crowd_pa">
+            📢 Add Crowd-Facing PA Speakers
+          </button>
         </div>
       `;
     }
 
-    var qty = slot.qty || 1;
-    var linePrice = item.price * qty;
-    var isPair = item.speaker_units === 2 || /pair/i.test(item.model);
-
-    var priceDisplay = "";
-    if (isOwned) {
-      priceDisplay = '<s>$' + linePrice + '</s> <span class="owned-sub">✓ Owned (Saved $' + linePrice + ')</span>';
-    } else if (isPair) {
-      priceDisplay = '$' + linePrice + ' <span class="booth-unit-hint">(Complete Pair)</span>';
-    } else if (qty > 1) {
-      priceDisplay = '$' + item.price + ' ea <span class="booth-unit-hint">($' + linePrice + ' for ' + qty + ')</span>';
-    } else {
-      priceDisplay = '$' + linePrice + ' <span class="booth-unit-hint">(Single Unit)</span>';
-    }
-
-    var packBadge = "";
-    if (isPair) {
-      packBadge = "Sold as complete stereo pair in 1 box";
-    } else if (qty === 1) {
-      packBadge = "Sold individually · 1 physical cabinet in setup";
-    } else {
-      packBadge = "Sold individually · " + qty + " cabinets in setup";
-    }
+    var item = getSlotItem(paSlot);
+    var qty = paSlot.qty || 1;
+    var isOwned = Boolean(paSlot.owned);
+    var linePrice = item ? item.price * qty : 0;
+    var isStereo = qty >= 2;
 
     return `
-      <div class="booth-card booth-card--spk ${isOwned ? 'booth-card--owned' : ''}">
-        <div class="booth-card-top">
-          <span class="booth-card-role">${icon} ${escapeHtml(label)}</span>
-          <button type="button" class="booth-owned-toggle rs-own-toggle ${isOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" title="Toggle already owned">
-            ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
-          </button>
-        </div>
-        <div class="booth-card-body" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
-          <div class="booth-thumb-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.brand + ' ' + item.model)}" loading="lazy" class="booth-thumb">
+      <div class="booth-speaker-zone booth-speaker-zone--pa ${isOwned ? 'is-owned' : ''}" id="zone-crowd-pa">
+        <div class="zone-header">
+          <div class="zone-header-info">
+            <span class="zone-role-tag">Audience &amp; Venue Sound</span>
+            <h4 class="zone-role-title">📢 Crowd-Facing PA System</h4>
+            <span class="zone-role-sub">Aimed outward at the audience and dancefloor</span>
           </div>
-          <div class="booth-info">
-            <span class="booth-brand">${escapeHtml(item.brand)}</span>
-            <strong class="booth-model">${escapeHtml(item.model)}</strong>
-            <span class="booth-price ${isOwned ? 'price--owned' : ''}">
-              ${priceDisplay}
-            </span>
-            <span class="booth-pack-note">${escapeHtml(packBadge)}</span>
+          <div class="zone-header-actions">
+            <span class="booth-unit-badge">${isStereo ? 'Stereo PA Array (' + qty + ' Cabinets · ' + qty + ' Boxes)' : 'Mono PA Main (1 Cabinet · 1 Box)'}</span>
+            <button type="button" class="btn-own-toggle ${isOwned ? 'is-owned btn-own-toggle--owned' : 'btn-own-toggle--need'} rs-own-toggle" data-action="toggle-slot-owned" data-slot-id="${paSlot.slotId}">
+              ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
+            </button>
+            <button type="button" class="booth-del-btn" data-action="remove-slot" data-slot-id="${paSlot.slotId}" title="Remove Crowd PA">✕</button>
           </div>
         </div>
-        <div class="booth-card-footer">
-          <div class="booth-qty-inline">
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>-</button>
-            <span class="qty-display">Qty: ${qty}</span>
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+
+        <div class="zone-cabinets-stage">
+          ${renderPACabinetVisual(qty, item)}
+        </div>
+
+        <div class="zone-product-card">
+          <div class="zone-product-body" data-action="pick" data-slot-id="${paSlot.slotId}" data-category="speakers" data-speaker-role="crowd_pa">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="zone-product-thumb" loading="lazy">
+            <div class="zone-product-info">
+              <span class="zone-product-brand">${escapeHtml(item.brand)}</span>
+              <strong class="zone-product-name">${escapeHtml(item.model)}</strong>
+              <span class="zone-product-pack-note">${escapeHtml(item.pack_note || 'Sold as single powered PA cabinet')}</span>
+              <span class="zone-product-price ${isOwned ? 'price--owned' : ''}">
+                ${isOwned ? '<s>$' + linePrice.toLocaleString() + '</s> <span class="owned-sub">✓ Owned ($0 out of pocket)</span>' : '$' + linePrice.toLocaleString() + (qty > 1 ? ' <span class="unit-sub">($' + item.price + ' ea)</span>' : '')}
+              </span>
+            </div>
           </div>
-          <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${slot.slotId}" data-category="speakers">
-            Swap →
-          </button>
-          <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed hardware specs">
-            Specs ℹ️
-          </button>
+          <div class="zone-product-actions">
+            <div class="booth-qty-inline">
+              <label>Boxes:</label>
+              <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${paSlot.slotId}" data-delta="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>−</button>
+              <span class="qty-num">${qty}</span>
+              <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${paSlot.slotId}" data-delta="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+            </div>
+            <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${paSlot.slotId}" data-category="speakers" data-speaker-role="crowd_pa">Swap Model</button>
+            <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed specs">Specs ℹ️</button>
+          </div>
         </div>
       </div>
     `;
   }
 
-  function renderAddSecondSpeakerCard(slot, isPA) {
-    var item = getSlotItem(slot);
-    var price = item ? item.price : (isPA ? 549 : 199);
-    var icon = isPA ? "📢" : "🔊";
-    var roleLabel = isPA ? "Right PA Speaker (Stereo)" : "Right Monitor (Stereo Pair)";
-    var subLabel = isPA ? "High-output powered PA cabinet" : "Sold individually at retail";
-    return `
-      <div class="booth-card booth-card--spk booth-card--add-pair" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" title="Click to add a second cabinet for stereo sound">
-        <div class="booth-card-top">
-          <span class="booth-card-role">${icon} ${roleLabel}</span>
-          <span class="booth-unit-badge">1 in Rig · Mono</span>
+  function renderPACabinetVisual(qty, item) {
+    if (qty < 2) {
+      return `
+        <div class="cabinet-stage-mono">
+          <div class="cabinet-unit cabinet-unit--pa cabinet-unit--mono">
+            <div class="cabinet-body cabinet-body--pa">
+              <div class="pa-horn"></div>
+              <div class="pa-woofer-wrap">
+                <div class="pa-woofer-cone">
+                  <div class="pa-dust-cap"></div>
+                </div>
+                <div class="sound-wave-rings sound-wave-rings--forward">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="pa-reflex-ports"><span></span><span></span></div>
+            </div>
+            <span class="cabinet-label">Mono PA Cabinet (1 Physical Unit)</span>
+            <span class="cabinet-sub">Master L/Mono Line In · Dedicated AC Mains</span>
+          </div>
         </div>
-        <div class="booth-empty-content">
-          <span class="booth-plus">+</span>
-          <strong>Add 2nd Cabinet for Stereo</strong>
-          <span class="booth-card-sub">${subLabel} (+$${price})</span>
-          <button type="button" class="btn btn-sm btn-secondary" style="margin-top: 0.6rem; pointer-events: none;">
-            + Add 2nd Cabinet (+$${price})
+      `;
+    }
+    return `
+      <div class="cabinet-stage-pair">
+        <div class="cabinet-unit cabinet-unit--pa">
+          <div class="cabinet-body cabinet-body--pa">
+            <div class="pa-horn"></div>
+            <div class="pa-woofer-wrap">
+              <div class="pa-woofer-cone"><div class="pa-dust-cap"></div></div>
+              <div class="sound-wave-rings sound-wave-rings--left"><span></span><span></span></div>
+            </div>
+            <div class="pa-reflex-ports"><span></span><span></span></div>
+          </div>
+          <span class="cabinet-label">Left PA Main (FOH L)</span>
+          <span class="cabinet-sub">Master L feed · AC Power</span>
+        </div>
+
+        <div class="cabinet-spread-indicator">
+          <span class="spread-line"></span>
+          <span class="spread-text">Audience Stereo Spread</span>
+          <span class="spread-line"></span>
+        </div>
+
+        <div class="cabinet-unit cabinet-unit--pa">
+          <div class="cabinet-body cabinet-body--pa">
+            <div class="pa-horn"></div>
+            <div class="pa-woofer-wrap">
+              <div class="pa-woofer-cone"><div class="pa-dust-cap"></div></div>
+              <div class="sound-wave-rings sound-wave-rings--right"><span></span><span></span></div>
+            </div>
+            <div class="pa-reflex-ports"><span></span><span></span></div>
+          </div>
+          <span class="cabinet-label">Right PA Main (FOH R)</span>
+          <span class="cabinet-sub">Master R feed · AC Power</span>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ------------------------------------------------------------- Zone 2: Signal Flow Highway */
+  function renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot) {
+    var paItem = paSlot ? getSlotItem(paSlot) : null;
+    var monItem = monitorSlot ? getSlotItem(monitorSlot) : null;
+
+    var activePlan = paPlan || monitorPlan;
+    var summaryText = getCableSummaryText(activePlan);
+
+    return `
+      <div class="booth-cables-hub" id="signal-highway">
+        <div class="cables-hub-header">
+          <div class="hub-header-left">
+            <span class="hub-tag">Audio Signal Highway</span>
+            <h4 class="hub-title">⚡ Live Audio Cable Routing</h4>
+          </div>
+          <div class="hub-header-right">
+            <span class="cable-title">${escapeHtml(summaryText)}</span>
+          </div>
+        </div>
+
+        <div class="cables-routes-grid">
+          ${paSlot ? `
+            <!-- Crowd PA Route -->
+            <div class="cable-route-card cable-route-card--pa ${paPlan ? (paPlan.balanced ? 'route--balanced' : 'route--unbalanced') : ''}">
+              <div class="route-role-badge">📢 Crowd PA Route (Dancefloor Audio)</div>
+              <div class="route-flow-line">
+                <div class="route-node route-node--source">
+                  <span class="node-sub">Source Output:</span>
+                  <strong class="node-name">${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')}</strong>
+                  <span class="node-port">[${escapeHtml(paPlan && paPlan.output ? paPlan.output.label : 'Master Out')}]</span>
+                </div>
+
+                <div class="route-pipe ${paPlan && paPlan.kind !== 'unresolved' ? 'pipe--active' : 'pipe--blocked'}">
+                  <div class="pipe-track">
+                    ${paPlan && paPlan.kind !== 'unresolved' ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
+                  </div>
+                  <div class="pipe-cable-pill" data-action="pick" data-slot-id="core-cable" data-category="cables">
+                    <span class="pill-icon">🔌</span>
+                    <span class="pill-name">${escapeHtml(paPlan ? paPlan.name : 'Audio Cable')}</span>
+                    <span class="pill-badge">${paPlan && paPlan.balanced ? 'Balanced XLR' : 'Analog Line'}</span>
+                  </div>
+                </div>
+
+                <div class="route-node route-node--dest">
+                  <span class="node-sub">Destination:</span>
+                  <strong class="node-name">${escapeHtml(paItem ? paItem.model : 'Crowd PA')}</strong>
+                  <span class="node-port">[${escapeHtml(paPlan && paPlan.socket ? OffbeatGear.endpointLabel(paPlan.socket.connector || paPlan.socket) : 'Line In')}]</span>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${monitorSlot ? `
+            <!-- DJ Monitors Route -->
+            ${monitorPlan && monitorPlan.conflict ? `
+              <div class="cable-route-card cable-route-card--conflict">
+                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware Routing Limitation: No Independent Booth Output</div>
+                <div class="conflict-content">
+                  <div class="conflict-head">
+                    <span class="conflict-icon">⚠️</span>
+                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently</strong>
+                  </div>
+                  <p class="conflict-desc">
+                    ${escapeHtml(ctrlItem ? ctrlItem.model : 'This device')} only provides one stereo master output (${escapeHtml(ctrlItem && ctrlItem.master_outputs ? ctrlItem.master_outputs.join(', ') : 'Master')} which is currently feeding Crowd PA), and lacks a secondary booth monitor output.
+                  </p>
+                  <div class="conflict-solutions">
+                    <strong>Verified Solutions:</strong>
+                    <ul>
+                      <li>Practice using <strong>Cue Headphones</strong> only when crowd PA is active.</li>
+                      <li>Upgrade to a 4-channel controller with dedicated <strong>Booth outputs</strong> (e.g. DDJ-FLX10 or XDJ-AZ).</li>
+                      <li>Route master output through an <strong>external DJ mixer</strong> or active audio distribution splitter box (do NOT use passive Y-cables).</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <div class="cable-route-card cable-route-card--monitors ${monitorPlan ? (monitorPlan.kind === 'included' ? 'route--included' : (monitorPlan.balanced ? 'route--balanced' : 'route--unbalanced')) : ''}">
+                <div class="route-role-badge">🔊 DJ Monitor Route (Personal Booth Sound)</div>
+                <div class="route-flow-line">
+                  <div class="route-node route-node--source">
+                    <span class="node-sub">Source Output:</span>
+                    <strong class="node-name">${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')}</strong>
+                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.output ? monitorPlan.output.label : (paSlot ? 'Booth Out' : 'Master Out'))}]</span>
+                  </div>
+
+                  <div class="route-pipe ${monitorPlan && monitorPlan.kind !== 'unresolved' ? 'pipe--active' : 'pipe--blocked'}">
+                    <div class="pipe-track">
+                      ${monitorPlan && monitorPlan.kind !== 'unresolved' ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
+                    </div>
+                    <div class="pipe-cable-pill" data-action="pick" data-slot-id="core-cable" data-category="cables">
+                      <span class="pill-icon">🔌</span>
+                      <span class="pill-name">${escapeHtml(monitorPlan ? monitorPlan.name : 'Audio Cable')}</span>
+                      <span class="pill-badge">${monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')}</span>
+                    </div>
+                  </div>
+
+                  <div class="route-node route-node--dest">
+                    <span class="node-sub">Destination:</span>
+                    <strong class="node-name">${escapeHtml(monItem ? monItem.model : 'DJ Monitors')}</strong>
+                    <span class="node-port">[${escapeHtml(monitorPlan && monitorPlan.socket ? OffbeatGear.endpointLabel(monitorPlan.socket.connector || monitorPlan.socket) : 'Input')}]</span>
+                  </div>
+                </div>
+              </div>
+            `}
+          ` : ''}
+
+          ${!paSlot && !monitorSlot ? `
+            <div class="cable-route-card cable-route-card--empty">
+              <span class="route-empty-text">No speakers currently selected. Add Crowd PA or DJ Monitors to plan required audio cables.</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ------------------------------------------------------------- Zone 3: DJ Monitors */
+  function renderDJMonitorsSection(monitorSlot, ctrlItem, monitorPlan) {
+    if (!monitorSlot || !monitorSlot.itemId) {
+      return `
+        <div class="booth-speaker-zone booth-speaker-zone--empty booth-speaker-zone--monitors-empty" id="zone-monitors">
+          <div class="zone-empty-header">
+            <span class="zone-role-tag">Booth Reference</span>
+            <h4 class="zone-role-title">🔊 DJ-Facing Booth Monitors</h4>
+          </div>
+          <p class="zone-empty-text">No booth monitors in this setup (monitoring via cue headphones only). Add nearfield studio monitors or a booth wedge to hear room sound with zero latency.</p>
+          <button type="button" class="btn btn-sm btn-primary btn-add-monitor" data-action="add-speaker-role" data-speaker-role="dj_monitor">
+            🔊 Add DJ-Facing Monitors
           </button>
+        </div>
+      `;
+    }
+
+    var item = getSlotItem(monitorSlot);
+    var qty = monitorSlot.qty || 1;
+    var isOwned = Boolean(monitorSlot.owned);
+    var linePrice = item ? item.price * qty : 0;
+    var isBoxedPair = item && (item.id === "pioneer-dm40d" || item.speaker_units === 2);
+    var isStereo = isBoxedPair || qty >= 2;
+
+    return `
+      <div class="booth-speaker-zone booth-speaker-zone--monitors ${isOwned ? 'is-owned' : ''}" id="zone-monitors">
+        <div class="zone-header">
+          <div class="zone-header-info">
+            <span class="zone-role-tag">Booth Reference</span>
+            <h4 class="zone-role-title">🔊 DJ-Facing Monitors</h4>
+            <span class="zone-role-sub">Aimed at performer ears for zero-latency monitoring</span>
+          </div>
+          <div class="zone-header-actions">
+            <span class="booth-unit-badge">${isBoxedPair ? 'Stereo Boxed Pair (2 Cabinets in 1 Box)' : (qty >= 2 ? 'Stereo Dual Monitors (' + qty + ' Cabinets · ' + qty + ' Boxes)' : '⚠️ 1 Cabinet (Mono)')}</span>
+            <button type="button" class="btn-own-toggle ${isOwned ? 'is-owned btn-own-toggle--owned' : 'btn-own-toggle--need'} rs-own-toggle" data-action="toggle-slot-owned" data-slot-id="${monitorSlot.slotId}">
+              ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
+            </button>
+            <button type="button" class="booth-del-btn" data-action="remove-slot" data-slot-id="${monitorSlot.slotId}" title="Remove DJ Monitors">✕</button>
+          </div>
+        </div>
+
+        <div class="zone-cabinets-stage">
+          ${renderMonitorCabinetVisual(qty, item)}
+        </div>
+
+        <div class="zone-product-card">
+          <div class="zone-product-body" data-action="pick" data-slot-id="${monitorSlot.slotId}" data-category="speakers" data-speaker-role="dj_monitor">
+            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="zone-product-thumb" loading="lazy">
+            <div class="zone-product-info">
+              <span class="zone-product-brand">${escapeHtml(item.brand)}</span>
+              <strong class="zone-product-name">${escapeHtml(item.model)}</strong>
+              <span class="zone-product-pack-note">${escapeHtml(item.pack_note || (isBoxedPair ? 'Sold as complete pair in one retail box · Includes speaker audio cable' : 'Sold individually · Need 2 units for stereo pair'))}</span>
+              <span class="zone-product-price ${isOwned ? 'price--owned' : ''}">
+                ${isOwned ? '<s>$' + linePrice.toLocaleString() + '</s> <span class="owned-sub">✓ Owned ($0 out of pocket)</span>' : '$' + linePrice.toLocaleString() + (qty > 1 && !isBoxedPair ? ' <span class="unit-sub">($' + item.price + ' ea)</span>' : '')}
+              </span>
+            </div>
+          </div>
+          <div class="zone-product-actions">
+            ${!isBoxedPair ? `
+              <div class="booth-qty-inline">
+                <label>Boxes:</label>
+                <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>−</button>
+                <span class="qty-num">${qty}</span>
+                <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
+              </div>
+            ` : '<span class="booth-unit-badge">1 Retail Box</span>'}
+            <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${monitorSlot.slotId}" data-category="speakers" data-speaker-role="dj_monitor">Swap Model</button>
+            <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed specs">Specs ℹ️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMonitorCabinetVisual(qty, item) {
+    var isBoxedPair = item && (item.id === "pioneer-dm40d" || item.speaker_units === 2);
+    var coneClass = item && /krk/i.test(item.brand) ? "cone--yellow" : (item && /yamaha/i.test(item.brand) ? "cone--white" : "cone--black");
+
+    if (isBoxedPair) {
+      return `
+        <div class="cabinet-stage-pair">
+          <div class="cabinet-unit cabinet-unit--monitor">
+            <div class="cabinet-body cabinet-body--monitor cabinet-body--master">
+              <div class="mon-tweeter"></div>
+              <div class="mon-woofer-cone ${coneClass}"></div>
+              <div class="mon-led mon-led--on"></div>
+              <span class="cabinet-role-tag">Powered Master</span>
+            </div>
+            <span class="cabinet-label">Left Monitor (Master)</span>
+            <span class="cabinet-sub">Amp &amp; Audio Inputs</span>
+          </div>
+
+          <div class="cabinet-link-wire" title="Manufacturer-included speaker interconnection cable">
+            <span class="link-wire-line"></span>
+            <span class="link-wire-badge">⚡ Included Link Wire ($0)</span>
+            <span class="link-wire-line"></span>
+          </div>
+
+          <div class="cabinet-unit cabinet-unit--monitor">
+            <div class="cabinet-body cabinet-body--monitor cabinet-body--satellite">
+              <div class="mon-tweeter"></div>
+              <div class="mon-woofer-cone ${coneClass}"></div>
+              <span class="cabinet-role-tag">Passive Satellite</span>
+            </div>
+            <span class="cabinet-label">Right Monitor (Satellite)</span>
+            <span class="cabinet-sub">Powered from Master lead</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (qty >= 2) {
+      return `
+        <div class="cabinet-stage-pair">
+          <div class="cabinet-unit cabinet-unit--monitor">
+            <div class="cabinet-body cabinet-body--monitor cabinet-body--biamped">
+              <div class="mon-tweeter"></div>
+              <div class="mon-woofer-cone ${coneClass}"></div>
+              <div class="mon-led mon-led--on"></div>
+              <span class="cabinet-role-tag">Active Bi-Amped</span>
+            </div>
+            <span class="cabinet-label">Left Monitor (Cabinet 1)</span>
+            <span class="cabinet-sub">Left signal · AC Power</span>
+          </div>
+
+          <div class="cabinet-spread-indicator">
+            <span class="spread-text">Nearfield Triangle</span>
+          </div>
+
+          <div class="cabinet-unit cabinet-unit--monitor">
+            <div class="cabinet-body cabinet-body--monitor cabinet-body--biamped">
+              <div class="mon-tweeter"></div>
+              <div class="mon-woofer-cone ${coneClass}"></div>
+              <div class="mon-led mon-led--on"></div>
+              <span class="cabinet-role-tag">Active Bi-Amped</span>
+            </div>
+            <span class="cabinet-label">Right Monitor (Cabinet 2)</span>
+            <span class="cabinet-sub">Right signal · AC Power</span>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="cabinet-stage-mono">
+        <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--mono-warn">
+          <div class="cabinet-body cabinet-body--monitor">
+            <div class="mon-tweeter"></div>
+            <div class="mon-woofer-cone ${coneClass}"></div>
+          </div>
+          <span class="cabinet-label">Single Studio Monitor</span>
+          <span class="cabinet-sub">⚠️ Mono sound · Order 2 units for stereo pair</span>
         </div>
       </div>
     `;
@@ -1365,6 +1652,7 @@
     `;
   }
 
+
   function renderModularTableRow(slot) {
     var item = getSlotItem(slot);
     var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
@@ -1374,7 +1662,7 @@
     if (!item) {
       return `
         <tr class="rig-row rig-row--empty rs-shop-line">
-          <td><span class="cat-pill">${catMeta ? catMeta.icon : ''} ${catMeta ? catMeta.name : slot.category}</span></td>
+          <td><span class="cat-pill">${slot.category === "speakers" ? (getSpeakerRole(slot) === "crowd_pa" ? "📢 Crowd-Facing PA" : "🔊 DJ-Facing Monitors") : ((catMeta ? catMeta.icon : "") + " " + (catMeta ? catMeta.name : slot.category))}</span></td>
           <td colspan="4"><span class="empty-slot-msg">No item selected</span></td>
           <td><button type="button" class="btn btn-sm" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}">Select Component</button></td>
         </tr>
@@ -1552,11 +1840,25 @@
   }
 
   /* ------------------------------------------------------------- Modal */
-  function openPickerModal(slotId, category) {
+  function openPickerModal(slotId, category, speakerRole) {
+    activeModalSlotId = slotId;
+    activeModalCategory = category;
+    activeModalSpeakerRole = speakerRole || (category === "speakers" ? (slotId === "slot-crowd-pa" ? "crowd_pa" : "dj_monitor") : null);
     activeModalSlotId = slotId;
     activeModalCategory = category;
     var catMeta = CATALOG.categories.find(function (c) { return c.id === category; });
     var items = CATALOG.items.filter(function (i) { return i.category === category; });
+    if (category === "speakers" && activeModalSpeakerRole) {
+      if (activeModalSpeakerRole === "crowd_pa") {
+        var pa = items.filter(isPAItem);
+        var mon = items.filter(function (i) { return !isPAItem(i); });
+        items = pa.concat(mon);
+      } else {
+        var mon = items.filter(function (i) { return !isPAItem(i); });
+        var pa = items.filter(isPAItem);
+        items = mon.concat(pa);
+      }
+    }
 
     var activeSlot = currentRig.items.find(function (s) { return s.slotId === slotId; });
     var currentItemId = activeSlot ? activeSlot.itemId : null;
@@ -2047,19 +2349,48 @@
         var itemId = btn.getAttribute("data-item-id");
         if (activeModalSlotId && itemId) {
           var targetSlot = currentRig.items.find(function (s) { return s.slotId === activeModalSlotId; });
+          var pickedItem = getItem(itemId);
+          var role = activeModalSpeakerRole || (activeModalCategory === "speakers" ? (isPAItem(pickedItem) ? "crowd_pa" : "dj_monitor") : undefined);
           if (targetSlot) {
             if (!replaceSlotItem(targetSlot, itemId)) return;
+            if (role) targetSlot.role = role;
           } else {
             currentRig.items.push({
               slotId: activeModalSlotId,
               category: activeModalCategory,
+              role: role,
               itemId: itemId,
-              qty: 1,
+              qty: (pickedItem && pickedItem.id === "yamaha-hs5") ? 1 : 1,
               owned: false
             });
           }
+          activeModalSpeakerRole = null;
           playClickSfx("select");
           closeModal();
+          saveActiveState();
+          renderApp();
+        }
+        return;
+      }
+
+      if (action === "add-speaker-role") {
+        var speakerRole = btn.getAttribute("data-speaker-role") || "dj_monitor";
+        var menuElem = document.getElementById("add-slot-menu");
+        if (menuElem) menuElem.hidden = true;
+        var newSlotId = speakerRole === "crowd_pa" ? "slot-crowd-pa" : "slot-dj-monitors";
+        openPickerModal(newSlotId, "speakers", speakerRole);
+        return;
+      }
+
+      if (action === "adjust-qty") {
+        var qtySlotId = btn.getAttribute("data-slot-id");
+        var delta = parseInt(btn.getAttribute("data-delta"), 10) || 0;
+        var targetQtySlot = currentRig.items.find(function (s) { return s.slotId === qtySlotId; });
+        if (targetQtySlot) {
+          var currentQty = targetQtySlot.qty || 1;
+          var newQty = Math.max(1, Math.min(8, currentQty + delta));
+          targetQtySlot.qty = newQty;
+          playClickSfx("toggle");
           saveActiveState();
           renderApp();
         }
@@ -2105,7 +2436,8 @@
       } else if (action === "pick") {
         var slotId = btn.getAttribute("data-slot-id");
         var category = btn.getAttribute("data-category");
-        if (slotId && category) openPickerModal(slotId, category);
+        var speakerRole = btn.getAttribute("data-speaker-role") || (category === "speakers" ? (slotId === "slot-crowd-pa" ? "crowd_pa" : "dj_monitor") : null);
+        if (slotId && category) openPickerModal(slotId, category, speakerRole);
       } else if (action === "inspect-item") {
         var inspId = btn.getAttribute("data-item-id");
         if (inspId) openInspectorModal(inspId);
@@ -2361,8 +2693,17 @@
     if (!ctrlItem || !spkSlots.length || typeof OffbeatGear === "undefined" || !OffbeatGear.connectionPlan) {
       return [];
     }
+    // Prioritize Crowd PA to claim Master Out first, then DJ Monitors claim Booth Out
+    var sortedSlots = spkSlots.slice().sort(function (a, b) {
+      var roleA = getSpeakerRole(a);
+      var roleB = getSpeakerRole(b);
+      if (roleA === "crowd_pa" && roleB !== "crowd_pa") return -1;
+      if (roleB === "crowd_pa" && roleA !== "crowd_pa") return 1;
+      return 0;
+    });
+
     var usedOutputs = {};
-    return spkSlots.map(function (s) {
+    return sortedSlots.map(function (s) {
       var item = getSlotItem(s);
       if (!item) return null;
       var plan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, item, s.qty || 1, { usedOutputs: usedOutputs });
@@ -2463,6 +2804,17 @@
       return out;
     },
     connections: computeAllRigConnections,
+    speakers: function () {
+      var spk = findSlot("speakers");
+      var it = spk ? getSlotItem(spk) : null;
+      var q = spk ? (spk.qty || 1) : 1;
+      return {
+        item: it,
+        qty: q,
+        cabinets: it ? (it.speaker_units || 1) * q : 0,
+        boxLabel: it ? it.box_label : null
+      };
+    },
     cableLines: function () {
       return currentRig.items.filter(function (s) { return s.category === "cables"; }).map(function (s) {
         var it = getSlotItem(s);
