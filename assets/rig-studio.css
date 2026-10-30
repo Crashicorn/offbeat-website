@@ -29,15 +29,15 @@
   position: relative;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0.45rem var(--gutter) 0.55rem;
+  padding: 0.2rem var(--gutter) 0.25rem;
 }
 .rig-masthead-topbar {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem 1rem;
-  margin-bottom: 0.2rem;
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.1rem;
 }
 .rig-masthead .crumbs { margin-bottom: 0; }
 .rig-masthead-grid {
@@ -45,17 +45,17 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 0.4rem 1.5rem;
+  gap: 0.25rem 1.5rem;
 }
-.rig-masthead .hero-eyebrow { display: inline-flex; gap: .35rem; align-items: center; font-size: .72rem; }
+.rig-masthead .hero-eyebrow { display: inline-flex; gap: .35rem; align-items: center; font-size: .65rem; }
 .rig-masthead h1 {
-  margin: 0.1rem 0 0.15rem;
+  margin: 0.05rem 0 0.1rem;
   font-family: var(--display);
-  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-size: clamp(1.15rem, 1.8vw, 1.35rem);
   line-height: 1.15;
   letter-spacing: -.02em;
   color: #fff;
-  max-width: 38ch;
+  max-width: 45ch;
 }
 .rig-masthead h1 em {
   font-style: normal;
@@ -68,8 +68,8 @@
   margin: 0;
   max-width: 80ch;
   color: var(--text-2);
-  font-size: 0.82rem;
-  line-height: 1.35;
+  font-size: 0.76rem;
+  line-height: 1.25;
 }
 .rig-masthead-facts {
   display: flex;

@@ -1,6 +1,6 @@
 {
-  "testedAt": "2026-10-30T01:25:41.809Z",
-  "browser": "HeadlessChrome/153.0.8010.0",
+  "testedAt": "2026-10-30T03:30:42.008Z",
+  "browser": "HeadlessChrome/133.0.6943.0",
   "pages": [
     {
       "file": "denon-sc6000-review.html",

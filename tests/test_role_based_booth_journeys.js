@@ -9,7 +9,7 @@ const fs = require("fs");
 const path = require("path");
 
 const CHROME = process.env.CHROME_BIN || "/usr/local/bin/chromium";
-const BASE_URL = "http://127.0.0.1:8080";
+const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:8080";
 const EVIDENCE_DIR = path.join(__dirname, "../evidence");
 
 if (!fs.existsSync(EVIDENCE_DIR)) {

@@ -1567,11 +1567,9 @@
         <div class="zone-header">
           <div class="zone-header-info">
             <span class="zone-role-tag">Booth Reference</span>
-            <h4 class="zone-role-title">🔊 DJ-Facing Monitors</h4>
-            <span class="zone-role-sub">Aimed at performer ears for zero-latency monitoring</span>
+            <h4 class="zone-role-title">🔊 DJ Monitors</h4>
           </div>
           <div class="zone-header-actions">
-            <span class="booth-unit-badge">${unitBadge}</span>
             <button type="button" class="btn-own-toggle ${isOwned ? 'is-owned btn-own-toggle--owned' : 'btn-own-toggle--need'} rs-own-toggle" data-action="toggle-slot-owned" data-slot-id="${monitorSlot.slotId}">
               ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
             </button>
@@ -1596,16 +1594,16 @@
             </div>
           </div>
           <div class="zone-product-actions">
+            <span class="booth-unit-badge">${unitBadge}</span>
             ${item.speaker_units === 1 ? `
               <div class="booth-qty-inline">
-                <label>Boxes:</label>
                 <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>−</button>
                 <span class="qty-num">${qty}</span>
                 <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
               </div>
-            ` : (isMasterSlave ? '<span class="booth-unit-badge">1 Retail Box</span>' : '<span class="booth-unit-badge">2 Retail Units</span>')}
-            <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${monitorSlot.slotId}" data-category="speakers" data-speaker-role="dj_monitor">Swap Model</button>
-            <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed specs">Specs ℹ️</button>
+            ` : ''}
+            <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${monitorSlot.slotId}" data-category="speakers" data-speaker-role="dj_monitor">Swap</button>
+            <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed specs">Specs</button>
           </div>
         </div>
       </div>
