@@ -1169,7 +1169,7 @@
         <div class="cables-hub-header">
           <div class="hub-header-left">
             <span class="hub-tag">Audio Signal Highway</span>
-            <h4 class="hub-title">⚡ Live Audio Cable Routing</h4>
+            <h4 class="hub-title">Audio routing diagram</h4>
           </div>
           <div class="hub-header-right">
             <span class="cable-title">${escapeHtml(summaryText)}</span>
@@ -1212,11 +1212,11 @@
             <!-- DJ Monitors Route -->
             ${monitorPlan && monitorPlan.conflict ? `
               <div class="cable-route-card cable-route-card--conflict">
-                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware Routing Limitation: No Independent Booth Output</div>
+                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware routing limitation</div>
                 <div class="conflict-content">
                   <div class="conflict-head">
                     <span class="conflict-icon">⚠️</span>
-                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently</strong>
+                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently in this plan</strong>
                   </div>
                   <p class="conflict-desc">
                     ${escapeHtml(monitorPlan.note || "This route needs a separate output. Confirm the hardware before buying cables.")}

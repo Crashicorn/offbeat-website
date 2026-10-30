@@ -1486,3 +1486,18 @@
   .visual-headphones .visual-pick > span:last-child, .visual-host .visual-pick > span:last-child { white-space:nowrap; font-size:.7rem; }
   .visual-headphones .visual-own, .visual-host .visual-own { flex:none; font-size:.72rem; padding:6px 8px; }
 }
+/* Keep picker results at their natural height inside the scrollable dialog. */
+.page-rig .picker-grid { min-height:0; align-content:start; grid-auto-rows:max-content; }
+.page-rig .picker-card-img-wrap { flex:none; }
+.page-rig .picker-card-img { object-fit:contain; }
+@media (max-width:700px) {
+  .page-rig .picker-grid { padding:12px; gap:10px; grid-template-columns:minmax(0,1fr); }
+  .page-rig .picker-card { display:grid; grid-template-columns:90px minmax(0,1fr); }
+  .page-rig .picker-card-img-wrap { height:110px; }
+  .page-rig .picker-card-body { padding:10px; }
+  .page-rig .picker-card-tagline { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; margin-bottom:4px; }
+  .page-rig .picker-specs-list { display:none; }
+  .page-rig .picker-card-footer { grid-column:1 / -1; padding:8px; gap:8px; }
+  .page-rig .picker-price-badge { right:3px; bottom:3px; font-size:.7rem; }
+  .page-rig .picker-provenance-tag { display:none; }
+}

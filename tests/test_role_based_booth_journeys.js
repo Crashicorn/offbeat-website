@@ -72,7 +72,7 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
     await page.click('.visual-route-link');
     const conflict = await page.$eval('.cable-route-card--conflict', el => ({text:el.textContent, dots:el.querySelectorAll('.signal-dot').length}));
     assert.match(conflict.text, /cannot feed both Crowd PA and DJ Monitors independently/i);
-    assert.match(conflict.text, /Verified Solutions/i); assert.equal(conflict.dots, 0);
+    assert.match(conflict.text, /Ways to explore/i); assert.equal(conflict.dots, 0);
     assert.match(await page.$eval('#rs-compatibility', el => el.textContent), /Secondary Speaker Route Cannot Be Fed/i);
     console.log('PASS: FLX4 two-zone limitation is visible, no false route animation');
 
