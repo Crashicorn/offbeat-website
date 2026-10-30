@@ -83,7 +83,10 @@ function visibleCount(page) {
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
       const guideEntries = index.filter(item => /^[^?]+\.html$/.test(item.u));
-      assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
+      assert.ok(guideEntries.length >= 119, "all original pages and the new tools hub remain indexed");
+      const guideUrls = guideEntries.map(item => item.u);
+      assert.ok(guideUrls.includes("dj-tools.html"), "new tools hub must be searchable");
+      assert.equal(new Set(guideUrls).size, guideUrls.length, "page search URLs must be unique");
       for (const entry of guideEntries) {
         assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
           entry.u + " must have a useful, source-grounded Spotlight summary");
