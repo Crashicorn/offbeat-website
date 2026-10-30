@@ -831,7 +831,7 @@
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
-              <span class="qsc-label">Actual Spend Needed</span>
+              <span class="qsc-label">Estimated to buy</span>
               <strong class="qsc-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
               <span class="qsc-sub">${stats.ownedCount > 0 ? "Saved $" + stats.ownedValue.toLocaleString() + " owned" : stats.itemCount + " items in setup"}</span>
             </div>
@@ -880,45 +880,16 @@
               ${currentRig.items.map(function (slot) {
                 return renderModularTableRow(slot);
               }).join("")}
-              ${(function () {
-                var ctrl = findSlot("controllers"), spk = findSlot("speakers");
-                var cItem = ctrl ? getSlotItem(ctrl) : null;
-                var sItem = spk ? getSlotItem(spk) : null;
-                var hasCableSlot = currentRig.items.some(function (s) { return s.category === "cables"; });
-                if (!hasCableSlot && cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
-                  var leadLabel = (sItem.included_cables && sItem.included_cables[0]) ? sItem.included_cables[0].model : "Included Analog Audio Lead";
-                  return `
-                    <tr class="rig-row rig-row--included-cable rs-shop-line">
-                      <td class="cell-cat"><span class="cat-pill">🔌 Cables</span></td>
-                      <td class="cell-item">
-                        <div class="item-summary-box">
-                          <div class="item-summary-copy">
-                            <div class="item-title-row rs-shop-line-name">
-                              <strong class="item-full-name">${escapeHtml(leadLabel)}</strong>
-                            </div>
-                            <p class="item-tagline">Supplied inside speaker box (${escapeHtml(sItem.brand)} ${escapeHtml(sItem.model)}). No separate cable purchase needed.</p>
-                            <span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="cell-qty"><span class="qty-display">1 in-box</span></td>
-                      <td class="cell-status"><button type="button" class="status-btn status-btn--owned" disabled aria-disabled="true">✓ In the Box</button></td>
-                      <td class="cell-price rs-shop-line-price"><span class="price-figure price--owned">$0</span></td>
-                      <td class="cell-actions"><span class="owned-sub">Supplied with speakers</span></td>
-                    </tr>
-                  `;
-                }
-                return "";
-              })()}
+
             </tbody>
           </table>
         </div>
 
-        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Offbeat benchmark total: estimated equipment expenditure across verified vendors</div>
+        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Planning estimates only; check current prices, quantities and availability at the retailer.</div>
 
         <!-- Commercial Disclosure Notice -->
         <p class="table-note rs-shop-note">
-          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs such as Amazon Associates) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
+          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links are handoffs, not confirmations of stock or compatibility. Some links may earn Offbeat a commission at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
@@ -1058,7 +1029,7 @@
     return item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d";
   }
 
-  function isRouteCableConfirmed(plan, routeIndex) {
+  function isRouteCableConfirmed(plan, alreadyAllocated) {
     if (!plan) return false;
     if (plan.conflict || plan.kind === "unresolved") return false;
     if (plan.kind === "included") return true;
@@ -1069,7 +1040,7 @@
       var totalUnits = matchingCables.reduce(function (sum, s) {
         return sum + (s.qty || 1);
       }, 0);
-      return totalUnits > routeIndex;
+      return totalUnits >= (Number(plan.units) || 1) + alreadyAllocated;
     }
     return false;
   }
@@ -1145,7 +1116,7 @@
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
 
     var paCableConfirmed = isRouteCableConfirmed(paPlan, 0);
-    var monRouteIndex = (paPlan && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? 1 : 0;
+    var monRouteIndex = (paPlan && paPlan.kind === 'product' && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? (Number(paPlan.units) || 1) : 0;
     var monCableConfirmed = isRouteCableConfirmed(monitorPlan, monRouteIndex);
 
     var hasConflict = (monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict);
@@ -1154,7 +1125,7 @@
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
         <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
-        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
+        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes planned' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route planned' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
         ${stats.compatibility.fatalErrors ? `<p class="visual-critical" role="alert">${stats.compatibility.checks.filter(function(c) { return c.type === 'error' || c.statusLevel === 'incompatible'; }).map(function(c) { return escapeHtml(c.title); }).join(' · ')}</p>` : ''}
         <div class="visual-stage">
           ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
@@ -1522,7 +1493,7 @@
           </div>
 
           <div class="picker-search-bar">
-            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, Prime 4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
+            <input type="search" aria-label="Search equipment" placeholder="Search by brand, model or feature" data-modal-search autocomplete="off">
           </div>
 
           <div class="picker-grid" id="modal-items-grid">
