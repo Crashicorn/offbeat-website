@@ -53,3 +53,35 @@ test("headphone comparison never equates sensitivity to max SPL", () => {
     assert.equal(cells.length, 5, "consistent five-column row " + index);
   });
 });
+
+test("Rig Spotlight deep links match catalog product identity, unit and planning price", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const index = JSON.parse(page("assets/search-index.json"));
+  const products = new Map(catalog.items.map(item => [item.id, item]));
+  const deepLinks = index.filter(item => typeof item.u === "string" &&
+    item.u.startsWith("build-your-dj-setup.html?add="));
+  assert.ok(deepLinks.length >= 30, "curated product links must remain searchable");
+  const seen = new Set();
+  const normalized = value => String(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const entry of deepLinks) {
+    const id = new URL(entry.u, "https://offbeatinc.com/").searchParams.get("add");
+    const product = products.get(id);
+    assert.ok(product, "search deep link targets missing catalog ID: " + id);
+    assert.ok(!seen.has(id), "duplicate curated search target: " + id);
+    seen.add(id);
+    assert.equal(entry.title, entry.t, id + " title fields diverge");
+    assert.equal(entry.url, entry.u, id + " URL fields diverge");
+    assert.equal(entry.desc, entry.d, id + " description fields diverge");
+    assert.ok(normalized(entry.t).includes(normalized(product.model.split("(")[0])),
+      id + " search label names a different product: " + entry.t + " vs " + product.model);
+    const price = entry.t.match(/\(\$([\d,]+(?:\.\d+)?)(?:\s+est\.)?\)/i);
+    if (price) {
+      assert.equal(Number(price[1].replace(/,/g, "")), product.price,
+        id + " search price differs from catalog planning price");
+    }
+  }
+  for (const [id, units] of [["krk-rokit-5-g4", 1], ["krk-classic-5-pair", 2]]) {
+    assert.equal(products.get(id).speaker_units, units, id + " sale unit count");
+    assert.ok(seen.has(id), id + " must have a separate search deep link");
+  }
+});

@@ -92,11 +92,17 @@ function visibleCount(page) {
           entry.u + " must have a useful, source-grounded Spotlight summary");
         assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
       }
-      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
-      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
-        "buyer search must match the actual Classic 5 catalog product");
-      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
-        "buyer search must not advertise a different monitor model");
+      const rokit = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
+      const classic = index.find(item => item.u === "build-your-dj-setup.html?add=krk-classic-5-pair");
+      assert.ok(rokit && classic, "both distinct KRK models must be searchable");
+      assert.match(rokit.title, /KRK ROKIT 5 G4.*Single/i,
+        "ROKIT search result must identify the single G4 cabinet");
+      assert.match(classic.title, /KRK Classic 5.*Pair/i,
+        "Classic search result must identify the two-cabinet monitor pack");
+      assert.doesNotMatch(rokit.title + " " + rokit.desc, /Classic 5/i,
+        "ROKIT search result must not advertise the Classic monitor pack");
+      assert.doesNotMatch(classic.title + " " + classic.desc, /ROKIT 5 G4/i,
+        "Classic search result must not advertise the ROKIT single");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")
