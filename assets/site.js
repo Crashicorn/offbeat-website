@@ -309,6 +309,10 @@
   })();
 
   /* ---------- 6. Search ---------- */
+  // The Arena Spotlight search owns the same header triggers and shortcuts.
+  // Never mount a second legacy dialog on pages that load quick-search.js:
+  // dual overlays trap focus and produce competing Escape/keyboard handlers.
+  if (document.querySelector('script[src$="assets/quick-search.js"]')) return;
   var overlay = document.getElementById("site-search");
   var openers = document.querySelectorAll("[data-search-open]");
   if (!overlay || !openers.length) return;
@@ -393,18 +397,20 @@
     if (!index) return;
     var terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     active = -1;
-    var candidates = groupFilter === "all"
+    // Apply the category to the complete ranked set BEFORE limiting results.
+    // Otherwise a category can falsely show zero matches when its results
+    // fall outside the global top twelve.
+    var ranked = terms.length
       ? index
-      : index.filter(function (item) { return item.g === groupFilter; });
-    var list = terms.length
-      ? candidates
           .map(function (item) { return { item: item, s: score(item, terms) }; })
           .filter(function (r) { return r.s > 0; })
           .sort(function (a, b) { return b.s - a.s; })
-          .slice(0, 12)
           .map(function (r) { return r.item; })
-      : candidates.filter(function (item) { return item.f; }).slice(0, 8);
-
+      : index.filter(function (item) { return item.f; });
+    if (groupFilter !== "all") {
+      ranked = ranked.filter(function (item) { return item.g === groupFilter; });
+    }
+    var list = ranked.slice(0, terms.length ? 12 : 8);
     if (status) {
       status.textContent = terms.length || groupFilter !== "all"
         ? (list.length ? list.length + (list.length === 1 ? " result" : " results") : "No guides matched that search")

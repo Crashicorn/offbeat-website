@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="100%" height="100%">
+  <rect x="15" y="15" width="370" height="450" rx="12" fill="#14141e" stroke="#8b5cf6" stroke-width="2"/>
+  <!-- Top Send FX & Display Section -->
+  <rect x="30" y="30" width="340" height="90" rx="6" fill="#0d0d16" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="65" cy="60" r="10" fill="#2d2d42" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="110" cy="60" r="10" fill="#2d2d42" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="155" cy="60" r="10" fill="#2d2d42" stroke="#8b5cf6" stroke-width="1.5"/>
+  <rect x="195" y="42" width="160" height="36" rx="4" fill="#080810" stroke="#38bdf8" stroke-width="1"/>
+  <text x="275" y="64" fill="#38bdf8" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">SONICLINK 2.4GHz</text>
+  <text x="275" y="105" fill="#a78bfa" font-size="8" font-family="sans-serif" text-anchor="middle">6 SEND FX · CROSS-PASS FILTER</text>
+  <!-- 3 Channels Section with 4-Band EQ -->
+  <g fill="#444">
+    <!-- Channel 1 -->
+    <circle cx="95" cy="145" r="8"/><circle cx="95" cy="170" r="8"/><circle cx="95" cy="195" r="8"/><circle cx="95" cy="220" r="8"/>
+    <!-- Channel 2 -->
+    <circle cx="195" cy="145" r="8"/><circle cx="195" cy="170" r="8"/><circle cx="195" cy="195" r="8"/><circle cx="195" cy="220" r="8"/>
+    <!-- Channel 3 -->
+    <circle cx="295" cy="145" r="8"/><circle cx="295" cy="170" r="8"/><circle cx="295" cy="195" r="8"/><circle cx="295" cy="220" r="8"/>
+  </g>
+  <!-- Filter Knobs -->
+  <circle cx="95" cy="255" r="11" fill="#1e1e2c" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="195" cy="255" r="11" fill="#1e1e2c" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="295" cy="255" r="11" fill="#1e1e2c" stroke="#8b5cf6" stroke-width="1.5"/>
+  <!-- 60mm Long-Throw Channel Faders -->
+  <line x1="95" y1="290" x2="95" y2="370" stroke="#2a2a3c" stroke-width="4"/>
+  <rect x="85" y="320" width="20" height="12" rx="2" fill="#ddd"/>
+  <line x1="195" y1="290" x2="195" y2="370" stroke="#2a2a3c" stroke-width="4"/>
+  <rect x="185" y="320" width="20" height="12" rx="2" fill="#ddd"/>
+  <line x1="295" y1="290" x2="295" y2="370" stroke="#2a2a3c" stroke-width="4"/>
+  <rect x="285" y="320" width="20" height="12" rx="2" fill="#ddd"/>
+  <!-- Crossfader -->
+  <line x1="120" y1="410" x2="270" y2="410" stroke="#2a2a3c" stroke-width="4"/>
+  <rect x="185" y="403" width="16" height="14" rx="2" fill="#fff"/>
+  <text x="200" y="445" fill="#fff" font-size="10" font-family="sans-serif" font-weight="bold" text-anchor="middle">ALPHATHETA DJM-V5 ($2,199)</text>
+</svg>

@@ -171,7 +171,10 @@
     if (UI && UI_IN_BODY) return UI;
     if (UI && UI.parentNode) { try { UI.parentNode.removeChild(UI); } catch (e) { } }
     UI = el('div', { 'class': 'ob-consent', role: 'region', 'aria-label': 'Offbeat analytics consent', 'aria-live': 'polite' });
-    document.body.appendChild(UI);
+    // On the rig page the prompt can flow above the builder on narrow screens,
+    // rather than covering equipment controls. Other pages retain their placement.
+    var rigMasthead = document.querySelector('body.page-rig .rig-masthead');
+    (rigMasthead || document.body).appendChild(UI);
     UI_IN_BODY = true;
     return UI;
   }
@@ -197,7 +200,7 @@
     var row = el('div', { 'class': 'ob-consent-actions' });
 
     if (consent === 'unknown') {
-      p.textContent = 'We use privacy-friendly analytics to learn which DJ guides are helpful. No ad tracking.';
+      p.textContent = 'Optional analytics help improve DJ guides. No ad tracking.';
       row.appendChild(button('Allow analytics', 'grant'));
       row.appendChild(button('Necessary only', 'deny'));
       row.appendChild(privacyLink());
@@ -280,7 +283,15 @@
   function handle(action) {
     if (action === 'grant') { writeConsent('granted'); applyConsent('granted'); }
     else if (action === 'deny' || action === 'withdraw') { writeConsent('denied'); stopAnalytics(); }
-    else if (action === 'reask') { refresh('reask'); } // re-choose without changing the store yet
+    else if (action === 'reask') {
+      refresh('reask'); // re-choose without changing the store yet
+      // On mobile the rig prompt is in the masthead, potentially far from the footer.
+      if (UI && window.getComputedStyle(UI).position === 'static') {
+        UI.scrollIntoView({ behavior: 'instant', block: 'center' });
+        var firstChoice = UI.querySelector('button');
+        if (firstChoice) firstChoice.focus({ preventScroll: true });
+      }
+    }
   }
 
   // Load + measure ONLY after affirmative consent. Idempotent (one tag, one

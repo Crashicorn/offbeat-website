@@ -284,6 +284,8 @@
   function feedShape(item, qty) { return gearApi().feedShape(item, qty); }
   function cableUnitsFor(feeds, channelsPerFeed, cable) { return gearApi().cableUnitsFor(feeds, channelsPerFeed, cable); }
   function isEstimateItem(item) { return gearApi().isEstimateItem(item); }
+  function itemRetailerDestinations(item) { return gearApi().itemRetailerDestinations ? gearApi().itemRetailerDestinations(item) : null; }
+  function speakerPackagingInfo(item) { return gearApi().speakerPackagingInfo ? gearApi().speakerPackagingInfo(item) : null; }
   function connectionPlan(controller, speaker, qty, options) {
     return gearApi().connectionPlan(CATALOG, controller, speaker, qty, options);
   }
@@ -335,6 +337,8 @@
       var plan = connectionPlan(controller, item, slot.qty || 1, { usedOutputs: usedOutputs });
       if (plan.output && plan.kind !== "unresolved") {
         usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(plan.output);
       }
       return { slot: slot, speaker: item, plan: plan, conflict: plan.kind === "unresolved" };
     });
@@ -1563,11 +1567,40 @@
   }
 
   function retailerLinks(item) {
-    var q = encodeURIComponent(item.amazon_search || (item.brand + " " + item.model));
+    var dests = itemRetailerDestinations ? itemRetailerDestinations(item) : null;
+    if (!dests) {
+      var q = encodeURIComponent(item.amazon_search || (item.brand + " " + item.model));
+      var qPlain = encodeURIComponent(item.brand + " " + item.model);
+      return '<span class="rs-shop-retailers">' +
+        '<a class="rs-retail rs-retail--amazon" href="https://www.amazon.com/s?k=' + q + '&tag=offbeatdj-20" rel="nofollow sponsored noopener" target="_blank" data-destination-type="search">Amazon</a>' +
+        '<a class="rs-retail rs-retail--zzounds rs-retail--search" href="https://www.zzounds.com/prodsearch?q=' + qPlain + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="search">zZounds</a>' +
+        '<a class="rs-retail rs-retail--sweetwater" href="https://www.sweetwater.com/store/search?s=' + qPlain + '" rel="nofollow noopener" target="_blank" data-destination-type="search">Sweetwater</a>' +
+        '<a class="rs-retail rs-retail--reverb" href="https://reverb.com/marketplace?query=' + qPlain + '" rel="nofollow noopener" target="_blank" data-destination-type="search">Reverb</a>' +
+      "</span>";
+    }
+
+    var amz = dests.amazon;
+    var zz = dests.zzounds;
+    var sw = dests.sweetwater;
+    var rev = dests.reverb;
+
+    var zzHtml = "";
+    if (zz.status === "verified_unavailable") {
+      zzHtml = '<a class="rs-retail rs-retail--zzounds rs-retail--unavailable" href="' + zz.url + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="' + zz.type + '" data-status="verified_unavailable"' + (zz.sku ? ' data-sku="' + zz.sku + '"' : '') + ' title="Product page marked unavailable at zZounds">zZounds (out of stock)</a>';
+      if (zz.alternative_url) {
+        zzHtml += ' <a class="rs-retail rs-retail--zzounds rs-retail--alt" href="' + zz.alternative_url + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="exact" data-status="verified_in_stock"' + (zz.alternative_sku ? ' data-sku="' + zz.alternative_sku + '"' : '') + ' title="In-stock alternative at zZounds">zZounds: ' + escapeHtml(zz.alternative_name) + '</a>';
+      }
+    } else if (zz.type === "exact") {
+      zzHtml = '<a class="rs-retail rs-retail--zzounds rs-retail--exact" href="' + zz.url + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="exact" data-status="verified_in_stock"' + (zz.sku ? ' data-sku="' + zz.sku + '"' : '') + ' title="Verified exact product page at zZounds (SKU: ' + zz.sku + ')">zZounds</a>';
+    } else {
+      zzHtml = '<a class="rs-retail rs-retail--zzounds rs-retail--search" href="' + zz.url + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="search" data-status="search_fallback" title="Search zZounds">zZounds</a>';
+    }
+
     return '<span class="rs-shop-retailers">' +
-      '<a class="rs-retail" href="https://www.amazon.com/s?k=' + q + '&tag=offbeatdj-20" rel="nofollow sponsored noopener" target="_blank">Amazon</a>' +
-      '<a class="rs-retail" href="https://www.sweetwater.com/store/search?s=' + q + '" rel="nofollow noopener" target="_blank">Sweetwater</a>' +
-      '<a class="rs-retail" href="https://reverb.com/marketplace?query=' + q + '" rel="nofollow noopener" target="_blank">Reverb</a>' +
+      '<a class="rs-retail rs-retail--amazon" href="' + amz.url + '" rel="nofollow sponsored noopener" target="_blank" data-destination-type="' + amz.type + '" title="Search model on Amazon">Amazon</a>' +
+      zzHtml +
+      '<a class="rs-retail rs-retail--sweetwater" href="' + sw.url + '" rel="nofollow noopener" target="_blank" data-destination-type="' + sw.type + '" title="Search Sweetwater">Sweetwater</a>' +
+      '<a class="rs-retail rs-retail--reverb" href="' + rev.url + '" rel="nofollow noopener" target="_blank" data-destination-type="' + rev.type + '" title="Find used offers on Reverb">Reverb</a>' +
     "</span>";
   }
 
@@ -1599,11 +1632,26 @@
     var rows = needLines.map(function (entry) {
       var item = entry.line.item;
       var estimate = isEstimateItem(item);
-      return '<li class="rs-shop-line' + (estimate ? " rs-shop-line--estimate" : "") + '">' +
+      var dests = (!estimate && itemRetailerDestinations) ? itemRetailerDestinations(item) : null;
+      var zzUnavailable = dests && dests.zzounds && dests.zzounds.status === "verified_unavailable";
+      var pkgInfo = (!estimate && speakerPackagingInfo) ? speakerPackagingInfo(item) : null;
+
+      var noteBits = [];
+      if (estimate) {
+        noteBits.push('<span class="rs-shop-line-estimate">Budget allowance · no recommended SKU. ' + escapeHtml(item.estimate_note || "Confirm the connector at both ends.") + '</span>');
+      }
+      if (pkgInfo && pkgInfo.note) {
+        noteBits.push('<span class="rs-shop-line-packaging">📦 ' + escapeHtml(pkgInfo.note) + '</span>');
+      }
+      if (zzUnavailable) {
+        noteBits.push('<span class="rs-shop-line-stock rs-shop-line-stock--unavailable">⚠️ Retailer notice: Discontinued / Out of stock at zZounds' + (dests.zzounds.alternative_name ? ' · In-stock alternative: ' + escapeHtml(dests.zzounds.alternative_name) : '') + '</span>');
+      }
+
+      return '<li class="rs-shop-line' + (estimate ? " rs-shop-line--estimate" : "") + (zzUnavailable ? " rs-shop-line--has-unavailable" : "") + '">' +
         '<span class="rs-shop-line-name"><strong>' + escapeHtml(item.brand + " " + item.model) +
           (entry.line.qty > 1 ? " ×" + entry.line.qty : "") + "</strong>" +
           "<span>" + escapeHtml(ROLE_LABEL[entry.cat] || entry.cat) + " · " + escapeHtml(item.tagline || "") + "</span>" +
-          (estimate ? '<span class="rs-shop-line-estimate">Budget allowance · no recommended SKU. ' + escapeHtml(item.estimate_note || "Confirm the connector at both ends.") + "</span>" : "") +
+          noteBits.join("") +
         "</span>" +
         '<span class="rs-shop-line-price">' + money(entry.line.lineTotal) + "</span>" +
         (estimate ? '<span class="rs-shop-retailers rs-shop-retailers--none">No retailer link</span>' : retailerLinks(item)) +
@@ -1624,10 +1672,10 @@
     return '<section class="rs-panel rs-shop" id="rs-shop">' +
       '<div class="rs-panel-head"><div><h2>' + icon("cart") + "Shopping list</h2>" +
         '<p class="rs-panel-sub">Only what is missing, with the cables and adapters that get forgotten.</p></div>' +
-        '<div class="rs-shop-head-total"><small>To buy</small><b data-total>' + money(rig.buyTotal) + "</b></div></div>" +
+        '<div class="rs-shop-head-total"><small>To buy (est.)</small><b data-total>' + money(rig.buyTotal) + "</b></div></div>" +
       '<div class="rs-shop-body">' + body + ownedList +
         '<div class="rs-shop-foot">' +
-          '<div class="rs-shop-total"><span>Estimated total</span><b>' + money(rig.buyTotal) + "</b></div>" +
+          '<div class="rs-shop-total"><span>Offbeat benchmark total</span><b>' + money(rig.buyTotal) + "</b></div>" +
           '<div class="rs-shop-actions rs-print-hide">' +
             '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="copy-shop">' + icon("copy") + "Copy list</button>" +
             '<button type="button" class="rs-btn rs-btn--ghost rs-btn--sm" data-rs="download-shopping">' + icon("down") + "Download</button>" +
@@ -1635,7 +1683,7 @@
             '<button type="button" class="rs-btn rs-btn--sm" data-rs="share">' + icon("share") + "Share rig</button>" +
           "</div>" +
         "</div>" +
-        '<p class="rs-shop-note">Prices are Offbeat estimates from October 2026, not live quotes. Some retailer links are affiliate links — they never change the price you pay. Check stock and the exact model number before ordering, and confirm the cable connectors match what is in the box.</p>' +
+        '<p class="rs-shop-note">Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Some merchant links are sponsored affiliate links (such as Amazon Associates) — these never change the price you pay. Always verify current pricing, live availability, exact model numbers, and included accessories on the retailer site before ordering.</p>' +
       "</div></section>";
   }
 
@@ -2713,6 +2761,8 @@
       var plan = connectionPlan(controller, itemOf(slot), slot.qty || 1, { usedOutputs: usedOutputs });
       if (plan.output && plan.kind !== "unresolved") {
         usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + Math.max(1, plan.outputsNeeded || 1);
+        if (!usedOutputs.claimed) usedOutputs.claimed = [];
+        usedOutputs.claimed.push(plan.output);
       }
       if (plan.kind === "included" || plan.kind === "unresolved" || !plan.itemId || plan.units <= 0) return;
       var existing = slotsOf("cables").filter(function (s) { return s.itemId === plan.itemId; })[0];
@@ -2804,8 +2854,18 @@
       lines.push(ROLE_LABEL[cat].toUpperCase());
       group.forEach(function (l) {
         need += l.lineTotal;
-        lines.push("  " + (l.qty > 1 ? l.qty + " × " : "") + l.item.brand + " " + l.item.model + " — " + money(l.lineTotal) +
-          (isEstimateItem(l.item) ? " (budget allowance — no recommended SKU; confirm connectors)" : ""));
+        var extra = "";
+        if (isEstimateItem(l.item)) {
+          extra = " (budget allowance — no recommended SKU; confirm connectors)";
+        } else {
+          var pkg = speakerPackagingInfo ? speakerPackagingInfo(l.item) : null;
+          if (pkg && pkg.note) extra += " [" + pkg.note + "]";
+          var dest = itemRetailerDestinations ? itemRetailerDestinations(l.item) : null;
+          if (dest && dest.zzounds && dest.zzounds.status === "verified_unavailable") {
+            extra += " [zZounds notice: Out of stock / discontinued" + (dest.zzounds.alternative_name ? " — see " + dest.zzounds.alternative_name : "") + "]";
+          }
+        }
+        lines.push("  " + (l.qty > 1 ? l.qty + " × " : "") + l.item.brand + " " + l.item.model + " — " + money(l.lineTotal) + extra);
       });
       lines.push("");
     });
@@ -2908,6 +2968,15 @@
       }
     }
 
+    if (preset) {
+      var p = presets().filter(function (x) { return x.id === preset; })[0];
+      if (p) {
+        state.name = p.name;
+        state.items = presetItems(p);
+        state.view = "studio";
+      }
+    }
+
     if (add) {
       var item = byId(add);
       if (item) {
@@ -2945,14 +3014,8 @@
       }
     }
 
-    if (preset) {
-      var p = presets().filter(function (x) { return x.id === preset; })[0];
-      if (p) {
-        state.name = p.name;
-        state.items = presetItems(p);
-        state.view = "studio";
-        return true;
-      }
+    if (preset && state.items.length) {
+      return true;
     }
 
     if (start === "guide") {
@@ -3305,6 +3368,8 @@
 
     /* Test hooks. Read-only views of the same state the UI renders. */
     window.__rigStudio = {
+      item: function (id) { return byId(id); },
+      catalog: function () { return catalog; },
       state: function () { return { name: state.name, items: state.items.slice(), budget: state.budget }; },
       cost: function () {
         var r = computeRig();
@@ -3342,6 +3407,8 @@
             conflict: Boolean(p.conflict),
             outputsNeeded: p.plan.outputsNeeded || 1,
             output: p.plan.output ? p.plan.output.connector : null,
+            outputRole: p.plan.output ? p.plan.output.role : null,
+            outputLabel: p.plan.output ? p.plan.output.label : null,
             socket: p.plan.socket ? p.plan.socket.connector : null
           };
         });

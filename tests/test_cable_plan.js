@@ -324,6 +324,36 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
     assert.strictEqual(twoLineBill, 1599 + 398 + 398 + 28 + 15,
       `both leads are real purchases, got $${twoLineBill}`);
 
+    /* A deck with booth output can feed a third pair: FLX10 resolves the third line on Booth TRS allowance. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "pioneer-ddj-flx10"),
+      slot("pair1", "speakers", "yamaha-hs5"),
+      slot("pair2", "speakers", "yamaha-hs5"),
+      slot("pair3", "speakers", "yamaha-hs5")
+    ]));
+    const threeLines = await page.connections();
+    assert.strictEqual(threeLines.length, 3);
+    assert.deepStrictEqual(threeLines.map((l) => l.output), ["xlr", "rca", "trs"]);
+    assert.strictEqual(threeLines[2].outputRole, "booth");
+    assert.strictEqual(threeLines[2].outputLabel, "Booth 1/4-inch TRS");
+
+    /* Denon PRIME 4+ multi-line routing: Master XLR, Booth XLR, and Zone XLR. */
+    await open(rigUrl(server.base, [
+      slot("deck", "controllers", "denon-prime-4-plus"),
+      slot("main", "speakers", "yamaha-hs5"),
+      slot("booth", "speakers", "yamaha-hs5"),
+      slot("zone", "speakers", "jbl-eon-715")
+    ]));
+    const p4Conns = await page.connections();
+    assert.strictEqual(p4Conns.length, 3);
+    assert.deepStrictEqual(p4Conns.map((l) => l.outputRole), ["master", "booth", "zone"]);
+    assert.deepStrictEqual(p4Conns.map((l) => l.output), ["xlr", "xlr", "xlr"]);
+    assert.strictEqual(p4Conns[1].outputLabel, "Booth XLR (balanced)");
+    assert.strictEqual(p4Conns[2].outputLabel, "Zone XLR (balanced)");
+    const p4Cables = await page.cableLines();
+    const p4XlrLead = p4Cables.find((l) => l.itemId === "cable-xlr-xlr");
+    assert.strictEqual(p4XlrLead.qty, 3, "3 pairs of cable-xlr-xlr for Master, Booth, Zone");
+
     /* Ownership must not smuggle a second pair past the output budget: marking
        a pair owned still leaves the second line unfeedable. */
     await open(rigUrl(server.base, [
@@ -336,6 +366,59 @@ const slot = (slotId, category, itemId, extra) => Object.assign({ slotId, catego
       "owning the first pair does not create a second output");
     assert.strictEqual((await page.cost()).buyTotal, 329 + 149,
       "only the second pair is charged, and no cable is invented for it");
+
+    /* --------------------------------------------------------------- D1 --
+     * Every preset card must bill exactly what the preset actually loads.
+     * The Bedroom Starter card used to advertise "and the cable" ($668 ·
+     * 6 pieces) while the engine correctly billed $656 · 5 pieces with the
+     * DM-40D's in-box lead credited. Guard: a template's card total must equal
+     * the loaded rig's bill, and the bedroom-starter card must not sell a
+     * lead the engine never charges on this route. */
+    const cardFitting = (p) => {
+      const owned = p.owned || [];
+      let total = 0, count = 0;
+      Object.keys(p.slots).forEach((cat) => {
+        const it = byId[p.slots[cat]];
+        if (!it) return;
+        count++;
+        if (owned.indexOf(cat) === -1) total += it.price;
+      });
+      return { total, count };
+    };
+    for (const preset of catalog.presets) {
+      if (page) page.close();
+      page = await openPage(server.base + "/build-your-dj-setup.html?preset=" + encodeURIComponent(preset.id));
+      const fitting = cardFitting(preset);
+      const bill = await page.cost();
+      assert.strictEqual(bill.buyTotal, fitting.total,
+        `${preset.id}: the loaded rig bills $${bill.buyTotal} but its card totals $${fitting.total}`);
+    }
+    /* The Bedroom Starter card itself: no cable claim, matching figure. */
+    if (page) page.close();
+    page = await openPage(server.base + "/build-your-dj-setup.html");
+    const bsCard = page.query('.rs-preset-card[data-preset="bedroom-starter"]');
+    assert.ok(bsCard, "the bedroom-starter preset card is rendered");
+    const bsCardText = bsCard.textContent.replace(/\s+/g, " ").trim();
+    assert.ok(/\$656/.test(bsCardText), `the card prints the $656 bill it loads, got: ${bsCardText}`);
+    assert.ok(/5 pieces/.test(bsCardText), `the card counts 5 pieces, got: ${bsCardText}`);
+    assert.ok(!/cable/i.test(bsCardText),
+      `the card must not sell a cable the engine credits in-box, got: ${bsCardText}`);
+
+    /* And the loaded rig: five pieces, $656, zero cable purchases. */
+    if (page) page.close();
+    page = await openPage(server.base + "/build-your-dj-setup.html?preset=bedroom-starter");
+    const bsBill = await page.cost();
+    assert.strictEqual(bsBill.buyTotal, 329 + 149 + 149 + 29,
+      `bedroom-starter bills $${bsBill.buyTotal}; expected deck + cue + pair + stand = $656`);
+    const bsItems = await page.state();
+    assert.strictEqual(bsItems.items.length, 5, "the loaded rig carries five pieces (four bought, one owned)");
+    assert.strictEqual(bsItems.items.filter((s) => s.category === "cables").length, 0,
+      "no cable may be a purchase on the FLX4 + DM-40D route");
+    const bsCableCheck = (await page.checks()).find((c) => c.key === "cables");
+    assert.strictEqual(bsCableCheck.level, "ok", `the in-box lead must satisfy the cable check, got ${JSON.stringify(bsCableCheck)}`);
+    assert.ok(/in the box/i.test(bsCableCheck.title + " " + (bsCableCheck.note || "")),
+      `the check credits the box, got: ${bsCableCheck.title}`);
+    assert.deepStrictEqual(await page.cableLines(), [], "no lead is priced for a route the box already covers");
 
     /* ------------------------------------------------------- guide handoff --
      * The beginner guide and the studio guide must hand over a rig whose bill

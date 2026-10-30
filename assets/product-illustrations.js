@@ -43,7 +43,12 @@
     { id: "ableton-push-3", brand: "Ableton", model: "Push 3", image: "assets/img/products/ableton-push-3.svg", image_type: "Offbeat technical illustration", media_only: true },
     { id: "akai-mpk-mini-mk3", brand: "Akai Professional", model: "MPK Mini MK3", image: "assets/img/products/akai-mpk-mini-mk3.svg", image_type: "Offbeat technical illustration", media_only: true },
     { id: "presonus-eris", brand: "PreSonus", model: "Eris", match: "PreSonus Eris", image: "assets/img/products/presonus-eris.svg", image_type: "Offbeat technical illustration", media_only: true },
-    { id: "rane-performer", brand: "RANE", model: "Performer", match: "RANE Performer", image: "assets/img/products/rane-performer.svg", image_type: "Offbeat technical illustration", media_only: true }
+    { id: "rane-performer", brand: "RANE", model: "Performer", match: "RANE Performer", image: "assets/img/products/rane-performer.svg", image_type: "Offbeat technical illustration", media_only: true },
+    { id: "denon-prime-4-g2", brand: "Denon DJ", model: "PRIME 4 G2", match: "PRIME 4 G2 / Prime 4 G2", image: "assets/img/products/denon-prime-4-g2.svg", image_type: "Offbeat technical illustration" },
+    { id: "rane-system-one", brand: "RANE", model: "SYSTEM ONE", match: "RANE SYSTEM ONE / SYSTEM ONE", image: "assets/img/products/rane-system-one.svg", image_type: "Offbeat technical illustration" },
+    { id: "numark-mixtrack-go", brand: "Numark", model: "MixTrack Go", match: "MixTrack Go / Mixtrack Go", image: "assets/img/products/numark-mixtrack-go.svg", image_type: "Offbeat technical illustration" },
+    { id: "numark-party-mix-3", brand: "Numark", model: "Party Mix III", match: "Party Mix III / Party Mix 3", image: "assets/img/products/numark-party-mix-3.svg", image_type: "Offbeat technical illustration" },
+    { id: "alphatheta-djm-v5", brand: "AlphaTheta", model: "DJM-V5", match: "DJM-V5", image: "assets/img/products/alphatheta-djm-v5.svg", image_type: "Offbeat technical illustration", tall: true }
   ];
 
   function clean(text) { return String(text || "").trim().toLocaleLowerCase(); }

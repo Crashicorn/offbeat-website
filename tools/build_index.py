@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-"""Build the site search index and browsable library page.
+"""Build the site index (search + library page) from the published HTML.
 
-Reconciled generator (Oct 2026): emits dual short/long keys and catalog
-deep-link entries so a blind rerun does not silently degrade Spotlight
-Search. The committed assets/search-index.json should be regenerated
-through this tool; curated keyword overrides for deeplinks live in the
-CATALOG_DEEPLINK_KEYWORDS map below and in assets/dj-gear-catalog.json.
-
-Writes:
-  * assets/search-index.json  — used by the header search dialog (includes
-    one entry per HTML page plus one per catalog item as ?add= deeplinks)
+Extracts the human-facing title, meta description and section for every page,
+then writes:
   * all-dj-guides.html        — the browsable library page
-
-Run after any page is added or retitled: python3 tools/build_index.py
+  * assets/search-index.json  — preserves curated/deep-link entries and appends new pages
+Run after any page is added or retitled.
 """
 import glob
 import html
@@ -115,54 +108,6 @@ def group_for(slug):
     return "start", "Start here", "First rigs, first steps and the questions people ask before spending anything."
 
 
-def _add_dual_keys(entry):
-    """Mirror short keys with long-form aliases for backwards compat."""
-    entry["title"] = entry["t"]
-    entry["url"] = entry["u"]
-    entry["desc"] = entry["d"]
-    entry["category"] = entry["c"]
-    return entry
-
-
-def _catalog_deeplinks():
-    """One searchable entry per catalog item so ?add= handoffs resolve in search."""
-    try:
-        catalog = json.load(open("assets/dj-gear-catalog.json", encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-    # Map category id -> group/search heading for deeplinks
-    cat_to_group = {
-        "controllers": ("controllers", "Controllers"),
-        "headphones": ("gear", "Headphones"),
-        "speakers": ("gear", "Speakers"),
-        "microphones": ("gear", "Microphones"),
-        "laptops": ("gear", "Laptops"),
-        "stands": ("gear", "Stands"),
-        "storage": ("gear", "USB Media"),
-        "cables": ("gear", "Cables"),
-    }
-    deeplinks = []
-    for item in catalog.get("items", []):
-        price_str = f" (${item['price']})" if item.get("price") else ""
-        t = f"{item.get('brand','')} {item.get('model','')}{price_str}".strip()
-        d = item.get("tagline") or item.get("ideal_for") or ""
-        # Curated keyword field: brand+model+tagline+ideal_for+software unlocks
-        k_parts = [t, d, item.get("ideal_for",""), " ".join(item.get("software_unlocks", [])),
-                   "hardware price review specs"]
-        g, c = cat_to_group.get(item.get("category",""), ("gear", "Gear"))
-        deeplinks.append(_add_dual_keys({
-            "u": f"build-your-dj-setup.html?add={item['id']}",
-            "t": t,
-            "d": d,
-            "c": c,
-            "g": g,
-            "k": " ".join(k_parts).lower(),
-            "f": item["id"] in ("pioneer-ddj-flx4", "pioneer-ddj-flx10", "denon-prime-4-plus",
-                                "sennheiser-hd25", "ath-m50x"),
-        }))
-    return deeplinks
-
-
 def main():
     items = []
     for path in sorted(glob.glob("*.html")):
@@ -180,7 +125,7 @@ def main():
         if len(desc) > 150:
             desc = desc[:150].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
         gid, heading, blurb = group_for(path)
-        items.append(_add_dual_keys({
+        items.append({
             "u": path,
             "t": title,
             "d": desc,
@@ -188,14 +133,43 @@ def main():
             "g": gid,
             "k": (title + " " + desc).lower(),
             "f": path in FEATURED,
-        }))
+        })
 
-    # Append catalog deeplinks (must come after page entries so counts match committed)
-    items.extend(_catalog_deeplinks())
-
-    with open("assets/search-index.json", "w", encoding="utf-8") as handle:
-        json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))
-    print("index entries:", len(items))
+    # The search index contains curated categories and ?add= product deep links
+    # absent from the HTML-only generator. Never silently overwrite those
+    # valuable entries with a smaller, generic index on a library rebuild.
+    index_path = "assets/search-index.json"
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as handle:
+            existing = json.load(handle)
+        if not isinstance(existing, list) or not all(
+            isinstance(entry, dict) and isinstance(entry.get("u"), str)
+            for entry in existing
+        ):
+            raise ValueError("Curated search index is invalid; refusing overwrite")
+        # Existing curated/deep-link titles and keywords are intentional, but
+        # missing snippets must be restored from the actual page metadata.
+        # Otherwise Spotlight renders title-only results for most guides.
+        page_by_url = {item["u"]: item for item in items}
+        repaired = 0
+        for entry in existing:
+            page = page_by_url.get(entry["u"])
+            if page and not entry.get("d") and page["d"]:
+                entry["d"] = page["d"]
+                entry["desc"] = page["d"]
+                entry["k"] = (entry.get("k", "") + " " + page["d"].lower()).strip()
+                repaired += 1
+        urls = {entry["u"] for entry in existing}
+        added = [item for item in items if item["u"] not in urls]
+        if added or repaired:
+            with open(index_path, "w", encoding="utf-8") as handle:
+                json.dump(existing + added, handle, ensure_ascii=False, separators=(",", ":"))
+        print("search index entries:", len(existing) + len(added),
+              "(curated entries preserved; missing snippets restored:", repaired, "; new pages:", len(added), ")")
+    else:
+        with open(index_path, "w", encoding="utf-8") as handle:
+            json.dump(items, handle, ensure_ascii=False, separators=(",", ":"))
+        print("new search index entries:", len(items))
 
     # ---------- library page ----------
     order = [g[0] for g in GROUPS]
@@ -206,12 +180,15 @@ def main():
             continue
         by_group[item["g"]].append(item)
 
-    chips = "".join(
-        '<button class="chip-filter%s" type="button" data-filter="%s" aria-pressed="%s">%s <span>%d</span></button>'
-        % (" is-active" if index == 0 else "", gid, "true" if index == 0 else "false",
-           headings[gid][0], len(by_group[gid]))
-        for index, gid in enumerate(order)
-        if by_group[gid]
+    total_guides = sum(len(group_items) for group_items in by_group.values())
+    chips = (
+        '<button class="chip-filter is-active" type="button" data-filter="all" '
+        'aria-pressed="true">All guides <span>%d</span></button>' % total_guides
+    ) + "".join(
+        '<button class="chip-filter" type="button" data-filter="%s" '
+        'aria-pressed="false">%s <span>%d</span></button>'
+        % (gid, headings[gid][0], len(by_group[gid]))
+        for gid in order if by_group[gid]
     )
 
     sections = []
@@ -235,7 +212,7 @@ def main():
 
     template = open("tools/library-template.html", encoding="utf-8").read()
     page = template.replace("<!--CHIPS-->", chips).replace("<!--GROUPS-->", "\n".join(sections))
-    page = page.replace("<!--TOTAL-->", str(len(items)))
+    page = page.replace("<!--TOTAL-->", str(total_guides))
     with open("all-dj-guides.html", "w", encoding="utf-8") as handle:
         handle.write(page)
     print("library written")

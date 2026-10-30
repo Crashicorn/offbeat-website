@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="100%" height="100%">
+  <rect x="15" y="15" width="570" height="310" rx="12" fill="#181822" stroke="#ec4899" stroke-width="1.5"/>
+  <!-- Built-in Light Show Domes on back -->
+  <circle cx="270" cy="30" r="14" fill="#ef4444" opacity="0.85"/>
+  <circle cx="300" cy="30" r="14" fill="#22c55e" opacity="0.85"/>
+  <circle cx="330" cy="30" r="14" fill="#3b82f6" opacity="0.85"/>
+  <!-- Jogs with Beat Align LEDs -->
+  <circle cx="110" cy="165" r="65" fill="#0d0d14" stroke="#ec4899" stroke-width="1.5"/>
+  <circle cx="110" cy="165" r="58" fill="#222230"/>
+  <circle cx="110" cy="165" r="20" fill="#111" stroke="#fff" stroke-width="1"/>
+  <circle cx="490" cy="165" r="65" fill="#0d0d14" stroke="#ec4899" stroke-width="1.5"/>
+  <circle cx="490" cy="165" r="58" fill="#222230"/>
+  <circle cx="490" cy="165" r="20" fill="#111" stroke="#fff" stroke-width="1"/>
+  <!-- Central 2-Channel Mixer with 3-Band EQ -->
+  <rect x="225" y="55" width="150" height="255" rx="6" fill="#13131c" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="260" cy="80" r="7" fill="#555"/><circle cx="340" cy="80" r="7" fill="#555"/>
+  <circle cx="260" cy="105" r="7" fill="#555"/><circle cx="340" cy="105" r="7" fill="#555"/>
+  <circle cx="260" cy="130" r="7" fill="#555"/><circle cx="340" cy="130" r="7" fill="#555"/>
+  <circle cx="260" cy="155" r="7" fill="#ec4899"/><circle cx="340" cy="155" r="7" fill="#ec4899"/>
+  <line x1="260" y1="180" x2="260" y2="230" stroke="#333" stroke-width="3"/>
+  <rect x="252" y="195" width="16" height="9" rx="2" fill="#bbb"/>
+  <line x1="340" y1="180" x2="340" y2="230" stroke="#333" stroke-width="3"/>
+  <rect x="332" y="195" width="16" height="9" rx="2" fill="#bbb"/>
+  <line x1="255" y1="260" x2="345" y2="260" stroke="#333" stroke-width="3"/>
+  <rect x="294" y="254" width="12" height="12" rx="2" fill="#fff"/>
+  <!-- 8 Performance Pads per Deck (Doubled from Party Mix II) -->
+  <g fill="#242436" stroke="#ec4899" stroke-width="1">
+    <rect x="35" y="245" width="22" height="16" rx="2"/><rect x="62" y="245" width="22" height="16" rx="2"/>
+    <rect x="89" y="245" width="22" height="16" rx="2"/><rect x="116" y="245" width="22" height="16" rx="2"/>
+    <rect x="35" y="267" width="22" height="16" rx="2"/><rect x="62" y="267" width="22" height="16" rx="2"/>
+    <rect x="89" y="267" width="22" height="16" rx="2"/><rect x="116" y="267" width="22" height="16" rx="2"/>
+    <rect x="440" y="245" width="22" height="16" rx="2"/><rect x="467" y="245" width="22" height="16" rx="2"/>
+    <rect x="494" y="245" width="22" height="16" rx="2"/><rect x="521" y="245" width="22" height="16" rx="2"/>
+    <rect x="440" y="267" width="22" height="16" rx="2"/><rect x="467" y="267" width="22" height="16" rx="2"/>
+    <rect x="494" y="267" width="22" height="16" rx="2"/><rect x="521" y="267" width="22" height="16" rx="2"/>
+  </g>
+  <text x="300" y="295" fill="#fff" font-size="9" font-family="sans-serif" font-weight="bold" text-anchor="middle">NUMARK PARTY MIX III ($149)</text>
+</svg>

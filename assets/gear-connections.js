@@ -99,6 +99,7 @@ function routeScore(output, socket, cable, socketIsNative) {
   if (socketIsNative) score += 2;
   if (socket.connector === "combo_xlr_trs" && (cable.b === "xlr" || cable.b === "trs")) score += 2;
   if (output.role === "master") score += 2;
+  if (output.role === "booth") score += 1;
   if (!output.balanced) score -= 1;
   if (!cable.balanced) score -= 1;
   /* An XLR plug is the balanced format. Sending an unbalanced signal down XLR
@@ -200,9 +201,11 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   }
 
   /* 1. Does a lead in the box already carry this signal? Passive assemblies
-        work in either direction, so both orientations count. */
+        work in either direction, so both orientations count. Check cables
+        included with the speaker or the controller. */
   var includedRoute = null;
-  (speaker.included_cables || []).forEach(function (inc) {
+  var allIncluded = (speaker.included_cables || []).concat(controller.included_cables || []);
+  allIncluded.forEach(function (inc) {
     leadOrientations(inc).forEach(function (orient) {
       outs.forEach(function (out) {
         if (!outputFeedsPlug(out.connector, orient.from)) return;
@@ -225,6 +228,23 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   var includedLeadsUsed = includedRoute ? Math.min(Math.ceil(shape.feeds / leadFeeds), boxes) : 0;
   var coveredFeeds = Math.min(shape.feeds, includedLeadsUsed * leadFeeds);
   var remainingFeeds = shape.feeds - coveredFeeds;
+
+  var capacity = outputCapacity(controller, options);
+  var used = (options && options.usedOutputs) || {};
+  function freeSockets(connector) {
+    return (capacity[connector] || 0) - (used[connector] || 0);
+  }
+  function isOutputAvailable(out, needed) {
+    if (freeSockets(out.connector) < (needed || 1)) return false;
+    if (used.claimed && used.claimed.indexOf(out) !== -1) return false;
+    var sameConnectorOuts = outs.filter(function (o) { return o.connector === out.connector; });
+    if (sameConnectorOuts.length > 1) {
+      var currentUsed = used[out.connector] || 0;
+      var rank = sameConnectorOuts.indexOf(out);
+      if (rank < currentUsed) return false;
+    }
+    return true;
+  }
 
   /* 2. Build every route the catalogue can actually make: a verified product
         first, then a priced allowance for socket pairs with no verified SKU. */
@@ -253,8 +273,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
       });
     });
   }
-  var verified = candidates.slice();
-  if (!verified.length && remainingFeeds > 0) {
+  var fitsVerified = candidates.filter(function (c) { return isOutputAvailable(c.output, c.socketsNeeded); });
+  if (!fitsVerified.length && remainingFeeds > 0) {
     cableAllowances(catalog).forEach(function (item) {
       cableOrientations(item.cable).forEach(function (raw) {
         var balanced = isBalancedConnector(raw.a) && isBalancedConnector(raw.b);
@@ -275,12 +295,6 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
         otherwise the best-scoring purchasable route is preferred. */
   candidates.sort(function (a, b) { return b.score - a.score; });
 
-  var capacity = outputCapacity(controller, options);
-  var used = (options && options.usedOutputs) || {};
-  function freeSockets(connector) {
-    return (capacity[connector] || 0) - (used[connector] || 0);
-  }
-
   var includedCandidate = includedRoute ? {
     score: includedRoute.score + 3, item: null, cable: null,
     output: includedRoute.output, socket: includedRoute.socket,
@@ -293,7 +307,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   if (includedCandidate) pool.push(includedCandidate);
   candidates.forEach(function (c) { pool.push(c); });
 
-  var fits = pool.filter(function (c) { return freeSockets(c.output.connector) >= c.socketsNeeded; });
+  var fits = pool.filter(function (c) { return isOutputAvailable(c.output, c.socketsNeeded); });
   /* When nothing fits we still want to explain the best route's socket path. */
   var chosen = fits[0] || null;
   var blocked = chosen ? null : (pool[0] || null);
@@ -384,7 +398,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
         : shape.feeds + " independently powered cabinets need " + plan.units + " leads: one plug into each cabinet.";
   /* A box can include leads that are the wrong shape for this output. Say so,
      otherwise the buyer cannot tell a spare from a substitute. */
-  var boxLabels = (speaker.included_cables || []).map(function (inc) {
+  var allBoxCables = (speaker.included_cables || []).concat(controller.included_cables || []);
+  var boxLabels = allBoxCables.map(function (inc) {
     return inc.label || (endpointLabel(inc.from) + " to " + endpointLabel(inc.to));
   });
   var boxNote = (!plan.alsoIncluded && boxLabels.length)
@@ -398,6 +413,100 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
       ? " The lead is unbalanced; it fits a balanced input without making the signal balanced."
       : "");
   return plan;
+}
+
+function itemRetailerDestinations(item) {
+  if (!item || isEstimateItem(item)) return null;
+  var dests = item.retailer_destinations || {};
+  var brandModel = (item.brand ? item.brand + " " : "") + (item.model || "");
+  var qAmazon = encodeURIComponent(item.amazon_search || brandModel);
+  var qPlain = encodeURIComponent(brandModel);
+
+  var zz = dests.zzounds || {};
+  var zzSku = zz.sku || null;
+  var zzStatus = zz.status || (zzSku ? "verified_in_stock" : "search_fallback");
+  var zzType = zz.type || (zzSku ? "exact" : "search_fallback");
+  var zzUrl = zz.url || (zzSku ? "https://www.zzounds.com/item--" + zzSku : "https://www.zzounds.com/prodsearch?q=" + qPlain);
+
+  var soldAs = zz.sold_as || (item.category === "speakers" ? (item.speaker_units === 1 ? "unit" : "pair") : "unit");
+  var requiresPair = Boolean(zz.requires_pair_qty !== undefined ? zz.requires_pair_qty : (item.category === "speakers" && (item.id === "yamaha-hs5" || item.speaker_units === 1)));
+
+  return {
+    zzounds: {
+      sku: zzSku,
+      url: zzUrl,
+      status: zzStatus,
+      type: zzType,
+      sold_as: soldAs,
+      requires_pair_qty: requiresPair,
+      quantity_note: zz.quantity_note || null,
+      alternative_sku: zz.alternative_sku || null,
+      alternative_url: zz.alternative_url || null,
+      alternative_name: zz.alternative_name || null,
+      note: zz.note || null
+    },
+    amazon: {
+      url: (dests.amazon && dests.amazon.url) || ("https://www.amazon.com/s?k=" + qAmazon + "&tag=offbeatdj-20"),
+      affiliate_tag: "offbeatdj-20",
+      status: (dests.amazon && dests.amazon.status) || "verified_search",
+      type: "search"
+    },
+    sweetwater: {
+      url: (dests.sweetwater && dests.sweetwater.url) || ("https://www.sweetwater.com/store/search?s=" + qPlain),
+      status: "search_fallback",
+      type: "search"
+    },
+    reverb: {
+      url: (dests.reverb && dests.reverb.url) || ("https://reverb.com/marketplace?query=" + qPlain),
+      status: "search_fallback",
+      type: "search"
+    }
+  };
+}
+
+function speakerPackagingInfo(item) {
+  if (!item || item.category !== "speakers") return null;
+  var isPair = item.speaker_units === 2 && (!item.box_label || item.box_label.indexOf("single") === -1);
+  if (item.id === "yamaha-hs5") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: true,
+      note: "Sold individually at retailers (MPN: HS5, ~$199 each). Need 2 units for stereo pair ($398 total)."
+    };
+  }
+  if (item.id === "krk-rokit-5-g4") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: true,
+      note: "Sold individually at retailers. Need 2 units for stereo pair (G4 discontinued at zZounds; Gen 5 is active)."
+    };
+  }
+  if (item.id === "jbl-eon-715") {
+    return {
+      sold_as: "unit",
+      requires_pair_qty: false,
+      note: "Sold as single powered PA cabinet."
+    };
+  }
+  if (item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d") {
+    return {
+      sold_as: "pair",
+      requires_pair_qty: false,
+      note: "Sold as complete pair in one retail box (active left + passive right)."
+    };
+  }
+  if (item.id === "krk-classic-5-pair") {
+    return {
+      sold_as: "pair",
+      requires_pair_qty: false,
+      note: "Sold as complete pair (monitor pack with 2 cabinets)."
+    };
+  }
+  return {
+    sold_as: isPair ? "pair" : "unit",
+    requires_pair_qty: !isPair,
+    note: isPair ? "Sold as complete pair in one box." : "Sold as single cabinet."
+  };
 }
 
   root.OffbeatGear = {
@@ -419,6 +528,8 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
     leadOrientations: leadOrientations,
     describeOutputs: describeOutputs,
     outputCapacity: outputCapacity,
-    connectionPlan: connectionPlan
+    connectionPlan: connectionPlan,
+    itemRetailerDestinations: itemRetailerDestinations,
+    speakerPackagingInfo: speakerPackagingInfo
   };
 })(typeof window !== "undefined" ? window : this);

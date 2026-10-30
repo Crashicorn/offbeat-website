@@ -1,9 +1,9 @@
 {
   "meta": {
-    "version": "2026.3",
-    "updated": "27 October 2026",
+    "version": "2026.4",
+    "updated": "28 October 2026",
     "currency": "USD",
-    "disclosure": "Prices are approximate US retail estimates checked on 27 October 2026. Retailer links may generate affiliate referral commissions for Offbeat at no extra cost to you."
+    "disclosure": "Prices shown are Offbeat benchmark planning estimates (October 2026), not real-time merchant quotes. Retailer pricing, shipping, and availability change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (such as via Amazon Associates) at no extra cost to you."
   },
   "categories": [
     {
@@ -61,7 +61,7 @@
       "category": "controllers",
       "brand": "Pioneer DJ",
       "model": "DDJ-FLX4",
-      "price": 329,
+      "price": 299,
       "channels": 2,
       "software_unlocks": [
         "rekordbox",
@@ -114,7 +114,29 @@
           "role": "master",
           "label": "RCA (unbalanced) master"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "PIODDJFLX4",
+          "url": "https://www.zzounds.com/item--PIODDJFLX4",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pioneer+DJ+DDJ-FLX4+2-Channel+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Pioneer+DJ+DDJ-FLX4",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DDJ-FLX4",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "pioneer-ddj-flx2",
@@ -151,7 +173,29 @@
           "role": "master",
           "label": "3.5 mm stereo master"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "APTDDJFLX2",
+          "url": "https://www.zzounds.com/item--APTDDJFLX2",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($189.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=AlphaTheta+Pioneer+DJ+DDJ-FLX2&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=AlphaTheta+DDJ-FLX2",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=AlphaTheta+DDJ-FLX2",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "pioneer-ddj-flx10",
@@ -206,7 +250,29 @@
           "role": "booth",
           "label": "Booth 1/4-inch TRS"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "PIODDJFLX10",
+          "url": "https://www.zzounds.com/item--PIODDJFLX10",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pioneer+DJ+DDJ-FLX10+4-Channel+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Pioneer+DJ+DDJ-FLX10",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DDJ-FLX10",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "alphatheta-ddj-grv6",
@@ -232,6 +298,7 @@
       "image": "assets/img/products/alphatheta-ddj-grv6.svg",
       "slug": "ddj-grv6-review.html",
       "amazon_search": "AlphaTheta DDJ-GRV6 4-Channel Controller",
+      "spec_source": "https://www.pioneerdj.com/hi-in/product/controller/ddj-grv6/black/overview/",
       "image_type": "schematic_vector",
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
@@ -259,7 +326,29 @@
           "role": "booth",
           "label": "Booth RCA"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "APTDDJGRV6",
+          "url": "https://www.zzounds.com/item--APTDDJGRV6",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=AlphaTheta+DDJ-GRV6+4-Channel+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=AlphaTheta+DDJ-GRV6",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=AlphaTheta+DDJ-GRV6",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "traktor-kontrol-s2-mk3",
@@ -303,7 +392,32 @@
           "role": "master",
           "label": "3.5 mm master"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "NATKONS2MK3",
+          "url": "https://www.zzounds.com/item--NATKONS2MK3",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "alternative_sku": "NATTRAKMX2",
+          "alternative_url": "https://www.zzounds.com/item--NATTRAKMX2",
+          "alternative_name": "Traktor MX2",
+          "note": "Discontinued at zZounds; replaced by Traktor MX2 ($449)."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Traktor+Kontrol+S2+Mk3+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Traktor+Kontrol+S2+MK3",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Traktor+Kontrol+S2+MK3",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "denon-prime-4-plus",
@@ -320,8 +434,8 @@
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
-        "Zone XLR (Balanced)",
-        "Booth (1/4\" TRS)"
+        "Booth XLR (Balanced)",
+        "Zone XLR (Balanced)"
       ],
       "headphone_jack": "1/4\" and 3.5mm",
       "standalone": true,
@@ -331,6 +445,7 @@
       "image": "assets/img/products/denon-prime-4-plus.svg",
       "slug": "xdj-az-vs-denon-prime-4-plus.html",
       "amazon_search": "Denon DJ Prime 4 Plus Standalone DJ System",
+      "spec_source": "https://www.denondj.com/prime-4-plus",
       "image_type": "schematic_vector",
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
@@ -353,13 +468,45 @@
           "label": "RCA master"
         },
         {
-          "connector": "trs",
+          "connector": "xlr",
           "channels": 2,
           "balanced": true,
           "role": "booth",
-          "label": "Booth 1/4-inch TRS"
+          "label": "Booth XLR (balanced)"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "zone",
+          "label": "Zone XLR (balanced)"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "DENPRIME4PLUS",
+          "url": "https://www.zzounds.com/item--DENPRIME4PLUS",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "alternative_sku": "DENPRIME4G2",
+          "alternative_url": "https://www.zzounds.com/item--DENPRIME4G2",
+          "alternative_name": "Denon DJ PRIME 4 G2",
+          "note": "Discontinued at zZounds; replaced by PRIME 4 G2 ($2,599)."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Denon+DJ+Prime+4+Plus+Standalone+DJ+System&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Denon+DJ+Prime+4+Plus",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Denon+DJ+Prime+4+Plus",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "denon-prime-go",
@@ -412,7 +559,32 @@
           "role": "booth",
           "label": "Booth 1/4-inch TRS"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "DENPRIMEGO",
+          "url": "https://www.zzounds.com/item--DENPRIMEGO",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "alternative_sku": "DENPRIMEGOPLUS",
+          "alternative_url": "https://www.zzounds.com/item--DENPRIMEGOPLUS",
+          "alternative_name": "Denon DJ PRIME GO+",
+          "note": "Discontinued at zZounds; replaced by PRIME GO+ ($958)."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Denon+DJ+Prime+GO+Standalone+DJ+System&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Denon+DJ+Prime+GO",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Denon+DJ+Prime+GO",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "hercules-inpulse-500",
@@ -458,7 +630,29 @@
           "role": "master",
           "label": "RCA master"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "HERDJCINPULSE500",
+          "url": "https://www.zzounds.com/item--HERDJCINPULSE500",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($299.99)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Hercules+DJControl+Inpulse+500&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Hercules+DJControl+Inpulse+500",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Hercules+DJControl+Inpulse+500",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "rane-four",
@@ -511,7 +705,472 @@
           "role": "booth",
           "label": "Booth 1/4-inch TRS"
         }
-      ]
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "RNEFOUR",
+          "url": "https://www.zzounds.com/item--RNEFOUR",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "alternative_sku": "RNESYSTEMONE",
+          "alternative_url": "https://www.zzounds.com/item--RNESYSTEMONE",
+          "alternative_name": "RANE SYSTEM ONE",
+          "note": "Discontinued at zZounds; see RANE SYSTEM ONE."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Rane+Four+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=RANE+FOUR",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=RANE+FOUR",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "alphatheta-xdj-az",
+      "category": "controllers",
+      "brand": "AlphaTheta",
+      "model": "XDJ-AZ",
+      "price": 3199,
+      "channels": 4,
+      "software_unlocks": [
+        "rekordbox Performance (Hardware Unlock)",
+        "Serato DJ Pro (Hardware Unlock)"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (1/4\" TRS)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Club-prep DJs, festival performers, and high-end mobile pros requiring 4-deck club continuity",
+      "tagline": "Flagship 4-deck all-in-one DJ system with club-standard layout, 10.1\" touchscreen, and Spotify StreamingDirectPlay.",
+      "image": "assets/img/products/alphatheta-xdj-az.svg",
+      "slug": "xdj-az-vs-denon-prime-4-plus.html",
+      "amazon_search": "AlphaTheta XDJ-AZ Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The flagship club-prep standalone system",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "APTXDJAZ",
+          "url": "https://www.zzounds.com/item--APTXDJAZ",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=AlphaTheta+XDJ-AZ+Professional+DJ+System&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=AlphaTheta+XDJ-AZ",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=AlphaTheta+XDJ-AZ",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "denon-prime-4-g2",
+      "category": "controllers",
+      "brand": "Denon DJ",
+      "model": "PRIME 4 G2",
+      "price": 2599,
+      "channels": 4,
+      "software_unlocks": [
+        "Engine DJ 5.0 Standalone",
+        "Engine Lighting (SoundSwitch DMX)"
+      ],
+      "software_notes": "Operates standalone with Engine DJ 5.0 and native SoundSwitch DMX lighting. Computer-mode controller support for Serato DJ Pro, Algoriddim djay, and VirtualDJ is anticipated in future updates, not currently available at launch (unlike PRIME 4+ which unlocks Serato DJ Pro today).",
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (XLR Balanced)",
+        "Zone XLR (Balanced)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Event pros, mobile DJs, and creative performers requiring standalone onboard Stems rendering, 8\" jogs, and direct DMX lighting without a laptop",
+      "tagline": "Next-generation 4-deck standalone system with onboard Stems rendering, MPCe 3D pads, and built-in 3-pin DMX output (Engine DJ OS standalone; computer mode anticipated in future updates).",
+      "image": "assets/img/products/denon-prime-4-g2.svg",
+      "slug": "xdj-az-vs-denon-prime-4-plus.html",
+      "amazon_search": "Denon DJ Prime 4 G2 Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The 2026 flagship standalone for feature density, onboard Stems, and integrated lighting",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth XLR (balanced)"
+        },
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "zone",
+          "label": "Zone XLR (balanced)"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "DENPRIME4G2",
+          "url": "https://www.zzounds.com/item--DENPRIME4G2",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($2,599.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Denon+DJ+Prime+4+G2&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Denon+DJ+Prime+4+G2",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Denon+DJ+Prime+4+G2",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "rane-system-one",
+      "category": "controllers",
+      "brand": "RANE",
+      "model": "SYSTEM ONE",
+      "price": 2499,
+      "channels": 2,
+      "software_unlocks": [
+        "Engine DJ 5.0 Standalone",
+        "Serato DJ Pro (Hardware Unlock)",
+        "Algoriddim djay Pro (Engine DJ 5.2.0+)"
+      ],
+      "software_notes": "Serato DJ Pro requires Engine DJ 4.6.0+ and Serato DJ Pro 4.0.3+ (includes Serato Pitch 'n Time download card with serial number). Algoriddim djay Pro requires Engine DJ 5.2.0 and djay Pro 5.6.9. VirtualDJ support is anticipated in a future update.",
+      "master_outputs": [
+        "XLR (Balanced)",
+        "RCA (Unbalanced)",
+        "Booth (1/4\" TRS)"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": true,
+      "stems_support": true,
+      "ideal_for": "Open-format DJs, turntablists, and scratch performers requiring standalone motorized platters and onboard Stems rendering",
+      "tagline": "The world's first motorized standalone DJ system with 7.2\" aluminum platters, Engine DJ 5.0, onboard Stems rendering, and Serato DJ Pro unlock.",
+      "image": "assets/img/products/rane-system-one.svg",
+      "slug": "best-standalone-dj-systems.html",
+      "amazon_search": "Rane System One Motorized Standalone DJ System",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The premier standalone system for motorized vinyl feel and open-format performance",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "rca",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "RCA master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "RNESYSTEMONE",
+          "url": "https://www.zzounds.com/item--RNESYSTEMONE",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($2,499.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Rane+System+One+Motorized+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=RANE+SYSTEM+ONE",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=RANE+SYSTEM+ONE",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "numark-mixtrack-go",
+      "category": "controllers",
+      "brand": "Numark",
+      "model": "MixTrack Go",
+      "price": 99,
+      "channels": 2,
+      "software_unlocks": [
+        "Serato DJ Lite",
+        "Algoriddim djay Pro (Hardware-unlocked features)",
+        "Algoriddim djay (iOS/Android)"
+      ],
+      "software_notes": "Algoriddim djay Pro hardware-unlocked features include Neural Mix™ stems, headphone cueing, Instant FX, and Crossfader FX. Advanced features (recording, automix, video mixing, 4 decks) require a paid subscription ($49.99/yr). Serato DJ Pro and VirtualDJ require separate paid licenses. When using Bluetooth MIDI, audio outputs are disabled on the controller (monitor directly from the phone/tablet).",
+      "included_cables": [
+        {
+          "from": "jack35",
+          "to": "rca",
+          "feeds_covered": 1,
+          "label": "1/8\" (3.5 mm) to stereo RCA adapter cable",
+          "note": "Included in the box with MixTrack Go for direct connection to RCA monitors without buying an adapter.",
+          "passive": true
+        }
+      ],
+      "master_outputs": [
+        "3.5mm (1/8\" Stereo Master)"
+      ],
+      "headphone_jack": "3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Ultra-portable travel mixing, budget beginners, and mobile practice with smartphone/tablet Bluetooth MIDI",
+      "tagline": "Ultra-compact 2-deck controller with Stems control, Fade FX, and Bluetooth MIDI at under $100.",
+      "image": "assets/img/products/numark-mixtrack-go.svg",
+      "slug": "best-dj-controllers-for-beginners.html",
+      "amazon_search": "Numark MixTrack Go DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The best ultra-compact sub-$100 travel and mobile practice controller",
+      "outputs": [
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm stereo master"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "NUMMIXTRACKGO",
+          "url": "https://www.zzounds.com/item--NUMMIXTRACKGO",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($99.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Numark+MixTrack+Go+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Numark+MixTrack+Go",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Numark+MixTrack+Go",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "numark-party-mix-3",
+      "category": "controllers",
+      "brand": "Numark",
+      "model": "Party Mix III",
+      "price": 149,
+      "channels": 2,
+      "software_unlocks": [
+        "Serato DJ Lite",
+        "Algoriddim djay Pro (Hardware-unlocked features)",
+        "Algoriddim djay (iOS/Android)"
+      ],
+      "software_notes": "Includes Serato DJ Lite and Algoriddim djay Pro (hardware-unlocked features: Neural Mix™ stems, headphone cueing, Instant FX, Crossfader FX; recording, video, and automix require paid subscription). Serato DJ Pro and VirtualDJ require paid licenses. When using Bluetooth MIDI, audio outputs are disabled on the controller (monitor directly from the phone/tablet).",
+      "master_outputs": [
+        "3.5mm (1/8\" Stereo Master)"
+      ],
+      "headphone_jack": "3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Beginners wanting an engaging party controller with 8 pads per deck, built-in light show, and Stems control under $150",
+      "tagline": "Engaging beginner controller with 16 performance pads, beat-synced LED light show, Stems, and Bluetooth MIDI.",
+      "image": "assets/img/products/numark-party-mix-3.svg",
+      "slug": "best-dj-controllers-for-beginners.html",
+      "amazon_search": "Numark Party Mix III DJ Controller",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The most fun under-$150 starter controller with 8 pads per deck and built-in lights",
+      "outputs": [
+        {
+          "connector": "jack35",
+          "channels": 2,
+          "balanced": false,
+          "role": "master",
+          "label": "3.5 mm stereo master"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "NUMPARTYMIXIII",
+          "url": "https://www.zzounds.com/item--NUMPARTYMIXIII",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($149.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Numark+Party+Mix+III+DJ+Controller&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Numark+Party+Mix+III",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Numark+Party+Mix+III",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "alphatheta-djm-v5",
+      "category": "controllers",
+      "brand": "AlphaTheta",
+      "model": "DJM-V5",
+      "price": 2199,
+      "channels": 3,
+      "software_unlocks": [
+        "rekordbox Performance (Hardware Unlock)",
+        "Serato DJ Pro (license needed)"
+      ],
+      "master_outputs": [
+        "XLR (Balanced)",
+        "Booth (1/4\" TRS)",
+        "SonicLink 2.4GHz Wireless"
+      ],
+      "headphone_jack": "1/4\" and 3.5mm",
+      "standalone": false,
+      "stems_support": true,
+      "ideal_for": "Club and studio setups requiring compact 3-channel V10-grade sound, 4-band EQ, 6 Send FX, and ultra-low-latency SonicLink wireless monitoring",
+      "tagline": "Next-generation compact 3-channel mixer with 4-band EQ, 6 Send FX, and built-in SonicLink wireless monitoring.",
+      "image": "assets/img/products/alphatheta-djm-v5.svg",
+      "slug": "best-dj-mixers-2026.html",
+      "amazon_search": "AlphaTheta DJM-V5 3-Channel DJ Mixer",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "pick": "The compact 3-channel club mixer with SonicLink wireless headphone monitoring",
+      "outputs": [
+        {
+          "connector": "xlr",
+          "channels": 2,
+          "balanced": true,
+          "role": "master",
+          "label": "XLR master"
+        },
+        {
+          "connector": "trs",
+          "channels": 2,
+          "balanced": true,
+          "role": "booth",
+          "label": "Booth 1/4-inch TRS"
+        }
+      ],
+      "retailer_destinations": {
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=AlphaTheta+DJM-V5",
+          "status": "search_fallback",
+          "type": "search_fallback",
+          "note": "Search fallback"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=AlphaTheta+DJM-V5+DJ+Mixer&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=AlphaTheta+DJM-V5",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=AlphaTheta+DJM-V5",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "sennheiser-hd25",
@@ -542,6 +1201,28 @@
         "license": "CC BY-SA 4.0",
         "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
         "modification": "Resized to 1920 × 1152."
+      },
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "SENHD25",
+          "url": "https://www.zzounds.com/item--SENHD25",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($149.95)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Sennheiser+HD+25+Headphones&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Sennheiser+HD+25",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Sennheiser+HD+25",
+          "status": "search_fallback"
+        }
       }
     },
     {
@@ -563,7 +1244,29 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "AUTATHM50X",
+          "url": "https://www.zzounds.com/item--AUTATHM50X",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($149.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Audio-Technica+ATH-M50x+Headphones&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Audio-Technica+ATH-M50x",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Audio-Technica+ATH-M50x",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "ath-m20x",
@@ -584,7 +1287,29 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "AUTATHM20X",
+          "url": "https://www.zzounds.com/item--AUTATHM20X",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($59.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Audio-Technica+ATH-M20x+Headphones&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Audio-Technica+ATH-M20x",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Audio-Technica+ATH-M20x",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "pioneer-hdj-cue1",
@@ -605,7 +1330,29 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "PIOHDJCUE1",
+          "url": "https://www.zzounds.com/item--PIOHDJCUE1",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($85.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pioneer+DJ+HDJ-CUE1+Headphones&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Pioneer+DJ+HDJ-CUE1",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Pioneer+DJ+HDJ-CUE1",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "sony-mdr-7506",
@@ -626,7 +1373,32 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "SNYMDR7506",
+          "url": "https://www.zzounds.com/item--SNYMDR7506",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "alternative_sku": "SENHD25",
+          "alternative_url": "https://www.zzounds.com/item--SENHD25",
+          "alternative_name": "Sennheiser HD 25",
+          "note": "MDR-7506 discontinued at zZounds; recommend Sennheiser HD 25 or ATH-M50x."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Sony+MDR-7506+Headphones&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Sony+MDR-7506",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Sony+MDR-7506",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "pioneer-dm40d",
@@ -639,6 +1411,8 @@
         "RCA (Unbalanced)",
         "3.5 mm Stereo Mini"
       ],
+      "included_audio_cable_3_5mm_to_rca": true,
+      "included_cable_source": "https://pioneernz.co.nz/pages/specifications-dm40d",
       "connection": {
         "topology": "master_slave",
         "feeds_per_box": 1,
@@ -683,7 +1457,34 @@
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
       "pick": "The default bedroom monitor pair",
-      "price_basis": "Pioneer DJ DM-40D pair, US retail estimate checked 2026-10-27."
+      "price_basis": "Pioneer DJ DM-40D pair, US retail estimate checked 2026-10-27.",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "PIODM40D",
+          "url": "https://www.zzounds.com/item--PIODM40D",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "pair",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as complete pair in one retail box (active left + passive right).",
+          "note": "Active product listing ($179.00 / pair)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pioneer+DJ+DM-40D+Pair&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Pioneer+DJ+DM-40D",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DM-40D",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "pioneer-dm50d",
@@ -745,7 +1546,34 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "price_basis": "Pioneer DJ DM-50D pair, US retail estimate checked 2026-10-27."
+      "price_basis": "Pioneer DJ DM-50D pair, US retail estimate checked 2026-10-27.",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "PIODM50D",
+          "url": "https://www.zzounds.com/item--PIODM50D",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "pair",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as complete pair in one retail box (active left + passive right).",
+          "note": "Active product listing ($199.00 / pair)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pioneer+DJ+DM-50D+Pair&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Pioneer+DJ+DM-50D",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DM-50D",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "krk-rokit-5-g4",
@@ -772,8 +1600,8 @@
       },
       "included_cables": [],
       "speaker_units": 1,
-      "box_label": "single cabinet",
-      "pack_note": "Sold as one cabinet. A stereo pair means buying two, with one signal cable and one power socket each. There is no RCA input on the G4, so an RCA-only controller needs a dual RCA to dual 1/4-inch lead or a balanced path.",
+      "box_label": "single cabinet (retail ~$169 ea)",
+      "pack_note": "Sold as one cabinet at retail (~$169 ea). A stereo pair requires purchasing two units (pair total $338). Note: Generation 4 is discontinued at zZounds; Gen 5 is the active replacement at $199 each.",
       "driver_size": "5.25-inch Kevlar aramid woofer, 1-inch Kevlar dome tweeter",
       "amplifier": "55 W bi-amped Class-D (35 W low frequency, 20 W high frequency)",
       "frequency_response": "43 Hz – 40 kHz",
@@ -789,10 +1617,40 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "price_basis": "KRK Systems store lists the ROKIT 5 G4 at $169.99 each; a pair is two units. US retail estimate checked 2026-10-27.",
+      "price_basis": "KRK Systems list estimate. Single cabinets retail ~$169.99-$179.99 each; the $299 figure reflects verified pair-setup planning benchmark. Generation 4 is discontinued at zZounds; Gen 5 is the active replacement.",
       "price_source": "https://www.krkmusic.com/collections/rokit-series-g4-powered-studio-monitors",
       "spec_source": "https://www.krkmusic.com/products/rokit-5-generation-4-powered-studio-monitor-black",
-      "id_note": "ROKIT 5 G4 only. It is not the KRK Classic 5: the Classic has RCA, TRS and XLR jacks, a 50 W Class A/B amplifier and a glass-aramid woofer. Those are separate catalog entries."
+      "id_note": "ROKIT 5 G4 only. It is not the KRK Classic 5: the Classic has RCA, TRS and XLR jacks, a 50 W Class A/B amplifier and a glass-aramid woofer. Those are separate catalog entries.",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "KRKRP5G4",
+          "url": "https://www.zzounds.com/item--KRKRP5G4",
+          "status": "verified_unavailable",
+          "type": "exact",
+          "sold_as": "unit",
+          "requires_pair_qty": true,
+          "alternative_sku": "KRKRP5G5NA",
+          "alternative_url": "https://www.zzounds.com/item--KRKRP5G5NA",
+          "alternative_name": "KRK RP5G5 Rokit 5 Gen 5",
+          "quantity_note": "Generation 4 discontinued at zZounds; Gen 5 is active. Sold individually; need 2 for stereo pair.",
+          "note": "Gen 4 discontinued at zZounds; Gen 5 is the active replacement."
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=KRK+ROKIT+5+G4+Studio+Monitor&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=KRK+ROKIT+5+G4",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=KRK+ROKIT+5+G4",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "krk-classic-5-pair",
@@ -863,7 +1721,32 @@
       "visual_type": "Technical Vector Schematic",
       "price_basis": "KRK CL5G3PK1-NA monitor pack (two Classic 5 monitors, two XLR cables, two isolation pads) at $299 US retail, checked 2026-10-27.",
       "spec_source": "https://www.bhphotovideo.com/c/product/1795088-REG/krk_cl5g3pk1_na_classic_5_studio_monitor.html",
-      "id_note": "Classic 5 only. It is a different product line from the ROKIT 5 G4: glass-aramid woofer, 50 W Class A/B, and RCA sockets the G4 does not have."
+      "id_note": "Classic 5 only. It is a different product line from the ROKIT 5 G4: glass-aramid woofer, 50 W Class A/B, and RCA sockets the G4 does not have.",
+      "retailer_destinations": {
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=KRK+Classic+5",
+          "status": "search_fallback",
+          "type": "search_fallback",
+          "sold_as": "pair",
+          "quantity_note": "Monitor pack containing 2 powered cabinets.",
+          "note": "Search fallback"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=KRK+Classic+5+Studio+Monitors+Pair&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=KRK+Classic+5",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=KRK+Classic+5",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "yamaha-hs5",
@@ -914,14 +1797,41 @@
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
       "price_basis": "Yamaha HS5 at $199.99 each (two-$399.98 pair pricing), checked 2026-10-27; sold per monitor.",
-      "spec_source": "https://usa.yamaha.com/products/proaudio/speakers/hs_series/specs.html"
+      "spec_source": "https://usa.yamaha.com/products/proaudio/speakers/hs_series/specs.html",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "YAMHS5",
+          "url": "https://www.zzounds.com/item--YAMHS5",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "requires_pair_qty": true,
+          "quantity_note": "Sold individually at retailers (MPN: HS5, ~$199 each). Need 2 units for stereo pair ($398 total).",
+          "note": "Active product listing; sold singly"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Yamaha+HS5+Powered+Studio+Monitor+Pair&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Yamaha+HS5",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Yamaha+HS5",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "jbl-eon-715",
       "category": "speakers",
       "brand": "JBL Professional",
       "model": "EON715 15\" (Single)",
-      "price": 599,
+      "price": 549,
       "type": "Powered PA Cabinet (single, 1300 W peak / 650 W RMS)",
       "inputs": [
         "2 x Combo XLR / 1/4\" (Mic/Line, balanced or unbalanced)",
@@ -960,7 +1870,180 @@
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
       "price_basis": "JBL EON715 single cabinet at $599 US retail, checked 2026-10-27.",
-      "spec_source": "https://jblpro.com/en-US/products/jbl-eon715"
+      "spec_source": "https://jblpro.com/en-US/products/jbl-eon715",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "JBLEON715",
+          "url": "https://www.zzounds.com/item--JBLEON715",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as single powered PA cabinet.",
+          "note": "Active product listing ($599.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=JBL+EON715+Powered+PA+Speaker&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=JBL+EON715",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=JBL+EON715",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
+    },
+    {
+      "id": "qsc-k10-2",
+      "category": "speakers",
+      "brand": "QSC",
+      "model": "K10.2 10\" (Single)",
+      "price": 899,
+      "type": "Powered PA Loudspeaker (single, 2000 W peak Class D)",
+      "inputs": [
+        "2 x Combo XLR / 1/4\" (Mic/Line/Hi-Z, balanced)",
+        "1 x 3.5 mm TRS stereo mini-jack"
+      ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "Premium 2000W Class-D powered PA loudspeaker with DMT acoustic directivity and multi-function DSP display. Sold individually; two units needed for stereo dancefloor sound."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold individually (1 cabinet). 2000W Class-D powered loudspeaker with multi-function digital display. 2 units required for stereo crowd array.",
+      "driver_size": "10-inch cone transducer, 1.4-inch titanium compression driver",
+      "sound_modes": "Factory DSP voicings (Dance, Live, Stage Monitor, Vocal Boost) and savable user presets",
+      "frequency_response": "50 Hz – 20 kHz (-10 dB)",
+      "max_spl": "130 dB peak",
+      "dispersion": "90° axisymmetric",
+      "ideal_for": "High-end mobile wedding DJs, corporate events, and demanding live music sound reinforcement",
+      "tagline": "A premium 2000-watt Class-D powered PA cabinet with multi-function display and DMT acoustic coverage.",
+      "image": "assets/img/products/qsc-k10-2-outline.svg",
+      "slug": "festival-dj-gear-checklist.html",
+      "amazon_search": "QSC K10.2 Powered Loudspeaker",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "price_basis": "QSC K10.2 single cabinet at $899 US retail, checked 2026-10-27.",
+      "spec_source": "https://www.qsc.com/live-sound/products/loudspeakers/powered-loudspeakers/k2-series/k102/",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "QSCK102",
+          "url": "https://www.zzounds.com/item--QSCK102",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as single powered PA cabinet.",
+          "note": "Active product listing ($899.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=QSC+K10.2+Powered+Loudspeaker&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=QSC+K10.2",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=QSC+K10.2",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
+    },
+    {
+      "id": "electro-voice-zlx-12bt",
+      "category": "speakers",
+      "brand": "Electro-Voice",
+      "model": "ZLX-12BT 12\" (Single)",
+      "price": 499,
+      "type": "Powered PA Loudspeaker (single, 1000 W Class D / QuickSmartDSP)",
+      "inputs": [
+        "2 x Combo XLR / 1/4\" (Mic/Line, balanced)",
+        "1 x 3.5 mm Aux input",
+        "Bluetooth wireless audio streaming"
+      ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "1000W Class-D powered PA speaker with QuickSmartDSP and Bluetooth audio. Sold individually; two units needed for stereo live performance."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold individually (1 cabinet). 1000W Class-D powered loudspeaker with Bluetooth wireless audio streaming. Order 2 units for stereo live sound.",
+      "driver_size": "12-inch EVS-12K woofer, 1.5-inch DH-1K titanium compression driver",
+      "sound_modes": "QuickSmartDSP LCD display with single-knob presets (Music, Live, Speech, Club) and visual metering",
+      "frequency_response": "50 Hz – 20 kHz (-10 dB)",
+      "max_spl": "126 dB peak",
+      "dispersion": "90° x 60°",
+      "ideal_for": "Mobile DJs, parties, bars, and compact live performances",
+      "tagline": "A workhorse 1000-watt 12-inch powered PA loudspeaker with QuickSmartDSP and Bluetooth streaming.",
+      "image": "assets/img/products/jbl-eon715.svg",
+      "slug": "festival-dj-gear-checklist.html",
+      "amazon_search": "Electro-Voice ZLX-12BT 12-inch Powered Speaker",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "price_basis": "Electro-Voice ZLX-12BT single cabinet at $499 US retail, checked 2026-10-27.",
+      "spec_source": "https://electrovoice.com/product/zlx-12bt-12-powered-loudspeaker-with-bluetooth/",
+      "retailer_destinations": {
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=Electro-Voice+ZLX-12BT",
+          "status": "verified_search",
+          "type": "search",
+          "sold_as": "single",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as single powered PA cabinet.",
+          "note": "Search fallback ($499.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Electro-Voice+ZLX-12BT+Powered+Speaker&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Electro-Voice+ZLX-12BT",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Electro-Voice+ZLX-12BT",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
     },
     {
       "id": "macbook-air-m2",
@@ -980,7 +2063,26 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Apple+MacBook+Air+13+16GB+RAM&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=Apple+MacBook+Air",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Apple+MacBook+Air",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Apple+MacBook+Air",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "existing-computer-host",
@@ -1016,7 +2118,26 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Dell+Lenovo+Laptop+Core+i7+16GB+RAM&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=DJ+laptop",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=DJ+Laptop",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=DJ+Laptop",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "existing-mobile-app-device",
@@ -1036,6 +2157,27 @@
       "image_type": "illustrative_vector",
       "provenance": "Original Offbeat interface illustration (2026)",
       "license": "Original Offbeat vector artwork"
+    },
+    {
+      "id": "existing-mobile-device",
+      "category": "laptops",
+      "brand": "Existing Device (Not Sold)",
+      "model": "Your Compatible Phone / Tablet (rekordbox Mobile)",
+      "price": 0,
+      "no_purchase": true,
+      "host_type": "existing-mobile",
+      "os": "Supported iOS/Android version; verify rekordbox mobile device requirements",
+      "audio_subsystem": "FLX4 USB: controller master and headphone outputs; Bluetooth: audio stays on mobile device",
+      "ports": "Compatible USB cable and separate 9V/3A USB power for FLX4 mobile use",
+      "ideal_for": "DDJ-FLX4 beginners who already own a compatible phone or tablet; not a free device",
+      "tagline": "Use your existing compatible phone/tablet. Verify rekordbox mobile, USB connection, 9V/3A power and available audio outputs before buying.",
+      "image": "assets/img/products/mobile-rekordbox-host.svg",
+      "slug": "beginner-dj-setup-guide-2026.html",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026); Pioneer DJ DDJ-FLX4 official setup",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic"
     },
     {
       "id": "standalone-usb-only",
@@ -1085,6 +2227,25 @@
         "b_plugs": 2,
         "balanced": false,
         "pack_of": 1
+      },
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Cable+Matters+Dual+RCA+to+Dual+RCA+6ft&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=dual+rca+cable",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Dual+RCA+Cable",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Dual+RCA+Cable",
+          "status": "search_fallback"
+        }
       }
     },
     {
@@ -1114,6 +2275,28 @@
         "b_plugs": 2,
         "balanced": false,
         "pack_of": 1
+      },
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "HOSCPR20",
+          "url": "https://www.zzounds.com/item--HOSCPR20",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Hosa Stereo RCA to Two Mono 1/4\" TS Cable ($9.99)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Hosa+Dual+RCA+to+Dual+1%2F4+TS+Cable+CPR-202&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Hosa+Dual+RCA+to+Dual+1%2F4+TS",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Hosa+CPR-202",
+          "status": "search_fallback"
+        }
       }
     },
     {
@@ -1143,6 +2326,28 @@
         "b_plugs": 2,
         "balanced": true,
         "pack_of": 2
+      },
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=CableCreation+Balanced+XLR+Male+to+Female+Pair+10ft&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "sku": "PGHPHM",
+          "url": "https://www.zzounds.com/item--PGHPHM",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Pig Hog XLR Cable (Single cable; need 2 for stereo pair)"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=XLR+Microphone+Cable+Pair",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Balanced+XLR+Cable+Pair",
+          "status": "search_fallback"
+        }
       }
     },
     {
@@ -1163,7 +2368,26 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=UGREEN+3.5mm+to+1%2F4+Headphone+Adapter&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=headphone+adapter+3.5mm+to+1%2F4",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=1%2F8+to+1%2F4+headphone+adapter",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=headphone+adapter+3.5mm+to+1%2F4",
+          "status": "search_fallback"
+        }
+      }
     },
     {
       "id": "cable-aux-rca-allowance",
@@ -1210,7 +2434,62 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Pyle+Pro+Heavy-Duty+Adjustable+DJ+Laptop+Stand&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=dj+laptop+stand",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=DJ+Laptop+Stand",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=DJ+Laptop+Stand",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "generic-desktop-riser",
+      "category": "stands",
+      "brand": "Planning Allowance",
+      "model": "Tabletop DJ Gear Riser",
+      "price": 25,
+      "estimate_only": true,
+      "type": "Fixed Tabletop Riser (Generic Planning Allowance)",
+      "ideal_for": "Elevating compact controllers or audio gear flush with mixer height",
+      "tagline": "Generic planning component for raising gear to ergonomic performance height.",
+      "image": "assets/img/products/pyle-laptop-stand.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=DJ+Equipment+Riser+Stand&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
+    },
+    {
+      "id": "generic-speaker-stands",
+      "category": "stands",
+      "brand": "Planning Allowance",
+      "model": "Desktop Monitor Isolation Stands / Pads",
+      "price": 35,
+      "estimate_only": true,
+      "type": "Monitor Isolation Risers (Generic Planning Allowance)",
+      "ideal_for": "Decoupling studio monitors from desktop surfaces to stop bass resonance",
+      "tagline": "Acoustic foam or clamp-on desk stands to angle studio monitors directly at ear level.",
+      "image": "assets/img/products/pyle-laptop-stand.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Studio+Monitor+Desktop+Stands&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
     },
     {
       "id": "usb-sandisk-extreme",
@@ -1230,7 +2509,44 @@
       "provenance": "Offbeat Illustrated Spec Guide (2026)",
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
-      "visual_type": "Technical Vector Schematic"
+      "visual_type": "Technical Vector Schematic",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=SanDisk+Extreme+PRO+128GB+USB+3.2+Flash+Drive&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=usb+flash+drive",
+          "status": "search_fallback",
+          "type": "search_fallback"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=USB+Flash+Drive",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=SanDisk+USB+Flash+Drive",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "generic-backup-usb",
+      "category": "storage",
+      "brand": "Planning Allowance",
+      "model": "Dual USB 3.0 Flash Drives (Pair)",
+      "price": 18,
+      "estimate_only": true,
+      "type": "USB Flash Drive Pair (Generic Planning Allowance)",
+      "ideal_for": "Primary and backup USB sticks formatted for standalone DJ gear (rekordbox / Engine OS)",
+      "tagline": "Two reliable high-speed thumb drives for club DJ gigs — one primary drive and one emergency backup.",
+      "image": "assets/img/products/sandisk-extreme-usb.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Dual+USB+3.0+Flash+Drive+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
     },
     {
       "id": "mic-shure-sm58",
@@ -1250,7 +2566,67 @@
       "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
       "attribution": "Offbeat Inc. Editorial Hardware Lab",
       "visual_type": "Technical Vector Schematic",
-      "pick": "The default vocal mic"
+      "pick": "The default vocal mic",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "SHUSM58",
+          "url": "https://www.zzounds.com/item--SHUSM58",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "note": "Active product listing ($109.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Shure+SM58+Dynamic+Vocal+Microphone&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Shure+SM58",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Shure+SM58",
+          "status": "search_fallback"
+        }
+      }
+    },
+    {
+      "id": "generic-budget-mic",
+      "category": "microphones",
+      "brand": "Planning Allowance",
+      "model": "Handheld Dynamic Vocal Mic with Cable",
+      "price": 39,
+      "estimate_only": true,
+      "type": "Entry Dynamic Vocal Mic (Generic Planning Allowance)",
+      "connector": "XLR / 1/4\" TS",
+      "ideal_for": "Party announcements, toasts, and emergency host voice without heavy touring durability",
+      "tagline": "Simple handheld dynamic microphone with bundled connection cable for straightforward DJ announcements.",
+      "image": "assets/img/products/shure-sm58.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Handheld+Dynamic+Microphone+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
+    },
+    {
+      "id": "generic-wireless-mic",
+      "category": "microphones",
+      "brand": "Planning Allowance",
+      "model": "Wireless Handheld Microphone System",
+      "price": 89,
+      "estimate_only": true,
+      "type": "Wireless Handheld Mic System (Generic Planning Allowance)",
+      "connector": "1/4\" TS / XLR Receiver Out",
+      "ideal_for": "Roaming wedding MCs, mobile banquet hosting, and cable-free event announcements",
+      "tagline": "Cordless handheld microphone system with receiver plugging directly into your DJ controller mic in.",
+      "image": "assets/img/products/shure-sm58.svg",
+      "retailer_destinations": {
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Wireless+Microphone+System+DJ&tag=offbeatdj-20",
+          "status": "verified_search"
+        }
+      }
     },
     {
       "id": "cable-aux-trs-allowance",
@@ -1439,26 +2815,20 @@
     {
       "id": "bedroom-starter",
       "name": "The Bedroom Starter",
-      "badge": "Beginner",
-      "desc": "A two-channel controller, monitoring headphones, a desktop monitor pair with the lead it needs in the box, and a laptop riser. One dual RCA lead is still required because the FLX4 has RCA outputs.",
+      "badge": "Est. $597 total",
+      "desc": "DDJ-FLX4, HD 25 and DM-40D with included speaker cable. Assumes you already own a compatible phone/tablet; verify rekordbox mobile, USB connection and separate 9V/3A power (not priced). No laptop purchase is required for this supported route.",
       "slots": {
         "controllers": "pioneer-ddj-flx4",
         "headphones": "sennheiser-hd25",
         "speakers": "pioneer-dm40d",
-        "laptops": "macbook-air-m2",
-        "cables": "cable-rca-rca",
-        "stands": "laptop-stand-pyle"
-      },
-      "owned": [
-        "laptops"
-      ],
-      "blurb": "Two-channel deck, cue headphones, desk monitors and the cable. Laptop assumed owned."
+        "laptops": "existing-mobile-device"
+      }
     },
     {
       "id": "club-ready",
       "name": "The Club-Ready Rig",
-      "badge": "Club",
-      "desc": "Four-channel controller, HD 25 headphones, two independently powered Yamaha HS5 cabinets fed by a balanced XLR pair, and a USB drive for export.",
+      "badge": "Est. $3,230 total",
+      "desc": "Club-standard 4-channel controller with jog displays, industry-standard HD 25 headphones, bi-amped Yamaha 5-inch monitors, balanced XLR cabling, and USB 3.2 flash drive for CDJ export.",
       "slots": {
         "controllers": "pioneer-ddj-flx10",
         "headphones": "sennheiser-hd25",
@@ -1467,16 +2837,12 @@
         "cables": "cable-xlr-xlr",
         "stands": "laptop-stand-pyle",
         "storage": "usb-sandisk-extreme"
-      },
-      "owned": [
-        "laptops"
-      ],
-      "blurb": "Four channels, balanced XLR path, booth-style layout. Laptop assumed owned."
+      }
     },
     {
       "id": "mobile-pro",
       "name": "The Mobile & Wedding Pro",
-      "badge": "Mobile / wedding",
+      "badge": "Est. $3,052 total",
       "desc": "Standalone 4-channel console with 10-inch touchscreen (no laptop required), 15-inch 1300W JBL PA speaker, Shure SM58 vocal mic, headphones, and balanced cables.",
       "slots": {
         "controllers": "denon-prime-4-plus",
@@ -1486,29 +2852,21 @@
         "microphones": "mic-shure-sm58",
         "cables": "cable-xlr-xlr",
         "storage": "usb-sandisk-extreme"
-      },
-      "owned": [
-        "laptops"
-      ],
-      "blurb": "Standalone decks, a powered PA and a vocal mic. No laptop on the table at all."
+      }
     },
     {
       "id": "traktor-techno",
       "name": "The Traktor Techno Specialist",
-      "badge": "Traktor",
-      "desc": "Traktor-native controller, reference headphones, the KRK Classic 5 monitor pack (two powered cabinets, two XLR leads and isolation pads) and the dual RCA lead its RCA inputs need.",
+      "badge": "Est. $1,780 total",
+      "desc": "Precision Traktor Kontrol S2 MK3 controller, Sony MDR-7506 reference monitoring, punchy KRK Classic 5 monitors, RCA-to-TRS cables, and laptop riser.",
       "slots": {
         "controllers": "traktor-kontrol-s2-mk3",
         "headphones": "sony-mdr-7506",
         "speakers": "krk-classic-5-pair",
         "laptops": "macbook-air-m2",
-        "cables": "cable-rca-rca",
+        "cables": "cable-rca-trs",
         "stands": "laptop-stand-pyle"
-      },
-      "owned": [
-        "laptops"
-      ],
-      "blurb": "Traktor-native controller, honest headphones, two KRK cabinets on RCA, one dual RCA lead."
+      }
     }
   ],
   "schema": {

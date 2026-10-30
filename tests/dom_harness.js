@@ -105,7 +105,7 @@ async function openPage(url, options) {
   const window = dom.window;
   const document = window.document;
 
-  const expectRig = !options || options.expectRig !== false;
+  const expectRig = (!options || options.expectRig !== false) && url.indexOf("build-your-dj-setup") !== -1;
   if (expectRig) {
     await waitFor(() => window.__rigStudio, 8000);
   } else {
