@@ -28,6 +28,10 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     waitUntil: "load", timeout: 20000
   });
   await page.waitForSelector(".rig-dashboard-shell", { timeout: 15000 });
+  // Make an explicit privacy choice so the consent dialog cannot intercept UI clicks.
+  if (!denyStorage && await page.$(".ob-consent-btn")) {
+    await page.click(".ob-consent-btn:nth-child(2)");
+  }
   const metrics = await page.evaluate(() => ({
     spend: document.querySelector(".metric-val--spend")?.textContent.trim() || "",
     overflow: document.documentElement.scrollWidth - innerWidth,
@@ -59,11 +63,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // Starter assumes a compatible phone already owned, not a forced laptop purchase.
       assert.equal(metrics.spend, "$597", "starter excludes a new laptop and stand");
       assert.match(initialAlerts, /Mobile Host, USB Audio and Power Need Verification/);
-      const initialOwned = await page.$eval(".metric-val--owned", el => el.textContent.trim());
-      assert.match(initialOwned, /\$0$/, "default ownership deduction must be zero");
+      const initialOwned = await page.$eval(".quick-spend-card .qsc-sub", el => el.textContent.trim());
+      assert.match(initialOwned, /Saved \$0 owned/, "default ownership deduction must be zero");
       const before = Number(metrics.spend.replace(/[^\d.]/g, ""));
       assert.ok(Number.isFinite(before) && before > 0, "initial spend must be a real amount");
-      await page.click('.booth-card--main [data-action="toggle-slot-owned"]');
+      await page.click('.visual-controller [data-action="toggle-slot-owned"]');
       const afterText = await page.$eval(".metric-val--spend", (el) => el.textContent.trim());
       const after = Number(afterText.replace(/[^\d.]/g, ""));
       assert.ok(after < before, "marking an owned controller must reduce remaining spend");
@@ -78,9 +82,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
         ["traktor-techno", "$1,780"]
       ];
       for (const [id, expectedPrice] of expectedPresets) {
-        const badge = await page.$eval('[data-preset-id="' + id + '"] .preset-badge', el => el.textContent.trim());
+        if (width < 600) await page.click('.mobile-presets summary');
+        const presetSelector = (width < 600 ? '.mobile-presets ' : '.rig-preset-strip ') + '[data-preset-id="' + id + '"]';
+        const badge = await page.$eval(presetSelector + ' .preset-badge', el => el.textContent.trim());
         assert.equal(badge, "Est. " + expectedPrice + " total", id + " badge");
-        await page.click('[data-preset-id="' + id + '"]');
+        await page.click(presetSelector);
         const actualSpend = await page.$eval(".metric-val--spend", el => el.textContent.trim());
         assert.equal(actualSpend, expectedPrice, id + " purchase cost must match advertised total");
       }
@@ -125,7 +131,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const missingController = await visit(browser, 390, noControllerQuery);
     const missingState = await missingController.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(missingState.tag, /Incompatible Configuration/);
@@ -145,7 +151,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const silentRig = await visit(browser, 390, noAudioQuery);
     const silentState = await silentRig.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(silentState.tag, /Incompatible Configuration/);
@@ -172,7 +178,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const multi = await visit(browser, 390, multiQuery);
     const multiState = await multi.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(multiState.tag, /Manual Routing Review Required/);
@@ -207,7 +213,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const quantity = await visit(browser, 390, quantityQuery);
     const quantityState = await quantity.page.evaluate(() => ({
       tag: document.querySelector(".compat-status-tag")?.textContent || "",
-      readiness: Number((document.querySelector(".readiness-num")?.textContent || "").replace("%", "")),
+      readiness: parseInt(document.querySelector(".quick-readiness-card .qsc-sub")?.textContent, 10),
       alerts: document.querySelector(".compat-items-grid")?.textContent || ""
     }));
     assert.match(quantityState.tag, /Manual Routing Review Required/);
@@ -235,7 +241,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     const cableFix = await visit(browser, 390, cableFixQuery);
     const spendBeforeCable = await cableFix.page.$eval(".metric-val--spend", el =>
       Number(el.textContent.replace(/[^\d.]/g, "")));
-    const fixSelector = '[data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
+    const fixSelector = '.compat-items-grid [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
     assert.ok(await cableFix.page.$(fixSelector), "XLR suggestion must be available");
     await cableFix.page.click(fixSelector);
     const cableFixResult = await cableFix.page.evaluate(() => ({

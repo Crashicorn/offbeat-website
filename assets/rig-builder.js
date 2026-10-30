@@ -827,7 +827,7 @@
             </div>
           </div>
 
-          <details class="mobile-presets"><summary>Choose preset</summary><div>${CATALOG.presets.map(function(p) { return `<button type="button" class="mobile-preset" data-preset-id="${p.id}">${escapeHtml(p.name)}</button>`; }).join('')}</div></details>
+          <details class="mobile-presets"><summary>Choose preset</summary><div>${CATALOG.presets.map(function(p) { return `<button type="button" class="mobile-preset" data-preset-id="${p.id}">${escapeHtml(p.name)} <span class="preset-badge">${escapeHtml(presetPriceBadge(p))}</span></button>`; }).join('')}</div></details>
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
