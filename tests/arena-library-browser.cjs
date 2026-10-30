@@ -92,11 +92,30 @@ function visibleCount(page) {
           entry.u + " must have a useful, source-grounded Spotlight summary");
         assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
       }
-      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
-      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
-        "buyer search must match the actual Classic 5 catalog product");
-      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
-        "buyer search must not advertise a different monitor model");
+      // Compare every product deep-link title against the model it actually adds.
+      // Ignore punctuation and spacing, but do not confuse similar product lines.
+      const catalog = await page.evaluate(async () =>
+        (await (await fetch("assets/dj-gear-catalog.json")).json()).items
+      );
+      const catalogById = new Map(catalog.map(item => [item.id, item]));
+      const normalizeModel = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const matchingModel = (title, model) => normalizeModel(title).includes(normalizeModel(model));
+      assert.equal(matchingModel("KRK Classic 5 (Pair, Monitor Pack)", "ROKIT 5 G4"), false,
+        "regression test must reject an unrelated KRK model");
+      let checkedProducts = 0;
+      for (const entry of index) {
+        const url = new URL(entry.u, base + "/");
+        const id = url.searchParams.get("add");
+        if (!url.pathname.endsWith("/build-your-dj-setup.html") || !id) continue;
+        const product = catalogById.get(id);
+        assert.ok(product, entry.u + " must point to an existing catalog item");
+        assert.ok(matchingModel(entry.title, product.model),
+          entry.title + " must identify catalog model " + product.model + " (" + id + ")");
+        checkedProducts++;
+      }
+      assert.ok(checkedProducts >= 29, "curated product deep links must be checked");
+      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-classic-5-pair");
+      assert.ok(krk && /Classic 5/i.test(krk.title), "Classic 5 must link to the Classic 5 pack");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")
