@@ -5734,3 +5734,61 @@ tr.rs-item { display: table-row !important; }
   gap: .5rem;
   align-items: center;
 }
+
+/* Standby & Active Cable Pipe States */
+.pipe--standby {
+  background: rgba(255, 255, 255, .03);
+  border: 1px dashed rgba(255, 255, 255, .15);
+  border-radius: var(--r-xs);
+  padding: .3rem .5rem;
+}
+.pipe--standby .pipe-track {
+  background: rgba(255, 255, 255, .05);
+}
+.route--standby {
+  border-color: rgba(251, 191, 36, .3) !important;
+  background: rgba(251, 191, 36, .02) !important;
+}
+
+/* Pipe Cable Pill States */
+.pipe-cable-pill--needed {
+  background: rgba(251, 191, 36, .12) !important;
+  border-color: rgba(251, 191, 36, .45) !important;
+  color: #fde047 !important;
+  cursor: pointer;
+}
+.pipe-cable-pill--needed:hover {
+  background: rgba(251, 191, 36, .22) !important;
+  border-color: #fde047 !important;
+  transform: scale(1.02);
+}
+.pipe-cable-pill--verified {
+  background: rgba(52, 211, 153, .12) !important;
+  border-color: rgba(52, 211, 153, .4) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Active Bi-Amped Monitors Stage & Spread */
+.cabinet-stage-pair--active-monitors {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+.cabinet-spread--nearfield {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.cabinet-spread--nearfield .spread-line {
+  width: 24px;
+  height: 1px;
+  background: rgba(56, 189, 248, .35);
+}
+.cabinet-spread--nearfield .spread-text {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #7dd3fc;
+}

@@ -1019,6 +1019,28 @@
     };
   }
 
+  function isMasterSlavePair(item) {
+    if (!item) return false;
+    if (item.connection && item.connection.topology === "master_slave") return true;
+    return item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d";
+  }
+
+  function isRouteCableConfirmed(plan, routeIndex) {
+    if (!plan) return false;
+    if (plan.conflict || plan.kind === "unresolved") return false;
+    if (plan.kind === "included") return true;
+    if (plan.kind === "product" && plan.itemId) {
+      var matchingCables = currentRig.items.filter(function (s) {
+        return s.category === "cables" && s.itemId === plan.itemId;
+      });
+      var totalUnits = matchingCables.reduce(function (sum, s) {
+        return sum + (s.qty || 1);
+      }, 0);
+      return totalUnits > routeIndex;
+    }
+    return false;
+  }
+
   function findSlot(category) {
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
@@ -1045,8 +1067,9 @@
     var monQty = monitorSlot ? (monitorSlot.qty || 1) : 0;
 
     var isStereoPA = paQty >= 2;
-    var isBoxedPair = monItem && (monItem.id === "pioneer-dm40d" || monItem.speaker_units === 2);
-    var isStereoMonitors = isBoxedPair || monQty >= 2;
+    var isMasterSlave = isMasterSlavePair(monItem);
+    var monCabinets = monItem ? (monItem.speaker_units || 1) * monQty : 0;
+    var isStereoMonitors = isMasterSlave || monCabinets >= 2;
 
     // Use OffbeatGear for real connection calculations
     var usedOutputs = {};
@@ -1078,19 +1101,43 @@
     var cableSlots = currentRig.items.filter(function (s) { return s.category === "cables"; });
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
 
-    var paBadgeText = !paSlot ? "📢 Crowd PA: Not in Setup (Practice Mode)" : (isStereoPA ? "📢 Crowd PA: Stereo Array (" + paQty + " Loudspeakers)" : "📢 Crowd PA: Mono PA Cabinet (1 Loudspeaker)");
-    var monBadgeText = !monitorSlot ? "🔊 DJ Monitors: None (Headphones Cue Only)" : (isBoxedPair ? "🔊 DJ Monitors: Stereo Pair (2 Cabinets in 1 Box)" : (monQty >= 2 ? "🔊 DJ Monitors: Stereo Dual Monitors (" + monQty + " Units)" : "⚠️ DJ Monitors: Mono (1 Unit · 2 Recommended)"));
+    var paCableConfirmed = isRouteCableConfirmed(paPlan, 0);
+    var monRouteIndex = (paPlan && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? 1 : 0;
+    var monCableConfirmed = isRouteCableConfirmed(monitorPlan, monRouteIndex);
+
+    var paBadgeText = !paSlot
+      ? "📢 Crowd PA: Not in Setup (Practice Mode)"
+      : (isStereoPA ? "📢 Crowd PA: Stereo Array (" + paQty + " Loudspeakers)" : "📢 Crowd PA: Mono PA Cabinet (1 Loudspeaker)");
+
+    var monBadgeText = !monitorSlot
+      ? "🔊 DJ Monitors: None (Headphones Cue Only)"
+      : (isMasterSlave
+        ? "🔊 DJ Monitors: Master/Passive Pair (2 Cabinets in 1 Box)"
+        : (monItem && monItem.id === "yamaha-hs5"
+          ? "🔊 DJ Monitors: Dual Active Monitors (2 Cabinets · Dual AC Mains)"
+          : (monCabinets >= 2
+            ? "🔊 DJ Monitors: Stereo Active Monitors (" + monCabinets + " Cabinets · Dual AC Mains)"
+            : "⚠️ DJ Monitors: Mono (1 Unit · 2 Recommended)")));
 
     var routingBadgeText = "⚡ Signal Path Verified";
     var routingBadgeClass = "badge--signal-ok";
 
-    if ((monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict)) {
+    var hasConflict = (monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict);
+    var anyCableMissing = (paSlot && paPlan && !paCableConfirmed) || (monitorSlot && monitorPlan && !monCableConfirmed && !monitorPlan.conflict);
+
+    if (hasConflict) {
       routingBadgeText = "⚠️ Hardware Routing Limitation (No Spare Output)";
       routingBadgeClass = "badge--signal-warn";
-    } else if (monitorPlan && monitorPlan.kind === "included") {
+    } else if (anyCableMissing) {
+      routingBadgeText = "🔌 Audio Cable Needed (Add to Rig to Verify)";
+      routingBadgeClass = "badge--signal-warn";
+    } else if ((paPlan && paCableConfirmed) && (monitorPlan && monCableConfirmed)) {
+      routingBadgeText = "⚡ Dual Signal Paths Fully Verified";
+      routingBadgeClass = "badge--signal-ok";
+    } else if (monitorPlan && monitorPlan.kind === "included" && (!paSlot || paCableConfirmed)) {
       routingBadgeText = "📦 In-Box Audio Cable Verified ($0)";
       routingBadgeClass = "badge--signal-ok";
-    } else if ((paPlan && paPlan.balanced) || (monitorPlan && monitorPlan.balanced)) {
+    } else if ((paPlan && paPlan.balanced && paCableConfirmed) || (monitorPlan && monitorPlan.balanced && monCableConfirmed)) {
       routingBadgeText = "⚡ Balanced Signal Path Verified";
       routingBadgeClass = "badge--signal-ok";
     } else if (stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0) {
@@ -1127,7 +1174,7 @@
 
           <!-- MIDDLE ZONE: Dynamic Signal Flow Routing Highway -->
           <div class="booth-purpose-zone booth-purpose-zone--highway">
-            ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot)}
+            ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot, paCableConfirmed, monCableConfirmed)}
           </div>
 
           <!-- BOTTOM ZONE: Performance Core & DJ-Facing Monitors -->
@@ -1293,7 +1340,7 @@
   }
 
   /* ------------------------------------------------------------- Zone 2: Signal Flow Highway */
-  function renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot) {
+  function renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot, paCableConfirmed, monCableConfirmed) {
     var paItem = paSlot ? getSlotItem(paSlot) : null;
     var monItem = monitorSlot ? getSlotItem(monitorSlot) : null;
 
@@ -1324,14 +1371,14 @@
                   <span class="node-port">[${escapeHtml(paPlan && paPlan.output ? paPlan.output.label : 'Master Out')}]</span>
                 </div>
 
-                <div class="route-pipe ${paPlan && paPlan.kind !== 'unresolved' ? 'pipe--active' : 'pipe--blocked'}">
+                <div class="route-pipe ${paCableConfirmed ? 'pipe--active' : 'pipe--standby'}">
                   <div class="pipe-track">
-                    ${paPlan && paPlan.kind !== 'unresolved' ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
+                    ${paCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                   </div>
-                  <div class="pipe-cable-pill" data-action="pick" data-slot-id="core-cable" data-category="cables">
-                    <span class="pill-icon">🔌</span>
+                  <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
+                    <span class="pill-icon">${paCableConfirmed ? '🔌' : '🛒'}</span>
                     <span class="pill-name">${escapeHtml(paPlan ? paPlan.name : 'Audio Cable')}</span>
-                    <span class="pill-badge">${paPlan && paPlan.balanced ? 'Balanced XLR' : 'Analog Line'}</span>
+                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced XLR' : 'Analog Line')) : '+ Add to Rig'}</span>
                   </div>
                 </div>
 
@@ -1429,8 +1476,18 @@
     var qty = monitorSlot.qty || 1;
     var isOwned = Boolean(monitorSlot.owned);
     var linePrice = item ? item.price * qty : 0;
-    var isBoxedPair = item && (item.id === "pioneer-dm40d" || item.speaker_units === 2);
-    var isStereo = isBoxedPair || qty >= 2;
+    var isMasterSlave = isMasterSlavePair(item);
+    var physicalUnits = (item ? item.speaker_units || 1 : 1) * qty;
+
+    var unitBadge = isMasterSlave
+      ? "Stereo Boxed Pair (2 Cabinets in 1 Box · 1 AC Plug)"
+      : (item.id === "yamaha-hs5"
+        ? "Stereo Dual Monitors (2 Cabinets · 2 Retail Units · Dual AC Mains)"
+        : (item.speaker_units === 2
+          ? "Stereo Monitor Pack (2 Active Cabinets · Dual AC Mains)"
+          : (physicalUnits >= 2
+            ? "Stereo Active Monitors (" + physicalUnits + " Cabinets · Dual AC Mains)"
+            : "⚠️ 1 Cabinet (Mono · Order 2 for Stereo)")));
 
     return `
       <div class="booth-speaker-zone booth-speaker-zone--monitors ${isOwned ? 'is-owned' : ''}" id="zone-monitors">
@@ -1441,7 +1498,7 @@
             <span class="zone-role-sub">Aimed at performer ears for zero-latency monitoring</span>
           </div>
           <div class="zone-header-actions">
-            <span class="booth-unit-badge">${isBoxedPair ? 'Stereo Boxed Pair (2 Cabinets in 1 Box)' : (qty >= 2 ? 'Stereo Dual Monitors (' + qty + ' Cabinets · ' + qty + ' Boxes)' : '⚠️ 1 Cabinet (Mono)')}</span>
+            <span class="booth-unit-badge">${unitBadge}</span>
             <button type="button" class="btn-own-toggle ${isOwned ? 'is-owned btn-own-toggle--owned' : 'btn-own-toggle--need'} rs-own-toggle" data-action="toggle-slot-owned" data-slot-id="${monitorSlot.slotId}">
               ${isOwned ? '✓ I Own This' : '🛒 Need to Buy'}
             </button>
@@ -1459,21 +1516,21 @@
             <div class="zone-product-info">
               <span class="zone-product-brand">${escapeHtml(item.brand)}</span>
               <strong class="zone-product-name">${escapeHtml(item.model)}</strong>
-              <span class="zone-product-pack-note">${escapeHtml(item.pack_note || (isBoxedPair ? 'Sold as complete pair in one retail box · Includes speaker audio cable' : 'Sold individually · Need 2 units for stereo pair'))}</span>
+              <span class="zone-product-pack-note">${escapeHtml(item.pack_note || '')}</span>
               <span class="zone-product-price ${isOwned ? 'price--owned' : ''}">
-                ${isOwned ? '<s>$' + linePrice.toLocaleString() + '</s> <span class="owned-sub">✓ Owned ($0 out of pocket)</span>' : '$' + linePrice.toLocaleString() + (qty > 1 && !isBoxedPair ? ' <span class="unit-sub">($' + item.price + ' ea)</span>' : '')}
+                ${isOwned ? '<s>$' + linePrice.toLocaleString() + '</s> <span class="owned-sub">✓ Owned ($0 out of pocket)</span>' : '$' + linePrice.toLocaleString() + (qty > 1 && !isMasterSlave && item.speaker_units === 1 ? ' <span class="unit-sub">($' + item.price + ' ea)</span>' : '')}
               </span>
             </div>
           </div>
           <div class="zone-product-actions">
-            ${!isBoxedPair ? `
+            ${item.speaker_units === 1 ? `
               <div class="booth-qty-inline">
                 <label>Boxes:</label>
                 <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="-1" aria-label="Decrease quantity" ${qty <= 1 ? 'disabled' : ''}>−</button>
                 <span class="qty-num">${qty}</span>
                 <button type="button" class="btn-qty" data-action="adjust-qty" data-slot-id="${monitorSlot.slotId}" data-delta="1" aria-label="Increase quantity" ${qty >= 4 ? 'disabled' : ''}>+</button>
               </div>
-            ` : '<span class="booth-unit-badge">1 Retail Box</span>'}
+            ` : (isMasterSlave ? '<span class="booth-unit-badge">1 Retail Box</span>' : '<span class="booth-unit-badge">2 Retail Units</span>')}
             <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${monitorSlot.slotId}" data-category="speakers" data-speaker-role="dj_monitor">Swap Model</button>
             <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${item.id}" title="View detailed specs">Specs ℹ️</button>
           </div>
@@ -1483,21 +1540,23 @@
   }
 
   function renderMonitorCabinetVisual(qty, item) {
-    var isBoxedPair = item && (item.id === "pioneer-dm40d" || item.speaker_units === 2);
+    var isMasterSlave = isMasterSlavePair(item);
     var coneClass = item && /krk/i.test(item.brand) ? "cone--yellow" : (item && /yamaha/i.test(item.brand) ? "cone--white" : "cone--black");
+    var physicalUnits = (item ? item.speaker_units || 1 : 1) * qty;
 
-    if (isBoxedPair) {
+    // Topology 1: Genuine Master/Passive-Satellite Boxed Pair (e.g. Pioneer DM-40D, DM-50D)
+    if (isMasterSlave) {
       return `
         <div class="cabinet-stage-pair">
-          <div class="cabinet-unit cabinet-unit--monitor">
+          <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--master">
             <div class="cabinet-body cabinet-body--monitor cabinet-body--master">
               <div class="mon-tweeter"></div>
               <div class="mon-woofer-cone ${coneClass}"></div>
-              <div class="mon-led mon-led--on"></div>
+              <div class="mon-led mon-led--on" title="Amplifier power indicator"></div>
               <span class="cabinet-role-tag">Powered Master</span>
             </div>
             <span class="cabinet-label">Left Monitor (Master)</span>
-            <span class="cabinet-sub">Amp &amp; Audio Inputs</span>
+            <span class="cabinet-sub">Built-in Amp · Inputs · AC Mains</span>
           </div>
 
           <div class="cabinet-link-wire" title="Manufacturer-included speaker interconnection cable">
@@ -1506,59 +1565,65 @@
             <span class="link-wire-line"></span>
           </div>
 
-          <div class="cabinet-unit cabinet-unit--monitor">
+          <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--satellite">
             <div class="cabinet-body cabinet-body--monitor cabinet-body--satellite">
               <div class="mon-tweeter"></div>
               <div class="mon-woofer-cone ${coneClass}"></div>
               <span class="cabinet-role-tag">Passive Satellite</span>
             </div>
             <span class="cabinet-label">Right Monitor (Satellite)</span>
-            <span class="cabinet-sub">Powered from Master lead</span>
+            <span class="cabinet-sub">Passive Speaker · Powered via Master Link</span>
           </div>
         </div>
       `;
     }
 
-    if (qty >= 2) {
+    // Topology 2: Independently Powered Active Studio Monitors (e.g. Yamaha HS5, KRK Classic 5, KRK ROKIT 5 G4 pair)
+    if (physicalUnits >= 2) {
       return `
-        <div class="cabinet-stage-pair">
-          <div class="cabinet-unit cabinet-unit--monitor">
+        <div class="cabinet-stage-pair cabinet-stage-pair--active-monitors">
+          <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--biamped">
             <div class="cabinet-body cabinet-body--monitor cabinet-body--biamped">
               <div class="mon-tweeter"></div>
               <div class="mon-woofer-cone ${coneClass}"></div>
-              <div class="mon-led mon-led--on"></div>
+              <div class="mon-led mon-led--on" title="Independent amplifier power indicator"></div>
               <span class="cabinet-role-tag">Active Bi-Amped</span>
             </div>
             <span class="cabinet-label">Left Monitor (Cabinet 1)</span>
-            <span class="cabinet-sub">Left signal · AC Power</span>
+            <span class="cabinet-sub">Left balanced feed · Dedicated AC mains</span>
           </div>
 
-          <div class="cabinet-spread-indicator">
-            <span class="spread-text">Nearfield Triangle</span>
+          <div class="cabinet-spread-indicator cabinet-spread--nearfield">
+            <span class="spread-line"></span>
+            <span class="spread-text">Nearfield Stereo Triangle</span>
+            <span class="spread-line"></span>
           </div>
 
-          <div class="cabinet-unit cabinet-unit--monitor">
+          <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--biamped">
             <div class="cabinet-body cabinet-body--monitor cabinet-body--biamped">
               <div class="mon-tweeter"></div>
               <div class="mon-woofer-cone ${coneClass}"></div>
-              <div class="mon-led mon-led--on"></div>
+              <div class="mon-led mon-led--on" title="Independent amplifier power indicator"></div>
               <span class="cabinet-role-tag">Active Bi-Amped</span>
             </div>
             <span class="cabinet-label">Right Monitor (Cabinet 2)</span>
-            <span class="cabinet-sub">Right signal · AC Power</span>
+            <span class="cabinet-sub">Right balanced feed · Dedicated AC mains</span>
           </div>
         </div>
       `;
     }
 
+    // Topology 3: Single Mono Independent Studio Monitor (e.g. 1× KRK ROKIT 5 G4)
     return `
       <div class="cabinet-stage-mono">
         <div class="cabinet-unit cabinet-unit--monitor cabinet-unit--mono-warn">
-          <div class="cabinet-body cabinet-body--monitor">
+          <div class="cabinet-body cabinet-body--monitor cabinet-body--biamped">
             <div class="mon-tweeter"></div>
             <div class="mon-woofer-cone ${coneClass}"></div>
+            <div class="mon-led mon-led--on" title="Independent amplifier power indicator"></div>
+            <span class="cabinet-role-tag">Active Bi-Amped</span>
           </div>
-          <span class="cabinet-label">Single Studio Monitor</span>
+          <span class="cabinet-label">Single Studio Monitor (Mono)</span>
           <span class="cabinet-sub">⚠️ Mono sound · Order 2 units for stereo pair</span>
         </div>
       </div>
@@ -2255,12 +2320,16 @@
   function convertPresetToItems(preset) {
     var items = [];
     Object.keys(preset.slots).forEach(function (cat) {
+      var itId = preset.slots[cat];
+      var it = getItem(itId);
+      var role = cat === "speakers" ? (isPAItem(it) ? "crowd_pa" : "dj_monitor") : undefined;
       items.push({
         slotId: "p-" + cat,
         category: cat,
-        itemId: preset.slots[cat],
+        role: role,
+        itemId: itId,
         qty: 1,
-        owned: preset.slots[cat] === "existing-mobile-device"
+        owned: itId === "existing-mobile-device"
       });
     });
     return items;
@@ -2456,11 +2525,11 @@
         var cableId = btn.getAttribute("data-cable-id");
         var cableItem = getItem(cableId);
         if (cableItem && cableItem.category === "cables") {
-          // The connection suggestion is additive, not a request to replace
-          // another cable the visitor may already own or need elsewhere.
-          // Preserve every existing cable's quantity and ownership.
-          var alreadySelected = currentRig.items.some(function (s) { return s.itemId === cableId; });
-          if (!alreadySelected) {
+          // If this cable is already in the rig, but a secondary line needs an additional lead, increment qty
+          var existingCableSlot = currentRig.items.find(function (s) { return s.itemId === cableId; });
+          if (existingCableSlot) {
+            existingCableSlot.qty = (existingCableSlot.qty || 1) + 1;
+          } else {
             var newSlotId = "auto-cable-" + Date.now();
             var suffix = 0;
             while (currentRig.items.some(function (s) { return s.slotId === newSlotId; })) {
