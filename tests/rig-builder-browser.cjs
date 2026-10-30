@@ -127,11 +127,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       const controllerSlot = await page.$eval('.visual-controller .visual-own', el => el.dataset.slotId);
       const plus = '#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="' + controllerSlot + '"]';
       await page.click(plus);
-      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$896', 'quantity updates the single spend summary');
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$956', 'quantity updates the single spend summary');
       assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'editing keeps shopping view open');
       const minus = '#rig-shopping [data-action="step-qty"][data-step="-1"][data-slot-id="' + controllerSlot + '"]';
       await page.click(minus);
-      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$597');
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$627');
       assert.ok(await page.$('#rig-shopping a.btn-retail'), 'retailer destinations remain available');
       await page.click('#rig-manage > summary');
       assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
@@ -147,7 +147,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       const includedLabel = await page.$eval(".cable-title", el => el.textContent.trim());
       assert.match(includedLabel, /Speaker Package Includes Audio Cable/);
       // Starter assumes a compatible phone already owned, not a forced laptop purchase.
-      assert.equal(metrics.spend, "$597", "starter excludes a new laptop and stand");
+      assert.equal(metrics.spend, "$627", "starter excludes a new laptop and stand");
       assert.match(initialAlerts, /Mobile Host, USB Audio and Power Need Verification/);
       const initialOwned = await page.$eval(".quick-spend-card .qsc-sub", el => el.textContent.trim());
       assert.match(initialOwned, /Saved \$0 owned/, "default ownership deduction must be zero");
@@ -162,9 +162,9 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // Every preset button must quote the same full total displayed after
       // selecting it, including host laptop, speakers, cables and accessories.
       const expectedPresets = [
-        ["bedroom-starter", "$597"],
-        ["club-ready", "$3,230"],
-        ["mobile-pro", "$3,052"],
+        ["bedroom-starter", "$627"],
+        ["club-ready", "$3,360"],
+        ["mobile-pro", "$3,102"],
         ["traktor-techno", "$1,780"]
       ];
       for (const [id, expectedPrice] of expectedPresets) {
@@ -279,11 +279,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await multi.page.click('[data-action="open-compare"]');
     await multi.page.waitForSelector("#compare-content-grid");
     const compareText = await multi.page.$eval("#compare-content-grid", el => el.textContent);
-    assert.match(compareText, /To buy:\s*\$609/);
-    assert.match(compareText, /Full value:\s*\$2,808/);
+    assert.match(compareText, /To buy:\s*\$639/);
+    assert.match(compareText, /Full value:\s*\$2,838/);
     assert.match(compareText, /Already owned:\s*\$2,199/);
     assert.match(compareText, /Denon DJ Prime 4\+ \(×1, Owned, \$2,199\)/);
-    assert.match(compareText, /Pioneer DJ DDJ-FLX4 \(×1, Buy, \$299\)/);
+    assert.match(compareText, /Pioneer DJ DDJ-FLX4 \(×1, Buy, \$329\)/);
     await multi.context.close();
     console.log("PASS: multi-controller shared rig warns that additional routing is unverified");
 
