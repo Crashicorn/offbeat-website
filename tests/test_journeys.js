@@ -222,6 +222,77 @@ async function journey(browser, name, fn) {
     return trail;
   });
 
+  /* G — mobile consent remains in flow, including when preferences reopen. */
+  await journey(browser, "G mobile consent in flow", async (page) => {
+    await page.setViewport({ width: 390, height: 900, isMobile: true, hasTouch: true });
+    for (const slug of ["index.html", "pioneer-ddj-flx4-review.html"]) {
+      await goto(page, slug);
+      await page.evaluate(() => { localStorage.removeItem("offbeat.ga-consent.v1"); });
+      await page.reload({ waitUntil: "networkidle2" });
+      await page.waitForSelector(".ob-consent");
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const placement = await page.evaluate(() => {
+        const notice = document.querySelector(".ob-consent");
+        const nav = document.querySelector('nav[aria-label="Primary navigation"]');
+        const a = notice.getBoundingClientRect(), b = nav.getBoundingClientRect();
+        return { position: getComputedStyle(notice).position, top: a.top, bottom: a.bottom,
+          navTop: b.top, width: document.documentElement.scrollWidth, viewport: innerWidth };
+      });
+      assert.equal(placement.position, "static", slug + " notice should be in flow");
+      assert.ok(placement.top >= 0 && placement.bottom <= placement.navTop + 1,
+        slug + " notice should be visible above, not cover, navigation and content: " + JSON.stringify(placement));
+      assert.ok(placement.width <= placement.viewport, slug + " must not overflow");
+      await page.evaluate(() => [...document.querySelectorAll(".ob-consent button")]
+        .find(button => button.textContent.trim() === "Necessary only").click());
+      assert.equal(await page.$(".ob-consent"), null, "choice dismisses the notice");
+      assert.equal(await page.evaluate(() => window.offbeatConsentState()), "denied");
+      await page.click("[data-reopen-consent]");
+      await page.waitForSelector(".ob-consent");
+      const reopened = await page.$eval(".ob-consent", e => ({
+        position: getComputedStyle(e).position, top: e.getBoundingClientRect().top,
+        bottom: e.getBoundingClientRect().bottom, focused: e.contains(document.activeElement)
+      }));
+      assert.equal(reopened.position, "static", "reopened preferences should remain in flow");
+      assert.ok(reopened.top >= 0 && reopened.bottom <= 900 && reopened.focused,
+        "reopened preferences should be visible and focused: " + JSON.stringify(reopened));
+    }
+    return ["390×900", "home + review: visible in-flow notice", "deny + reopen preferences"];
+  });
+
+  /* H — issue #1043 claims in the rendered pages, not just search snippets. */
+  await journey(browser, "H buyer facts on the page", async (page) => {
+    await goto(page, "pioneer-ddj-flx4-review.html");
+    let body = await page.$eval("main", e => e.innerText);
+    assert.match(body, /2\.1 kg \/ 4\.6 lb/);
+    assert.match(body, /111\.6 mm/);
+    assert.match(body, /microphone input/i);
+    assert.match(body, /Serato DJ Lite already includes basic Stems/i);
+    assert.doesNotMatch(body, /(?:tighten|adjust).{0,35}jog.{0,35}screw/i);
+    await goto(page, "pioneer-ddj-flx4-vs-flx6.html");
+    const inputRow = await page.evaluate(() => [...document.querySelectorAll("tr")]
+      .find(row => /External AUX \/ line \/ CDJ input/.test(row.innerText))?.innerText || "");
+    assert.match(inputRow, /No\s+No/);
+    await goto(page, "best-dj-headphones-2026.html");
+    const headphoneRow = await page.evaluate(() => [...document.querySelectorAll("tr")]
+      .find(row => /ATH-M50x/.test(row.innerText))?.innerText || "");
+    assert.match(headphoneRow, /99 dB\/mW sensitivity is not max SPL/i);
+    await goto(page, "beginner-dj-setup-guide-2026.html");
+    const card = await page.$eval(".top-pick-section", e => ({
+      text: e.innerText, links: [...e.querySelectorAll("a")].map(a => a.href)
+    }));
+    assert.match(card.text, /speakers/i);
+    assert.ok(!card.links.some(href => /amazon\.com\/s\?.*(speaker|monitor)/i.test(href)),
+      "starter card must not imply a generic speaker search is a specific product");
+    await goto(page, "index.html");
+    body = await page.$eval("body", e => e.innerText);
+    assert.doesNotMatch(body, /independent since 2015/i);
+    const org = await page.evaluate(() => [...document.querySelectorAll('script[type="application/ld+json"]')]
+      .flatMap(e => { try { const data = JSON.parse(e.textContent); return data['@graph'] || [data]; } catch { return []; } })
+      .find(e => e && e['@type'] === 'Organization'));
+    assert.ok(org && !Object.hasOwn(org, "foundingDate"));
+    return ["FLX4: inputs, Stems, weight + jogs", "FLX6 inputs", "ATH-M50x sensitivity", "starter card", "organization metadata"];
+  });
+
   await browser.close();
   console.log(results.join("\n"));
   const passed = results.filter((r) => r.startsWith("[PASS]")).length;

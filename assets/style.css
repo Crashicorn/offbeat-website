@@ -6290,3 +6290,19 @@ tr.rs-item { display: table-row !important; }
   .controller-budget-grid,
   .taxonomy-matrix { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* On phones, put the consent choice in document flow before page content.
+   The loader appends it to body; the rig page has its own in-flow placement. */
+@media screen and (max-width: 700px) {
+  body:not(.page-rig):has(> .ob-consent) {
+    display: flex;
+    flex-direction: column;
+  }
+  body:not(.page-rig) > .ob-consent {
+    position: static;
+    order: -1;
+    max-width: none;
+    margin: .5rem;
+    box-shadow: none;
+  }
+}
