@@ -29,24 +29,33 @@
   position: relative;
   max-width: 1320px;
   margin: 0 auto;
-  padding: clamp(1.1rem, 2.4vw, 1.9rem) var(--gutter) clamp(1.4rem, 3vw, 2.2rem);
+  padding: 0.45rem var(--gutter) 0.55rem;
 }
-.rig-masthead .crumbs { margin-bottom: 1.1rem; }
+.rig-masthead-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.2rem;
+}
+.rig-masthead .crumbs { margin-bottom: 0; }
 .rig-masthead-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: clamp(1rem, 3vw, 3rem);
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem 1.5rem;
 }
-.rig-masthead .hero-eyebrow { display: inline-flex; gap: .5rem; align-items: center; }
+.rig-masthead .hero-eyebrow { display: inline-flex; gap: .35rem; align-items: center; font-size: .72rem; }
 .rig-masthead h1 {
-  margin: .55rem 0 .7rem;
+  margin: 0.1rem 0 0.15rem;
   font-family: var(--display);
-  font-size: clamp(1.9rem, 4.1vw, 3.05rem);
-  line-height: 1.06;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  line-height: 1.15;
   letter-spacing: -.02em;
   color: #fff;
-  max-width: 24ch;
+  max-width: 38ch;
 }
 .rig-masthead h1 em {
   font-style: normal;
@@ -57,59 +66,44 @@
 }
 .rig-masthead p.rig-masthead-sub {
   margin: 0;
-  max-width: 62ch;
+  max-width: 80ch;
   color: var(--text-2);
-  font-size: 1.02rem;
-  line-height: 1.6;
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 .rig-masthead-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: .45rem .55rem;
-  margin: 1.15rem 0 0;
+  gap: .3rem .4rem;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 .rig-masthead-facts li {
   display: inline-flex;
   align-items: center;
-  gap: .4rem;
+  gap: .3rem;
   margin: 0;
-  padding: .34rem .7rem;
+  padding: .15rem .45rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-pill);
   background: rgba(255, 255, 255, .03);
   color: var(--text-2);
-  font-size: .78rem;
+  font-size: .7rem;
   font-weight: 500;
   letter-spacing: .01em;
   white-space: nowrap;
 }
-.rig-masthead-facts svg { width: 13px; height: 13px; color: var(--flame-2); flex: none; }
+.rig-masthead-facts svg { width: 11px; height: 11px; color: var(--flame-2); flex: none; }
 .rig-masthead-art {
-  display: none;
-  width: 240px;
-  margin: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transform: rotate(-1.4deg);
+  display: none !important;
 }
-.rig-masthead-art img { width: 100%; height: 150px; object-fit: cover; }
-.rig-masthead-art figcaption {
-  padding: .5rem .7rem;
-  background: rgba(9, 8, 16, .9);
-  color: var(--muted-2);
-  font-size: .68rem;
-  line-height: 1.4;
-}
-@media (min-width: 1000px) { .rig-masthead-art { display: block; } }
+@media (min-width: 1000px) { .rig-masthead-art { display: none !important; } }
 
 .rig-page-wrap {
   max-width: 1320px;
   margin: 0 auto;
-  padding: clamp(1rem, 2.2vw, 1.75rem) var(--gutter) 3.5rem;
+  padding: 0.35rem var(--gutter) 2.5rem;
 }
 .rig-studio { position: relative; }
 

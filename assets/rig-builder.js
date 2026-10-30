@@ -153,7 +153,11 @@
         // must not replace an unrelated accessory already in the shopping list.
         var additive = ["cables", "storage", "microphones", "stands"].indexOf(targetItem.category) !== -1;
         var alreadySelected = currentRig.items.some(function (s) { return s.itemId === targetItem.id; });
+        var targetRole = targetItem.category === "speakers" ? (isSpeakerEligibleForRole(targetItem, "crowd_pa") ? "crowd_pa" : "dj_monitor") : undefined;
         var existingSlot = additive ? null : currentRig.items.find(function (s) {
+          if (targetItem.category === "speakers") {
+            return s.category === "speakers" && (s.role === targetRole || (!s.role && isSpeakerEligibleForRole(getItem(s.itemId), targetRole)));
+          }
           return s.category === targetItem.category;
         });
         if (alreadySelected) {
@@ -163,15 +167,18 @@
           // A genuinely new core product replaces the primary slot, while
           // accessories remain additive. Replacement resets ownership.
           replaceSlotItem(existingSlot, targetItem.id);
+          if (targetRole) existingSlot.role = targetRole;
           existingSlot.qty = 1;
         } else {
-          currentRig.items.push({
+          var newSlot = {
             slotId: "guide-" + targetItem.category + "-" + Date.now(),
             category: targetItem.category,
             itemId: targetItem.id,
             qty: 1,
             owned: false
-          });
+          };
+          if (targetRole) newSlot.role = targetRole;
+          currentRig.items.push(newSlot);
         }
         saveActiveState();
         return;
@@ -228,11 +235,23 @@
       var suffix = 0;
       while (used[id]) id = "imported-" + index + "-" + (++suffix);
       used[id] = true;
-      items.push({
+      var role = slot.role;
+      if (item.category === "speakers") {
+        if (role === "crowd_pa" && isSpeakerEligibleForRole(item, "crowd_pa")) {
+          // valid crowd_pa
+        } else if (role === "dj_monitor" && isSpeakerEligibleForRole(item, "dj_monitor")) {
+          // valid dj_monitor
+        } else {
+          role = isSpeakerEligibleForRole(item, "crowd_pa") ? "crowd_pa" : "dj_monitor";
+        }
+      }
+      var cleanSlot = {
         slotId: id, category: item.category, itemId: item.id,
         qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1),
         owned: item.no_purchase === true || slot.owned === true
-      });
+      };
+      if (role) cleanSlot.role = role;
+      items.push(cleanSlot);
     });
     if (!items.length) return null;
     return {
@@ -273,6 +292,12 @@
   function replaceSlotItem(slot, itemId) {
     var item = getItem(itemId);
     if (!slot || !item) return false;
+    if (slot.category === "speakers" && slot.role) {
+      if (!isSpeakerEligibleForRole(item, slot.role)) {
+        console.warn("Cannot replace speaker slot with ineligible role item:", item.id, slot.role);
+        return false;
+      }
+    }
     if (slot.itemId !== item.id) slot.owned = false;
     slot.itemId = item.id;
     slot.category = item.category;
@@ -532,6 +557,26 @@
       }
     }
 
+    // Check for acoustic role suitability
+    var allSpeakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    allSpeakers.forEach(function (slot) {
+      var item = getItem(slot.itemId);
+      if (!item) return;
+      var role = slot.role || (isSpeakerEligibleForRole(item, "crowd_pa") ? "crowd_pa" : "dj_monitor");
+      if (role === "crowd_pa" && !isSpeakerEligibleForRole(item, "crowd_pa")) {
+        fatalErrors++;
+        checks.unshift({
+          type: "error",
+          statusLevel: "incompatible",
+          title: "Ineligible Crowd PA: " + item.model,
+          desc: item.brand + " " + item.model + " is a nearfield reference monitor and cannot be used as a crowd-facing PA system. Live sound reinforcement requires horn dispersion and high acoustic output.",
+          fixSlotId: slot.slotId,
+          fixItemId: "jbl-eon-715",
+          fixActionText: "Swap to JBL EON715 PA →"
+        });
+      }
+    });
+
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
       if (laptop.id === "existing-mobile-device" && !controller.standalone) {
@@ -765,21 +810,35 @@
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
-          <div class="rig-title-block">
-            <span class="hero-eyebrow">Interactive DJ Rig Architect</span>
-            <h2 class="rig-main-title" contenteditable="true" data-rig-name title="Click to rename your setup">${escapeHtml(currentRig.name)}</h2>
-            <p class="rig-subtitle">Assemble your dream DJ rig with dedicated crowd-facing PA and DJ-facing booth monitoring, verify physical signal routing, toggle gear you already own, and generate an itemized shopping list.</p>
+          <div class="rig-dash-left">
+            <div class="rig-title-block">
+              <span class="hero-eyebrow">DJ Studio Workspace</span>
+              <h2 class="rig-main-title" contenteditable="true" data-rig-name title="Click to rename your setup">${escapeHtml(currentRig.name)}</h2>
+            </div>
+            <!-- Presets Bar -->
+            <div class="rig-preset-strip" role="group" aria-label="Preset starting points">
+              <span class="preset-label">Presets:</span>
+              ${CATALOG.presets.map(function (p) {
+                return `<button type="button" class="rig-preset-pill" data-preset-id="${p.id}">
+                  <strong>${escapeHtml(p.name)}</strong> <span class="preset-badge">${escapeHtml(presetPriceBadge(p))}</span>
+                </button>`;
+              }).join("")}
+            </div>
           </div>
-        </div>
 
-        <!-- Presets Bar -->
-        <div class="rig-preset-strip" role="group" aria-label="Preset starting points">
-          <span class="preset-label">Quick Start Rigs:</span>
-          ${CATALOG.presets.map(function (p) {
-            return `<button type="button" class="rig-preset-pill" data-preset-id="${p.id}">
-              <strong>${escapeHtml(p.name)}</strong> <span class="preset-badge">${escapeHtml(presetPriceBadge(p))}</span>
-            </button>`;
-          }).join("")}
+          <!-- Immediate Above-The-Fold Spend & Readiness -->
+          <div class="rig-quick-spend-strip">
+            <div class="quick-spend-card">
+              <span class="qsc-label">Actual Spend Needed</span>
+              <strong class="qsc-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
+              <span class="qsc-sub">${stats.ownedCount > 0 ? "Saved $" + stats.ownedValue.toLocaleString() + " owned" : stats.itemCount + " items in setup"}</span>
+            </div>
+            <div class="quick-readiness-card">
+              <span class="qsc-label">Signal Status</span>
+              <strong class="qsc-status ${stats.compatibility.fatalErrors > 0 ? 'status--conflict' : 'status--verified'}">${stats.compatibility.fatalErrors > 0 ? '⚠️ Route Blocked' : '⚡ Dual Paths OK'}</strong>
+              <span class="qsc-sub">${stats.compatibility.readiness}% Ready</span>
+            </div>
+          </div>
         </div>
 
         <!-- CENTERPIECE: Visual DJ Booth Studio Layout (Appears FIRST!) -->
@@ -969,20 +1028,35 @@
     builderRoot.innerHTML = html;
   }
 
+  function isSpeakerEligibleForRole(item, role) {
+    if (!item || item.category !== "speakers") return false;
+    var supported = item.roles_supported;
+    if (Array.isArray(supported) && supported.length > 0) {
+      return supported.indexOf(role) !== -1;
+    }
+    if (role === "crowd_pa") {
+      return item.id === "jbl-eon-715" || item.is_pa === true;
+    }
+    if (role === "dj_monitor") {
+      return item.id !== "jbl-eon-715" && !item.is_pa;
+    }
+    return false;
+  }
+
   function isPAItem(item) {
-    if (!item) return false;
-    return item.id === "jbl-eon-715" ||
-      /\bPA\b/i.test(item.type || "") ||
-      /loudspeaker/i.test(item.type || "") ||
-      item.is_pa === true ||
-      (item.box_label && /single cabinet/i.test(item.box_label) && item.speaker_units === 1 && item.price >= 400);
+    return isSpeakerEligibleForRole(item, "crowd_pa");
   }
 
   function getSpeakerRole(slot) {
     if (!slot) return "dj_monitor";
-    if (slot.role === "crowd_pa" || slot.role === "dj_monitor") return slot.role;
     var item = getItem(slot.itemId);
-    if (isPAItem(item)) return "crowd_pa";
+    if (slot.role === "crowd_pa" && isSpeakerEligibleForRole(item, "crowd_pa")) {
+      return "crowd_pa";
+    }
+    if (slot.role === "dj_monitor" && isSpeakerEligibleForRole(item, "dj_monitor")) {
+      return "dj_monitor";
+    }
+    if (isSpeakerEligibleForRole(item, "crowd_pa")) return "crowd_pa";
     return "dj_monitor";
   }
 
@@ -993,23 +1067,25 @@
     var extra = [];
 
     speakerSlots.forEach(function (slot) {
+      var item = getItem(slot.itemId);
+      if (!item) return;
       var role = getSpeakerRole(slot);
       if (role === "crowd_pa") {
-        if (!paSlot) paSlot = slot;
-        else extra.push(slot);
+        if (!paSlot) {
+          paSlot = slot;
+          paSlot.role = "crowd_pa";
+        } else {
+          extra.push(slot);
+        }
       } else {
-        if (!monitorSlot) monitorSlot = slot;
-        else extra.push(slot);
+        if (!monitorSlot) {
+          monitorSlot = slot;
+          monitorSlot.role = "dj_monitor";
+        } else {
+          extra.push(slot);
+        }
       }
     });
-
-    if (!paSlot && extra.length > 0) {
-      paSlot = extra.shift();
-      paSlot.role = "crowd_pa";
-    } else if (!monitorSlot && extra.length > 0) {
-      monitorSlot = extra.shift();
-      monitorSlot.role = "dj_monitor";
-    }
 
     return {
       paSlot: paSlot,
@@ -1151,7 +1227,6 @@
           <div class="booth-title-group">
             <span class="booth-kicker">Interactive Setup Builder · Real Signal Flow</span>
             <h3 class="booth-main-heading">DJ Studio Booth &amp; Cable Routing</h3>
-            <p class="booth-lead-desc">Purpose-based audio routing separating crowd-facing PA systems from performer booth monitors. Animated signals represent verified physical hardware routes.</p>
           </div>
           <div class="booth-stage-badges">
             <span class="booth-badge ${paSlot ? 'badge--pa' : 'badge--neutral'}">
@@ -1186,11 +1261,7 @@
 
             <!-- Col 2: Performance Core (Host + Controller + Headphones) -->
             <div class="booth-col booth-col--core">
-              <div class="booth-core-stack">
-                ${renderBoothSlot(hostSlot, "Host Platform & Library", "💻", false)}
-                ${renderBoothSlot(controllerSlot, "DJ Controller / Decks & Mixer", "🎛️", true)}
-                ${renderBoothSlot(headphonesSlot, "Cue Headphones", "🎧", false)}
-              </div>
+              ${renderPerformanceCenterpiece(controllerSlot, hostSlot, headphonesSlot)}
             </div>
 
             <!-- Col 3: Studio Accessories (Mic, Stand, Media) -->
@@ -1213,14 +1284,16 @@
     if (!paSlot || !paSlot.itemId) {
       return `
         <div class="booth-speaker-zone booth-speaker-zone--empty booth-speaker-zone--pa-empty" id="zone-crowd-pa">
-          <div class="zone-empty-header">
-            <span class="zone-role-tag">Audience &amp; Venue Sound</span>
-            <h4 class="zone-role-title">📢 Crowd-Facing PA Sound System</h4>
+          <div class="zone-empty-compact">
+            <div class="zone-empty-info">
+              <span class="zone-role-tag">Audience &amp; Venue Sound</span>
+              <strong class="zone-empty-headline">📢 Crowd-Facing PA: Not in Setup (Practice / Bedroom Mode)</strong>
+              <span class="zone-empty-hint">Add powered PA loudspeakers when performing for crowds or live venues.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary btn-add-pa" data-action="add-speaker-role" data-speaker-role="crowd_pa">
+              📢 Add Crowd-Facing PA Speakers
+            </button>
           </div>
-          <p class="zone-empty-text">No crowd PA in this setup. Perfect for bedroom mixing, home streaming, or private practice. If performing for an audience at a house party, wedding, or live venue, add PA loudspeakers.</p>
-          <button type="button" class="btn btn-sm btn-primary btn-add-pa" data-action="add-speaker-role" data-speaker-role="crowd_pa">
-            📢 Add Crowd-Facing PA Speakers
-          </button>
         </div>
       `;
     }
@@ -1480,14 +1553,14 @@
     var physicalUnits = (item ? item.speaker_units || 1 : 1) * qty;
 
     var unitBadge = isMasterSlave
-      ? "Stereo Boxed Pair (2 Cabinets in 1 Box · 1 AC Plug)"
+      ? "Boxed Pair"
       : (item.id === "yamaha-hs5"
-        ? "Stereo Dual Monitors (2 Cabinets · 2 Retail Units · Dual AC Mains)"
+        ? "Dual Active Monitors"
         : (item.speaker_units === 2
-          ? "Stereo Monitor Pack (2 Active Cabinets · Dual AC Mains)"
+          ? "Stereo Pack"
           : (physicalUnits >= 2
-            ? "Stereo Active Monitors (" + physicalUnits + " Cabinets · Dual AC Mains)"
-            : "⚠️ 1 Cabinet (Mono · Order 2 for Stereo)")));
+            ? "Stereo Active Monitors"
+            : "1 Cabinet (Mono)")));
 
     return `
       <div class="booth-speaker-zone booth-speaker-zone--monitors ${isOwned ? 'is-owned' : ''}" id="zone-monitors">
@@ -1555,8 +1628,8 @@
               <div class="mon-led mon-led--on" title="Amplifier power indicator"></div>
               <span class="cabinet-role-tag">Powered Master</span>
             </div>
-            <span class="cabinet-label">Left Monitor (Master)</span>
-            <span class="cabinet-sub">Built-in Amp · Inputs · AC Mains</span>
+            <span class="cabinet-label">Left (Master)</span>
+            <span class="cabinet-sub">Amp &amp; AC Mains</span>
           </div>
 
           <div class="cabinet-link-wire" title="Manufacturer-included speaker interconnection cable">
@@ -1571,8 +1644,8 @@
               <div class="mon-woofer-cone ${coneClass}"></div>
               <span class="cabinet-role-tag">Passive Satellite</span>
             </div>
-            <span class="cabinet-label">Right Monitor (Satellite)</span>
-            <span class="cabinet-sub">Passive Speaker · Powered via Master Link</span>
+            <span class="cabinet-label">Right (Satellite)</span>
+            <span class="cabinet-sub">Passive Link</span>
           </div>
         </div>
       `;
@@ -1589,13 +1662,13 @@
               <div class="mon-led mon-led--on" title="Independent amplifier power indicator"></div>
               <span class="cabinet-role-tag">Active Bi-Amped</span>
             </div>
-            <span class="cabinet-label">Left Monitor (Cabinet 1)</span>
-            <span class="cabinet-sub">Left balanced feed · Dedicated AC mains</span>
+            <span class="cabinet-label">Left (Cab 1)</span>
+            <span class="cabinet-sub">Dedicated Mains</span>
           </div>
 
           <div class="cabinet-spread-indicator cabinet-spread--nearfield">
             <span class="spread-line"></span>
-            <span class="spread-text">Nearfield Stereo Triangle</span>
+            <span class="spread-text">Nearfield Triangle</span>
             <span class="spread-line"></span>
           </div>
 
@@ -1606,8 +1679,8 @@
               <div class="mon-led mon-led--on" title="Independent amplifier power indicator"></div>
               <span class="cabinet-role-tag">Active Bi-Amped</span>
             </div>
-            <span class="cabinet-label">Right Monitor (Cabinet 2)</span>
-            <span class="cabinet-sub">Right balanced feed · Dedicated AC mains</span>
+            <span class="cabinet-label">Right (Cab 2)</span>
+            <span class="cabinet-sub">Dedicated Mains</span>
           </div>
         </div>
       `;
@@ -1654,11 +1727,114 @@
       `;
     }
     return `
-      <div class="booth-acc-chip booth-acc-chip--empty" data-action="pick" data-slot-id="${defaultSlotId}" data-category="${category}">
+      <div class="booth-acc-chip booth-acc-chip--empty rs-add-chip" data-action="pick" data-slot-id="${defaultSlotId}" data-category="${category}" data-cat="${category}">
         <span class="acc-icon">${icon}</span>
         <div class="acc-body">
           <span class="acc-role">${escapeHtml(label)}</span>
           <strong class="acc-add-text">+ Add ${escapeHtml(label)}</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPerformanceCenterpiece(controllerSlot, hostSlot, headphonesSlot) {
+    var ctrlItem = getSlotItem(controllerSlot);
+    var hostItem = getSlotItem(hostSlot);
+    var hpItem = getSlotItem(headphonesSlot);
+
+    var ctrlOwned = Boolean(controllerSlot.owned) || Boolean(ctrlItem && ctrlItem.no_purchase);
+    var hpOwned = Boolean(headphonesSlot.owned) || Boolean(hpItem && hpItem.no_purchase);
+    var hostOwned = Boolean(hostSlot.owned) || Boolean(hostItem && hostItem.no_purchase);
+
+    return `
+      <div class="booth-centerpiece-stage">
+        <!-- 1. Top Bar: Host Platform / Laptop / Mobile -->
+        <div class="booth-subslot-bar booth-subslot-bar--host ${hostOwned ? 'is-owned' : ''}">
+          <div class="subslot-left" data-action="pick" data-slot-id="${hostSlot.slotId}" data-category="laptops">
+            <span class="subslot-icon">💻</span>
+            <div class="subslot-info">
+              <span class="subslot-role">Host Platform &amp; Library</span>
+              <strong class="subslot-name">${escapeHtml(hostItem ? hostItem.model : 'Select Host Device')}</strong>
+            </div>
+          </div>
+          <div class="subslot-actions">
+            ${hostItem ? `
+              <span class="subslot-price ${hostOwned ? 'price--owned' : ''}">
+                ${hostOwned ? '<s>$' + hostItem.price + '</s> <span class="owned-tag">✓ Owned</span>' : '$' + hostItem.price}
+              </span>
+              <button type="button" class="btn-subslot-own rs-own-toggle ${hostOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${hostSlot.slotId}" ${hostItem.no_purchase ? 'disabled' : ''} title="Toggle owned">
+                ${hostOwned ? '✓ Owned' : '🛒 Need'}
+              </button>
+              <button type="button" class="btn-subslot-swap" data-action="pick" data-slot-id="${hostSlot.slotId}" data-category="laptops" title="Swap host platform">✎</button>
+            ` : `
+              <button type="button" class="btn btn-sm btn-ghost" data-action="pick" data-slot-id="${hostSlot.slotId}" data-category="laptops">+ Add Host</button>
+            `}
+          </div>
+        </div>
+
+        <!-- 2. Main Desk Centerpiece: DJ Controller / Standalone System -->
+        ${ctrlItem ? `
+          <div class="booth-card booth-card--main rs-node--hero ${ctrlOwned ? 'booth-card--owned' : ''}">
+            <div class="booth-card-top">
+              <span class="booth-card-role">🎛️ DJ Decks &amp; Mixer Centerpiece</span>
+              <button type="button" class="booth-owned-toggle rs-own-toggle ${ctrlOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${controllerSlot.slotId}" title="Toggle whether you already own this controller">
+                ${ctrlOwned ? '✓ I Own This' : '🛒 Need to Buy'}
+              </button>
+            </div>
+            <div class="booth-card-body" data-action="pick" data-slot-id="${controllerSlot.slotId}" data-category="controllers">
+              <div class="booth-thumb-wrap">
+                <img src="${ctrlItem.image}" alt="${escapeHtml(ctrlItem.brand + ' ' + ctrlItem.model)}" loading="lazy" class="booth-thumb">
+              </div>
+              <div class="booth-info">
+                <span class="booth-brand">${escapeHtml(ctrlItem.brand)}</span>
+                <strong class="booth-model">${escapeHtml(ctrlItem.model)}</strong>
+                <span class="booth-price ${ctrlOwned ? 'price--owned' : ''}">
+                  ${ctrlOwned ? '<s>$' + ctrlItem.price + '</s> <span class="owned-sub">✓ Owned (Saved $' + ctrlItem.price + ')</span>' : '$' + ctrlItem.price}
+                </span>
+                ${ctrlItem.pack_note ? `<span class="booth-pack-note">${escapeHtml(ctrlItem.box_label || '')}</span>` : ''}
+              </div>
+            </div>
+            <div class="booth-card-footer">
+              <button type="button" class="booth-swap-btn" data-action="pick" data-slot-id="${controllerSlot.slotId}" data-category="controllers">
+                Swap Controller →
+              </button>
+              <button type="button" class="booth-spec-btn" data-action="inspect-item" data-item-id="${ctrlItem.id}" title="View detailed hardware specs">
+                Specs ℹ️
+              </button>
+            </div>
+          </div>
+        ` : `
+          <div class="booth-card booth-card--main rs-node--hero booth-card--empty" data-action="pick" data-slot-id="${controllerSlot.slotId}" data-category="controllers">
+            <span class="booth-card-role">🎛️ DJ Controller / Decks</span>
+            <div class="booth-empty-content">
+              <span class="booth-plus">+</span>
+              <strong>Select DJ Controller</strong>
+            </div>
+          </div>
+        `}
+
+        <!-- 3. Bottom Bar: Cue Headphones -->
+        <div class="booth-subslot-bar booth-subslot-bar--hp ${hpOwned ? 'is-owned' : ''}">
+          <div class="subslot-left" data-action="pick" data-slot-id="${headphonesSlot.slotId}" data-category="headphones">
+            <span class="subslot-icon">🎧</span>
+            <div class="subslot-info">
+              <span class="subslot-role">Cue Headphones</span>
+              <strong class="subslot-name">${escapeHtml(hpItem ? hpItem.model : 'Select DJ Headphones')}</strong>
+            </div>
+          </div>
+          <div class="subslot-actions">
+            ${hpItem ? `
+              <span class="subslot-price ${hpOwned ? 'price--owned' : ''}">
+                ${hpOwned ? '<s>$' + hpItem.price + '</s> <span class="owned-tag">✓ Owned</span>' : '$' + hpItem.price}
+              </span>
+              <button type="button" class="btn-subslot-own rs-own-toggle ${hpOwned ? 'is-active' : ''}" data-action="toggle-slot-owned" data-slot-id="${headphonesSlot.slotId}" title="Toggle owned">
+                ${hpOwned ? '✓ Owned' : '🛒 Need'}
+              </button>
+              <button type="button" class="btn-subslot-swap" data-action="pick" data-slot-id="${headphonesSlot.slotId}" data-category="headphones" title="Swap headphones">✎</button>
+            ` : `
+              <button type="button" class="btn btn-sm btn-ghost" data-action="pick" data-slot-id="${headphonesSlot.slotId}" data-category="headphones">+ Add Headphones</button>
+            `}
+          </div>
         </div>
       </div>
     `;
@@ -1908,33 +2084,45 @@
   function openPickerModal(slotId, category, speakerRole) {
     activeModalSlotId = slotId;
     activeModalCategory = category;
-    activeModalSpeakerRole = speakerRole || (category === "speakers" ? (slotId === "slot-crowd-pa" ? "crowd_pa" : "dj_monitor") : null);
-    activeModalSlotId = slotId;
-    activeModalCategory = category;
+
+    var targetSlot = currentRig.items.find(function (s) { return s.slotId === slotId; });
+    var inferredRole = speakerRole || (targetSlot ? targetSlot.role : null);
+    if (!inferredRole && category === "speakers") {
+      inferredRole = (slotId && slotId.indexOf("crowd") !== -1) ? "crowd_pa" : "dj_monitor";
+    }
+    activeModalSpeakerRole = inferredRole;
+
     var catMeta = CATALOG.categories.find(function (c) { return c.id === category; });
     var items = CATALOG.items.filter(function (i) { return i.category === category; });
+
+    // Strict eligibility gating: filter out ineligible components per role
     if (category === "speakers" && activeModalSpeakerRole) {
-      if (activeModalSpeakerRole === "crowd_pa") {
-        var pa = items.filter(isPAItem);
-        var mon = items.filter(function (i) { return !isPAItem(i); });
-        items = pa.concat(mon);
-      } else {
-        var mon = items.filter(function (i) { return !isPAItem(i); });
-        var pa = items.filter(isPAItem);
-        items = mon.concat(pa);
-      }
+      items = items.filter(function (i) {
+        return isSpeakerEligibleForRole(i, activeModalSpeakerRole);
+      });
     }
 
-    var activeSlot = currentRig.items.find(function (s) { return s.slotId === slotId; });
-    var currentItemId = activeSlot ? activeSlot.itemId : null;
+    var currentItemId = targetSlot ? targetSlot.itemId : null;
+
+    var modalTitle = catMeta ? catMeta.name : 'Component';
+    var modalEyebrow = (catMeta ? catMeta.icon : '') + ' Component Selector';
+    if (category === "speakers") {
+      if (activeModalSpeakerRole === "crowd_pa") {
+        modalTitle = "Crowd-Facing PA Speakers";
+        modalEyebrow = "📢 Audience & Front-of-House Sound";
+      } else if (activeModalSpeakerRole === "dj_monitor") {
+        modalTitle = "DJ-Facing Booth Monitors";
+        modalEyebrow = "🔊 Nearfield Mix Reference";
+      }
+    }
 
     var modalHtml = `
       <div class="picker-backdrop" data-action="close-modal">
         <div class="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-modal-title">
           <div class="picker-header">
             <div>
-              <span class="picker-eyebrow">${catMeta ? catMeta.icon : ''} Component Selector</span>
-              <h3 id="picker-modal-title">Select ${catMeta ? catMeta.name : 'Component'}</h3>
+              <span class="picker-eyebrow">${modalEyebrow}</span>
+              <h3 id="picker-modal-title">Select ${modalTitle}</h3>
             </div>
             <button type="button" class="picker-close" data-action="close-modal" aria-label="Close dialog">✕</button>
           </div>
@@ -2419,7 +2607,16 @@
         if (activeModalSlotId && itemId) {
           var targetSlot = currentRig.items.find(function (s) { return s.slotId === activeModalSlotId; });
           var pickedItem = getItem(itemId);
-          var role = activeModalSpeakerRole || (activeModalCategory === "speakers" ? (isPAItem(pickedItem) ? "crowd_pa" : "dj_monitor") : undefined);
+          var role = activeModalSpeakerRole || (activeModalCategory === "speakers" ? (targetSlot && targetSlot.role ? targetSlot.role : (isPAItem(pickedItem) ? "crowd_pa" : "dj_monitor")) : undefined);
+
+          // Hard role safety guard: refuse ineligible speaker selection
+          if (activeModalCategory === "speakers" && role) {
+            if (!isSpeakerEligibleForRole(pickedItem, role)) {
+              alert("⚠️ Incompatible Component: " + (pickedItem ? pickedItem.model : "Selected speaker") + " cannot be used as " + (role === "crowd_pa" ? "a crowd-facing PA speaker" : "a DJ booth monitor") + ".\n\nNearfield studio reference monitors lack the acoustic dispersion and headroom required for live sound reinforcement, while PA loudspeakers are too large and directional for nearfield booth reference.");
+              return;
+            }
+          }
+
           if (targetSlot) {
             if (!replaceSlotItem(targetSlot, itemId)) return;
             if (role) targetSlot.role = role;

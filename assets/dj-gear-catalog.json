@@ -1481,7 +1481,10 @@
           "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DM-40D",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "pioneer-dm50d",
@@ -1567,7 +1570,10 @@
           "url": "https://reverb.com/marketplace?query=Pioneer+DJ+DM-50D",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "krk-rokit-5-g4",
@@ -1641,7 +1647,10 @@
           "url": "https://reverb.com/marketplace?query=KRK+ROKIT+5+G4",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "krk-classic-5-pair",
@@ -1734,7 +1743,10 @@
           "url": "https://reverb.com/marketplace?query=KRK+Classic+5",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "yamaha-hs5",
@@ -1809,7 +1821,10 @@
           "url": "https://reverb.com/marketplace?query=Yamaha+HS5",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "dj_monitor"
+      ]
     },
     {
       "id": "jbl-eon-715",
@@ -1879,7 +1894,10 @@
           "url": "https://reverb.com/marketplace?query=JBL+EON715",
           "status": "search_fallback"
         }
-      }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
     },
     {
       "id": "macbook-air-m2",
