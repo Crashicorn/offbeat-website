@@ -197,7 +197,7 @@
     var row = el('div', { 'class': 'ob-consent-actions' });
 
     if (consent === 'unknown') {
-      p.textContent = 'We use privacy-friendly analytics to learn which DJ guides are helpful. No ad tracking.';
+      p.textContent = 'Optional analytics help improve DJ guides. No ad tracking.';
       row.appendChild(button('Allow analytics', 'grant'));
       row.appendChild(button('Necessary only', 'deny'));
       row.appendChild(privacyLink());

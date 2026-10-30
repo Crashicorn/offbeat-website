@@ -1404,3 +1404,17 @@
   .rig-main-title { white-space:normal; }
   .ob-consent-text { line-height:1.25; }
 }
+@media (max-width:700px) {
+  .mobile-presets { border:0; background:transparent; padding:0; }
+  .mobile-presets summary { list-style:none; white-space:nowrap; color:#c8baff; }
+  .mobile-presets summary::-webkit-details-marker { display:none; }
+  .mobile-presets summary::after { content:none; }
+  .mobile-presets summary::before { content:'▾ '; }
+}
+.visual-images img:not(:only-child) { flex:1 1 0; width:0; }
+.visual-secondary { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.visual-headphones .visual-pick img, .visual-host .visual-pick img { width:64px; height:48px; }
+@media (max-width:700px) {
+  .visual-secondary { grid-template-columns:1fr; gap:0; }
+  .visual-headphones .visual-pick img, .visual-host .visual-pick img { width:48px; height:38px; }
+}

@@ -827,7 +827,7 @@
             </div>
           </div>
 
-          <details class="mobile-presets"><summary>Change starting point</summary><div>${CATALOG.presets.map(function(p) { return `<button type="button" class="mobile-preset" data-preset-id="${p.id}">${escapeHtml(p.name)}</button>`; }).join('')}</div></details>
+          <details class="mobile-presets"><summary>Choose preset</summary><div>${CATALOG.presets.map(function(p) { return `<button type="button" class="mobile-preset" data-preset-id="${p.id}">${escapeHtml(p.name)}</button>`; }).join('')}</div></details>
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
@@ -1111,7 +1111,7 @@
     return `<div class="visual-equipment ${extraClass || ''}">
       <span class="visual-role">${label}</span>
       <button type="button" class="visual-pick" ${pick} aria-label="${item ? 'Change ' : 'Add '}${label}">
-        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 4) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
+        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
       </button>
       ${item ? `<button type="button" class="visual-own ${owned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${id}" ${item.no_purchase ? 'disabled' : ''}>${owned ? '✓ Owned' : 'Mark owned'}</button>` : ''}
     </div>`;
@@ -1219,13 +1219,15 @@
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
         <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
-        <div class="visual-next"><span class="visual-route ${hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" onclick="this.closest('.rig-booth-section').querySelector('.booth-details').open=true; this.closest('.rig-booth-section').querySelector('#signal-highway').scrollIntoView({behavior:'smooth',block:'start'})">Inspect connections ↓</button></div>
+        <div class="visual-next"><span class="visual-route ${hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
         <div class="visual-stage">
           ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
           ${renderVisualEquipment(controllerSlot, 'controllers', '', 'Controller / decks', 'core-ctrl', 'visual-controller')}
           ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa')}
-          ${renderVisualEquipment(headphonesSlot, 'headphones', '', 'Headphones', 'core-hp', 'visual-headphones')}
-          ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
+          <div class="visual-secondary">
+            ${renderVisualEquipment(headphonesSlot, 'headphones', '', 'Headphones', 'core-hp', 'visual-headphones')}
+            ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
+          </div>
         </div>
         <details class="booth-details"><summary>Equipment details, quantities &amp; routing</summary>
         <div class="rig-booth-stage">
@@ -2584,6 +2586,9 @@
       // 2. Button / Card actions
       var btn = e.target.closest("[data-action]") || e.target.closest(".btn-select-item") || e.target.closest(".picker-close");
       if (!btn) return;
+      // Dialog contents without their own action (such as export tabs and inputs)
+      // must not inherit the backdrop's close action.
+      if (btn.classList.contains("picker-backdrop") && e.target !== btn) return;
 
       var action = btn.getAttribute("data-action");
 
@@ -2622,6 +2627,13 @@
           saveActiveState();
           renderApp();
         }
+        return;
+      }
+
+      if (action === "inspect-routes") {
+        var stage = btn.closest(".rig-booth-section");
+        stage.querySelector(".booth-details").open = true;
+        stage.querySelector("#signal-highway").scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
 

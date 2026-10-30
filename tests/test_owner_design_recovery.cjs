@@ -105,7 +105,7 @@ test("Owner Design Recovery - Browser Acceptance Across Setups A, B, C, D & Mobi
     await page.goto(`${baseUrl}/build-your-dj-setup.html?preset=bedroom-starter`, { waitUntil: "networkidle0" });
     const boxesA = await page.evaluate(() => {
       const stage = document.getElementById("interactive-booth-stage");
-      const bottomRow = document.querySelector(".booth-bottom-row");
+      const bottomRow = document.querySelector(".visual-controller");
       const paZone = document.getElementById("zone-crowd-pa");
       const monZone = document.getElementById("zone-monitors");
       const linkWire = monZone?.querySelector(".cabinet-link-wire");
@@ -120,7 +120,7 @@ test("Owner Design Recovery - Browser Acceptance Across Setups A, B, C, D & Mobi
     });
 
     assert.ok(boxesA.stageTop !== null && boxesA.stageTop < 450, `Setup A stage must begin above Y=450 (actual: ${boxesA.stageTop}px)`);
-    assert.ok(boxesA.bottomRowTop !== null && boxesA.bottomRowTop < 900, `Setup A workstation row must start above 900px fold (actual: ${boxesA.bottomRowTop}px)`);
+    assert.ok(boxesA.bottomRowTop !== null && boxesA.bottomRowTop < 900, `Setup A visual controller must start above 900px fold (actual: ${boxesA.bottomRowTop}px)`);
     assert.strictEqual(boxesA.paZoneEmpty, true, "Setup A Crowd PA must be empty without conflict");
     assert.strictEqual(boxesA.hasLinkWire, true, "Setup A DM-40D must render link wire");
     assert.strictEqual(boxesA.hasPassiveSat, true, "Setup A DM-40D must render passive satellite");
@@ -140,7 +140,8 @@ test("Owner Design Recovery - Browser Acceptance Across Setups A, B, C, D & Mobi
     console.log("✓ Criteria B passed: Mobile rig renders genuine PA cabinet with dedicated feed.");
 
     // Criteria C: Hard Rejection of KRK / Yamaha in Crowd PA picker
-    const paSwapBtn = await page.$("#zone-crowd-pa [data-action=\"pick\"]");
+    const paSwapBtn = await page.$(".visual-pa [data-action=\"pick\"]");
+    assert.ok(paSwapBtn, "PA swap control must be available");
     if (paSwapBtn) {
       await paSwapBtn.click();
       await new Promise(r => setTimeout(r, 400));
