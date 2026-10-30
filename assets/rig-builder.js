@@ -805,6 +805,7 @@
   /* ---------------------------------------------------------------- Render */
   function renderApp() {
     var stats = calculateRigStats();
+    var detailsOpen = !!builderRoot.querySelector('.booth-details[open]');
 
     var html = `
       <!-- Builder Top Dashboard -->
@@ -826,6 +827,7 @@
             </div>
           </div>
 
+          <details class="mobile-presets"><summary>Change starting point</summary><div>${CATALOG.presets.map(function(p) { return `<button type="button" class="mobile-preset" data-preset-id="${p.id}">${escapeHtml(p.name)}</button>`; }).join('')}</div></details>
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
@@ -835,7 +837,7 @@
             </div>
             <div class="quick-readiness-card">
               <span class="qsc-label">Signal Status</span>
-              <strong class="qsc-status ${stats.compatibility.fatalErrors > 0 ? 'status--conflict' : 'status--verified'}">${stats.compatibility.fatalErrors > 0 ? '⚠️ Route Blocked' : '⚡ Dual Paths OK'}</strong>
+              <strong class="qsc-status ${stats.compatibility.fatalErrors > 0 ? 'status--conflict' : 'status--verified'}">${stats.compatibility.fatalErrors > 0 ? 'Route blocked' : stats.compatibility.requiresManualReview || stats.compatibility.warnings > 0 ? 'Review connections' : 'Check connections'}</strong>
               <span class="qsc-sub">${stats.compatibility.readiness}% Ready</span>
             </div>
           </div>
@@ -843,33 +845,6 @@
 
         <!-- CENTERPIECE: Visual DJ Booth Studio Layout (Appears FIRST!) -->
         ${renderBooth(stats)}
-
-        <!-- Financial Summary & Setup Readiness -->
-        <div class="rig-metrics-grid">
-          <div class="rig-metric-card">
-            <span class="metric-label">Total Rig Valuation</span>
-            <strong class="metric-val">$${stats.totalValue.toLocaleString()}</strong>
-            <span class="metric-sub">${stats.itemCount} items in setup</span>
-          </div>
-          <div class="rig-metric-card metric-card--owned">
-            <span class="metric-label">Gear You Own (Saved)</span>
-            <strong class="metric-val metric-val--owned">-$${stats.ownedValue.toLocaleString()}</strong>
-            <span class="metric-sub">${stats.ownedCount} owned items deducted</span>
-          </div>
-          <div class="rig-metric-card metric-card--spend">
-            <span class="metric-label">Actual Spend Needed</span>
-            <strong class="metric-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
-            <span class="metric-sub">${stats.itemCount - stats.ownedCount} items to purchase</span>
-          </div>
-          <div class="rig-metric-card metric-card--readiness">
-            <span class="metric-label">Setup Readiness</span>
-            <div class="readiness-gauge-wrap">
-              <div class="readiness-bar"><div class="readiness-fill" style="width: ${stats.compatibility.readiness}%"></div></div>
-              <strong class="readiness-num">${stats.compatibility.readiness}%</strong>
-            </div>
-            <span class="metric-sub">${stats.compatibility.fatalErrors === 0 && stats.compatibility.warnings === 0 ? "No listed issues found" : stats.compatibility.fatalErrors > 0 ? "❌ Incompatibility detected" : stats.compatibility.requiresManualReview ? "⚠️ Signal routing needs review" : "⚠️ " + stats.compatibility.warnings + " connection advisory"}</span>
-          </div>
-        </div>
 
         <!-- Upgrade Path Advisory Card -->
         ${stats.nextUpgrade ? `
@@ -1026,6 +1001,7 @@
     `;
 
     builderRoot.innerHTML = html;
+    if (detailsOpen) builderRoot.querySelector('.booth-details').open = true;
   }
 
   function isSpeakerEligibleForRole(item, role) {
@@ -1122,6 +1098,25 @@
   }
 
   /* ------------------------------------------------- Interactive DJ Booth (Purpose-Based) */
+  // The stage uses the same slots and actions as the detailed editor below.
+  function renderVisualEquipment(slot, category, role, label, defaultId, extraClass) {
+    var item = slot && getSlotItem(slot);
+    var id = slot ? slot.slotId : defaultId;
+    var roleAttr = role ? ` data-speaker-role="${role}"` : '';
+    var pick = item || !role
+      ? `data-action="pick" data-slot-id="${id}" data-category="${category}"${roleAttr}`
+      : `data-action="add-speaker-role" data-speaker-role="${role}"`;
+    var owned = item && (slot.owned || item.no_purchase);
+    var count = item && role ? (item.speaker_units || 1) * (slot.qty || 1) : 0;
+    return `<div class="visual-equipment ${extraClass || ''}">
+      <span class="visual-role">${label}</span>
+      <button type="button" class="visual-pick" ${pick} aria-label="${item ? 'Change ' : 'Add '}${label}">
+        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 4) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
+      </button>
+      ${item ? `<button type="button" class="visual-own ${owned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${id}" ${item.no_purchase ? 'disabled' : ''}>${owned ? '✓ Owned' : 'Mark owned'}</button>` : ''}
+    </div>`;
+  }
+
   function renderBooth(stats) {
     var controllerSlot = findSlot("controllers") || { slotId: "core-ctrl", category: "controllers", itemId: null };
     var headphonesSlot = findSlot("headphones") || { slotId: "core-hp", category: "headphones", itemId: null };
@@ -1223,24 +1218,16 @@
 
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
-        <div class="booth-stage-header">
-          <div class="booth-title-group">
-            <span class="booth-kicker">Interactive Setup Builder · Real Signal Flow</span>
-            <h3 class="booth-main-heading">DJ Studio Booth &amp; Cable Routing</h3>
-          </div>
-          <div class="booth-stage-badges">
-            <span class="booth-badge ${paSlot ? 'badge--pa' : 'badge--neutral'}">
-              ${paBadgeText}
-            </span>
-            <span class="booth-badge ${monitorSlot ? 'badge--studio' : 'badge--neutral'}">
-              ${monBadgeText}
-            </span>
-            <span class="booth-badge ${routingBadgeClass}">
-              ${routingBadgeText}
-            </span>
-          </div>
+        <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
+        <div class="visual-next"><span class="visual-route ${hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" onclick="this.closest('.rig-booth-section').querySelector('.booth-details').open=true; this.closest('.rig-booth-section').querySelector('#signal-highway').scrollIntoView({behavior:'smooth',block:'start'})">Inspect connections ↓</button></div>
+        <div class="visual-stage">
+          ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
+          ${renderVisualEquipment(controllerSlot, 'controllers', '', 'Controller / decks', 'core-ctrl', 'visual-controller')}
+          ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa')}
+          ${renderVisualEquipment(headphonesSlot, 'headphones', '', 'Headphones', 'core-hp', 'visual-headphones')}
+          ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
         </div>
-
+        <details class="booth-details"><summary>Equipment details, quantities &amp; routing</summary>
         <div class="rig-booth-stage">
           <!-- TOP ZONE: Crowd-Facing PA System (Front-of-House / Audience) -->
           <div class="booth-purpose-zone booth-purpose-zone--pa">
@@ -1275,6 +1262,7 @@
             </div>
           </div>
         </div>
+        </details>
       </section>
     `;
   }
