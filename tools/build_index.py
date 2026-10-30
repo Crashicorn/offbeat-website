@@ -176,7 +176,9 @@ def main():
     headings = {g[0]: (g[1], g[2]) for g in GROUPS}
     by_group = {gid: [] for gid in order}
     for item in items:
-        if item["u"] == "all-dj-guides.html":
+        # The library page and the tools hub are navigational surfaces, not
+        # entries in the guide list; the library links to both directly.
+        if item["u"] in ("all-dj-guides.html", "dj-tools.html"):
             continue
         by_group[item["g"]].append(item)
 

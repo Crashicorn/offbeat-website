@@ -6234,3 +6234,59 @@ tr.rs-item { display: table-row !important; }
   .tool-row:nth-child(even) .tool-row-media { order: 0; }
   .tool-row-media { box-shadow: none; }
 }
+
+/* Library page: the tools band (dj-tools.html entry point) */
+.library-toolband {
+  margin: 0 0 clamp(1.8rem, 4vw, 2.8rem);
+  padding: clamp(1.1rem, 2.6vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(600px 220px at 100% 0, rgba(56, 189, 248, .07), transparent 70%),
+    linear-gradient(150deg, rgba(139, 92, 246, .07), transparent 55%),
+    var(--ink-2);
+}
+.library-toolband-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: .8rem 1.6rem;
+}
+.library-toolband-head > div { min-width: 0; max-width: 46rem; }
+.library-toolband-head h2 { margin: .3rem 0 .5rem; }
+.library-toolband-head .section-sub { margin: 0 0 .2rem; }
+.library-toolband-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: .1rem; margin-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.library-toolband-grid a {
+  display: grid; gap: .18rem;
+  padding: .8rem .9rem .8rem 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  transition: color .15s ease;
+}
+.library-toolband-grid a::before {
+  content: "↗"; position: absolute; opacity: 0;
+}
+.library-toolband-grid strong { color: #fff; font-size: .93rem; }
+.library-toolband-grid span { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.library-toolband-grid a:hover strong { color: var(--cyan-2); }
+@media (max-width: 640px) {
+  .library-toolband-grid { grid-template-columns: minmax(0, 1fr); }
+  .library-toolband-head .btn { width: 100%; justify-content: center; }
+}
+
+/* Homepage: four "start where you are" paths read as a 2x2, not 3+1 */
+.home-paths { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) { .home-paths { grid-template-columns: minmax(0, 1fr); } }
+
+/* Section-head links that sit where a tag used to */
+.section-head > a:only-of-type { align-self: center; }
+
+/* Homepage: the other two four-item grids also fell into 3+1 at ~830px */
+.controller-budget-grid,
+.taxonomy-matrix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 700px) {
+  .controller-budget-grid,
+  .taxonomy-matrix { grid-template-columns: minmax(0, 1fr); }
+}
