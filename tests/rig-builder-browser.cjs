@@ -80,6 +80,10 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.equal(googleRequests, 0, "denied choice must persist without analytics");
       assert.equal(await page.$(".ob-consent"), null);
       await page.click("[data-reopen-consent]");
+      assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Allow analytics",
+        "reopening consent from the footer must focus the in-flow choices");
+      const reopenedTop = await page.$eval(".ob-consent", el => el.getBoundingClientRect().top);
+      assert.ok(reopenedTop >= 0 && reopenedTop < 844, "reopened consent must be in view");
       await page.click(".ob-consent-btn:nth-child(1)");
       await page.waitForFunction(() => window.offbeatConsentState() === "granted" && window.__obGtagBooted);
       assert.equal(googleRequests, 0, "preview hosts must not load Google even when allowed");

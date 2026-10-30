@@ -283,7 +283,15 @@
   function handle(action) {
     if (action === 'grant') { writeConsent('granted'); applyConsent('granted'); }
     else if (action === 'deny' || action === 'withdraw') { writeConsent('denied'); stopAnalytics(); }
-    else if (action === 'reask') { refresh('reask'); } // re-choose without changing the store yet
+    else if (action === 'reask') {
+      refresh('reask'); // re-choose without changing the store yet
+      // On mobile the rig prompt is in the masthead, potentially far from the footer.
+      if (UI && window.getComputedStyle(UI).position === 'static') {
+        UI.scrollIntoView({ behavior: 'instant', block: 'center' });
+        var firstChoice = UI.querySelector('button');
+        if (firstChoice) firstChoice.focus({ preventScroll: true });
+      }
+    }
   }
 
   // Load + measure ONLY after affirmative consent. Idempotent (one tag, one
