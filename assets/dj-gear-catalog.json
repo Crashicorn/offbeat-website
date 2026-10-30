@@ -1900,6 +1900,152 @@
       ]
     },
     {
+      "id": "qsc-k10-2",
+      "category": "speakers",
+      "brand": "QSC",
+      "model": "K10.2 10\" (Single)",
+      "price": 899,
+      "type": "Powered PA Loudspeaker (single, 2000 W peak Class D)",
+      "inputs": [
+        "2 x Combo XLR / 1/4\" (Mic/Line/Hi-Z, balanced)",
+        "1 x 3.5 mm TRS stereo mini-jack"
+      ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "Premium 2000W Class-D powered PA loudspeaker with DMT acoustic directivity and multi-function DSP display. Sold individually; two units needed for stereo dancefloor sound."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold individually (1 cabinet). 2000W Class-D powered loudspeaker with multi-function digital display. 2 units required for stereo crowd array.",
+      "driver_size": "10-inch cone transducer, 1.4-inch titanium compression driver",
+      "sound_modes": "Factory DSP voicings (Dance, Live, Stage Monitor, Vocal Boost) and savable user presets",
+      "frequency_response": "50 Hz – 20 kHz (-10 dB)",
+      "max_spl": "130 dB peak",
+      "dispersion": "90° axisymmetric",
+      "ideal_for": "High-end mobile wedding DJs, corporate events, and demanding live music sound reinforcement",
+      "tagline": "A premium 2000-watt Class-D powered PA cabinet with multi-function display and DMT acoustic coverage.",
+      "image": "assets/img/products/qsc-k10-2-outline.svg",
+      "slug": "festival-dj-gear-checklist.html",
+      "amazon_search": "QSC K10.2 Powered Loudspeaker",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "price_basis": "QSC K10.2 single cabinet at $899 US retail, checked 2026-10-27.",
+      "spec_source": "https://www.qsc.com/live-sound/products/loudspeakers/powered-loudspeakers/k2-series/k102/",
+      "retailer_destinations": {
+        "zzounds": {
+          "sku": "QSCK102",
+          "url": "https://www.zzounds.com/item--QSCK102",
+          "status": "verified_in_stock",
+          "type": "exact",
+          "sold_as": "unit",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as single powered PA cabinet.",
+          "note": "Active product listing ($899.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=QSC+K10.2+Powered+Loudspeaker&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=QSC+K10.2",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=QSC+K10.2",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
+    },
+    {
+      "id": "electro-voice-zlx-12bt",
+      "category": "speakers",
+      "brand": "Electro-Voice",
+      "model": "ZLX-12BT 12\" (Single)",
+      "price": 499,
+      "type": "Powered PA Loudspeaker (single, 1000 W Class D / QuickSmartDSP)",
+      "inputs": [
+        "2 x Combo XLR / 1/4\" (Mic/Line, balanced)",
+        "1 x 3.5 mm Aux input",
+        "Bluetooth wireless audio streaming"
+      ],
+      "connection": {
+        "topology": "independent",
+        "feeds_per_box": 1,
+        "channels_per_feed": 1,
+        "inputs": [
+          {
+            "connector": "combo_xlr_trs",
+            "channels": 1,
+            "balanced": true
+          }
+        ],
+        "note": "1000W Class-D powered PA speaker with QuickSmartDSP and Bluetooth audio. Sold individually; two units needed for stereo live performance."
+      },
+      "included_cables": [],
+      "speaker_units": 1,
+      "box_label": "single cabinet",
+      "pack_note": "Sold individually (1 cabinet). 1000W Class-D powered loudspeaker with Bluetooth wireless audio streaming. Order 2 units for stereo live sound.",
+      "driver_size": "12-inch EVS-12K woofer, 1.5-inch DH-1K titanium compression driver",
+      "sound_modes": "QuickSmartDSP LCD display with single-knob presets (Music, Live, Speech, Club) and visual metering",
+      "frequency_response": "50 Hz – 20 kHz (-10 dB)",
+      "max_spl": "126 dB peak",
+      "dispersion": "90° x 60°",
+      "ideal_for": "Mobile DJs, parties, bars, and compact live performances",
+      "tagline": "A workhorse 1000-watt 12-inch powered PA loudspeaker with QuickSmartDSP and Bluetooth streaming.",
+      "image": "assets/img/products/jbl-eon715.svg",
+      "slug": "festival-dj-gear-checklist.html",
+      "amazon_search": "Electro-Voice ZLX-12BT 12-inch Powered Speaker",
+      "image_type": "schematic_vector",
+      "provenance": "Offbeat Illustrated Spec Guide (2026)",
+      "license": "CC-BY-SA 4.0 / Offbeat Hardware Reference",
+      "attribution": "Offbeat Inc. Editorial Hardware Lab",
+      "visual_type": "Technical Vector Schematic",
+      "price_basis": "Electro-Voice ZLX-12BT single cabinet at $499 US retail, checked 2026-10-27.",
+      "spec_source": "https://electrovoice.com/product/zlx-12bt-12-powered-loudspeaker-with-bluetooth/",
+      "retailer_destinations": {
+        "zzounds": {
+          "url": "https://www.zzounds.com/prodsearch?q=Electro-Voice+ZLX-12BT",
+          "status": "verified_search",
+          "type": "search",
+          "sold_as": "single",
+          "requires_pair_qty": false,
+          "quantity_note": "Sold as single powered PA cabinet.",
+          "note": "Search fallback ($499.00)"
+        },
+        "amazon": {
+          "url": "https://www.amazon.com/s?k=Electro-Voice+ZLX-12BT+Powered+Speaker&tag=offbeatdj-20",
+          "status": "verified_search"
+        },
+        "sweetwater": {
+          "url": "https://www.sweetwater.com/store/search?s=Electro-Voice+ZLX-12BT",
+          "status": "search_fallback"
+        },
+        "reverb": {
+          "url": "https://reverb.com/marketplace?query=Electro-Voice+ZLX-12BT",
+          "status": "search_fallback"
+        }
+      },
+      "roles_supported": [
+        "crowd_pa"
+      ]
+    },
+    {
       "id": "macbook-air-m2",
       "category": "laptops",
       "brand": "Apple",
