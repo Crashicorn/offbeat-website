@@ -160,7 +160,16 @@ def main():
                 entry["k"] = (entry.get("k", "") + " " + page["d"].lower()).strip()
                 repaired += 1
         urls = {entry["u"] for entry in existing}
-        added = [item for item in items if item["u"] not in urls]
+        added = []
+        for item in items:
+            if item["u"] in urls:
+                continue
+            # Match the curated entry shape (title/desc/url/category) as well as
+            # the compact keys, so the search UI never renders blanks.
+            full = dict(item)
+            full.update({"title": item["t"], "desc": item["d"],
+                         "url": item["u"], "category": item["c"]})
+            added.append(full)
         if added or repaired:
             with open(index_path, "w", encoding="utf-8") as handle:
                 json.dump(existing + added, handle, ensure_ascii=False, separators=(",", ":"))

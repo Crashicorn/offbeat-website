@@ -126,7 +126,7 @@ async function journey(browser, name, fn) {
     trail.push(await follow(page, "rekordbox-vs-serato.html"));
     trail.push(await follow(page, "controller-software-compatibility-matrix.html"));
     const visibleCards = () =>
-      page.evaluate(() => [...document.querySelectorAll(".mat-compare-toggle")].filter((el) => el.offsetParent !== null).length);
+      page.evaluate(() => [...document.querySelectorAll(".matrix-card")].filter((el) => el.offsetParent !== null).length);
     const before = await visibleCards();
     const chosen = await page.evaluate(() => {
       const sel = document.querySelector("select[data-mat-soft]");
@@ -145,22 +145,34 @@ async function journey(browser, name, fn) {
   });
 
   /* D — learner: mixing guide → Mix Lab, start decks, switch lesson. */
-  await journey(browser, "D mix lab learner", async (page) => {
+  await journey(browser, "D beatmatch trainer drill", async (page) => {
     const trail = ["how-to-mix-music-beginners.html"];
     await goto(page, "how-to-mix-music-beginners.html");
     trail.push(await follow(page, "beatmatch-trainer.html"));
-    await page.waitForSelector("[data-ml-play]", { timeout: 8000 });
-    const idle = await page.evaluate(() => window.__mixlab.metrics().running);
-    await page.click("[data-ml-play]");
-    await sleep(900);
-    const m = await page.evaluate(() => window.__mixlab.metrics());
-    trail.push(`decks running: ${idle} → ${m.running}`);
-    assert.strictEqual(m.running, true, "decks should be running after play");
-    await page.click('[data-ml-lesson="2"]');
-    await sleep(500);
-    const sel = await page.evaluate(() => document.querySelector('[data-ml-lesson="2"]').getAttribute("aria-selected"));
-    trail.push(`lesson 2 selected: ${sel}`);
-    assert.strictEqual(sel, "true", "lesson 2 tab should activate");
+    await page.waitForSelector("[data-start]", { timeout: 8000 });
+    const statusOf = () =>
+      page.evaluate(() => (document.querySelector("[data-lock-status]") || {}).textContent || "");
+    const idle = (await statusOf()).trim();
+    await page.click("[data-start]");
+    await sleep(1400);
+    const running = (await statusOf()).trim();
+    trail.push(`drill status: ${idle.slice(0, 24)} → ${running.slice(0, 34)}`);
+    assert.ok(/ready/i.test(idle), "the drill should start in a ready state");
+    assert.ok(running && !/ready/i.test(running), "pressing Start Training should hand over to live coaching");
+    /* The drill must actually measure the two decks, not just run a timer. */
+    const measurable = await page.evaluate(() => {
+      const pitch = document.querySelector("[data-pitch]");
+      const score = document.querySelector("[data-score-val]");
+      return !!(pitch && score);
+    });
+    assert.ok(measurable, "pitch control and score output should both be present");
+    await page.evaluate(() => {
+      const pitch = document.querySelector("[data-pitch]");
+      if (pitch) { pitch.value = String(Number(pitch.value) + 1); pitch.dispatchEvent(new Event("input", { bubbles: true })); }
+    });
+    await sleep(600);
+    const moved = await page.evaluate(() => (document.querySelector("[data-score-val]") || {}).textContent || "");
+    trail.push(`score after pitch nudge: ${moved.trim().slice(0, 24)}`);
     return trail;
   });
 
@@ -189,14 +201,14 @@ async function journey(browser, name, fn) {
     await page.keyboard.press("/");
     await sleep(500);
     const open = await page.evaluate(() => {
-      const el = document.querySelector('[role="dialog"] input, .spotlight input, input[type="search"]');
+      const el = document.querySelector("#quick-search-input");
       return !!el && el.offsetParent !== null;
     });
     assert.ok(open, "search should open with /");
     await page.keyboard.type("flx4 review", { delay: 40 });
     await sleep(900);
     const hit = await page.evaluate(() => {
-      const items = [...document.querySelectorAll('[role="dialog"] a, .spotlight a, [class*="search"] a')];
+      const items = [...document.querySelectorAll("#quick-search-backdrop a, .quick-search-dialog a")];
       const el = items.find((a) => /flx4/i.test(a.textContent));
       if (!el) return null;
       const t = el.textContent.trim().slice(0, 40);
