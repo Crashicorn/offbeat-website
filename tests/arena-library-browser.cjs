@@ -45,6 +45,33 @@ function visibleCount(page) {
         assert.ok(state.overflow <= 1, path + " overflows at " + width + "px: " + state.overflow);
         assert.deepEqual(errors, [], path + " browser errors at " + width + "px");
       }
+      // Product video facades must not contact YouTube until the visitor loads one.
+      const videos = {
+        "ddj-flx2-review.html": "OnNkSZK45jo",
+        "ddj-grv6-review.html": "I3832XEsxX4",
+        "pioneer-ddj-flx10-review.html": "N0dg3GNnoRw",
+        "pioneer-cdj-3000-review.html": "MxRKpTI5dqo",
+        "denon-prime-go-review.html": "dMQb0GShVaQ",
+        "denon-sc6000-review.html": "T84COjxlAOo",
+        "numark-scratch-review.html": "95hmwMn6pFQ"
+      };
+      for (const [path, id] of Object.entries(videos)) {
+        const youtubeRequests = [];
+        const track = request => {
+          if (/youtube|ytimg/i.test(request.url())) youtubeRequests.push(request.url());
+        };
+        page.on("request", track);
+        await page.goto(base + "/" + path, { waitUntil: "load" });
+        assert.deepEqual(youtubeRequests, [], path + " must not load YouTube before consent");
+        assert.equal(await page.$$(".official-video iframe").then(frames => frames.length), 0);
+        assert.ok((await page.$eval(".official-video figcaption", el => el.textContent)).includes("official channel"));
+        assert.ok(await page.$eval(".official-video a", (el, videoId) => el.href.endsWith(videoId), id), "direct video link");
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), path + " video layout overflow");
+        await page.click(".official-video__load");
+        assert.equal(await page.$eval(".official-video iframe", el => el.getAttribute("src")),
+          "https://www.youtube-nocookie.com/embed/" + id + "?rel=0");
+        page.off("request", track);
+      }
       await page.goto(base + "/all-dj-guides.html", { waitUntil: "load" });
       const total = await page.$$eval(".library-item", els => els.length);
       assert.ok(total >= 100, "library must contain real guide links");

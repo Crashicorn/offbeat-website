@@ -6306,3 +6306,11 @@ tr.rs-item { display: table-row !important; }
     box-shadow: none;
   }
 }
+
+/* Official product videos: no third-party request until the visitor opts in. */
+.official-video { margin: 2rem 0; }
+.official-video__stage { aspect-ratio: 16 / 9; display: grid; place-items: center; background: #161920; border: 1px solid #414957; border-radius: 12px; overflow: hidden; }
+.official-video__load { padding: .85rem 1.35rem; border: 2px solid #fff; border-radius: 999px; background: #242b36; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.official-video__load:hover, .official-video__load:focus-visible { background: #fff; color: #161920; outline: 3px solid #f3bc53; outline-offset: 3px; }
+.official-video__stage iframe { width: 100%; height: 100%; border: 0; }
+.official-video figcaption { margin-top: .7rem; }
