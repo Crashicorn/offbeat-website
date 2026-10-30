@@ -1428,3 +1428,30 @@
     box-shadow: none;
   }
 }
+
+/* One workspace: editorial introduction, then optional supporting views. */
+.rig-masthead-inner { padding:18px var(--gutter); }
+.rig-masthead-grid { display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(220px, .7fr); gap:32px; }
+.rig-masthead .hero-eyebrow { font-size:.75rem; }
+.rig-masthead h1 { font-size:clamp(1.7rem, 2.5vw, 2.4rem); max-width:25ch; margin:.25rem 0 .45rem; }
+.rig-masthead p.rig-masthead-sub { max-width:65ch; font-size:1rem; line-height:1.45; }
+.rig-hero-photo { position:relative; margin:0; height:150px; overflow:hidden; border-radius:12px; }
+.rig-hero-photo img { width:100%; height:100%; object-fit:cover; }
+.rig-hero-photo figcaption { position:absolute; bottom:0; right:0; color:#fff; font-size:.7rem; background:#101019dc; padding:3px 7px; }
+.rig-hero-photo figcaption a { color:inherit; }
+.rig-secondary { margin:10px 0; border:1px solid var(--line-strong); border-radius:12px; background:var(--panel); }
+.rig-secondary > summary { cursor:pointer; padding:14px 18px; color:#e4dbff; font-weight:700; }
+.rig-secondary > section, .rig-secondary > .booth-cables-hub { margin:12px; }
+.rig-secondary .rig-compat-section { margin:12px; }
+.rig-help { margin:1.5rem 0; }
+.rig-help h2 { font-size:1.25rem; }
+@media (max-width:700px) {
+  .rig-masthead-inner { padding:14px var(--gutter); }
+  .rig-masthead-grid { grid-template-columns:minmax(0,1fr) 96px; gap:12px; }
+  .rig-masthead .hero-eyebrow { display:inline-flex; }
+  .rig-masthead h1 { font-size:1.35rem; }
+  .rig-masthead p.rig-masthead-sub { display:block; font-size:.9rem; line-height:1.35; }
+  .rig-hero-photo { height:100px; }
+  .rig-hero-photo figcaption { font-size:.6rem; }
+  .rig-secondary > section, .rig-secondary > .booth-cables-hub, .rig-secondary .rig-compat-section { margin:8px; }
+}
