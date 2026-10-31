@@ -120,11 +120,11 @@ test("MixTrack Go included stereo RCA lead covers two independent Classic 5 moni
 test("Inpulse 500 buyer facts match Hercules across the budget and main guides", () => {
   const budget = page("best-dj-controllers-under-200.html");
   const main = page("best-dj-controllers-2026.html");
-  assert.match(budget, /Hercules DJControl Inpulse 500[\\s\\S]*?<td>140 mm \\(5\\.5 in\\)<\\/td>/,
+  assert.match(budget, /Hercules DJControl Inpulse 500[\s\S]*?<td>140 mm \(5\.5 in\)<\/td>/,
     "the comparison table must state the manufacturer's 140 mm jog diameter");
-  assert.match(budget, /140 mm \\(5\\.5-inch\\) jog wheels/);
+  assert.match(budget, /140 mm \(5\.5-inch\) jog wheels/);
   assert.match(budget, /Beatmatch Guide lights assist manual tempo practice in both DJUCED and Serato DJ Lite/);
-  assert.match(budget, /https:\\/\\/www\\.hercules\\.com\\/en\\/product\\/dj-control-inpulse-500\\//);
-  assert.match(main, /Hercules DJControl Inpulse 500[\\s\\S]*?140mm jog wheels/);
-  assert.doesNotMatch(budget, /114\\s*mm|DJUCED\\/Rekordbox learning lights|Serato users get the hardware without those cues/);
+  assert.match(budget, /https:\/\/www\.hercules\.com\/en\/product\/dj-control-inpulse-500\//);
+  assert.match(main, /Hercules DJControl Inpulse 500[\s\S]*?140mm jog wheels/);
+  assert.doesNotMatch(budget, /114\s*mm|DJUCED\/Rekordbox learning lights|Serato users get the hardware without those cues/);
 });
