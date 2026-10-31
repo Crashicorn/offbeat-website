@@ -491,13 +491,25 @@
           warnings++;
         }
       } else if (selected) {
-        checks.push({
-          type: "success", statusLevel: "workable",
-          title: "Listed Audio Connection Match",
-          desc: "Listed connectors support " + selected.name + " between " + controller.model +
-            " and " + speakers.model + ". Verify wiring, levels, and manufacturer requirements.",
-          fixCableId: null
-        });
+        // A matching connector does not prove enough cable packs exist for
+        // every PA/monitor route. Keep this verdict aligned with the booth.
+        if (areAllSpeakerRoutesConfirmed()) {
+          checks.push({
+            type: "success", statusLevel: "workable",
+            title: "Listed Audio Connection Match",
+            desc: "Selected cable quantities cover the planned speaker routes. Verify wiring, levels, and manufacturer requirements.",
+            fixCableId: null
+          });
+        } else {
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Speaker Cable Quantity or Routing Needs Review",
+            desc: "A connector type matches, but the selected cable packs do not yet establish every speaker route. " +
+              "Check the booth's per-route cable requirements, quantities and hardware output limits before buying.",
+            fixCableId: null
+          });
+          warnings++;
+        }
       } else if (options.length) {
         var suggestion = options[0];
         checks.push({
@@ -1058,6 +1070,25 @@
       return totalUnits >= (Number(plan.units) || 1) + alreadyAllocated;
     }
     return false;
+  }
+
+  // All speaker routes must be independently feasible and supplied. A single
+  // cable pack cannot be counted twice when PA and monitors use the same SKU.
+  function areAllSpeakerRoutesConfirmed() {
+    var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    if (!speakers.length) return false;
+    var routes = computeAllRigConnections();
+    if (routes.length !== speakers.length) return false;
+    var allocated = Object.create(null);
+    return routes.every(function (route) {
+      if (!route || route.conflict) return false;
+      var used = route.itemId ? (allocated[route.itemId] || 0) : 0;
+      if (!isRouteCableConfirmed(route, used)) return false;
+      if (route.kind === "product" && route.itemId) {
+        allocated[route.itemId] = used + (Number(route.units) || 1);
+      }
+      return true;
+    });
   }
 
   function findSlot(category) {
@@ -2444,25 +2475,27 @@
       return window.location.origin + window.location.pathname + "?rig=" + encodeURIComponent(encoded);
     },
     checks: function () {
-      var stats = calculateRigStats();
       var checks = [];
       var ctrl = findSlot("controllers");
       var ctrlItem = ctrl ? getSlotItem(ctrl) : null;
-      if (ctrlItem && (/prime|sc6000|standalone|xdj/i.test(ctrlItem.id) || ctrlItem.is_standalone)) {
-        checks.push({ key: "host", level: "ok", title: "Standalone Playback", note: ctrlItem.brand + " " + ctrlItem.model + " runs its own playback without a computer." });
+      var host = findSlot("laptops");
+      var hostItem = host ? getSlotItem(host) : null;
+      if (!ctrlItem) {
+        checks.push({ key: "host", level: "warn", title: "Controller Required", note: "No DJ playback or mixing system is selected." });
+      } else if (ctrlItem.standalone) {
+        checks.push({ key: "host", level: "ok", title: "Standalone Capability Listed", note: "Confirm media, firmware and supported playback before performing." });
+      } else if (!hostItem || hostItem.id === "standalone-usb-only") {
+        checks.push({ key: "host", level: "warn", title: "Host Computer Required", note: "This controller cannot play tracks without a compatible host and DJ software." });
       } else {
-        checks.push({ key: "host", level: "ok", title: "Host Computer Connected", note: "Controller connected to host device." });
+        checks.push({ key: "host", level: "warn", title: "Host Compatibility Needs Verification", note: "A host is listed, not physically connected or software-verified. Confirm device, licensing, USB audio and power." });
       }
-      var spk = findSlot("speakers");
-      var sItem = spk ? getSlotItem(spk) : null;
-      var spkPlan = (ctrlItem && sItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan)
-        ? OffbeatGear.connectionPlan(CATALOG, ctrlItem, sItem, (spk ? spk.qty : 1) || 1)
-        : null;
-      var cablesOk = spkPlan && spkPlan.kind !== "unresolved";
-      if (cablesOk) {
-        checks.push({ key: "cables", level: "ok", title: "Cables Verified", note: "Audio routing cleanly matched for " + (sItem ? sItem.model : "speakers") + " and " + (ctrlItem ? ctrlItem.model : "controller") });
+      var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+      if (!speakers.length) {
+        checks.push({ key: "cables", level: "warn", title: "No Speaker Route Selected", note: "Headphone-only practice is possible; no speaker cabling has been established." });
+      } else if (areAllSpeakerRoutesConfirmed()) {
+        checks.push({ key: "cables", level: "ok", title: "Speaker Cable Routes Planned", note: "Included or selected cable quantities cover the modeled routes; verify physical connections before use." });
       } else {
-        checks.push({ key: "cables", level: "warn", title: "Routing Review Needed", note: "Check connections" });
+        checks.push({ key: "cables", level: "warn", title: "Speaker Cable Routes Need Review", note: "At least one route has missing cable packs, unsupported connectors or conflicting hardware outputs." });
       }
       return checks;
     },
