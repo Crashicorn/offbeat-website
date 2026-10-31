@@ -287,9 +287,18 @@
           role = isSpeakerEligibleForRole(item, "crowd_pa") ? "crowd_pa" : "dj_monitor";
         }
       }
+      // A corrupt explicit quantity must never silently become one unit:
+      // that would understate the cost of a shared shopping list. Preserve
+      // older object-format rigs that omitted qty (historically one unit).
+      // Non-purchasable placeholders always represent a single owned host.
+      if (item.no_purchase !== true && slot.qty !== undefined &&
+          (!Number.isInteger(slot.qty) || slot.qty < 1 || slot.qty > 8)) {
+        invalidLine = true;
+        return;
+      }
       var cleanSlot = {
         slotId: id, category: item.category, itemId: item.id,
-        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 8 ? slot.qty : 1),
+        qty: item.no_purchase === true ? 1 : (slot.qty === undefined ? 1 : slot.qty),
         owned: item.no_purchase === true || slot.owned === true
       };
       if (role) cleanSlot.role = role;
