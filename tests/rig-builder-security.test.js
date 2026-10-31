@@ -108,10 +108,10 @@ test("auto-fix purchases extra cable without inventing owned inventory", () => {
   assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
   let cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
   assert.equal(cables.length, 2, "a new purchase must be a separate slot");
-  assert.deepEqual(cables.map(s => [s.qty, s.owned]), [[1, true], [1, false]]);
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [1, false]]);
   assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
   cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
-  assert.deepEqual(cables.map(s => [s.qty, s.owned]), [[1, true], [2, false]],
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [2, false]],
     "further purchases increment only the unowned cable pack");
   assert.equal(api.addRequiredCableToRig("pioneer-ddj-flx4"), false,
     "only catalogued cables can be auto-purchased");
