@@ -1221,6 +1221,8 @@ table td strong { color: var(--text); }
 .qp, .quick-picks, .rank-1, .product-hero, .intro, .headphone-buy-grid-section { display: block; }
 
 /* ---------- Rig map: how the parts of a setup connect ---------- */
+/* Connector strokes remain inside their own cards: a visible grid-gap stroke
+   otherwise enlarges each li scrollWidth and fails the real Chromium spill gate. */
 .rig-map {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem;
   margin: 1.4rem 0 1.8rem; padding: 0; list-style: none; counter-reset: rig;
@@ -1237,7 +1239,7 @@ table td strong { color: var(--text); }
   font-family: var(--display); font-size: .78rem; font-weight: 600; letter-spacing: .1em;
 }
 .rig-map li::after {
-  content: ""; position: absolute; top: 50%; right: -.42rem; width: .5rem; height: 1px;
+  content: ""; position: absolute; top: 50%; right: 0; width: .45rem; height: 1px;
   background: var(--line-strong);
 }
 .rig-map li:last-child::after { display: none; }
@@ -4423,18 +4425,20 @@ tr.rs-item { display: table-row !important; }
 }
 
 /* A product-specific routing sketch fills the visual gap where no verified DJ-707M photo is available. */
+/* Input/output connector strokes must stay inside their respective label boxes;
+   protruding pseudo-elements cause real scrollWidth spill at desktop widths. */
 .product-section-card[id^="pick-"] { scroll-margin-top: 84px; }
 .product-section-card--workflow { margin:1.15rem 0 1.55rem; padding:clamp(1rem,2.1vw,1.35rem); border:1px solid rgba(56,189,248,.2); border-radius:var(--r-md); background:radial-gradient(650px 220px at 100% 0,rgba(56,189,248,.07),transparent 75%),linear-gradient(140deg,rgba(124,58,237,.055),transparent 48%),#0d0e15; }
 .product-section-card--workflow > h2:first-child { margin-top:0; }
 .dj707-routing { display:grid; grid-template-columns:minmax(0,.7fr) minmax(0,1.2fr) minmax(0,.75fr); align-items:center; gap:.65rem; margin:1.1rem 0 1rem; padding:1rem; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(7,9,15,.55); }
 .dj707-inputs,.dj707-outputs { display:grid; gap:.4rem; min-width:0; }
 .dj707-inputs span,.dj707-outputs span { position:relative; display:flex; align-items:center; min-width:0; overflow-wrap:anywhere; min-height:36px; padding:.45rem .55rem; border:1px solid rgba(255,255,255,.09); border-radius:7px; background:rgba(255,255,255,.025); color:#b7bbca; font-size:.68rem; line-height:1.35; }
-.dj707-inputs span::after { content:""; position:absolute; right:-.7rem; width:.65rem; border-top:1px solid rgba(56,189,248,.52); }
+.dj707-inputs span::after { content:""; position:absolute; right:0; width:.5rem; border-top:1px solid rgba(56,189,248,.52); }
 .dj707-controller { display:grid; justify-items:center; gap:.3rem; min-height:98px; padding:.8rem; border:1px solid rgba(139,92,246,.3); border-radius:9px; background:linear-gradient(140deg,rgba(124,58,237,.14),rgba(56,189,248,.045)); text-align:center; }
 .dj707-controller small { color:#8bdcf1; font-size:.58rem; font-weight:750; letter-spacing:.12em; }
 .dj707-controller strong { color:#f0edf9; font:650 1rem/1.25 var(--display); }
 .dj707-controller span { color:#a2a7ba; font-size:.64rem; }
-.dj707-outputs span::before { content:""; position:absolute; left:-.7rem; width:.65rem; border-top:1px solid rgba(56,189,248,.52); }
+.dj707-outputs span::before { content:""; position:absolute; left:0; width:.5rem; border-top:1px solid rgba(56,189,248,.52); }
 .dj707-routing figcaption { grid-column:1/-1; margin-top:.15rem; color:#8f95a8; font-size:.64rem; line-height:1.45; }
 @media(max-width:650px) {
   .product-section-card--workflow { padding:.9rem; }
