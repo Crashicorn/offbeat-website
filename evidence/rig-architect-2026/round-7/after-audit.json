@@ -1,0 +1,50 @@
+{
+  "390": {
+    "first": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": [],
+      "compat": "Planning assumptions — verify host",
+      "warningCount": 0
+    },
+    "expanded": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": []
+    },
+    "selected": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": [],
+      "compat": "⚠️ Connection Verification Needed",
+      "warningCount": 1
+    }
+  },
+  "1280": {
+    "first": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": [],
+      "compat": "Planning assumptions — verify host",
+      "warningCount": 0
+    },
+    "expanded": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": []
+    },
+    "selected": {
+      "pageOverflowX": 0,
+      "beyondViewport": 0,
+      "spillVisible": 0,
+      "spillTop": [],
+      "compat": "⚠️ Connection Verification Needed",
+      "warningCount": 1
+    }
+  }
+}

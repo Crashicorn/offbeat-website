@@ -1513,3 +1513,12 @@
   .visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
   .page-rig .picker-card-body .rig-photo-credit { grid-column:1 / -1; }
 }
+
+/* Compact secondary gear must fit beside the separate ownership control. */
+.visual-headphones .visual-pick, .visual-host .visual-pick { flex-wrap:wrap; min-width:0; }
+.visual-headphones .visual-pick strong, .visual-host .visual-pick strong { flex:1 1 5rem; min-width:0; overflow-wrap:anywhere; }
+.visual-headphones .visual-pick > span:last-child, .visual-host .visual-pick > span:last-child { min-width:0; overflow-wrap:anywhere; }
+/* Put photo credit below the controls rather than squeezing the pick target. */
+.visual-headphones, .visual-host { flex-wrap:wrap; }
+.visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
+.page-rig .compat-status-tag.tag--neutral { color:#c5d6e7; background:#263748; border-color:#617a90; }

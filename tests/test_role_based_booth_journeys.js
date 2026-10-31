@@ -18,12 +18,20 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
       const consent = await page.$('.ob-consent-btn:nth-child(2)');
       if (consent) await consent.click();
     };
+    // Opening a section must not accidentally collapse an already-open default view.
+    const ensureOpen = async selector => {
+      if (!await page.$eval(selector, el => el.open)) {
+        await page.click(selector + ' > summary');
+      }
+    };
     const choose = async (selector, id) => {
       await page.click(selector);
       await page.waitForSelector(`[data-action="select-item"][data-item-id="${id}"]`, {visible:true});
-      await page.click(`[data-action="select-item"][data-item-id="${id}"]`);
+      await page.click(`button[data-action="select-item"][data-item-id="${id}"]`);
     };
     await visit('bedroom-starter');
+    assert.equal(await page.$eval('#rig-shopping', el => el.open), true);
+    assert.equal(await page.$eval('#rig-connections', el => el.open), true);
     const bedroom = await page.evaluate(() => ({
       mon: window.__rigStudio.item('pioneer-dm40d'), routes: window.__rigStudio.connections(),
       pa: document.querySelector('.visual-pa').textContent,
@@ -45,7 +53,7 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
     assert.equal(hs.connection.topology, 'independent'); assert.equal(hs.speaker_units, 2);
     assert.match(hs.connection.note, /own signal cable.*own power socket/);
     // Count a second PA via the actual shopping quantity stepper.
-    await page.click('#rig-shopping > summary');
+    await ensureOpen('#rig-shopping');
     const paSlot = await page.$eval('.visual-pa .visual-own', el => el.dataset.slotId);
     await page.click(`#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="${paSlot}"]`);
     assert.equal(await page.$$eval('.visual-pa .visual-images img', a => a.length), 2);
@@ -60,7 +68,7 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
     assert.equal(routes[0].conflict, false); assert.equal(routes[1].conflict, false);
     await page.click('.visual-route-link');
     assert.equal(await page.$eval('#rig-connections', el => el.open), true);
-    assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
+    assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'route details must not collapse Shopping');
     // A missing cable must never animate as an established route.
     const monitor = await page.$eval('.cable-route-card--monitors', el => ({text:el.textContent, dots:el.querySelectorAll('.signal-dot').length}));
     if (/Cable needed/.test(monitor.text)) assert.equal(monitor.dots, 0);
@@ -79,18 +87,18 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
     await visit('club-ready');
     await choose('.visual-pa .visual-pick', 'jbl-eon-715');
     await page.click('.visual-monitor .visual-own');
-    await page.click('#rig-shopping > summary');
+    await ensureOpen('#rig-shopping');
     const newPaSlot = await page.$eval('.visual-pa .visual-own', el => el.dataset.slotId);
     await page.click(`#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="${newPaSlot}"]`);
     const initial = await page.evaluate(() => ({state:window.__rigStudio.state(), cost:window.__rigStudio.cost(), url:window.__rigStudio.shareUrl()}));
     assert.equal(initial.state.items.find(s => s.itemId === 'yamaha-hs5').owned, true);
     assert.equal(initial.state.items.find(s => s.itemId === 'jbl-eon-715').qty, 2);
     assert.ok(initial.cost.ownedSavings >= 398);
-    await page.click('#rig-manage > summary');
+    await ensureOpen('#rig-manage');
     await page.click('[data-action="save-rig"]');
     assert.match(await page.evaluate(() => localStorage.getItem('offbeat.rigs.saved')), /Two-zone test/);
     await visit('bedroom-starter');
-    await page.click('#rig-manage > summary');
+    await ensureOpen('#rig-manage');
     await page.click('[data-action="load-saved-rig"][data-index="0"]');
     assert.equal(await page.evaluate(() => window.__rigStudio.state().items.find(s => s.itemId === 'jbl-eon-715').qty), 2, 'saved build reloads its quantity');
     assert.equal(await page.evaluate(() => window.__rigStudio.cost().buyTotal), initial.cost.buyTotal);
