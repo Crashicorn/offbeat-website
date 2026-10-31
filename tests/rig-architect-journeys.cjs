@@ -18,6 +18,18 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       await page.screenshot({path:`evidence/rig-architect-2026/bedroom-${width}.png`});
       assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'cables').level), 'ok',
         'bedroom pair has a genuinely included cable');
+      // A partially invalid shared rig must not quietly render an underpriced
+      // subset or substitute a local rig while claiming it was restored.
+      const incompleteShare = {name:'Missing gear in shared build',items:[
+        {slotId:'ctrl',category:'controllers',itemId:'pioneer-ddj-flx4',qty:1,owned:false},
+        {slotId:'retired',category:'headphones',itemId:'removed-headphones',qty:1,owned:false}
+      ]};
+      const incompleteEncoded = Buffer.from(encodeURIComponent(JSON.stringify(incompleteShare))).toString('base64');
+      await page.goto(base+'/build-your-dj-setup.html?rig='+encodeURIComponent(incompleteEncoded), {waitUntil:'networkidle0'});
+      const rejection = await page.$eval('[role="alert"]', el => el.textContent);
+      assert.match(rejection, /Shared DJ setup could not be restored/);
+      assert.match(rejection, /NOT the shared shopping list/);
+      assert.doesNotMatch(await page.$eval('.rig-main-title', el => el.textContent), /Missing gear in shared build/);
       await page.goto(base+'/build-your-dj-setup.html?preset=mobile-pro', {waitUntil:'networkidle0'});
       await page.click('.visual-monitor .visual-pick');
       await page.waitForSelector('[data-action="select-item"][data-item-id="yamaha-hs5"]', {visible:true});
