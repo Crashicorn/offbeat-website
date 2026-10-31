@@ -504,11 +504,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     // A real buyer selecting DDJ-GRV6 with a phone must see the supported
     // two-deck path and its limits, not a false "incompatible" verdict.
     // The same mobile host remains blocked for a controller not qualified here.
-    function mobileRigLink(controllerId) {
+    function mobileRigLink(controllerId, hostId = "existing-mobile-device") {
       const state = { name: "Mobile host check", items: [
         { slotId: "ctrl", category: "controllers", itemId: controllerId, qty: 1, owned: false },
         { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
-        { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+        { slotId: "host", category: "laptops", itemId: hostId, qty: 1, owned: true }
       ] };
       return "?rig=" + encodeURIComponent(Buffer.from(
         encodeURIComponent(JSON.stringify(state)), "binary").toString("base64"));
@@ -551,6 +551,29 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.match(blocked, /Mobile Host Not Verified for This Controller/);
     assert.deepEqual(mobileUnsupported.errors, [], "unverified mobile host UI must not throw");
     await mobileUnsupported.context.close();
+    // The older preset and the newer Studio builder use different catalog
+    // IDs for the same already-owned phone. Neither may bypass compatibility
+    // checks or masquerade as a fully verified computer connection.
+    for (const hostId of ["existing-mobile-device", "existing-mobile-app-device"]) {
+      for (const controllerId of ["pioneer-ddj-flx2", "alphatheta-ddj-grv6",
+        "numark-mixtrack-go", "numark-party-mix-3"]) {
+        const mobile = await visit(browser, 390, mobileRigLink(controllerId, hostId));
+        const checks = await mobile.page.evaluate(() => window.__rigStudio.checks());
+        const host = checks.find(check => check.key === "host");
+        assert.equal(host.level, "warn", hostId + " + " + controllerId + " must require mobile setup verification");
+        assert.match(host.note, /iOS\/Android|iOS\/Android devices|compatible iOS/i);
+        const builderAlerts = await mobile.page.$eval(".compat-items-grid", el => el.textContent);
+        assert.doesNotMatch(builderAlerts, /Mobile Host Not Verified for This Controller/);
+        assert.deepEqual(mobile.errors, [], "cross-planner mobile host browser errors");
+        await mobile.context.close();
+      }
+      const unsupported = await visit(browser, 390, mobileRigLink("pioneer-ddj-flx10", hostId));
+      const host = await unsupported.page.evaluate(() => window.__rigStudio.checks().find(c => c.key === "host"));
+      assert.equal(host.level, "bad", "unverified phone route must fail closed in Studio");
+      const alerts = await unsupported.page.$eval(".compat-items-grid", el => el.textContent);
+      assert.match(alerts, /Mobile Host Not Verified for This Controller/);
+      await unsupported.context.close();
+    }
     console.log("PASS: GRV6 supported two-deck mobile journey; unverified controller blocked");
 
     const payload = {
