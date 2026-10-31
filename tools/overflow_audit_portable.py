@@ -108,6 +108,8 @@ def main():
     ap.add_argument("--pages", default=None, help="file with one page path per line")
     ap.add_argument("--out", default="./overflow-audit-out")
     ap.add_argument("--widths", default="1280x800,390x844")
+    ap.add_argument("--browser-executable", default=None,
+                    help="preinstalled Chrome/Chromium executable for CI runners")
     ap.add_argument("--strict", action="store_true",
                     help="also fail on elements beyond viewport (production itself has 1 such page)")
     ap.add_argument("--max-pages", type=int, default=0)
@@ -128,7 +130,7 @@ def main():
     results = {}
     fails = []
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
+        browser = pw.chromium.launch(executable_path=a.browser_executable) if a.browser_executable else pw.chromium.launch()
         for w, h in widths:
             ctx = browser.new_context(viewport={"width": w, "height": h}, device_scale_factor=1)
             page = ctx.new_page()

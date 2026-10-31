@@ -165,8 +165,9 @@ jobs:
           python-version: '3.12'
       - name: Install portable audit dependencies
         run: |
+          # Reuse the runner's installed Chrome; Playwright-managed Chromium
+          # is unavailable on the current Ubuntu 26.04 hosted image.
           python -m pip install --disable-pip-version-check playwright==1.55.0
-          python -m playwright install --with-deps chromium
       - name: Audit all checked-out HTML pages at 1280 and 390 (report only)
         id: overflow
         continue-on-error: true
@@ -198,7 +199,10 @@ jobs:
             echo 2 > overflow-audit-out/exit-code.txt
             exit 2
           fi
+          CHROME_BIN="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -x "$CHROME_BIN" || exit 2
           python -u tools/overflow_audit_portable.py \
+            --browser-executable "$CHROME_BIN" \
             --base http://127.0.0.1:8099/ \
             --pages overflow-audit-out/pages.txt \
             --widths 1280x800,390x844 \
