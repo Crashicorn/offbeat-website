@@ -16,6 +16,8 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       if (await page.$('.ob-consent-btn:nth-child(2)')) await page.click('.ob-consent-btn:nth-child(2)');
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth), 0);
       await page.screenshot({path:`evidence/rig-architect-2026/bedroom-${width}.png`});
+      assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'cables').level), 'ok',
+        'bedroom pair has a genuinely included cable');
       await page.goto(base+'/build-your-dj-setup.html?preset=mobile-pro', {waitUntil:'networkidle0'});
       await page.click('.visual-monitor .visual-pick');
       await page.waitForSelector('[data-action="select-item"][data-item-id="yamaha-hs5"]', {visible:true});
@@ -32,6 +34,10 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       await page.click('.visual-controller .visual-pick');
       await page.click('[data-action="select-item"][data-item-id="pioneer-ddj-flx4"]');
       assert.match(await page.$eval('.visual-route', e=>e.textContent), /limitation/i);
+      assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'cables').level), 'warn',
+        'FLX4 dual-zone output conflict must never receive a green cable verdict');
+      assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'host').level), 'warn',
+        'a laptop-dependent FLX4 with standalone USB-only host is not connected');
       await page.$eval('#interactive-booth-stage', el=>el.scrollIntoView());
       await (await page.$('#interactive-booth-stage')).screenshot({path:`evidence/rig-architect-2026/mobile-rig-${width}.png`});
       await page.click('.visual-route-link');
@@ -58,11 +64,21 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       const encoded = Buffer.from(encodeURIComponent(JSON.stringify(state))).toString('base64');
       await page.goto(base+'/build-your-dj-setup.html?rig='+encodeURIComponent(encoded), {waitUntil:'networkidle0'});
       assert.equal((await page.evaluate(()=>__rigStudio.connections()))[0].units, 2);
+      assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'cables').level), 'warn',
+        'three PA cabinets with one cable pack cannot be called cable-ready');
+      assert.match(await page.$eval('#rs-compatibility', e => e.textContent),
+        /Speaker Cable Quantity or Routing Needs Review/,
+        'visible compatibility verdict must agree with the booth cable deficit');
       assert.match(await page.$eval('.visual-pa',e=>e.textContent), /3 cabinets.*Cable needed|Cable needed[\s\S]*3 cabinets/);
       await page.click('#rig-shopping > summary');
       const cableSlot = await page.evaluate(()=>__rigStudio.state().items.find(s=>s.category==='cables').slotId);
       await page.click(`[data-action="step-qty"][data-slot-id="${cableSlot}"][data-step="1"]`);
       assert.match(await page.$eval('.visual-pa',e=>e.textContent), /Cable in plan/);
+      assert.equal(await page.evaluate(() => __rigStudio.checks().find(c => c.key === 'cables').level), 'ok',
+        'second cable pack covers both planned PA feeds');
+      assert.match(await page.$eval('#rs-compatibility', e => e.textContent),
+        /Listed Audio Connection Match/,
+        'compatibility verdict recovers only after sufficient cable quantity');
       await page.click('.visual-pa .visual-pick');
       await page.type('[data-modal-search]', 'no-such-model-123');
       assert.match(await page.$eval('.picker-empty',e=>e.textContent), /No components/);
