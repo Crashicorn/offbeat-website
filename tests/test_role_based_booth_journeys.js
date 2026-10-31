@@ -105,7 +105,7 @@ const CHROME = process.env.CHROME_BIN || '/usr/local/bin/chromium';
     assert.equal(restored.state.items.find(s => s.itemId === 'yamaha-hs5').owned, true);
     assert.equal(restored.state.items.find(s => s.itemId === 'jbl-eon-715').qty, 2);
     assert.equal(restored.cost.buyTotal, initial.cost.buyTotal);
-    assert.equal(await page.$eval('.visual-pa .visual-images img', a => a.length), 2);
+    assert.equal(await page.$$eval('.visual-pa .visual-images img', a => a.length), 2);
     // A buyer can choose five PA cabinets. Quantity, purchasing total and the
     // generated share URL must agree after reload, not silently reset to one.
     await ensureOpen('#rig-shopping');
