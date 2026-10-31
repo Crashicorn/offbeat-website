@@ -51,7 +51,8 @@ function harness(storageDisabled, withGear = false) {
     presetPriceBadge: presetPriceBadge,
     recommendNextUpgrade: recommendNextUpgrade,
     renderModularTableRow: renderModularTableRow,
-    renderCompareGridContent: renderCompareGridContent
+    renderCompareGridContent: renderCompareGridContent,
+    addRequiredCableToRig: addRequiredCableToRig
   };
 ` + hook);
   const sandbox = { window, document, URLSearchParams, console, atob, btoa };
@@ -86,6 +87,54 @@ test("shopping quantities through eight survive shared-state sanitation without 
     const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
     assert.equal(clean.items[0].qty, 1, "invalid quantity " + qty + " must fail closed");
   }
+});
+
+test("auto-fix purchases extra cable without inventing owned inventory", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  assert.equal(api.normalizeRigState({
+    name: "Owned one XLR pack",
+    items: [
+      slot(),
+      { slotId: "owned-xlr", category: "cables", itemId: "cable-xlr-xlr", qty: 1, owned: true }
+    ]
+  }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  let cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.equal(cables.length, 2, "a new purchase must be a separate slot");
+  assert.deepEqual(cables.map(s => [s.qty, s.owned]), [[1, true], [1, false]]);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.deepEqual(cables.map(s => [s.qty, s.owned]), [[1, true], [2, false]],
+    "further purchases increment only the unowned cable pack");
+  assert.equal(api.addRequiredCableToRig("pioneer-ddj-flx4"), false,
+    "only catalogued cables can be auto-purchased");
+});
+
+test("auto-fix fails closed at the 24-slot limit instead of faking a cable purchase", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  const items = [slot()];
+  for (let i = 0; i < 23; i++) {
+    items.push({ slotId: "owned-xlr-" + i, category: "cables",
+      itemId: "cable-xlr-xlr", qty: 8, owned: true });
+  }
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), false);
+  assert.equal(api.getRig().items.length, 24);
+  assert.ok(api.getRig().items.every(s => s.owned || s.category !== "cables"));
 });
 
 test("hostile shared identifiers cannot become HTML attributes", () => {
