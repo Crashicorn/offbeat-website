@@ -252,7 +252,7 @@
       }
       var cleanSlot = {
         slotId: id, category: item.category, itemId: item.id,
-        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1),
+        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 8 ? slot.qty : 1),
         owned: item.no_purchase === true || slot.owned === true
       };
       if (role) cleanSlot.role = role;
@@ -1349,7 +1349,9 @@
     var zzStatus = "unknown";
     var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
 
-    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model));
+    // Keep the configured Associates attribution on every planner shopping handoff.
+    // These are model searches, never claims of an exact Amazon product listing.
+    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&amp;tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
 
@@ -2112,7 +2114,7 @@
         var sToStep = currentRig.items.find(function (s) { return s.slotId === stepSlotId; });
         if (sToStep) {
           var newQ = (sToStep.qty || 1) + stepVal;
-          if (newQ >= 1 && newQ <= 4) {
+          if (newQ >= 1 && newQ <= 8) {
             sToStep.qty = newQ;
             playClickSfx("toggle");
             saveActiveState();
@@ -2168,7 +2170,7 @@
           // If this cable is already in the rig, but a secondary line needs an additional lead, increment qty
           var existingCableSlot = currentRig.items.find(function (s) { return s.itemId === cableId; });
           if (existingCableSlot) {
-            existingCableSlot.qty = (existingCableSlot.qty || 1) + 1;
+            existingCableSlot.qty = Math.min(8, (existingCableSlot.qty || 1) + 1);
           } else {
             var newSlotId = "auto-cable-" + Date.now();
             var suffix = 0;
