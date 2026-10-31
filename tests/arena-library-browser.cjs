@@ -2,6 +2,8 @@
 // Uses a local HTTP server and installed Chromium; never deploys or changes content.
 "use strict";
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const puppeteer = require("puppeteer-core");
 const base = process.env.RIG_BASE_URL || "http://127.0.0.1:8099";
 const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
@@ -17,6 +19,39 @@ function visibleCount(page) {
   return page.$$eval(".library-item:not([hidden])", els => els.length);
 }
 (async () => {
+  // Audit the documented priority shortlist and the contextual Commons additions.
+  // These are not catalog product photos; exact-model catalog media is checked separately.
+  const root = path.join(__dirname, "..");
+  const shortlistDoc = fs.readFileSync(path.join(root, "evidence/hero-recovery-20261030/README.md"), "utf8");
+  const topPages = [...shortlistDoc.matchAll(/^\| `([^`]+\.html)` \|/gm)].map(m => m[1]);
+  assert.equal(topPages.length, 30, "priority shortlist should contain 30 pages");
+  const offenders = ["software-desk.jpg", "production-hero.jpg", "controller-macro.jpg",
+    "gear-flatlay.jpg", "hero-breakdown.jpg", "booth-wide.jpg"];
+  const topCounts = Object.fromEntries(offenders.map(file => [file, 0]));
+  for (const name of topPages) {
+    const html = fs.readFileSync(path.join(root, name), "utf8");
+    const hero = html.match(/<figure class="hero-figure">[\s\S]*?<\/figure>/);
+    assert.ok(hero, name + " needs a hero figure");
+    for (const file of offenders) if (hero[0].includes(file)) topCounts[file]++;
+  }
+  for (const [file, count] of Object.entries(topCounts))
+    assert.ok(count <= 2, file + " exceeds the top-30 hero cap: " + count);
+  const photos = JSON.parse(fs.readFileSync(path.join(root, "evidence/commons-heroes-20261030/commons-photo-manifest.json"), "utf8"));
+  const htmlFiles = fs.readdirSync(root).filter(name => name.endsWith(".html"));
+  for (const photo of photos) {
+    for (const key of ["src", "alt", "credit", "source", "license", "license_url", "modification"])
+      assert.ok(photo[key], "Commons photo missing " + key);
+    assert.match(photo.source, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+    assert.match(photo.license_url, /^https:\/\/creativecommons\.org\/licenses\/by(?:-sa)?\//);
+    assert.ok(fs.existsSync(path.join(root, photo.src)), photo.src + " missing");
+    const uses = htmlFiles.filter(name => fs.readFileSync(path.join(root, name), "utf8").includes(photo.src));
+    assert.ok(uses.length <= 2, photo.src + " exceeds two pages sitewide");
+    assert.deepEqual(uses.sort(), [...photo.pages].sort(), photo.src + " usage manifest drift");
+    for (const name of photo.pages) {
+      const text = fs.readFileSync(path.join(root, name), "utf8");
+      assert.ok(text.includes(photo.license_url), name + " missing license link");
+    }
+  }
   const browser = await puppeteer.launch({
     executablePath: chrome, headless: true,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
@@ -53,7 +88,10 @@ function visibleCount(page) {
         "pioneer-cdj-3000-review.html": "MxRKpTI5dqo",
         "denon-prime-go-review.html": "dMQb0GShVaQ",
         "denon-sc6000-review.html": "T84COjxlAOo",
-        "numark-scratch-review.html": "95hmwMn6pFQ"
+        "numark-scratch-review.html": "95hmwMn6pFQ",
+        "rane-one-review.html": "F85xClO8MCA",
+        "ableton-live-review.html": "xBk_GVgfm1Y",
+        "fl-studio-review.html": "IvJ1EAs8Sxw"
       };
       for (const [path, id] of Object.entries(videos)) {
         const youtubeRequests = [];

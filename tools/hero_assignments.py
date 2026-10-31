@@ -130,6 +130,258 @@ CAPTIONS = {
     ),
 }
 
+# Wikimedia Commons additions, with matching intrinsic dimensions and attribution.
+ALT.update({'commons-ddj-sx-reusink.jpg': 'A Pioneer DDJ-SX controller, laptop and keyboard in a DJ setup',
+ 'commons-denon-workstation-mattig.jpg': 'A Denon DN-HC4500 controller, headphones and computer peripherals on '
+                                         'a desk',
+ 'commons-technics-dj-station-francis.jpg': 'Two Technics SL-1200 MkII turntables and a RANE mixer',
+ 'commons-behringer-dj-mixer-pj.jpg': 'Close-up of a Behringer DX626 DJ mixer',
+ 'commons-wwoz-turntables-infrogmation.jpg': 'Turntables in the WWOZ radio studio in New Orleans',
+ 'commons-live-mixer-fotokannan.jpg': 'An Allen &amp; Heath ZED-428 sound mixing console',
+ 'commons-asta-dj-booth-noobx.jpg': 'A DJ working in the AStA club DJ booth under purple lights',
+ 'commons-cdj350-djm400-davidj.jpg': 'A pair of Pioneer CDJ-350 players and a DJM-400 mixer'})
+DIMS.update({'commons-ddj-sx-reusink.jpg': (3264, 2448),
+ 'commons-denon-workstation-mattig.jpg': (960, 640),
+ 'commons-technics-dj-station-francis.jpg': (960, 552),
+ 'commons-behringer-dj-mixer-pj.jpg': (960, 637),
+ 'commons-wwoz-turntables-infrogmation.jpg': (960, 720),
+ 'commons-live-mixer-fotokannan.jpg': (1024, 680),
+ 'commons-asta-dj-booth-noobx.jpg': (960, 720),
+ 'commons-cdj350-djm400-davidj.jpg': (960, 720)})
+ASSIGN.update({'dj-controllers-hub.html': 'commons-ddj-sx-reusink.jpg',
+ 'controller-software-compatibility-matrix.html': 'commons-ddj-sx-reusink.jpg',
+ 'best-dj-controllers-under-200.html': 'commons-denon-workstation-mattig.jpg',
+ 'best-dj-laptop-2026.html': 'commons-denon-workstation-mattig.jpg',
+ 'best-dj-turntables-2026.html': 'commons-technics-dj-station-francis.jpg',
+ 'best-dj-software-vinyl-scratch.html': 'commons-technics-dj-station-francis.jpg',
+ 'best-dj-mixers-beginners.html': 'commons-behringer-dj-mixer-pj.jpg',
+ 'how-to-record-dj-mix.html': 'commons-behringer-dj-mixer-pj.jpg',
+ 'how-to-beatmatch-manually.html': 'commons-wwoz-turntables-infrogmation.jpg',
+ 'dj-music-stores.html': 'commons-wwoz-turntables-infrogmation.jpg',
+ 'how-to-connect-dj-controller-to-speakers.html': 'commons-live-mixer-fotokannan.jpg',
+ 'audio-interface-guide-djs.html': 'commons-live-mixer-fotokannan.jpg',
+ 'beginner-dj-hub.html': 'commons-asta-dj-booth-noobx.jpg',
+ 'best-standalone-dj-systems.html': 'commons-asta-dj-booth-noobx.jpg',
+ 'dj-gear-hub.html': 'commons-cdj350-djm400-davidj.jpg',
+ 'dj-equipment-beginners.html': 'commons-cdj350-djm400-davidj.jpg'})
+CAPTIONS.update({'dj-controllers-hub.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of a '
+                             'specific product.</figcaption>',
+                             '<figcaption class="img-attribution">Photo: Jan-Willem Reusink, <a '
+                             'href="https://commons.wikimedia.org/wiki/File:Pioneer_DDJ-SX,_2x_MacBook_Pro,_and_Arturia_Minilab_(2015-05-22_16.00.21_by_Jan-Willem_Reusin).jpg" '
+                             'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                             'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                             'rel="noopener">CC BY 2.0</a>. Original file; cropped for display. A 2015 DJ '
+                             'setup, shown for context; not a recommendation of the pictured '
+                             'equipment.</figcaption>'),
+ 'controller-software-compatibility-matrix.html': ('<figcaption>Offbeat editorial photography. Illustrative '
+                                                   'image, not a photo of the specific product.</figcaption>',
+                                                   '<figcaption class="img-attribution">Photo: Jan-Willem '
+                                                   'Reusink, <a '
+                                                   'href="https://commons.wikimedia.org/wiki/File:Pioneer_DDJ-SX,_2x_MacBook_Pro,_and_Arturia_Minilab_(2015-05-22_16.00.21_by_Jan-Willem_Reusin).jpg" '
+                                                   'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                                   'href="https://creativecommons.org/licenses/by/2.0/" '
+                                                   'target="_blank" rel="noopener">CC BY 2.0</a>. Original '
+                                                   'file; cropped for display. A 2015 DJ setup, shown for '
+                                                   'context; not a recommendation of the pictured '
+                                                   'equipment.</figcaption>'),
+ 'best-dj-controllers-under-200.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                        'photo of the specific product.</figcaption>',
+                                        '<figcaption class="img-attribution">Photo: Thiemo Mättig, <a '
+                                        'href="https://commons.wikimedia.org/wiki/File:DENON_DN-HC4500_DJ_Controller.jpg" '
+                                        'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                        'href="https://creativecommons.org/licenses/by-sa/3.0/de/" '
+                                        'target="_blank" rel="noopener">CC BY-SA 3.0 DE</a>. Resized to 960 × '
+                                        '640 and cropped for display. An older Denon workstation, shown for '
+                                        'context, not a current recommended model.</figcaption>'),
+ 'best-dj-laptop-2026.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of '
+                              'the specific product.</figcaption>',
+                              '<figcaption class="img-attribution">Photo: Thiemo Mättig, <a '
+                              'href="https://commons.wikimedia.org/wiki/File:DENON_DN-HC4500_DJ_Controller.jpg" '
+                              'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                              'href="https://creativecommons.org/licenses/by-sa/3.0/de/" target="_blank" '
+                              'rel="noopener">CC BY-SA 3.0 DE</a>. Resized to 960 × 640 and cropped for '
+                              'display. An older Denon workstation, shown for context, not a current '
+                              'recommended model.</figcaption>'),
+ 'best-dj-turntables-2026.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo '
+                                  'of the specific product.</figcaption>',
+                                  '<figcaption class="img-attribution">Photo: © Glenn Francis, '
+                                  'www.PacificProDigital.com; edit by Pittigrilli, <a '
+                                  'href="https://commons.wikimedia.org/wiki/File:Two_Technics_SL-1200_MkII_and_a_Serato_DJ_Mixer,_Vintage_DJ_Station_2019_by_Glenn_Francis_(edited).jpg" '
+                                  'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                  'href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" '
+                                  'rel="noopener">CC BY-SA 4.0</a>. Background removed and cropped by '
+                                  'Pittigrilli; resized to 960 × 552 and cropped for display. Vintage Technics '
+                                  'SL-1200 MkII turntables and a RANE mixer; not a photograph of the specific '
+                                  'products compared.</figcaption>'),
+ 'best-dj-software-vinyl-scratch.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                         'photo of the specific product.</figcaption>',
+                                         '<figcaption class="img-attribution">Photo: © Glenn Francis, '
+                                         'www.PacificProDigital.com; edit by Pittigrilli, <a '
+                                         'href="https://commons.wikimedia.org/wiki/File:Two_Technics_SL-1200_MkII_and_a_Serato_DJ_Mixer,_Vintage_DJ_Station_2019_by_Glenn_Francis_(edited).jpg" '
+                                         'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                         'href="https://creativecommons.org/licenses/by-sa/4.0/" '
+                                         'target="_blank" rel="noopener">CC BY-SA 4.0</a>. Background removed '
+                                         'and cropped by Pittigrilli; resized to 960 × 552 and cropped for '
+                                         'display. Vintage Technics SL-1200 MkII turntables and a RANE mixer; '
+                                         'not a photograph of the specific products compared.</figcaption>'),
+ 'best-dj-mixers-beginners.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo '
+                                   'of the specific product.</figcaption>',
+                                   '<figcaption class="img-attribution">Photo: PJ, <a '
+                                   'href="https://commons.wikimedia.org/wiki/File:Behringer_dj_mixer.jpg" '
+                                   'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                   'href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" '
+                                   'rel="noopener">CC BY-SA 3.0</a>. Resized to 960 × 637 and cropped for '
+                                   'display. A Behringer DX626, shown for context; not a photograph of the '
+                                   'products compared.</figcaption>'),
+ 'how-to-record-dj-mix.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of '
+                               'the specific product.</figcaption>',
+                               '<figcaption class="img-attribution">Photo: PJ, <a '
+                               'href="https://commons.wikimedia.org/wiki/File:Behringer_dj_mixer.jpg" '
+                               'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                               'href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" '
+                               'rel="noopener">CC BY-SA 3.0</a>. Resized to 960 × 637 and cropped for display. '
+                               'A Behringer DX626, shown for context; not a photograph of the products '
+                               'compared.</figcaption>'),
+ 'how-to-beatmatch-manually.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                    'photo of the specific product.</figcaption>',
+                                    '<figcaption class="img-attribution">Photo: Infrogmation of New Orleans, '
+                                    '<a '
+                                    'href="https://commons.wikimedia.org/wiki/File:Radio_WWOZ_Studios_New_Orleans_June_2021_-_Turntables.jpg" '
+                                    'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                    'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                                    'rel="noopener">CC BY 2.0</a>. Resized to 960 × 720 and cropped for '
+                                    'display. Turntables at WWOZ radio, New Orleans, shown for '
+                                    'context.</figcaption>'),
+ 'dj-music-stores.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of the '
+                          'specific product.</figcaption>',
+                          '<figcaption class="img-attribution">Photo: Infrogmation of New Orleans, <a '
+                          'href="https://commons.wikimedia.org/wiki/File:Radio_WWOZ_Studios_New_Orleans_June_2021_-_Turntables.jpg" '
+                          'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                          'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                          'rel="noopener">CC BY 2.0</a>. Resized to 960 × 720 and cropped for display. '
+                          'Turntables at WWOZ radio, New Orleans, shown for context.</figcaption>'),
+ 'how-to-connect-dj-controller-to-speakers.html': ('<figcaption>Offbeat editorial photography. Illustrative '
+                                                   'image, not a photo of the specific product.</figcaption>',
+                                                   '<figcaption class="img-attribution">Photo: '
+                                                   'Kannanshanmugam, shanmugamstudio, Kollam, <a '
+                                                   'href="https://commons.wikimedia.org/wiki/File:Sound_mixer_2.JPG" '
+                                                   'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                                   'href="https://creativecommons.org/licenses/by/3.0/" '
+                                                   'target="_blank" rel="noopener">CC BY 3.0</a>. Original '
+                                                   '1024 × 680 file; cropped for display. An Allen &amp; Heath '
+                                                   'ZED-428 live-sound mixer, shown for context.</figcaption>'),
+ 'audio-interface-guide-djs.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                    'photo of the specific product.</figcaption>',
+                                    '<figcaption class="img-attribution">Photo: Kannanshanmugam, '
+                                    'shanmugamstudio, Kollam, <a '
+                                    'href="https://commons.wikimedia.org/wiki/File:Sound_mixer_2.JPG" '
+                                    'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                    'href="https://creativecommons.org/licenses/by/3.0/" target="_blank" '
+                                    'rel="noopener">CC BY 3.0</a>. Original 1024 × 680 file; cropped for '
+                                    'display. An Allen &amp; Heath ZED-428 live-sound mixer, shown for '
+                                    'context.</figcaption>'),
+ 'beginner-dj-hub.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of a '
+                          'specific product.</figcaption>',
+                          '<figcaption class="img-attribution">Photo: NoobX, <a '
+                          'href="https://commons.wikimedia.org/wiki/File:Asta_dj_booth.jpg" target="_blank" '
+                          'rel="noopener">Wikimedia Commons</a>, <a '
+                          'href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" '
+                          'rel="noopener">CC BY-SA 3.0</a>. Resized to 960 × 720 and cropped for display. The '
+                          'AStA club booth, shown for context; not the specific systems '
+                          'discussed.</figcaption>'),
+ 'best-standalone-dj-systems.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                     'photo of the specific product.</figcaption>',
+                                     '<figcaption class="img-attribution">Photo: NoobX, <a '
+                                     'href="https://commons.wikimedia.org/wiki/File:Asta_dj_booth.jpg" '
+                                     'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                     'href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" '
+                                     'rel="noopener">CC BY-SA 3.0</a>. Resized to 960 × 720 and cropped for '
+                                     'display. The AStA club booth, shown for context; not the specific '
+                                     'systems discussed.</figcaption>'),
+ 'dj-gear-hub.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of a '
+                      'specific product.</figcaption>',
+                      '<figcaption class="img-attribution">Photo: David J, <a '
+                      'href="https://commons.wikimedia.org/wiki/File:DJ_gear_-_Pioneer_CDJ-350_(x2),_DJM-400_(by_David_J,_9288913605).jpg" '
+                      'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                      'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC '
+                      'BY 2.0</a>. Resized to 960 × 720 and cropped for display. Older CDJ-350 players and '
+                      'DJM-400 mixer, shown for context, not the specific products discussed.</figcaption>'),
+ 'dj-equipment-beginners.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo '
+                                 'of the specific product.</figcaption>',
+                                 '<figcaption class="img-attribution">Photo: David J, <a '
+                                 'href="https://commons.wikimedia.org/wiki/File:DJ_gear_-_Pioneer_CDJ-350_(x2),_DJM-400_(by_David_J,_9288913605).jpg" '
+                                 'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                 'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                                 'rel="noopener">CC BY 2.0</a>. Resized to 960 × 720 and cropped for display. '
+                                 'Older CDJ-350 players and DJM-400 mixer, shown for context, not the specific '
+                                 'products discussed.</figcaption>')})
+
+# Wikimedia Commons additions, with matching intrinsic dimensions and attribution.
+ALT.update({'commons-lang-studio-rutz.jpg': 'A recording studio console with speakers in the control room',
+ 'commons-jackpot-mixing-vacant-fever.jpg': 'A sound engineer working at a recording studio mixing console',
+ 'commons-dj-mixing-extranoise.jpg': 'Hands on an Allen &amp; Heath Xone:92 DJ mixer'})
+DIMS.update({'commons-lang-studio-rutz.jpg': (960, 720),
+ 'commons-jackpot-mixing-vacant-fever.jpg': (960, 718),
+ 'commons-dj-mixing-extranoise.jpg': (960, 639)})
+ASSIGN.update({'best-dj-monitor-speakers.html': 'commons-lang-studio-rutz.jpg',
+ 'best-studio-monitors.html': 'commons-lang-studio-rutz.jpg',
+ 'best-music-production-software-2026.html': 'commons-jackpot-mixing-vacant-fever.jpg',
+ 'fl-studio-review.html': 'commons-jackpot-mixing-vacant-fever.jpg',
+ 'dj-skills-performance-hub.html': 'commons-dj-mixing-extranoise.jpg',
+ 'dj-software-selection.html': 'commons-dj-mixing-extranoise.jpg'})
+CAPTIONS.update({'best-dj-monitor-speakers.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo '
+                                   'of the specific product.</figcaption>',
+                                   '<figcaption class="img-attribution">Photo: christina rutz, <a '
+                                   'href="https://commons.wikimedia.org/wiki/File:Lang%27s_Recording_Studio_console.jpg" '
+                                   'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                   'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                                   'rel="noopener">CC BY 2.0</a>. Resized to 960 × 720 and cropped for '
+                                   'display. Lang’s recording studio, shown for context; not the specific '
+                                   'monitors compared.</figcaption>'),
+ 'best-studio-monitors.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of '
+                               'the specific product.</figcaption>',
+                               '<figcaption class="img-attribution">Photo: christina rutz, <a '
+                               'href="https://commons.wikimedia.org/wiki/File:Lang%27s_Recording_Studio_console.jpg" '
+                               'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                               'href="https://creativecommons.org/licenses/by/2.0/" target="_blank" '
+                               'rel="noopener">CC BY 2.0</a>. Resized to 960 × 720 and cropped for display. '
+                               'Lang’s recording studio, shown for context; not the specific monitors '
+                               'compared.</figcaption>'),
+ 'best-music-production-software-2026.html': ('<figcaption>Offbeat editorial photography. Illustrative image, '
+                                              'not a photo of the specific product.</figcaption>',
+                                              '<figcaption class="img-attribution">Photo: VACANT FEVER, <a '
+                                              'href="https://commons.wikimedia.org/wiki/File:Larry_Crane_mixing_on_Rupert_Neve_Designs_5088_console,_Jackpot!_Recording_Studio_(Portland,_Oregon).jpg" '
+                                              'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                              'href="https://creativecommons.org/licenses/by-sa/2.0/" '
+                                              'target="_blank" rel="noopener">CC BY-SA 2.0</a>. Resized to 960 '
+                                              '× 718 and cropped for display. Larry Crane mixing at Jackpot! '
+                                              'Recording Studio, shown for context.</figcaption>'),
+ 'fl-studio-review.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of the '
+                           'specific product.</figcaption>',
+                           '<figcaption class="img-attribution">Photo: VACANT FEVER, <a '
+                           'href="https://commons.wikimedia.org/wiki/File:Larry_Crane_mixing_on_Rupert_Neve_Designs_5088_console,_Jackpot!_Recording_Studio_(Portland,_Oregon).jpg" '
+                           'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                           'href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank" '
+                           'rel="noopener">CC BY-SA 2.0</a>. Resized to 960 × 718 and cropped for display. '
+                           'Larry Crane mixing at Jackpot! Recording Studio, shown for context.</figcaption>'),
+ 'dj-skills-performance-hub.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a '
+                                    'photo of a specific product.</figcaption>',
+                                    '<figcaption class="img-attribution">Photo: extranoise, <a '
+                                    'href="https://commons.wikimedia.org/wiki/File:DJ_mixing.jpg" '
+                                    'target="_blank" rel="noopener">Wikimedia Commons</a>, <a '
+                                    'href="https://creativecommons.org/licenses/by-sa/2.5/" target="_blank" '
+                                    'rel="noopener">CC BY-SA 2.5</a>. Resized to 960 × 639 and cropped for '
+                                    'display. DJ mixing at Nation of Gondwana, shown for '
+                                    'context.</figcaption>'),
+ 'dj-software-selection.html': ('<figcaption>Offbeat editorial photography. Illustrative image, not a photo of '
+                                'the specific product.</figcaption>',
+                                '<figcaption class="img-attribution">Photo: extranoise, <a '
+                                'href="https://commons.wikimedia.org/wiki/File:DJ_mixing.jpg" target="_blank" '
+                                'rel="noopener">Wikimedia Commons</a>, <a '
+                                'href="https://creativecommons.org/licenses/by-sa/2.5/" target="_blank" '
+                                'rel="noopener">CC BY-SA 2.5</a>. Resized to 960 × 639 and cropped for '
+                                'display. DJ mixing at Nation of Gondwana, shown for context.</figcaption>')})
+
 IMG_RE = re.compile(r'<figure class="hero-figure"><img[^>]*>')
 
 
