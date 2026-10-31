@@ -173,6 +173,8 @@ jobs:
           # Reuse the runner's installed Chrome; Playwright-managed Chromium
           # is unavailable on the current Ubuntu 26.04 hosted image.
           python -m pip install --disable-pip-version-check playwright==1.55.0
+      - name: Verify audit semantics against real Chromium
+        run: python -m unittest discover -s tests -p test_overflow_audit_semantics.py -v
       - name: Audit all checked-out HTML pages at 1280 and 390 (report only)
         id: overflow
         continue-on-error: true
