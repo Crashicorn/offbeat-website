@@ -580,6 +580,17 @@
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
       if (laptop.id === "existing-mobile-device" && !controller.standalone) {
+        // First load of the default bedroom rig lands here by design: exactly
+        // one "workable" warning, so the status tag reads "Connection
+        // Verification Needed", not "Preliminary Match". The $0 phone/tablet
+        // host is a conditional route (rekordbox mobile support, USB audio,
+        // separate 9V/3A power are buyer-verified, not catalog-verified).
+        // Never drop the host to chase a green tag: a non-standalone
+        // controller with no host fails FATAL ("Host Computer Required" ->
+        // "Incompatible Configuration"), and the $0-host + warning are locked
+        // by tests/rig-builder-security.test.js and
+        // tests/rig-builder-browser.cjs. Documented in
+        // evidence/single-rig/owner-review-briefing.md.
         if (controller.id === "pioneer-ddj-flx4") {
           checks.push({
             type: "warning", statusLevel: "workable",
