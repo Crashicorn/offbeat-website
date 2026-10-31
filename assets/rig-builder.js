@@ -242,12 +242,24 @@
     } else return null;
     if (!raw.length || raw.length > 24) return null;
 
-    var used = Object.create(null), items = [];
+    // A partially restored shopping list can understate the purchase total and
+    // falsely certify compatibility. Reject the whole saved/shared build when
+    // any equipment line is missing or no longer matches the catalog.
+    var used = Object.create(null), items = [], invalidLine = false;
     raw.forEach(function (slot, index) {
-      if (!slot || typeof slot !== "object" || Array.isArray(slot)) return;
-      if (typeof slot.itemId !== "string" || typeof slot.category !== "string") return;
+      if (!slot || typeof slot !== "object" || Array.isArray(slot)) {
+        invalidLine = true;
+        return;
+      }
+      if (typeof slot.itemId !== "string" || typeof slot.category !== "string") {
+        invalidLine = true;
+        return;
+      }
       var item = getItem(slot.itemId);
-      if (!item || item.category !== slot.category) return;
+      if (!item || item.category !== slot.category) {
+        invalidLine = true;
+        return;
+      }
       var id = typeof slot.slotId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(slot.slotId)
         ? slot.slotId : "imported-" + index;
       var suffix = 0;
@@ -271,7 +283,7 @@
       if (role) cleanSlot.role = role;
       items.push(cleanSlot);
     });
-    if (!items.length) return null;
+    if (invalidLine || !items.length) return null;
     return {
       name: typeof data.name === "string" ? data.name.slice(0, 80) : (typeof data.n === "string" ? data.n.slice(0, 80) : "My Custom DJ Rig"),
       items: items
