@@ -2505,6 +2505,19 @@
         checks.push({ key: "host", level: "ok", title: "Standalone Capability Listed", note: "Confirm media, firmware and supported playback before performing." });
       } else if (!hostItem || hostItem.id === "standalone-usb-only") {
         checks.push({ key: "host", level: "warn", title: "Host Computer Required", note: "This controller cannot play tracks without a compatible host and DJ software." });
+      } else if (hostItem.host_type === "mobile") {
+        // The public read-only check must agree with the actual buying verdict,
+        // not label an unsupported phone route as merely "unverified".
+        var mobileVerdict = runDeepCompatibilityChecks();
+        var mobileCheck = mobileVerdict.checks.find(function (check) {
+          return /Mobile Host Not Verified|Mobile Host, USB|FLX2 Mobile Host|GRV6 Mobile|Numark Mobile/.test(check.title);
+        });
+        checks.push({
+          key: "host",
+          level: mobileCheck && mobileCheck.type === "error" ? "bad" : "warn",
+          title: mobileCheck ? mobileCheck.title : "Mobile host: verify app, power and audio",
+          note: mobileCheck ? mobileCheck.desc : "Confirm mobile app, device, power and audio before purchasing."
+        });
       } else {
         checks.push({ key: "host", level: "warn", title: "Host Compatibility Needs Verification", note: "A host is listed, not physically connected or software-verified. Confirm device, licensing, USB audio and power." });
       }
