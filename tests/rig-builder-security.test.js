@@ -913,16 +913,18 @@ test("guide add preserves explicit shared rig over unrelated local state", () =>
   assert.equal(rig.items[1].owned, false);
 });
 
-test("corrupt shared rig falls back to valid saved rig during guide add", () => {
+test("corrupt explicit share during guide add fails closed without substituting saved gear", () => {
   const { api, memory, window } = harness(false);
   memory["offbeat.rig.active"] = JSON.stringify({
-    name: "Saved fallback", items: [{ ...slot(), owned: true }]
+    name: "Unrelated saved rig", items: [{ ...slot(), owned: true }]
   });
+  assert.equal(api.normalizeRigState({ name: "Starter", items: [slot()] }), true);
   window.location.search = "?rig=not-base64!&add=sennheiser-hd25";
   api.parseUrlOrLocalState();
-  assert.equal(api.getRig().name, "Saved fallback");
-  assert.equal(api.getRig().items.length, 2);
-  assert.equal(api.getRig().items[0].owned, true);
+  assert.equal(api.getRig().name, "Starter");
+  assert.equal(api.getRig().items.length, 1);
+  assert.equal(api.getRig().items[0].owned, false);
+  assert.equal(api.wasShareRejected(), true);
 });
 
 test("adding an already-selected shared item does not reset owned quantity", () => {
