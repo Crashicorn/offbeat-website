@@ -183,7 +183,9 @@
             owned: false
           };
           if (targetRole) newSlot.role = targetRole;
-          currentRig.items.push(newSlot);
+          if (!appendRigSlot(newSlot)) {
+            console.warn("Cannot add guide equipment: this rig already has 24 equipment lines.");
+          }
         }
         saveActiveState();
         return;
@@ -306,6 +308,14 @@
     if (slot.itemId !== item.id) slot.owned = false;
     slot.itemId = item.id;
     slot.category = item.category;
+    return true;
+  }
+
+  // A shared/saved rig rejects more than 24 lines. Apply the same limit to
+  // live edits so the planner never creates a build that cannot be reopened.
+  function appendRigSlot(slot) {
+    if (currentRig.items.length >= 24) return false;
+    currentRig.items.push(slot);
     return true;
   }
 
@@ -2078,14 +2088,17 @@
             if (!replaceSlotItem(targetSlot, itemId)) return;
             if (role) targetSlot.role = role;
           } else {
-            currentRig.items.push({
+            if (!appendRigSlot({
               slotId: activeModalSlotId,
               category: activeModalCategory,
               role: role,
               itemId: itemId,
-              qty: (pickedItem && pickedItem.id === "yamaha-hs5") ? 1 : 1,
+              qty: 1,
               owned: false
-            });
+            })) {
+              alert("This rig already has 24 equipment lines. Remove a line before adding another component.");
+              return;
+            }
           }
           activeModalSpeakerRole = null;
           playClickSfx("select");
@@ -2200,13 +2213,16 @@
         } else {
           var fixItem = getItem(fixItemId);
           if (fixItem) {
-            currentRig.items.push({
+            if (!appendRigSlot({
               slotId: fixSlotId,
               category: fixItem.category,
               itemId: fixItemId,
               qty: 1,
               owned: false
-            });
+            })) {
+              alert("This rig already has 24 equipment lines. Remove a line before applying this fix.");
+              return;
+            }
           }
         }
         playClickSfx("select");
@@ -2322,10 +2338,9 @@
     while (currentRig.items.some(function (slot) { return slot.slotId === newSlotId; })) {
       newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
     }
-    currentRig.items.push({
+    return appendRigSlot({
       slotId: newSlotId, category: "cables", itemId: cableId, qty: 1, owned: false
     });
-    return true;
   }
 
   function copyChecklistToClipboard() {
