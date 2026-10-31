@@ -220,7 +220,18 @@
     if (Array.isArray(data.items)) {
       raw = data.items;
     } else if (Array.isArray(data.i)) {
-      raw = data.i;
+      // Compact share URLs use fixed six-field tuples to fit the same
+      // 24-line rigs that local storage can preserve. Legacy object arrays
+      // remain accepted, and every tuple still passes the usual catalog,
+      // quantity, role and slot-identifier validation below.
+      raw = data.i.map(function (entry) {
+        if (!Array.isArray(entry)) return entry;
+        if (entry.length !== 6) return null;
+        return {
+          slotId: entry[0], category: entry[1], itemId: entry[2],
+          qty: entry[3], owned: entry[4] === 1, role: entry[5]
+        };
+      });
     } else if (data.slots && typeof data.slots === "object" && !Array.isArray(data.slots)) {
       var cats = Object.keys(data.slots);
       if (cats.length > 24) return null;
@@ -279,7 +290,26 @@
     safeStorageSet("offbeat.rig.active", serialized);
     try {
       var encoded = btoa(encodeURIComponent(serialized));
-      if (encoded.length > 8192) return;
+      if (encoded.length > 8192) {
+        // Full JSON can exceed the share-link limit for a valid 24-line rig.
+        // Fall back to compact tuples without losing quantity, ownership,
+        // speaker role, or slot identity. Small/legacy links are unchanged.
+        var compact = {
+          n: currentRig.name,
+          i: currentRig.items.map(function (slot) {
+            return [slot.slotId, slot.category, slot.itemId, slot.qty || 1,
+              slot.owned === true ? 1 : 0, slot.role || ""];
+          })
+        };
+        encoded = btoa(encodeURIComponent(JSON.stringify(compact)));
+      }
+      if (encoded.length > 8192) {
+        // Never leave an old ?rig= in the address bar: exporting that stale
+        // link would silently share a different shopping list.
+        window.history.replaceState({ rig: currentRig }, "", window.location.pathname);
+        console.warn("This rig is too large for a share URL; saved local state remains available.");
+        return;
+      }
       window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encodeURIComponent(encoded));
     } catch (e) {
       console.warn("Could not update rig share URL:", e);
