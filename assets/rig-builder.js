@@ -2408,7 +2408,10 @@
     });
   }
 
-  function copyChecklistToClipboard() {
+  // Build the text from the same exact current state used by Share/Export.
+  // The clipboard must never advertise a bare or stale ?rig= link.
+  function buildShoppingChecklistText() {
+    var canShare = saveActiveState();
     var stats = calculateRigStats();
     var lines = [
       "=========================================",
@@ -2432,9 +2435,16 @@
     lines.push("Owned Gear Savings: -$" + stats.ownedValue.toLocaleString());
     lines.push("Total Out-of-Pocket Spend: $" + stats.purchaseCost.toLocaleString());
     lines.push("");
-    lines.push("Plan and customize your DJ rig on Offbeat: " + window.location.href);
+    if (canShare) {
+      lines.push("Plan and customize your DJ rig on Offbeat: " + window.location.href);
+    } else {
+      lines.push("Exact share link unavailable for this build; save it locally or reduce its size before sharing.");
+    }
+    return lines.join("\n");
+  }
 
-    var text = lines.join("\n");
+  function copyChecklistToClipboard() {
+    var text = buildShoppingChecklistText();
     navigator.clipboard.writeText(text).then(function () {
       alert("✓ Shopping checklist copied to clipboard!");
     }).catch(function () {
