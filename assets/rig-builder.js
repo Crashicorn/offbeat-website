@@ -2184,29 +2184,12 @@
         }
       } else if (action === "auto-fix-cable") {
         var cableId = btn.getAttribute("data-cable-id");
-        var cableItem = getItem(cableId);
-        if (cableItem && cableItem.category === "cables") {
-          // If this cable is already in the rig, but a secondary line needs an additional lead, increment qty
-          var existingCableSlot = currentRig.items.find(function (s) { return s.itemId === cableId; });
-          if (existingCableSlot) {
-            existingCableSlot.qty = Math.min(8, (existingCableSlot.qty || 1) + 1);
-          } else {
-            var newSlotId = "auto-cable-" + Date.now();
-            var suffix = 0;
-            while (currentRig.items.some(function (s) { return s.slotId === newSlotId; })) {
-              newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
-            }
-            currentRig.items.push({
-              slotId: newSlotId,
-              category: "cables",
-              itemId: cableId,
-              qty: 1,
-              owned: false
-            });
-          }
+        if (addRequiredCableToRig(cableId)) {
           playClickSfx("select");
           saveActiveState();
           renderApp();
+        } else {
+          alert("Cannot add another cable: check the catalog and the 24-item rig limit before purchasing.");
         }
       } else if (action === "auto-fix-slot") {
         var fixSlotId = btn.getAttribute("data-slot-id");
@@ -2315,6 +2298,34 @@
     var randomIdx = Math.floor(Math.random() * CATALOG.presets.length);
     playClickSfx("preset");
     loadPresetData(CATALOG.presets[randomIdx]);
+  }
+
+  // A purchased cable pack and an already-owned cable pack are different
+  // inventory. Never increase the owned quantity to satisfy a missing route:
+  // that would show a green connection while omitting the extra purchase.
+  function addRequiredCableToRig(cableId) {
+    var cableItem = getItem(cableId);
+    if (!cableItem || cableItem.category !== "cables") return false;
+    var toBuy = currentRig.items.find(function (slot) {
+      return slot.category === "cables" && slot.itemId === cableId &&
+        !slot.owned && (slot.qty || 1) < 8;
+    });
+    if (toBuy) {
+      toBuy.qty = (toBuy.qty || 1) + 1;
+      return true;
+    }
+    // An owned pack, or an unowned pack already at quantity eight, cannot
+    // absorb a new purchase. Keep the new units explicitly unowned.
+    if (currentRig.items.length >= 24) return false;
+    var newSlotId = "auto-cable-" + Date.now();
+    var suffix = 0;
+    while (currentRig.items.some(function (slot) { return slot.slotId === newSlotId; })) {
+      newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
+    }
+    currentRig.items.push({
+      slotId: newSlotId, category: "cables", itemId: cableId, qty: 1, owned: false
+    });
+    return true;
   }
 
   function copyChecklistToClipboard() {
