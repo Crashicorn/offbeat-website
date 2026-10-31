@@ -645,6 +645,28 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: GRV6 supported two-deck mobile journey; unverified controller blocked");
 
+    // A damaged quantity cannot silently become one unit in the browser's
+    // shopping total. The entire imported build must show a visible warning.
+    {
+      const damaged = {
+        name: "Damaged eight-unit shopping list",
+        items: [
+          { slotId: "ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 8, owned: false },
+          { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 100, owned: false }
+        ]
+      };
+      const damagedQuery = "?rig=" + encodeURIComponent(
+        Buffer.from(encodeURIComponent(JSON.stringify(damaged)), "binary").toString("base64")
+      );
+      const imported = await visit(browser, 390, damagedQuery);
+      const warning = await imported.page.$eval('[role="alert"]', el => el.textContent);
+      assert.match(warning, /Shared DJ setup could not be restored/);
+      assert.match(warning, /NOT the shared shopping list/);
+      assert.deepEqual(imported.errors, [], "corrupt purchase quantities must not crash the planner");
+      await imported.context.close();
+    }
+    console.log("PASS: corrupt shared quantities reject the full shopping list visibly");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
