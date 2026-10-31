@@ -563,8 +563,9 @@
             type: "warning",
             statusLevel: "incompatible",
             title: "Hardware Limitation: Secondary Speaker Route Cannot Be Fed",
-            desc: controller.model + " only provides one stereo master output and lacks an independent booth output. " +
-              "It cannot simultaneously drive crowd PA and DJ monitors without an external DJ mixer or powered distribution box.",
+            desc: controller.model + " has no verified free output pair for both selected speaker routes at these quantities. " +
+              "Master, booth or zone outputs may already be allocated, or a different cable path may need verification. " +
+              "Reduce the speaker count or confirm a suitable mixer or powered distribution route before purchasing.",
             fixCableId: null
           });
         }
