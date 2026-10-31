@@ -485,6 +485,39 @@ test("FLX4 and FLX2 mobile routes are conditional; unsupported controllers fail 
   assert.ok(other.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
 });
 
+// Numark's published mobile support is real, but Bluetooth MIDI never carries
+// audio through these controllers. Both models must remain conditional rather
+// than being rejected or incorrectly marked as cable-ready.
+test("Numark mobile djay routes are conditional and disclose disabled Bluetooth audio", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = { name: "Numark phone route", items: [
+    { slotId: "ctrl", category: "controllers", itemId: "numark-mixtrack-go", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+  ] };
+  for (const controllerId of ["numark-mixtrack-go", "numark-party-mix-3"]) {
+    rig.items[0].itemId = controllerId;
+    assert.equal(api.normalizeRigState(rig), true);
+    const verdict = api.runDeepCompatibilityChecks();
+    assert.equal(verdict.fatalErrors, 0, controllerId + " is officially mobile-compatible");
+    assert.ok(verdict.warnings > 0, "conditional audio/power cannot be declared fully verified");
+    const note = verdict.checks.find(c => c.title === "Numark Mobile: USB-C vs Bluetooth Audio Routing");
+    assert.ok(note && note.type === "warning", "visible Numark mobile warning required");
+    assert.match(note.desc, /djay on compatible iOS\/Android/);
+    assert.match(note.desc, /Bluetooth MIDI disables.*master AND headphone audio outputs/);
+    assert.match(note.desc, /5V\/500mA/);
+    assert.match(note.desc, /phone\/tablet instead/);
+    assert.ok(!verdict.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+  }
+  rig.items[0].itemId = "pioneer-ddj-flx10";
+  assert.equal(api.normalizeRigState(rig), true);
+  const unsupported = api.runDeepCompatibilityChecks();
+  assert.ok(unsupported.fatalErrors > 0);
+  assert.ok(unsupported.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+});
+
 test("all four preset badges equal full current catalog totals", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
