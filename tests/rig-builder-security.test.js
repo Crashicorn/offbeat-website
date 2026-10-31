@@ -676,6 +676,27 @@ test("mobile wedding preset requires independent microphone input and cable revi
   assert.ok(!withoutMic.checks.some(c => /Microphone Input/.test(c.title)));
 });
 
+test("zero-dollar host placeholders never become purchasable gear on imported rigs", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  for (const id of ["existing-computer-host", "standalone-usb-only"]) {
+    const item = catalog.items.find(x => x.id === id);
+    assert.equal(item.no_purchase, true, id + " must be a non-purchasable host");
+    assert.equal(api.normalizeRigState({ name: "Untrusted saved rig", items: [
+      { slotId: "host", category: "laptops", itemId: id, qty: 7, owned: false }
+    ] }), true);
+    const saved = api.getRig().items[0];
+    assert.equal(saved.itemId, id);
+    assert.equal(saved.qty, 1, "non-purchasable placeholders must not multiply");
+    assert.equal(saved.owned, true, "a zero-cost placeholder must never become a new purchase");
+    const row = api.renderModularTableRow(saved);
+    assert.match(row, /No laptop purchase/);
+    assert.doesNotMatch(row, /btn-retail|amazon\\.com|sweetwater\\.com|reverb\\.com/,
+      "a placeholder must not generate retailer links");
+  }
+});
+
 test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
