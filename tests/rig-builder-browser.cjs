@@ -415,6 +415,47 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.deepEqual(enoughCables.errors, []);
     await enoughCables.context.close();
 
+    // Regression: the same XLR SKU is already owned, but three independent
+    // PA cabinets require another purchased pack. Auto-fix must never mark
+    // an extra pack as owned or remove it from the shopping budget.
+    const ownedCableRoute = {
+      name: "Owned XLR needs another pack",
+      items: routeRig.items.map(s => ({ ...s }))
+    };
+    const ownedXlr = ownedCableRoute.items.find(s => s.category === "cables");
+    ownedXlr.qty = 1;
+    ownedXlr.owned = true;
+    const ownedFix = await visit(browser, 390, rigQuery(ownedCableRoute));
+    assert.equal(await ownedFix.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    const spendBeforeOwnedFix = await ownedFix.page.evaluate(() => __rigStudio.stats().purchase);
+    const ownedFixButton = '.visual-pa [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
+    assert.ok(await ownedFix.page.$(ownedFixButton), "missing PA cable must offer auto-fix");
+    await ownedFix.page.click(ownedFixButton);
+    const fixedOwned = await ownedFix.page.evaluate(() => ({
+      cables: __rigStudio.state().items.filter(s => s.itemId === "cable-xlr-xlr"),
+      spend: __rigStudio.stats().purchase,
+      shopping: __rigStudio.shoppingList().filter(s => s.itemId === "cable-xlr-xlr"),
+      cableCheck: __rigStudio.checks().find(c => c.key === "cables").level
+    }));
+    assert.deepEqual(fixedOwned.cables.map(s => [s.qty, s.owned]), [[1, true], [1, false]],
+      "owned and new-to-buy cable packs must remain distinct");
+    assert.equal(fixedOwned.spend, spendBeforeOwnedFix + 28,
+      "extra required cable must increase out-of-pocket estimate");
+    assert.equal(fixedOwned.shopping.length, 1);
+    assert.equal(fixedOwned.shopping[0].lineTotal, 28);
+    assert.equal(fixedOwned.cableCheck, "ok");
+    await ownedFix.page.reload({ waitUntil: "networkidle0" });
+    await ownedFix.page.waitForSelector(".visual-pa");
+    const restoredCables = await ownedFix.page.evaluate(() =>
+      __rigStudio.state().items.filter(s => s.itemId === "cable-xlr-xlr")
+        .map(s => [s.qty, s.owned]));
+    assert.deepEqual(restoredCables, [[1, true], [1, false]],
+      "shared URL reload must preserve owned vs purchased cable packs");
+    assert.deepEqual(ownedFix.errors, []);
+    await ownedFix.context.close();
+    console.log("PASS: owned XLR auto-fix purchases a distinct pack and survives share reload");
+
     routeRig.items[0].itemId = "pioneer-ddj-flx4";
     routeRig.items[2].qty = 1;
     routeRig.items.push({ slotId: "mon", category: "speakers", role: "dj_monitor",
