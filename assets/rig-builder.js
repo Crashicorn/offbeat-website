@@ -7,6 +7,7 @@
   "use strict";
 
   var CATALOG = null;
+  var sharedRigRejected = false;
   var audioCtx = null;
   var soundEnabled = safeStorageGet("offbeat.rig.sfx") !== "muted";
 
@@ -139,7 +140,14 @@
     if (addParam) {
       var targetItem = getItem(addParam);
       if (targetItem) {
-        if (!restoreSharedRigParam(params.get("rig"))) {
+        var hasSharedRig = params.has("rig");
+        if (hasSharedRig && !restoreSharedRigParam(params.get("rig"))) {
+          // Never substitute the browser's unrelated local setup for a broken
+          // shared shopping list, then silently add an item to the wrong build.
+          sharedRigRejected = true;
+          return;
+        }
+        if (!hasSharedRig) {
           var presetParam = params.get("preset");
           var pMatch = presetParam && CATALOG.presets ? CATALOG.presets.find(function (p) { return p.id === presetParam; }) : null;
           if (pMatch) {
@@ -203,7 +211,11 @@
     }
 
     // 3. Base64 encoded rig state param (e.g. ?rig=...)
-    if (restoreSharedRigParam(params.get("rig"))) return;
+    if (params.has("rig")) {
+      if (restoreSharedRigParam(params.get("rig"))) return;
+      sharedRigRejected = true;
+      return; // The visible starter is NOT a partially restored shared rig.
+    }
 
     // 4. Local state is optional and untrusted, just like shared URLs.
     var local = safeStorageGet("offbeat.rig.active");
@@ -294,10 +306,12 @@
     var clean = sanitizeRigState(data);
     if (!clean) return false;
     currentRig = clean;
+    sharedRigRejected = false;
     return true;
   }
 
   function saveActiveState() {
+    sharedRigRejected = false;
     var serialized = JSON.stringify(currentRig);
     safeStorageSet("offbeat.rig.active", serialized);
     try {
@@ -902,6 +916,7 @@
     });
 
     var html = `
+      ${sharedRigRejected ? '<div class="highlight-box" role="alert"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid or unavailable. The starter rig shown below is NOT the shared shopping list; do not rely on its prices or compatibility for the original build.</div>' : ''}
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
