@@ -98,6 +98,31 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       await context.close();
       console.log("PASS: mobile consent is non-overlapping and analytics remains opt-in and withdrawable");
     }
+    // A first-time visitor can export the starter rig without editing a
+    // quantity or opening a preset. The link must encode the actual shopping
+    // list, not just the bare builder page.
+    {
+      const fresh = await visit(browser, 1440);
+      assert.equal(await fresh.page.evaluate(() => location.search), "");
+      await fresh.page.click("#rig-manage > summary");
+      await fresh.page.click('[data-action="open-export-modal"]');
+      await fresh.page.waitForSelector("#link-export-box");
+      const exported = await fresh.page.evaluate(() => ({
+        url: location.href,
+        link: document.getElementById("link-export-box").value,
+        disabled: document.getElementById("link-export-box").disabled
+      }));
+      assert.equal(exported.disabled, false);
+      assert.equal(exported.link, exported.url, "exported link must reflect the live rig URL");
+      assert.match(exported.link, /[?&]rig=/, "first-load rig must become shareable on export");
+      const payload = new URL(exported.link).searchParams.get("rig");
+      const state = JSON.parse(decodeURIComponent(atob(payload)));
+      assert.ok(state.items.length >= 3, "exported starter must contain selected equipment");
+      assert.deepEqual(fresh.errors, [], "first-load export must not throw browser errors");
+      await fresh.context.close();
+      console.log("PASS: first-load export shares actual starter gear without prior edits");
+    }
+
     // A multi-cabinet PA line can consume two stereo output pairs. A second
     // monitor line must not reuse those occupied outputs merely because four
     // XLR cable packs are selected in the shopping list.
