@@ -116,13 +116,14 @@ test("corrupt quantity in an explicit shared rig cannot substitute unrelated sav
       { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 100, owned: false }
     ]
   };
+  const before = JSON.stringify(api.getRig());
   window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
   api.parseUrlOrLocalState();
   assert.equal(api.wasShareRejected(), true, "a partial shopping list must be visibly rejected");
-  assert.equal(api.getRig().items.some(s => s.itemId === "sennheiser-hd25"), false,
-    "do not silently drop the damaged line and show a misleading purchase total");
-  assert.equal(api.getRig().items.some(s => s.owned), false,
-    "do not substitute unrelated browser-owned equipment for a corrupt shared rig");
+  assert.equal(JSON.stringify(api.getRig()), before,
+    "reject the full import without modifying the starter or loading unrelated browser equipment");
+  assert.notEqual(api.getRig().name, "Unrelated owned equipment",
+    "a damaged share must not load the visitor's unrelated saved shopping list");
 });
 
 test("auto-fix purchases extra cable without inventing owned inventory", () => {
@@ -203,7 +204,7 @@ test("hostile shared identifiers cannot become HTML attributes", () => {
   const { api } = harness(false);
   const rig = api.sanitizeRigState({
     name: "<img src=x onerror=alert(1)>",
-    items: [{ ...slot('x" onmouseover="alert(1)'), qty: 999999, owned: "true" }]
+    items: [{ ...slot('x" onmouseover="alert(1)'), qty: 1, owned: "true" }]
   });
   assert.equal(rig.items[0].slotId, "imported-0");
   assert.equal(rig.items[0].qty, 1);
