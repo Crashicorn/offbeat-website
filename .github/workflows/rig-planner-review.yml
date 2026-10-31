@@ -16,6 +16,11 @@ on:
       - arena/4eafba31-offbeat-website
     paths:
       - assets/rig-builder.js
+      - assets/rig-studio.js
+      - assets/rig-studio.css
+      - assets/gear-connections.js
+      - assets/style.css
+      - '**/*.html'
       - assets/beatmatch-trainer.js
       - tests/beatmatch-cue.test.js
       - tests/test_trainer_e2e.js
@@ -180,6 +185,7 @@ jobs:
           find . -type f -name '*.html' \
             ! -path './.git/*' ! -path './.github/*' \
             ! -path './node_modules/*' ! -path './evidence/*' \
+            ! -path './tests/*' ! -path './tools/*' \
             -printf '%P\n' | LC_ALL=C sort -u > overflow-audit-out/pages.txt
           test -s overflow-audit-out/pages.txt || exit 2
           echo "Scanning $(wc -l < overflow-audit-out/pages.txt) checked-out HTML pages"
