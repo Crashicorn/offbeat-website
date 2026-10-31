@@ -6314,3 +6314,18 @@ tr.rs-item { display: table-row !important; }
 .official-video__load:hover, .official-video__load:focus-visible { background: #fff; color: #161920; outline: 3px solid #f3bc53; outline-offset: 3px; }
 .official-video__stage iframe { width: 100%; height: 100%; border: 0; }
 .official-video figcaption { margin-top: .7rem; }
+
+
+/* 2026-10-31: audit-confirmed buying-CTA and software-card overflow repair. */
+/* A long retailer label must wrap within its allocated purchasing column. */
+.top-pick-section > a.btn-amazon {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+/* Software comparisons contain slash-separated service names with no spaces.
+   Do not let those tokens extend beyond the card's visible reading area. */
+.hub-grid > .hub-card { min-width: 0; }
+.hub-grid > .hub-card p { overflow-wrap: anywhere; }
