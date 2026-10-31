@@ -594,7 +594,7 @@
 
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
-      if (laptop.id === "existing-mobile-device" && !controller.standalone) {
+      if (laptop.host_type === "mobile" && !controller.standalone) {
         if (controller.id === "pioneer-ddj-flx4") {
           checks.push({
             type: "warning", statusLevel: "workable",
@@ -664,7 +664,7 @@
           checks.push({
             type: "error", statusLevel: "incompatible",
             title: "Mobile Host Not Verified for This Controller",
-            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4, DDJ-FLX2, or DDJ-GRV6 routes. " +
+            desc: "This existing-phone option is qualified only for listed DDJ-FLX4, DDJ-FLX2, DDJ-GRV6, MixTrack Go, or Party Mix III mobile routes. " +
               "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
             fixSlotId: laptopSlot ? laptopSlot.slotId : null,
             fixItemId: "macbook-air-m2",
@@ -817,7 +817,7 @@
       }
     }
 
-    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).id !== "existing-mobile-device" && !controller.standalone) {
+    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).host_type !== "mobile" && !controller.standalone) {
       var standUpgrade = offer("laptop-stand-pyle", "Optional Laptop Stand",
         "A laptop stand may improve visibility and desk space. Check your laptop size and booth clearance before purchasing.",
         "core-stand");
@@ -1454,7 +1454,7 @@
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn rs-own-toggle ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
-            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
+            ${item.host_type === "mobile" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
           </button>
         </td>
         <td class="cell-price">
@@ -1466,7 +1466,7 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}" ${slot.category === 'speakers' ? `data-speaker-role="${getSpeakerRole(slot)}"` : ''}>Swap</button>
-            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.id === "existing-mobile-device" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
+            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.host_type === "mobile" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
             <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
             ${item.id === "denon-prime-4-plus" ? `
             <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" data-sku="DENPRIME4G2" title="Check PRIME 4 G2 at zZounds">Check alternative: PRIME 4 G2</a>
@@ -1963,7 +1963,7 @@
         role: role,
         itemId: itId,
         qty: 1,
-        owned: itId === "existing-mobile-device"
+        owned: Boolean(it && it.no_purchase === true)
       });
     });
     return items;
