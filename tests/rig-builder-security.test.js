@@ -692,7 +692,7 @@ test("zero-dollar host placeholders never become purchasable gear on imported ri
     assert.equal(saved.owned, true, "a zero-cost placeholder must never become a new purchase");
     const row = api.renderModularTableRow(saved);
     assert.match(row, /No laptop purchase/);
-    assert.doesNotMatch(row, /btn-retail|amazon\\.com|sweetwater\\.com|reverb\\.com/,
+    assert.doesNotMatch(row, /btn-retail|amazon|sweetwater|reverb/,
       "a placeholder must not generate retailer links");
   }
 });
