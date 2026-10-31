@@ -52,7 +52,8 @@ function harness(storageDisabled, withGear = false) {
     recommendNextUpgrade: recommendNextUpgrade,
     renderModularTableRow: renderModularTableRow,
     renderCompareGridContent: renderCompareGridContent,
-    addRequiredCableToRig: addRequiredCableToRig
+    addRequiredCableToRig: addRequiredCableToRig,
+    appendRigSlot: appendRigSlot
   };
 ` + hook);
   const sandbox = { window, document, URLSearchParams, console, atob, btoa };
@@ -135,6 +136,32 @@ test("auto-fix fails closed at the 24-slot limit instead of faking a cable purch
   assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), false);
   assert.equal(api.getRig().items.length, 24);
   assert.ok(api.getRig().items.every(s => s.owned || s.category !== "cables"));
+});
+
+test("live additions stop at 24 lines so saved and shared rigs remain restorable", () => {
+  const { api, window } = harness(false);
+  const items = Array.from({ length: 23 }, (_, i) => slot("deck-" + i));
+  assert.equal(api.normalizeRigState({ name: "Nearly full", items }), true);
+  assert.equal(api.appendRigSlot({
+    slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false
+  }), true, "the 24th line is permitted");
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.appendRigSlot({
+    slotId: "overflow", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false
+  }), false, "the 25th line must be rejected");
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.sanitizeRigState(api.getRig()).items.length, 24,
+    "the live build must remain serializable");
+  api.saveActiveState();
+
+  // A guide-to-planner add link must not silently create a 25th slot either.
+  const full = { name: "Full rig", items: Array.from({ length: 24 }, (_, i) => slot("deck-" + i)) };
+  const encoded = btoa(encodeURIComponent(JSON.stringify(full)));
+  window.location.search = "?add=sennheiser-hd25&rig=" + encodeURIComponent(encoded);
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 24);
+  assert.ok(api.getRig().items.every(s => s.category === "controllers"));
+  assert.equal(api.sanitizeRigState(api.getRig()).items.length, 24);
 });
 
 test("hostile shared identifiers cannot become HTML attributes", () => {
