@@ -561,8 +561,9 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
         const checks = await mobile.page.evaluate(() => window.__rigStudio.checks());
         const host = checks.find(check => check.key === "host");
         assert.equal(host.level, "warn", hostId + " + " + controllerId + " must require mobile setup verification");
-        assert.match(host.title, /Mobile host: verify app, power and audio/);
-        assert.match(host.note, /host is listed|USB audio and power/i);
+        assert.match(host.title, /Mobile Host|GRV6 Mobile|Numark Mobile/,
+          "public host check must identify the controller-specific mobile limitation");
+        assert.match(host.note, /USB|Bluetooth|power|mobile/i);
         const builderAlerts = await mobile.page.$eval(".compat-items-grid", el => el.textContent);
         assert.doesNotMatch(builderAlerts, /Mobile Host Not Verified for This Controller/);
         assert.deepEqual(mobile.errors, [], "cross-planner mobile host browser errors");
