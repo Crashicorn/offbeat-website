@@ -429,8 +429,9 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.equal(await ownedFix.page.evaluate(() =>
       __rigStudio.checks().find(c => c.key === "cables").level), "warn");
     const spendBeforeOwnedFix = await ownedFix.page.evaluate(() => __rigStudio.cost().purchase);
-    const ownedFixButton = '.visual-pa [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
+    const ownedFixButton = '.cable-route-card--pa [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
     assert.ok(await ownedFix.page.$(ownedFixButton), "missing PA cable must offer auto-fix");
+    await ownedFix.page.click('#rig-connections > summary');
     await ownedFix.page.click(ownedFixButton);
     const fixedOwned = await ownedFix.page.evaluate(() => ({
       cables: __rigStudio.state().items.filter(s => s.itemId === "cable-xlr-xlr"),
