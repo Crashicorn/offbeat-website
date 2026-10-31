@@ -518,6 +518,50 @@ test("Numark mobile djay routes are conditional and disclose disabled Bluetooth 
   assert.ok(unsupported.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
 });
 
+test("both existing-phone host IDs use conditional mobile checks, never a fake computer or phone purchase", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const supported = [
+    "pioneer-ddj-flx4", "pioneer-ddj-flx2", "alphatheta-ddj-grv6",
+    "numark-mixtrack-go", "numark-party-mix-3"
+  ];
+  for (const hostId of ["existing-mobile-device", "existing-mobile-app-device"]) {
+    const host = catalog.items.find(item => item.id === hostId);
+    assert.equal(host.host_type, "mobile", hostId + " must be a mobile host in both planners");
+    assert.equal(host.no_purchase, true, hostId + " must not create a phone purchase");
+    for (const controllerId of supported) {
+      const controller = catalog.items.find(item => item.id === controllerId);
+      assert.ok(controller.mobile_support && controller.mobile_app_support.length,
+        controllerId + " needs manufacturer-grounded mobile app metadata");
+      assert.equal(api.normalizeRigState({ items: [
+        { slotId: "c", category: "controllers", itemId: controllerId, qty: 1 },
+        { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+        { slotId: "m", category: "laptops", itemId: hostId, qty: 5, owned: false }
+      ] }), true);
+      const savedHost = api.getRig().items.find(item => item.category === "laptops");
+      assert.equal(savedHost.owned, true);
+      assert.equal(savedHost.qty, 1);
+      const verdict = api.runDeepCompatibilityChecks();
+      assert.equal(verdict.fatalErrors, 0, controllerId + " mobile route must not be falsely rejected");
+      assert.ok(verdict.warnings > 0, "mobile power, app and audio remain conditional");
+      assert.ok(!verdict.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+      assert.equal(api.recommendNextUpgrade(), null, "phone host must not trigger laptop-stand upsell");
+      const row = api.renderModularTableRow(savedHost);
+      assert.match(row, /Existing phone\/tablet \(verify\)/);
+      assert.doesNotMatch(row, /btn-retail/, "already-owned mobile host must have no purchase links");
+    }
+    assert.equal(api.normalizeRigState({ items: [
+      { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx10", qty: 1 },
+      { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+      { slotId: "m", category: "laptops", itemId: hostId, qty: 1, owned: true }
+    ] }), true);
+    const unsupported = api.runDeepCompatibilityChecks();
+    assert.ok(unsupported.fatalErrors > 0, "unverified mobile controller must fail closed");
+    assert.ok(unsupported.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+  }
+});
+
 test("all four preset badges equal full current catalog totals", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
