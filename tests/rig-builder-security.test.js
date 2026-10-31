@@ -237,6 +237,49 @@ test("share links encode base64 plus and restore correctly without local storage
   assert.equal(api.getRig().name, name);
 });
 
+test("24-line builds use a compact share URL when full JSON exceeds the URL limit", () => {
+  const { api, memory, window, lastUrl } = harness(false);
+  const longItemId = "gear-" + "x".repeat(80);
+  api.setCatalog({ items: [{ id: longItemId, category: "controllers", price: 100 }], categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: ("line-" + index + "-").padEnd(64, "x"),
+    category: "controllers", itemId: longItemId,
+    qty: index % 8 + 1, owned: index % 2 === 0
+  }));
+  assert.equal(api.normalizeRigState({ name: "L".repeat(80), items }), true);
+  api.saveActiveState();
+  const url = lastUrl();
+  assert.match(url, /\\?rig=/, "valid 24-line build must remain shareable");
+  const encoded = new URL(url, "https://offbeatinc.com").searchParams.get("rig");
+  const payload = JSON.parse(decodeURIComponent(atob(encoded)));
+  assert.equal(payload.i.length, 24, "large build must use the compact tuple format");
+  assert.equal(payload.i[23][3], 8, "quantity must survive compact encoding");
+  memory["offbeat.rig.active"] = "";
+  window.location.search = new URL(url, "https://offbeatinc.com").search;
+  assert.equal(api.normalizeRigState({ name: "Other", items: [items[0]] }), true);
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.getRig().items[23].qty, 8);
+  assert.equal(api.getRig().items[0].owned, true);
+  assert.equal(api.getRig().items[1].owned, false);
+  assert.equal(api.getRig().name, "L".repeat(80));
+});
+
+test("oversized unsendable rigs remove stale share URLs instead of exporting wrong gear", () => {
+  const { api, window, lastUrl } = harness(false);
+  const longItemId = "gear-" + "x".repeat(500);
+  api.setCatalog({ items: [{ id: longItemId, category: "controllers", price: 100 }], categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: ("line-" + index + "-").padEnd(64, "x"),
+    category: "controllers", itemId: longItemId, qty: 1, owned: false
+  }));
+  assert.equal(api.normalizeRigState({ name: "Oversized", items }), true);
+  window.location.search = "?rig=stale-build";
+  api.saveActiveState();
+  assert.equal(lastUrl(), "/build-your-dj-setup.html", "stale rig URL must be cleared");
+  assert.equal(api.getRig().items.length, 24, "active gear must remain intact");
+});
+
 test("guide add of an existing secondary controller preserves the whole shared rig", () => {
   const { api, memory, window, lastUrl } = harness(false);
   api.setCatalog({ items: [
