@@ -11,7 +11,7 @@ const source = fs.readFileSync(path.join(__dirname, "../assets/rig-builder.js"),
 const hook = "  /* ---------------------------------------------------------------- Start */";
 assert.equal(source.split(hook).length, 2, "test hook must match one startup point");
 
-function harness(storageDisabled) {
+function harness(storageDisabled, withGear = false) {
   const memory = Object.create(null);
   const localStorage = {
     getItem(key) {
@@ -45,6 +45,8 @@ function harness(storageDisabled) {
     renderSavedRigsList: renderSavedRigsList,
     replaceSlotItem: replaceSlotItem,
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
+    computeAllRigConnections: computeAllRigConnections,
+    areAllSpeakerRoutesConfirmed: areAllSpeakerRoutesConfirmed,
     calculateRigStats: calculateRigStats,
     presetPriceBadge: presetPriceBadge,
     recommendNextUpgrade: recommendNextUpgrade,
@@ -52,7 +54,13 @@ function harness(storageDisabled) {
     renderCompareGridContent: renderCompareGridContent
   };
 ` + hook);
-  vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
+  const sandbox = { window, document, URLSearchParams, console, atob, btoa };
+  if (withGear) {
+    const gear = fs.readFileSync(path.join(__dirname, "../assets/gear-connections.js"), "utf8");
+    vm.runInNewContext(gear, sandbox);
+    sandbox.OffbeatGear = window.OffbeatGear;
+  }
+  vm.runInNewContext(injected, sandbox);
   window.__testRig.setCatalog({
     items: [
       { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
@@ -760,4 +768,44 @@ test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
   const unsupported = api.runDeepCompatibilityChecks();
   assert.ok(unsupported.fatalErrors > 0, "unverified controller mobile route remains fail-closed");
   assert.ok(unsupported.checks.some(check => check.title === "Mobile Host Not Verified for This Controller"));
+});
+
+
+test("multi-cabinet PA consumes every stereo output pair before booth-monitor routing", () => {
+  const { api } = harness(false, true);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = {
+    name: "PRIME 4+ multiple output routes",
+    items: [
+      { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+      { slotId: "pa", category: "speakers", itemId: "jbl-eon-715", role: "crowd_pa", qty: 3, owned: false },
+      { slotId: "mon", category: "speakers", itemId: "krk-rokit-5-g4", role: "dj_monitor", qty: 4, owned: false },
+      { slotId: "leads", category: "cables", itemId: "cable-xlr-xlr", qty: 4, owned: false }
+    ]
+  };
+  assert.equal(api.normalizeRigState(rig), true);
+  const routes = api.computeAllRigConnections();
+  assert.equal(routes.length, 2);
+  assert.equal(routes[0].speakerId, "jbl-eon-715");
+  assert.equal(routes[0].outputsNeeded, 2, "three PA cabinets consume two stereo output pairs");
+  assert.equal(routes[1].speakerId, "krk-rokit-5-g4");
+  assert.equal(routes[1].outputsNeeded, 2, "four mono monitors also require two stereo pairs");
+  assert.equal(routes[1].conflict, true, "three XLR pairs cannot feed four required pairs");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), false, "four purchased cable packs cannot create a fourth physical output");
+  const checks = api.runDeepCompatibilityChecks().checks;
+  const warning = checks.find(c => /Secondary Speaker Route Cannot Be Fed/.test(c.title));
+  assert.ok(warning, "visible assistant must expose the same output-capacity conflict");
+  assert.doesNotMatch(warning.desc, /only provides one stereo master|lacks an independent booth/i,
+    "PRIME 4+ does have independent booth and zone outputs");
+
+  rig.items[1].qty = 2;
+  rig.items[2].qty = 2;
+  rig.items[3].qty = 2;
+  assert.equal(api.normalizeRigState(rig), true);
+  const smaller = api.computeAllRigConnections();
+  assert.equal(smaller[0].outputsNeeded, 1);
+  assert.equal(smaller[1].outputsNeeded, 1);
+  assert.ok(smaller.every(r => !r.conflict), "two stereo output pairs are routable on PRIME 4+");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), true, "two selected XLR packs cover the two feasible routes");
 });
