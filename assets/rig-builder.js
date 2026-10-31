@@ -623,6 +623,25 @@
             fixCableId: null
           });
           warnings++;
+        } else if (controller.id === "numark-mixtrack-go" || controller.id === "numark-party-mix-3") {
+          // Numark explicitly supports djay on iOS/Android via USB-C or
+          // Bluetooth MIDI. The Bluetooth mode is CONTROL ONLY: both onboard
+          // master and headphone outputs are disabled. Never sell the selected
+          // controller-to-speaker/headphone cable route as Bluetooth-ready.
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Numark Mobile: USB-C vs Bluetooth Audio Routing",
+            desc: controller.model + " supports Algoriddim djay on compatible iOS/Android " +
+              "devices via USB-C or Bluetooth MIDI. Bluetooth MIDI disables the controller's " +
+              "master AND headphone audio outputs: monitor and connect speakers at the " +
+              "phone/tablet instead (a separate adapter may be needed). For Bluetooth, " +
+              "power the controller from an external USB supply of at least 5V/500mA. " +
+              "USB-C controller audio requires a compatible device, app and cable. " +
+              "Confirm your exact phone, djay features/licensing, audio route and power " +
+              "before buying; external power and phone-audio adapters are not priced here.",
+            fixCableId: null
+          });
+          warnings++;
         } else if (controller.id === "alphatheta-ddj-grv6") {
           // AlphaTheta confirms mobile rekordbox support, but only decks 1
           // and 2 work on iOS/Android. No Bluetooth; USB-C and sufficient
