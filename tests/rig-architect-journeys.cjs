@@ -83,6 +83,31 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       await page.type('[data-modal-search]', 'no-such-model-123');
       assert.match(await page.$eval('.picker-empty',e=>e.textContent), /No components/);
       await page.keyboard.press('Escape');
+      // Previously, zero-dollar host placeholders could reappear as unowned
+      // shopping lines after importing a saved/shared rig.
+      for (const hostId of ['existing-computer-host', 'standalone-usb-only']) {
+        const imported = await page.evaluate(() => __rigStudio.state());
+        let host = imported.items.find(s => s.category === 'laptops');
+        if (!host) {
+          host = { slotId: 'core-host', category: 'laptops', itemId: hostId, qty: 7, owned: false };
+          imported.items.push(host);
+        } else {
+          host.itemId = hostId;
+          host.qty = 7;
+          host.owned = false;
+        }
+        const shared = Buffer.from(encodeURIComponent(JSON.stringify(imported))).toString('base64');
+        await page.goto(base+'/build-your-dj-setup.html?rig='+encodeURIComponent(shared), {waitUntil:'networkidle0'});
+        const restored = await page.evaluate(() => {
+          const host = __rigStudio.state().items.find(s => s.category === 'laptops');
+          return { host, purchases: __rigStudio.shoppingList() };
+        });
+        assert.equal(restored.host.itemId, hostId);
+        assert.equal(restored.host.qty, 1, 'a placeholder cannot be multiplied');
+        assert.equal(restored.host.owned, true, 'a placeholder cannot be marked for purchase');
+        assert.ok(!restored.purchases.some(x => x.itemId === hostId),
+          'saved/shared rig must not put a zero-dollar placeholder on the purchase list');
+      }
       assert.deepEqual(errors, []);
       console.log(`${width}px: bedroom, role gating, PA/monitor editing, ownership, routing limitation, save/share/reopen/edit passed`);
       await context.close();
