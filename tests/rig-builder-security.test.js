@@ -26,8 +26,11 @@ function harness(storageDisabled, withGear = false) {
   let lastUrl = null;
   const window = {
     localStorage,
-    location: { pathname: "/build-your-dj-setup.html", search: "" },
-    history: { replaceState(_state, _title, url) { lastUrl = url; } }
+    location: { pathname: "/build-your-dj-setup.html", search: "", href: "https://offbeatinc.com/build-your-dj-setup.html" },
+    history: { replaceState(_state, _title, url) {
+      lastUrl = url;
+      window.location.href = new URL(url, "https://offbeatinc.com").href;
+    } }
   };
   const document = {
     getElementById() { return {}; },
@@ -41,6 +44,7 @@ function harness(storageDisabled, withGear = false) {
     wasShareRejected: function () { return sharedRigRejected; },
     parseUrlOrLocalState: parseUrlOrLocalState,
     saveActiveState: saveActiveState,
+    buildShoppingChecklistText: buildShoppingChecklistText,
     getRig: function () { return currentRig; },
     getSavedRigs: getSavedRigs,
     renderSavedRigsList: renderSavedRigsList,
@@ -1085,4 +1089,33 @@ test("multi-cabinet PA consumes every stereo output pair before booth-monitor ro
   assert.equal(smaller[1].outputsNeeded, 1);
   assert.ok(smaller.every(r => !r.conflict), "two stereo output pairs are routable on PRIME 4+");
   assert.equal(api.areAllSpeakerRoutesConfirmed(), true, "two selected XLR packs cover the two feasible routes");
+});
+
+test("shopping checklist exports the current rig, never a stale or bare share link", () => {
+  const { api, window, lastUrl } = harness(false, true);
+  assert.equal(api.normalizeRigState({ name: "Owned comparison", items: [{ ...slot(), qty: 2, owned: true }] }), true);
+  // No prior edit or share event: the checklist itself must serialize the rig.
+  const text = api.buildShoppingChecklistText();
+  const link = new URL(lastUrl(), "https://offbeatinc.com");
+  const rigParam = link.searchParams.get("rig");
+  assert.ok(rigParam, "a valid rig gets a share link");
+  const payload = JSON.parse(decodeURIComponent(atob(rigParam)));
+  assert.equal(payload.items[0].qty, 2);
+  assert.equal(payload.items[0].owned, true);
+  assert.ok(text.includes("Plan and customize your DJ rig on Offbeat: " + link.href));
+  assert.equal(window.location.href, link.href);
+
+  // A formerly valid URL must not leak into an oversized subsequent build.
+  const longId = "oversized-" + "x".repeat(500);
+  api.setCatalog({ items: [{ id: longId, category: "controllers", price: 1, brand: "Test", model: "Long" }],
+    categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: "slot-" + index, category: "controllers", itemId: longId, qty: 1, owned: false
+  }));
+  assert.equal(api.normalizeRigState({ name: "Large build", items }), true);
+  const largeText = api.buildShoppingChecklistText();
+  assert.match(largeText, /Exact share link unavailable for this build/);
+  assert.doesNotMatch(largeText, /Plan and customize your DJ rig on Offbeat:/);
+  assert.equal(new URL(lastUrl(), "https://offbeatinc.com").searchParams.has("rig"), false);
+  assert.equal(api.getRig().items.length, 24, "local equipment must remain intact");
 });
