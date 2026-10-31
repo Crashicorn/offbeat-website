@@ -618,13 +618,13 @@ details > ul { padding-left: 2.4rem; }
   margin: 0; padding: 0; list-style: none;
 }
 .related-articles li, .datbotty-related-guides li { margin: 0; }
-.related-articles a, .datbotty-related-guides a {
+.related-articles li > a, .datbotty-related-guides li > a {
   display: flex; align-items: center; gap: .55rem; height: 100%;
   padding: .7rem .85rem; border: 1px solid var(--line); border-radius: var(--r-sm);
   background: rgba(255, 255, 255, .025); color: var(--text-2); font-size: .92rem; font-weight: 550;
 }
-.related-articles a::before { content: "→"; color: var(--flame-2); font-weight: 700; }
-.related-articles a:hover, .datbotty-related-guides a:hover {
+.related-articles li > a::before { content: "→"; color: var(--flame-2); font-weight: 700; }
+.related-articles li > a:hover, .datbotty-related-guides li > a:hover {
   border-color: var(--line-warm); background: rgba(139, 92, 246, .09); color: #fff; text-decoration: none;
 }
 
