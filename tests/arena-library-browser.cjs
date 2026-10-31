@@ -45,6 +45,33 @@ function visibleCount(page) {
         assert.ok(state.overflow <= 1, path + " overflows at " + width + "px: " + state.overflow);
         assert.deepEqual(errors, [], path + " browser errors at " + width + "px");
       }
+      // Product video facades must not contact YouTube until the visitor loads one.
+      const videos = {
+        "ddj-flx2-review.html": "OnNkSZK45jo",
+        "ddj-grv6-review.html": "I3832XEsxX4",
+        "pioneer-ddj-flx10-review.html": "N0dg3GNnoRw",
+        "pioneer-cdj-3000-review.html": "MxRKpTI5dqo",
+        "denon-prime-go-review.html": "dMQb0GShVaQ",
+        "denon-sc6000-review.html": "T84COjxlAOo",
+        "numark-scratch-review.html": "95hmwMn6pFQ"
+      };
+      for (const [path, id] of Object.entries(videos)) {
+        const youtubeRequests = [];
+        const track = request => {
+          if (/youtube|ytimg/i.test(request.url())) youtubeRequests.push(request.url());
+        };
+        page.on("request", track);
+        await page.goto(base + "/" + path, { waitUntil: "load" });
+        assert.deepEqual(youtubeRequests, [], path + " must not load YouTube before consent");
+        assert.equal(await page.$$(".official-video iframe").then(frames => frames.length), 0);
+        assert.ok((await page.$eval(".official-video figcaption", el => el.textContent)).includes("official channel"));
+        assert.ok(await page.$eval(".official-video a", (el, videoId) => el.href.endsWith(videoId), id), "direct video link");
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), path + " video layout overflow");
+        await page.click(".official-video__load");
+        assert.equal(await page.$eval(".official-video iframe", el => el.getAttribute("src")),
+          "https://www.youtube-nocookie.com/embed/" + id + "?rel=0");
+        page.off("request", track);
+      }
       await page.goto(base + "/all-dj-guides.html", { waitUntil: "load" });
       const total = await page.$$eval(".library-item", els => els.length);
       assert.ok(total >= 100, "library must contain real guide links");
@@ -83,17 +110,48 @@ function visibleCount(page) {
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
       const guideEntries = index.filter(item => /^[^?]+\.html$/.test(item.u));
-      assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
+      assert.ok(guideEntries.length >= 119, "all original pages and the new tools hub remain indexed");
+      const guideUrls = guideEntries.map(item => item.u);
+      assert.ok(guideUrls.includes("dj-tools.html"), "new tools hub must be searchable");
+      assert.equal(new Set(guideUrls).size, guideUrls.length, "page search URLs must be unique");
       for (const entry of guideEntries) {
         assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
           entry.u + " must have a useful, source-grounded Spotlight summary");
         assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
       }
-      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
-      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
-        "buyer search must match the actual Classic 5 catalog product");
-      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
-        "buyer search must not advertise a different monitor model");
+      // Compare every product deep-link title against the model it actually adds.
+      // Ignore punctuation and spacing, but do not confuse similar product lines.
+      const catalog = await page.evaluate(async () =>
+        (await (await fetch("assets/dj-gear-catalog.json")).json()).items
+      );
+      const catalogById = new Map(catalog.map(item => [item.id, item]));
+      const normalizeModel = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const matchingModel = (title, model) => normalizeModel(title).includes(normalizeModel(model));
+      assert.equal(matchingModel("KRK Classic 5 (Pair, Monitor Pack)", "ROKIT 5 G4"), false,
+        "regression test must reject an unrelated KRK model");
+      let checkedProducts = 0;
+      for (const entry of index) {
+        const url = new URL(entry.u, base + "/");
+        const id = url.searchParams.get("add");
+        if (!url.pathname.endsWith("/build-your-dj-setup.html") || !id) continue;
+        const product = catalogById.get(id);
+        assert.ok(product, entry.u + " must point to an existing catalog item");
+        assert.ok(matchingModel(entry.title, product.model),
+          entry.title + " must identify catalog model " + product.model + " (" + id + ")");
+        checkedProducts++;
+      }
+      assert.ok(checkedProducts >= 29, "curated product deep links must be checked");
+      const rokit = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
+      const classic = index.find(item => item.u === "build-your-dj-setup.html?add=krk-classic-5-pair");
+      assert.ok(rokit && classic, "both distinct KRK models must be searchable");
+      assert.match(rokit.title, /KRK ROKIT 5 G4.*Single/i,
+        "ROKIT search result must identify the single G4 cabinet");
+      assert.match(classic.title, /KRK Classic 5.*Pair/i,
+        "Classic search result must identify the two-cabinet monitor pack");
+      assert.doesNotMatch(rokit.title + " " + rokit.desc, /Classic 5/i,
+        "ROKIT search result must not advertise the Classic monitor pack");
+      assert.doesNotMatch(classic.title + " " + classic.desc, /ROKIT 5 G4/i,
+        "Classic search result must not advertise the ROKIT single");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")

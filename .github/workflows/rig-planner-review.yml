@@ -16,6 +16,11 @@ on:
       - arena/4eafba31-offbeat-website
     paths:
       - assets/rig-builder.js
+      - assets/rig-studio.js
+      - assets/rig-studio.css
+      - assets/gear-connections.js
+      - assets/style.css
+      - '**/*.html'
       - assets/beatmatch-trainer.js
       - tests/beatmatch-cue.test.js
       - tests/test_trainer_e2e.js
@@ -33,6 +38,7 @@ on:
       - assets/search-index.json
       - tools/build_index.py
       - .github/workflows/rig-planner-review.yml
+      - tools/overflow_audit_portable.py
       - tools/check_site.py
       - tests/check_site_structure.py
 
@@ -137,3 +143,95 @@ jobs:
             echo "::error title=Trainer Browser Test Failed::$err_msg"
             exit 1
           fi
+
+  overflow-audit:
+    name: Sitewide overflow (report only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The supplied auditor exits 1 on violations. For now, capture its failure
+    # without blocking PR qualification. Remove continue-on-error after
+    # Arena A's remaining overflow repair is merged and the exact-head scan is clean.
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Check out exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact candidate checkout
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install portable audit dependencies
+        run: |
+          # Reuse the runner's installed Chrome; Playwright-managed Chromium
+          # is unavailable on the current Ubuntu 26.04 hosted image.
+          python -m pip install --disable-pip-version-check playwright==1.55.0
+      - name: Verify audit semantics against real Chromium
+        run: python -m unittest discover -s tests -p test_overflow_audit_semantics.py -v
+      - name: Audit all checked-out HTML pages at 1280 and 390 (report only)
+        id: overflow
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p overflow-audit-out
+          # Use actual checked-out HTML. The sitemap advertises offbeatinc.com,
+          # which cannot be appended to a localhost base by the portable script.
+          find . -type f -name '*.html' \
+            ! -path './.git/*' ! -path './.github/*' \
+            ! -path './node_modules/*' ! -path './evidence/*' \
+            ! -path './tests/*' ! -path './tools/*' \
+            -printf '%P\n' | LC_ALL=C sort -u > overflow-audit-out/pages.txt
+          test -s overflow-audit-out/pages.txt || exit 2
+          echo "Scanning $(wc -l < overflow-audit-out/pages.txt) checked-out HTML pages"
+          python -m http.server 8099 --bind 127.0.0.1 > overflow-audit-out/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8099/index.html -o /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 0.25
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "Local static server failed" | tee overflow-audit-out/audit.log
+            echo 2 > overflow-audit-out/exit-code.txt
+            exit 2
+          fi
+          CHROME_BIN="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -x "$CHROME_BIN" || exit 2
+          python -u tools/overflow_audit_portable.py \
+            --browser-executable "$CHROME_BIN" \
+            --base http://127.0.0.1:8099/ \
+            --pages overflow-audit-out/pages.txt \
+            --widths 1280x800,390x844 \
+            --out overflow-audit-out \
+            2>&1 | tee overflow-audit-out/audit.log
+          audit_rc=${PIPESTATUS[0]}
+          printf '%s\n' "$audit_rc" > overflow-audit-out/exit-code.txt
+          {
+            echo '## Sitewide browser overflow audit — report only'
+            echo "Exact SHA: \`$(git rev-parse HEAD)\`"
+            echo "Pages: $(wc -l < overflow-audit-out/pages.txt), viewports: 1280x800 and 390x844"
+            echo "Audit exit code: \`$audit_rc\` (0 = clean, 1 = violations)"
+            echo 'All findings and raw per-page measurements are saved in the workflow artifact.'
+            echo 'This check does not block the draft PR until the owner authorizes enforcement.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$audit_rc"
+      - name: Upload full overflow evidence (even on violation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitewide-overflow-${{ github.sha }}
+          path: overflow-audit-out/
+          if-no-files-found: warn
+          retention-days: 14

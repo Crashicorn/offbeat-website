@@ -11,7 +11,7 @@ const source = fs.readFileSync(path.join(__dirname, "../assets/rig-builder.js"),
 const hook = "  /* ---------------------------------------------------------------- Start */";
 assert.equal(source.split(hook).length, 2, "test hook must match one startup point");
 
-function harness(storageDisabled) {
+function harness(storageDisabled, withGear = false) {
   const memory = Object.create(null);
   const localStorage = {
     getItem(key) {
@@ -45,14 +45,23 @@ function harness(storageDisabled) {
     renderSavedRigsList: renderSavedRigsList,
     replaceSlotItem: replaceSlotItem,
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
+    computeAllRigConnections: computeAllRigConnections,
+    areAllSpeakerRoutesConfirmed: areAllSpeakerRoutesConfirmed,
     calculateRigStats: calculateRigStats,
     presetPriceBadge: presetPriceBadge,
     recommendNextUpgrade: recommendNextUpgrade,
     renderModularTableRow: renderModularTableRow,
-    renderCompareGridContent: renderCompareGridContent
+    renderCompareGridContent: renderCompareGridContent,
+    addRequiredCableToRig: addRequiredCableToRig
   };
 ` + hook);
-  vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
+  const sandbox = { window, document, URLSearchParams, console, atob, btoa };
+  if (withGear) {
+    const gear = fs.readFileSync(path.join(__dirname, "../assets/gear-connections.js"), "utf8");
+    vm.runInNewContext(gear, sandbox);
+    sandbox.OffbeatGear = window.OffbeatGear;
+  }
+  vm.runInNewContext(injected, sandbox);
   window.__testRig.setCatalog({
     items: [
       { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
@@ -67,6 +76,66 @@ function harness(storageDisabled) {
 function slot(id = "core-ctrl") {
   return { slotId: id, category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false };
 }
+
+test("shopping quantities through eight survive shared-state sanitation without silent resets", () => {
+  const { api } = harness(false);
+  for (const qty of [1, 4, 5, 8]) {
+    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
+    assert.equal(clean.items[0].qty, qty, "valid quantity " + qty + " must persist");
+  }
+  for (const qty of [0, 9, 1000]) {
+    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
+    assert.equal(clean.items[0].qty, 1, "invalid quantity " + qty + " must fail closed");
+  }
+});
+
+test("auto-fix purchases extra cable without inventing owned inventory", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  assert.equal(api.normalizeRigState({
+    name: "Owned one XLR pack",
+    items: [
+      slot(),
+      { slotId: "owned-xlr", category: "cables", itemId: "cable-xlr-xlr", qty: 1, owned: true }
+    ]
+  }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  let cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.equal(cables.length, 2, "a new purchase must be a separate slot");
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [1, false]]);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [2, false]],
+    "further purchases increment only the unowned cable pack");
+  assert.equal(api.addRequiredCableToRig("pioneer-ddj-flx4"), false,
+    "only catalogued cables can be auto-purchased");
+});
+
+test("auto-fix fails closed at the 24-slot limit instead of faking a cable purchase", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  const items = [slot()];
+  for (let i = 0; i < 23; i++) {
+    items.push({ slotId: "owned-xlr-" + i, category: "cables",
+      itemId: "cable-xlr-xlr", qty: 8, owned: true });
+  }
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), false);
+  assert.equal(api.getRig().items.length, 24);
+  assert.ok(api.getRig().items.every(s => s.owned || s.category !== "cables"));
+});
 
 test("hostile shared identifiers cannot become HTML attributes", () => {
   const { api } = harness(false);
@@ -465,6 +534,83 @@ test("FLX4 and FLX2 mobile routes are conditional; unsupported controllers fail 
   assert.ok(other.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
 });
 
+// Numark's published mobile support is real, but Bluetooth MIDI never carries
+// audio through these controllers. Both models must remain conditional rather
+// than being rejected or incorrectly marked as cable-ready.
+test("Numark mobile djay routes are conditional and disclose disabled Bluetooth audio", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = { name: "Numark phone route", items: [
+    { slotId: "ctrl", category: "controllers", itemId: "numark-mixtrack-go", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+  ] };
+  for (const controllerId of ["numark-mixtrack-go", "numark-party-mix-3"]) {
+    rig.items[0].itemId = controllerId;
+    assert.equal(api.normalizeRigState(rig), true);
+    const verdict = api.runDeepCompatibilityChecks();
+    assert.equal(verdict.fatalErrors, 0, controllerId + " is officially mobile-compatible");
+    assert.ok(verdict.warnings > 0, "conditional audio/power cannot be declared fully verified");
+    const note = verdict.checks.find(c => c.title === "Numark Mobile: USB-C vs Bluetooth Audio Routing");
+    assert.ok(note && note.type === "warning", "visible Numark mobile warning required");
+    assert.match(note.desc, /djay on compatible iOS\/Android/);
+    assert.match(note.desc, /Bluetooth MIDI disables.*master AND headphone audio outputs/);
+    assert.match(note.desc, /5V\/500mA/);
+    assert.match(note.desc, /phone\/tablet instead/);
+    assert.ok(!verdict.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+  }
+  rig.items[0].itemId = "pioneer-ddj-flx10";
+  assert.equal(api.normalizeRigState(rig), true);
+  const unsupported = api.runDeepCompatibilityChecks();
+  assert.ok(unsupported.fatalErrors > 0);
+  assert.ok(unsupported.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+});
+
+test("both existing-phone host IDs use conditional mobile checks, never a fake computer or phone purchase", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const supported = [
+    "pioneer-ddj-flx4", "pioneer-ddj-flx2", "alphatheta-ddj-grv6",
+    "numark-mixtrack-go", "numark-party-mix-3"
+  ];
+  for (const hostId of ["existing-mobile-device", "existing-mobile-app-device"]) {
+    const host = catalog.items.find(item => item.id === hostId);
+    assert.equal(host.host_type, "mobile", hostId + " must be a mobile host in both planners");
+    assert.equal(host.no_purchase, true, hostId + " must not create a phone purchase");
+    for (const controllerId of supported) {
+      const controller = catalog.items.find(item => item.id === controllerId);
+      assert.ok(controller.mobile_support && controller.mobile_app_support.length,
+        controllerId + " needs manufacturer-grounded mobile app metadata");
+      assert.equal(api.normalizeRigState({ items: [
+        { slotId: "c", category: "controllers", itemId: controllerId, qty: 1 },
+        { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+        { slotId: "m", category: "laptops", itemId: hostId, qty: 5, owned: false }
+      ] }), true);
+      const savedHost = api.getRig().items.find(item => item.category === "laptops");
+      assert.equal(savedHost.owned, true);
+      assert.equal(savedHost.qty, 1);
+      const verdict = api.runDeepCompatibilityChecks();
+      assert.equal(verdict.fatalErrors, 0, controllerId + " mobile route must not be falsely rejected");
+      assert.ok(verdict.warnings > 0, "mobile power, app and audio remain conditional");
+      assert.ok(!verdict.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+      assert.equal(api.recommendNextUpgrade(), null, "phone host must not trigger laptop-stand upsell");
+      const row = api.renderModularTableRow(savedHost);
+      assert.match(row, /Existing phone\/tablet \(verify\)/);
+      assert.doesNotMatch(row, /btn-retail/, "already-owned mobile host must have no purchase links");
+    }
+    assert.equal(api.normalizeRigState({ items: [
+      { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx10", qty: 1 },
+      { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+      { slotId: "m", category: "laptops", itemId: hostId, qty: 1, owned: true }
+    ] }), true);
+    const unsupported = api.runDeepCompatibilityChecks();
+    assert.ok(unsupported.fatalErrors > 0, "unverified mobile controller must fail closed");
+    assert.ok(unsupported.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+  }
+});
+
 test("all four preset badges equal full current catalog totals", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
@@ -579,6 +725,27 @@ test("mobile wedding preset requires independent microphone input and cable revi
   assert.ok(!withoutMic.checks.some(c => /Microphone Input/.test(c.title)));
 });
 
+test("zero-dollar host placeholders never become purchasable gear on imported rigs", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  for (const id of ["existing-computer-host", "standalone-usb-only"]) {
+    const item = catalog.items.find(x => x.id === id);
+    assert.equal(item.no_purchase, true, id + " must be a non-purchasable host");
+    assert.equal(api.normalizeRigState({ name: "Untrusted saved rig", items: [
+      { slotId: "host", category: "laptops", itemId: id, qty: 7, owned: false }
+    ] }), true);
+    const saved = api.getRig().items[0];
+    assert.equal(saved.itemId, id);
+    assert.equal(saved.qty, 1, "non-purchasable placeholders must not multiply");
+    assert.equal(saved.owned, true, "a zero-cost placeholder must never become a new purchase");
+    const row = api.renderModularTableRow(saved);
+    assert.match(row, /No laptop purchase/);
+    assert.doesNotMatch(row, /btn-retail|amazon|sweetwater|reverb/,
+      "a placeholder must not generate retailer links");
+  }
+});
+
 test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
@@ -594,6 +761,9 @@ test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
     qty: 1, owned: false
   });
   assert.match(realItem, /amazon\.com/);
+  assert.match(realItem, /amazon\.com\/s\?k=[^"]+&amp;tag=offbeatdj-20/,
+    "planner Amazon search handoffs must retain the configured Associates attribution");
+  assert.match(realItem, /rel="nofollow noopener sponsored"/);
   assert.match(realItem, /sweetwater\.com/);
 });
 
@@ -760,4 +930,44 @@ test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
   const unsupported = api.runDeepCompatibilityChecks();
   assert.ok(unsupported.fatalErrors > 0, "unverified controller mobile route remains fail-closed");
   assert.ok(unsupported.checks.some(check => check.title === "Mobile Host Not Verified for This Controller"));
+});
+
+
+test("multi-cabinet PA consumes every stereo output pair before booth-monitor routing", () => {
+  const { api } = harness(false, true);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = {
+    name: "PRIME 4+ multiple output routes",
+    items: [
+      { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+      { slotId: "pa", category: "speakers", itemId: "jbl-eon-715", role: "crowd_pa", qty: 3, owned: false },
+      { slotId: "mon", category: "speakers", itemId: "krk-rokit-5-g4", role: "dj_monitor", qty: 4, owned: false },
+      { slotId: "leads", category: "cables", itemId: "cable-xlr-xlr", qty: 4, owned: false }
+    ]
+  };
+  assert.equal(api.normalizeRigState(rig), true);
+  const routes = api.computeAllRigConnections();
+  assert.equal(routes.length, 2);
+  assert.equal(routes[0].speakerId, "jbl-eon-715");
+  assert.equal(routes[0].outputsNeeded, 2, "three PA cabinets consume two stereo output pairs");
+  assert.equal(routes[1].speakerId, "krk-rokit-5-g4");
+  assert.equal(routes[1].outputsNeeded, 2, "four mono monitors also require two stereo pairs");
+  assert.equal(routes[1].conflict, true, "three XLR pairs cannot feed four required pairs");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), false, "four purchased cable packs cannot create a fourth physical output");
+  const checks = api.runDeepCompatibilityChecks().checks;
+  const warning = checks.find(c => /Secondary Speaker Route Cannot Be Fed/.test(c.title));
+  assert.ok(warning, "visible assistant must expose the same output-capacity conflict");
+  assert.doesNotMatch(warning.desc, /only provides one stereo master|lacks an independent booth/i,
+    "PRIME 4+ does have independent booth and zone outputs");
+
+  rig.items[1].qty = 2;
+  rig.items[2].qty = 2;
+  rig.items[3].qty = 2;
+  assert.equal(api.normalizeRigState(rig), true);
+  const smaller = api.computeAllRigConnections();
+  assert.equal(smaller[0].outputsNeeded, 1);
+  assert.equal(smaller[1].outputsNeeded, 1);
+  assert.ok(smaller.every(r => !r.conflict), "two stereo output pairs are routable on PRIME 4+");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), true, "two selected XLR packs cover the two feasible routes");
 });

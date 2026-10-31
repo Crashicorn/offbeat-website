@@ -98,9 +98,36 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       await context.close();
       console.log("PASS: mobile consent is non-overlapping and analytics remains opt-in and withdrawable");
     }
+    // A multi-cabinet PA line can consume two stereo output pairs. A second
+    // monitor line must not reuse those occupied outputs merely because four
+    // XLR cable packs are selected in the shopping list.
+    {
+      const rig = { name: "Multi-output capacity", items: [
+        { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+        { slotId: "pa", category: "speakers", itemId: "jbl-eon-715", role: "crowd_pa", qty: 3, owned: false },
+        { slotId: "mon", category: "speakers", itemId: "krk-rokit-5-g4", role: "dj_monitor", qty: 4, owned: false },
+        { slotId: "leads", category: "cables", itemId: "cable-xlr-xlr", qty: 4, owned: false }
+      ] };
+      const encoded = encodeURIComponent(Buffer.from(encodeURIComponent(JSON.stringify(rig)), "utf8").toString("base64"));
+      const { page, context, errors } = await visit(browser, 1440, "?rig=" + encoded);
+      const routes = await page.evaluate(() => window.__rigStudio.connections());
+      assert.equal(routes.length, 2);
+      assert.equal(routes[0].outputsNeeded, 2, "three JBL PA cabinets need two output pairs");
+      assert.equal(routes[1].outputsNeeded, 2, "four KRK monitors need two more output pairs");
+      assert.equal(routes[1].conflict, true, "only three compatible XLR output pairs exist");
+      assert.match(await page.$eval(".visual-route", el => el.textContent), /Routing limitation|Incompatible/);
+      assert.match(await page.$eval(".compat-items-grid", el => el.textContent),
+        /Secondary Speaker Route Cannot Be Fed/);
+      assert.equal((await page.evaluate(() => window.__rigStudio.checks())).find(c => c.key === "cables").level,
+        "warn", "public checks must not declare a fourth XLR output verified");
+      assert.deepEqual(errors, [], "no browser JS errors during over-capacity routing");
+      await context.close();
+      console.log("PASS: multi-pair PA and monitor routes cannot reuse occupied XLR outputs");
+    }
+
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
-      // One visual editor only; secondary views are optional and exclusive.
+      // One visual editor; supporting sections remain independently expandable.
       const structure = await page.evaluate(() => ({
         canvas: document.querySelectorAll('.visual-stage').length,
         controllers: document.querySelectorAll('.visual-controller img').length,
@@ -117,24 +144,26 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.equal(structure.tiers, 0);
       assert.equal(structure.spend, 1);
       assert.ok(structure.photo, 'editorial hero includes contextual photography');
-      assert.ok(structure.height < (width < 600 ? 6500 : 4000), 'collapsed page should be substantially shorter');
+      assert.ok(structure.height > 0, 'page renders with supporting views');
       assert.ok(structure.controllerTop < 900, 'controller begins in the first viewport');
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'shopping is open by default');
+      assert.equal(await page.$eval('#rig-connections', el => el.open), width >= 700, 'connections opens on desktop');
+      await page.$eval('.visual-route-link', el => el.scrollIntoView({block:'center',behavior:'instant'}));
       await page.click('.visual-route-link');
       assert.equal(await page.$eval('#rig-connections', el => el.open), true);
-      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
-      await page.click('#rig-shopping > summary');
-      assert.equal(await page.$eval('#rig-connections', el => el.open), false);
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'both views can remain open');
       const controllerSlot = await page.$eval('.visual-controller .visual-own', el => el.dataset.slotId);
       const plus = '#rig-shopping [data-action="step-qty"][data-step="1"][data-slot-id="' + controllerSlot + '"]';
       await page.click(plus);
-      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$896', 'quantity updates the single spend summary');
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$956', 'quantity updates the single spend summary');
       assert.equal(await page.$eval('#rig-shopping', el => el.open), true, 'editing keeps shopping view open');
       const minus = '#rig-shopping [data-action="step-qty"][data-step="-1"][data-slot-id="' + controllerSlot + '"]';
       await page.click(minus);
-      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$597');
+      assert.equal(await page.$eval('.metric-val--spend', el => el.textContent.trim()), '$627');
       assert.ok(await page.$('#rig-shopping a.btn-retail'), 'retailer destinations remain available');
       await page.click('#rig-manage > summary');
-      assert.equal(await page.$eval('#rig-shopping', el => el.open), false);
+      assert.equal(await page.$eval('#rig-shopping', el => el.open), true);
+      assert.equal(await page.$eval('#rig-connections', el => el.open), true);
       assert.equal(await page.$eval('#rig-manage', el => el.open), true);
       await page.click('#rig-manage > summary');
       // HD 25 already includes a native 3.5mm plug; do not upsell an adapter.
@@ -147,7 +176,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       const includedLabel = await page.$eval(".cable-title", el => el.textContent.trim());
       assert.match(includedLabel, /Speaker Package Includes Audio Cable/);
       // Starter assumes a compatible phone already owned, not a forced laptop purchase.
-      assert.equal(metrics.spend, "$597", "starter excludes a new laptop and stand");
+      assert.equal(metrics.spend, "$627", "starter excludes a new laptop and stand");
       assert.match(initialAlerts, /Mobile Host, USB Audio and Power Need Verification/);
       const initialOwned = await page.$eval(".quick-spend-card .qsc-sub", el => el.textContent.trim());
       assert.match(initialOwned, /Saved \$0 owned/, "default ownership deduction must be zero");
@@ -162,13 +191,13 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       // Every preset button must quote the same full total displayed after
       // selecting it, including host laptop, speakers, cables and accessories.
       const expectedPresets = [
-        ["bedroom-starter", "$597"],
-        ["club-ready", "$3,230"],
-        ["mobile-pro", "$3,052"],
+        ["bedroom-starter", "$627"],
+        ["club-ready", "$3,360"],
+        ["mobile-pro", "$3,102"],
         ["traktor-techno", "$1,780"]
       ];
       for (const [id, expectedPrice] of expectedPresets) {
-        if (width < 600) await page.click('.mobile-presets summary');
+        if (width < 600) { await page.$eval('.mobile-presets summary', el => el.scrollIntoView({block:'center', behavior:'instant'})); await page.click('.mobile-presets summary'); }
         const presetSelector = (width < 600 ? '.mobile-presets ' : '.rig-preset-strip ') + '[data-preset-id="' + id + '"]';
         const badge = await page.$eval(presetSelector + ' .preset-badge', el => el.textContent.trim());
         assert.equal(badge, "Est. " + expectedPrice + " total", id + " badge");
@@ -279,11 +308,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await multi.page.click('[data-action="open-compare"]');
     await multi.page.waitForSelector("#compare-content-grid");
     const compareText = await multi.page.$eval("#compare-content-grid", el => el.textContent);
-    assert.match(compareText, /To buy:\s*\$609/);
-    assert.match(compareText, /Full value:\s*\$2,808/);
+    assert.match(compareText, /To buy:\s*\$639/);
+    assert.match(compareText, /Full value:\s*\$2,838/);
     assert.match(compareText, /Already owned:\s*\$2,199/);
     assert.match(compareText, /Denon DJ Prime 4\+ \(×1, Owned, \$2,199\)/);
-    assert.match(compareText, /Pioneer DJ DDJ-FLX4 \(×1, Buy, \$299\)/);
+    assert.match(compareText, /Pioneer DJ DDJ-FLX4 \(×1, Buy, \$329\)/);
     await multi.context.close();
     console.log("PASS: multi-controller shared rig warns that additional routing is unverified");
 
@@ -351,6 +380,97 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     assert.deepEqual(cableFix.errors, [], "no JS errors after cable auto-fix");
     await cableFix.context.close();
     console.log("PASS: connection fix adds XLR without discarding owned RCA cables");
+
+    // Buyer-facing compatibility must agree with the booth: one XLR cable
+    // pack does not serve three PA cabinets, and an unsupported second output
+    // must never be reported as a verified cable route.
+    const routeRig = {
+      name: "Three PA cabinets",
+      items: [
+        { slotId: "ctrl", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+        { slotId: "hp", category: "headphones", itemId: "ath-m50x", qty: 1, owned: true },
+        { slotId: "pa", category: "speakers", role: "crowd_pa", itemId: "jbl-eon-715", qty: 3, owned: false },
+        { slotId: "xlr", category: "cables", itemId: "cable-xlr-xlr", qty: 1, owned: false }
+      ]
+    };
+    const rigQuery = rig => "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(rig)), "binary").toString("base64")
+    );
+    const shortCables = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await shortCables.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    assert.match(await shortCables.page.$eval("#rs-compatibility", e => e.textContent),
+      /Speaker Cable Quantity or Routing Needs Review/);
+    assert.match(await shortCables.page.$eval(".visual-pa", e => e.textContent), /Cable needed/);
+    assert.deepEqual(shortCables.errors, []);
+    await shortCables.context.close();
+
+    routeRig.items.find(s => s.category === "cables").qty = 2;
+    const enoughCables = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await enoughCables.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "ok");
+    assert.match(await enoughCables.page.$eval("#rs-compatibility", e => e.textContent),
+      /Listed Audio Connection Match/);
+    assert.match(await enoughCables.page.$eval(".visual-pa", e => e.textContent), /Cable in plan/);
+    assert.deepEqual(enoughCables.errors, []);
+    await enoughCables.context.close();
+
+    // Regression: the same XLR SKU is already owned, but three independent
+    // PA cabinets require another purchased pack. Auto-fix must never mark
+    // an extra pack as owned or remove it from the shopping budget.
+    const ownedCableRoute = {
+      name: "Owned XLR needs another pack",
+      items: routeRig.items.map(s => ({ ...s }))
+    };
+    const ownedXlr = ownedCableRoute.items.find(s => s.category === "cables");
+    ownedXlr.qty = 1;
+    ownedXlr.owned = true;
+    const ownedFix = await visit(browser, 390, rigQuery(ownedCableRoute));
+    assert.equal(await ownedFix.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    const spendBeforeOwnedFix = await ownedFix.page.evaluate(() => __rigStudio.cost().purchase);
+    const ownedFixButton = '.cable-route-card--pa [data-action="auto-fix-cable"][data-cable-id="cable-xlr-xlr"]';
+    assert.ok(await ownedFix.page.$(ownedFixButton), "missing PA cable must offer auto-fix");
+    await ownedFix.page.click('#rig-connections > summary');
+    await ownedFix.page.click(ownedFixButton);
+    const fixedOwned = await ownedFix.page.evaluate(() => ({
+      cables: __rigStudio.state().items.filter(s => s.itemId === "cable-xlr-xlr"),
+      spend: __rigStudio.cost().purchase,
+      shopping: __rigStudio.shoppingList().filter(s => s.itemId === "cable-xlr-xlr"),
+      cableCheck: __rigStudio.checks().find(c => c.key === "cables").level
+    }));
+    assert.deepEqual(fixedOwned.cables.map(s => [s.qty, s.owned]), [[1, true], [1, false]],
+      "owned and new-to-buy cable packs must remain distinct");
+    assert.equal(fixedOwned.spend, spendBeforeOwnedFix + 28,
+      "extra required cable must increase out-of-pocket estimate");
+    assert.equal(fixedOwned.shopping.length, 1);
+    assert.equal(fixedOwned.shopping[0].lineTotal, 28);
+    assert.equal(fixedOwned.cableCheck, "ok");
+    await ownedFix.page.reload({ waitUntil: "networkidle0" });
+    await ownedFix.page.waitForSelector(".visual-pa");
+    const restoredCables = await ownedFix.page.evaluate(() =>
+      __rigStudio.state().items.filter(s => s.itemId === "cable-xlr-xlr")
+        .map(s => [s.qty, s.owned]));
+    assert.deepEqual(restoredCables, [[1, true], [1, false]],
+      "shared URL reload must preserve owned vs purchased cable packs");
+    assert.deepEqual(ownedFix.errors, []);
+    await ownedFix.context.close();
+    console.log("PASS: owned XLR auto-fix purchases a distinct pack and survives share reload");
+
+    routeRig.items[0].itemId = "pioneer-ddj-flx4";
+    routeRig.items[2].qty = 1;
+    routeRig.items.push({ slotId: "mon", category: "speakers", role: "dj_monitor",
+      itemId: "pioneer-dm40d", qty: 1, owned: false });
+    const outputConflict = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await outputConflict.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    assert.equal(await outputConflict.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "host").level), "warn",
+      "standalone USB-only host cannot be reported as connected to FLX4");
+    assert.match(await outputConflict.page.$eval(".visual-route", e => e.textContent), /limitation/i);
+    assert.deepEqual(outputConflict.errors, []);
+    await outputConflict.context.close();
+    console.log("PASS: insufficient PA cable packs and FLX4 dual-output conflict never show green readiness");
 
     // Guide-to-planner links must not wipe an existing saved shopping list.
     // Replacing a controller resets only its own purchase/quantity state;
@@ -426,11 +546,11 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     // A real buyer selecting DDJ-GRV6 with a phone must see the supported
     // two-deck path and its limits, not a false "incompatible" verdict.
     // The same mobile host remains blocked for a controller not qualified here.
-    function mobileRigLink(controllerId) {
+    function mobileRigLink(controllerId, hostId = "existing-mobile-device") {
       const state = { name: "Mobile host check", items: [
         { slotId: "ctrl", category: "controllers", itemId: controllerId, qty: 1, owned: false },
         { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: true },
-        { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+        { slotId: "host", category: "laptops", itemId: hostId, qty: 1, owned: true }
       ] };
       return "?rig=" + encodeURIComponent(Buffer.from(
         encodeURIComponent(JSON.stringify(state)), "binary").toString("base64"));
@@ -449,11 +569,55 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.deepEqual(mobileGRV6.errors, [], "GRV6 mobile UI must not throw");
       await mobileGRV6.context.close();
     }
+    // Numark's official mobile djay support must not be rejected. Equally,
+    // a selected controller-to-speaker cable cannot carry Bluetooth MIDI audio:
+    // both master and cue outputs are disabled in that mode.
+    for (const controllerId of ["numark-mixtrack-go", "numark-party-mix-3"]) {
+      for (const width of [1440, 390]) {
+        const mobileNumark = await visit(browser, width, mobileRigLink(controllerId));
+        const shown = await mobileNumark.page.evaluate(() => ({
+          status: document.querySelector(".compat-status-tag")?.textContent.trim() || "",
+          alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+        }));
+        assert.match(shown.alerts, /Numark Mobile: USB-C vs Bluetooth Audio Routing/);
+        assert.match(shown.alerts, /Bluetooth MIDI disables the controller's master AND headphone audio outputs/);
+        assert.match(shown.alerts, /5V\/500mA/);
+        assert.doesNotMatch(shown.alerts, /Mobile Host Not Verified for This Controller/);
+        assert.doesNotMatch(shown.status, /Incompatible/);
+        assert.deepEqual(mobileNumark.errors, [], "Numark mobile browser journey must not throw");
+        await mobileNumark.context.close();
+      }
+    }
     const mobileUnsupported = await visit(browser, 390, mobileRigLink("pioneer-ddj-flx10"));
     const blocked = await mobileUnsupported.page.$eval(".compat-items-grid", el => el.textContent);
     assert.match(blocked, /Mobile Host Not Verified for This Controller/);
     assert.deepEqual(mobileUnsupported.errors, [], "unverified mobile host UI must not throw");
     await mobileUnsupported.context.close();
+    // The older preset and the newer Studio builder use different catalog
+    // IDs for the same already-owned phone. Neither may bypass compatibility
+    // checks or masquerade as a fully verified computer connection.
+    for (const hostId of ["existing-mobile-device", "existing-mobile-app-device"]) {
+      for (const controllerId of ["pioneer-ddj-flx2", "alphatheta-ddj-grv6",
+        "numark-mixtrack-go", "numark-party-mix-3"]) {
+        const mobile = await visit(browser, 390, mobileRigLink(controllerId, hostId));
+        const checks = await mobile.page.evaluate(() => window.__rigStudio.checks());
+        const host = checks.find(check => check.key === "host");
+        assert.equal(host.level, "warn", hostId + " + " + controllerId + " must require mobile setup verification");
+        assert.match(host.title, /Mobile Host|GRV6 Mobile|Numark Mobile/,
+          "public host check must identify the controller-specific mobile limitation");
+        assert.match(host.note, /USB|Bluetooth|power|mobile/i);
+        const builderAlerts = await mobile.page.$eval(".compat-items-grid", el => el.textContent);
+        assert.doesNotMatch(builderAlerts, /Mobile Host Not Verified for This Controller/);
+        assert.deepEqual(mobile.errors, [], "cross-planner mobile host browser errors");
+        await mobile.context.close();
+      }
+      const unsupported = await visit(browser, 390, mobileRigLink("pioneer-ddj-flx10", hostId));
+      const host = await unsupported.page.evaluate(() => window.__rigStudio.checks().find(c => c.key === "host"));
+      assert.equal(host.level, "bad", "unverified phone route must fail closed in Studio");
+      const alerts = await unsupported.page.$eval(".compat-items-grid", el => el.textContent);
+      assert.match(alerts, /Mobile Host Not Verified for This Controller/);
+      await unsupported.context.close();
+    }
     console.log("PASS: GRV6 supported two-deck mobile journey; unverified controller blocked");
 
     const payload = {

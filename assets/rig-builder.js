@@ -104,6 +104,11 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         CATALOG = data;
+        var starter = CATALOG.presets && CATALOG.presets.find(function (p) { return p.id === "bedroom-starter"; });
+        if (starter) {
+          currentRig.name = starter.name;
+          currentRig.items = convertPresetToItems(starter);
+        }
         parseUrlOrLocalState();
       });
   }
@@ -247,7 +252,7 @@
       }
       var cleanSlot = {
         slotId: id, category: item.category, itemId: item.id,
-        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1),
+        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 8 ? slot.qty : 1),
         owned: item.no_purchase === true || slot.owned === true
       };
       if (role) cleanSlot.role = role;
@@ -486,13 +491,25 @@
           warnings++;
         }
       } else if (selected) {
-        checks.push({
-          type: "success", statusLevel: "workable",
-          title: "Listed Audio Connection Match",
-          desc: "Listed connectors support " + selected.name + " between " + controller.model +
-            " and " + speakers.model + ". Verify wiring, levels, and manufacturer requirements.",
-          fixCableId: null
-        });
+        // A matching connector does not prove enough cable packs exist for
+        // every PA/monitor route. Keep this verdict aligned with the booth.
+        if (areAllSpeakerRoutesConfirmed()) {
+          checks.push({
+            type: "success", statusLevel: "workable",
+            title: "Listed Audio Connection Match",
+            desc: "Selected cable quantities cover the planned speaker routes. Verify wiring, levels, and manufacturer requirements.",
+            fixCableId: null
+          });
+        } else {
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Speaker Cable Quantity or Routing Needs Review",
+            desc: "A connector type matches, but the selected cable packs do not yet establish every speaker route. " +
+              "Check the booth's per-route cable requirements, quantities and hardware output limits before buying.",
+            fixCableId: null
+          });
+          warnings++;
+        }
       } else if (options.length) {
         var suggestion = options[0];
         checks.push({
@@ -538,10 +555,7 @@
       if (paItem && monItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
         var usedOuts = {};
         var pPlan = OffbeatGear.connectionPlan(CATALOG, controller, paItem, spkGroup.paSlot.qty || 1, { usedOutputs: usedOuts });
-        if (pPlan && pPlan.output) {
-          usedOuts[pPlan.output.connector] = (usedOuts[pPlan.output.connector] || 0) + 1;
-          usedOuts.claimed = [pPlan.output];
-        }
+        reservePlannedOutputs(pPlan, usedOuts);
         var mPlan = OffbeatGear.connectionPlan(CATALOG, controller, monItem, spkGroup.monitorSlot.qty || 1, { usedOutputs: usedOuts });
         if (mPlan && mPlan.conflict) {
           fatalErrors++;
@@ -549,8 +563,9 @@
             type: "warning",
             statusLevel: "incompatible",
             title: "Hardware Limitation: Secondary Speaker Route Cannot Be Fed",
-            desc: controller.model + " only provides one stereo master output and lacks an independent booth output. " +
-              "It cannot simultaneously drive crowd PA and DJ monitors without an external DJ mixer or powered distribution box.",
+            desc: controller.model + " has no verified free output pair for both selected speaker routes at these quantities. " +
+              "Master, booth or zone outputs may already be allocated, or a different cable path may need verification. " +
+              "Reduce the speaker count or confirm a suitable mixer or powered distribution route before purchasing.",
             fixCableId: null
           });
         }
@@ -579,7 +594,7 @@
 
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
-      if (laptop.id === "existing-mobile-device" && !controller.standalone) {
+      if (laptop.host_type === "mobile" && !controller.standalone) {
         if (controller.id === "pioneer-ddj-flx4") {
           checks.push({
             type: "warning", statusLevel: "workable",
@@ -608,6 +623,25 @@
             fixCableId: null
           });
           warnings++;
+        } else if (controller.id === "numark-mixtrack-go" || controller.id === "numark-party-mix-3") {
+          // Numark explicitly supports djay on iOS/Android via USB-C or
+          // Bluetooth MIDI. The Bluetooth mode is CONTROL ONLY: both onboard
+          // master and headphone outputs are disabled. Never sell the selected
+          // controller-to-speaker/headphone cable route as Bluetooth-ready.
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Numark Mobile: USB-C vs Bluetooth Audio Routing",
+            desc: controller.model + " supports Algoriddim djay on compatible iOS/Android " +
+              "devices via USB-C or Bluetooth MIDI. Bluetooth MIDI disables the controller's " +
+              "master AND headphone audio outputs: monitor and connect speakers at the " +
+              "phone/tablet instead (a separate adapter may be needed). For Bluetooth, " +
+              "power the controller from an external USB supply of at least 5V/500mA. " +
+              "USB-C controller audio requires a compatible device, app and cable. " +
+              "Confirm your exact phone, djay features/licensing, audio route and power " +
+              "before buying; external power and phone-audio adapters are not priced here.",
+            fixCableId: null
+          });
+          warnings++;
         } else if (controller.id === "alphatheta-ddj-grv6") {
           // AlphaTheta confirms mobile rekordbox support, but only decks 1
           // and 2 work on iOS/Android. No Bluetooth; USB-C and sufficient
@@ -630,7 +664,7 @@
           checks.push({
             type: "error", statusLevel: "incompatible",
             title: "Mobile Host Not Verified for This Controller",
-            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4, DDJ-FLX2, or DDJ-GRV6 routes. " +
+            desc: "This existing-phone option is qualified only for listed DDJ-FLX4, DDJ-FLX2, DDJ-GRV6, MixTrack Go, or Party Mix III mobile routes. " +
               "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
             fixSlotId: laptopSlot ? laptopSlot.slotId : null,
             fixItemId: "macbook-air-m2",
@@ -783,7 +817,7 @@
       }
     }
 
-    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).id !== "existing-mobile-device" && !controller.standalone) {
+    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).host_type !== "mobile" && !controller.standalone) {
       var standUpgrade = offer("laptop-stand-pyle", "Optional Laptop Stand",
         "A laptop stand may improve visibility and desk space. Check your laptop size and booth clearance before purchasing.",
         "core-stand");
@@ -805,7 +839,13 @@
   /* ---------------------------------------------------------------- Render */
   function renderApp() {
     var stats = calculateRigStats();
-    var openView = builderRoot.querySelector('details[name="rig-views"][open]')?.id || '';
+    var viewIds = ["rig-connections", "rig-shopping", "rig-manage"];
+    var previousViews = {};
+    var hadViews = false;
+    viewIds.forEach(function (id) {
+      var view = builderRoot.querySelector("#" + id);
+      if (view) { hadViews = true; previousViews[id] = view.open; }
+    });
 
     var html = `
       <!-- Builder Top Dashboard -->
@@ -831,7 +871,7 @@
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
-              <span class="qsc-label">Actual Spend Needed</span>
+              <span class="qsc-label">Estimated to buy</span>
               <strong class="qsc-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
               <span class="qsc-sub">${stats.ownedCount > 0 ? "Saved $" + stats.ownedValue.toLocaleString() + " owned" : stats.itemCount + " items in setup"}</span>
             </div>
@@ -844,7 +884,7 @@
       </section>
 
       <!-- Itemized shopping and saved builds share the same rig state. -->
-      <details name="rig-views" id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
+      <details id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
       <section class="rig-table-section" id="rs-shop" aria-labelledby="checklist-title">
         <div class="section-head-split">
           <div>
@@ -880,50 +920,21 @@
               ${currentRig.items.map(function (slot) {
                 return renderModularTableRow(slot);
               }).join("")}
-              ${(function () {
-                var ctrl = findSlot("controllers"), spk = findSlot("speakers");
-                var cItem = ctrl ? getSlotItem(ctrl) : null;
-                var sItem = spk ? getSlotItem(spk) : null;
-                var hasCableSlot = currentRig.items.some(function (s) { return s.category === "cables"; });
-                if (!hasCableSlot && cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
-                  var leadLabel = (sItem.included_cables && sItem.included_cables[0]) ? sItem.included_cables[0].model : "Included Analog Audio Lead";
-                  return `
-                    <tr class="rig-row rig-row--included-cable rs-shop-line">
-                      <td class="cell-cat"><span class="cat-pill">🔌 Cables</span></td>
-                      <td class="cell-item">
-                        <div class="item-summary-box">
-                          <div class="item-summary-copy">
-                            <div class="item-title-row rs-shop-line-name">
-                              <strong class="item-full-name">${escapeHtml(leadLabel)}</strong>
-                            </div>
-                            <p class="item-tagline">Supplied inside speaker box (${escapeHtml(sItem.brand)} ${escapeHtml(sItem.model)}). No separate cable purchase needed.</p>
-                            <span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="cell-qty"><span class="qty-display">1 in-box</span></td>
-                      <td class="cell-status"><button type="button" class="status-btn status-btn--owned" disabled aria-disabled="true">✓ In the Box</button></td>
-                      <td class="cell-price rs-shop-line-price"><span class="price-figure price--owned">$0</span></td>
-                      <td class="cell-actions"><span class="owned-sub">Supplied with speakers</span></td>
-                    </tr>
-                  `;
-                }
-                return "";
-              })()}
+
             </tbody>
           </table>
         </div>
 
-        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Offbeat benchmark total: estimated equipment expenditure across verified vendors</div>
+        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Planning estimates only; check current prices, quantities and availability at the retailer.</div>
 
         <!-- Commercial Disclosure Notice -->
         <p class="table-note rs-shop-note">
-          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs such as Amazon Associates) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
+          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links are handoffs, not confirmations of stock or compatibility. Some links may earn Offbeat a commission at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
       </details>
-      <details name="rig-views" id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
+      <details id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
       <section class="rig-manage-dock" id="rig-actions-dock">
         <div class="manage-dock-inner">
           <div class="manage-dock-info">
@@ -951,7 +962,11 @@
     `;
 
     builderRoot.innerHTML = html;
-    if (openView) { var view = document.getElementById(openView); if (view) view.open = true; }
+    viewIds.forEach(function (id) {
+      var view = document.getElementById(id);
+      if (view) view.open = hadViews ? Boolean(previousViews[id]) :
+        (id === "rig-shopping" || (id === "rig-connections" && window.innerWidth > 700));
+    });
   }
 
   function renderCompatibility(stats) {
@@ -1058,7 +1073,7 @@
     return item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d";
   }
 
-  function isRouteCableConfirmed(plan, routeIndex) {
+  function isRouteCableConfirmed(plan, alreadyAllocated) {
     if (!plan) return false;
     if (plan.conflict || plan.kind === "unresolved") return false;
     if (plan.kind === "included") return true;
@@ -1069,31 +1084,64 @@
       var totalUnits = matchingCables.reduce(function (sum, s) {
         return sum + (s.qty || 1);
       }, 0);
-      return totalUnits > routeIndex;
+      return totalUnits >= (Number(plan.units) || 1) + alreadyAllocated;
     }
     return false;
+  }
+
+  // All speaker routes must be independently feasible and supplied. A single
+  // cable pack cannot be counted twice when PA and monitors use the same SKU.
+  function areAllSpeakerRoutesConfirmed() {
+    var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    if (!speakers.length) return false;
+    var routes = computeAllRigConnections();
+    if (routes.length !== speakers.length) return false;
+    var allocated = Object.create(null);
+    return routes.every(function (route) {
+      if (!route || route.conflict) return false;
+      var used = route.itemId ? (allocated[route.itemId] || 0) : 0;
+      if (!isRouteCableConfirmed(route, used)) return false;
+      if (route.kind === "product" && route.itemId) {
+        allocated[route.itemId] = used + (Number(route.units) || 1);
+      }
+      return true;
+    });
   }
 
   function findSlot(category) {
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
 
+  function usableProductPhoto(item) {
+    var photo = item && item.product_photo;
+    return photo && photo.src && photo.source && photo.license && photo.license_url && (photo.attribution || photo.credit) ? photo : null;
+  }
+
+  function productPhotoCredit(item) {
+    var photo = usableProductPhoto(item);
+    if (!photo) return "";
+    return `<span class="rig-photo-credit">Photo: <a href="${escapeHtml(photo.source)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.attribution || photo.credit)}</a> · <a href="${escapeHtml(photo.license_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.license)}</a>${photo.modification ? ' · modified' : ''}</span>`;
+  }
+
   /* ------------------------------------------------- Interactive DJ Booth (Purpose-Based) */
   // The stage uses the same slots and actions as the detailed editor below.
-  function renderVisualEquipment(slot, category, role, label, defaultId, extraClass) {
+  function renderVisualEquipment(slot, category, role, label, defaultId, extraClass, routeLabel) {
     var item = slot && getSlotItem(slot);
     var id = slot ? slot.slotId : defaultId;
     var roleAttr = role ? ` data-speaker-role="${role}"` : '';
     var pick = item || !role
       ? `data-action="pick" data-slot-id="${id}" data-category="${category}"${roleAttr}`
       : `data-action="add-speaker-role" data-speaker-role="${role}"`;
+    var photo = usableProductPhoto(item);
     var owned = item && (slot.owned || item.no_purchase);
     var count = item && role ? (item.speaker_units || 1) * (slot.qty || 1) : 0;
     return `<div class="visual-equipment ${extraClass || ''}">
       <span class="visual-role">${label}</span>
+      ${routeLabel ? `<span class="visual-port-status">${escapeHtml(routeLabel)}</span>` : ''}
       <button type="button" class="visual-pick" ${pick} aria-label="${item ? 'Change ' : 'Add '}${label}">
-        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
+        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
       </button>
+      ${item && photo ? productPhotoCredit(item) : ''}
       ${item ? `<button type="button" class="visual-own ${owned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${id}" ${item.no_purchase ? 'disabled' : ''}>${owned ? '✓ Owned' : 'Mark owned'}</button>` : ''}
     </div>`;
   }
@@ -1123,21 +1171,13 @@
       // 1. Crowd PA takes priority for Master Output
       if (paSlot && paItem) {
         paPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, paItem, paQty, { usedOutputs: usedOutputs });
-        if (paPlan && paPlan.output) {
-          usedOutputs[paPlan.output.connector] = (usedOutputs[paPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(paPlan.output);
-        }
+        reservePlannedOutputs(paPlan, usedOutputs);
       }
 
       // 2. DJ Monitors take Booth output (or Master output if PA is absent)
       if (monitorSlot && monItem) {
         monitorPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, monItem, monQty, { usedOutputs: usedOutputs });
-        if (monitorPlan && monitorPlan.output) {
-          usedOutputs[monitorPlan.output.connector] = (usedOutputs[monitorPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(monitorPlan.output);
-        }
+        reservePlannedOutputs(monitorPlan, usedOutputs);
       }
     }
 
@@ -1145,8 +1185,16 @@
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
 
     var paCableConfirmed = isRouteCableConfirmed(paPlan, 0);
-    var monRouteIndex = (paPlan && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? 1 : 0;
+    var monRouteIndex = (paPlan && paPlan.kind === 'product' && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? (Number(paPlan.units) || 1) : 0;
     var monCableConfirmed = isRouteCableConfirmed(monitorPlan, monRouteIndex);
+
+    function routeLabel(slot, plan, confirmed) {
+      if (!slot) return 'Not added';
+      if (!plan || plan.conflict || plan.kind === 'unknown' || plan.kind === 'unresolved') return 'Route needs review';
+      if (plan.kind === 'allowance') return 'Cable type to confirm';
+      if (plan.kind === 'included') return 'Cable included';
+      return confirmed ? 'Cable in plan' : 'Cable needed';
+    }
 
     var hasConflict = (monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict);
     var anyCableMissing = (paSlot && paPlan && !paCableConfirmed) || (monitorSlot && monitorPlan && !monCableConfirmed && !monitorPlan.conflict);
@@ -1154,18 +1202,22 @@
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
         <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
-        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
+        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Connections need review' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes planned' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route planned' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
         ${stats.compatibility.fatalErrors ? `<p class="visual-critical" role="alert">${stats.compatibility.checks.filter(function(c) { return c.type === 'error' || c.statusLevel === 'incompatible'; }).map(function(c) { return escapeHtml(c.title); }).join(' · ')}</p>` : ''}
         <div class="visual-stage">
-          ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
+          <svg class="visual-wiring visual-wiring--desktop" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+            <path class="visual-wire ${monCableConfirmed ? 'is-planned' : ''}" d="M 430 165 C 350 220 270 220 190 165" />
+            <path class="visual-wire ${paCableConfirmed ? 'is-planned' : ''}" d="M 570 165 C 650 220 730 220 810 165" />
+          </svg>
+          ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor', routeLabel(monitorSlot, monitorPlan, monCableConfirmed))}
           ${renderVisualEquipment(controllerSlot, 'controllers', '', 'Controller / decks', 'core-ctrl', 'visual-controller')}
-          ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa')}
+          ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa', routeLabel(paSlot, paPlan, paCableConfirmed))}
           <div class="visual-secondary">
             ${renderVisualEquipment(headphonesSlot, 'headphones', '', 'Headphones', 'core-hp', 'visual-headphones')}
             ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
           </div>
         </div>
-        <details name="rig-views" id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
+        <details id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
           ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot, paCableConfirmed, monCableConfirmed)}
           ${renderCompatibility(stats)}
         </details>
@@ -1185,7 +1237,7 @@
         <div class="cables-hub-header">
           <div class="hub-header-left">
             <span class="hub-tag">Audio Signal Highway</span>
-            <h4 class="hub-title">⚡ Live Audio Cable Routing</h4>
+            <h4 class="hub-title">Audio routing diagram</h4>
           </div>
           <div class="hub-header-right">
             <span class="cable-title">${escapeHtml(summaryText)}</span>
@@ -1208,10 +1260,10 @@
                   <div class="pipe-track">
                     ${paCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                   </div>
-                  <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
+                  <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.kind === 'product' && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                     <span class="pill-icon">${paCableConfirmed ? '🔌' : '🛒'}</span>
                     <span class="pill-name">${escapeHtml(paPlan ? paPlan.name : 'Audio Cable')}</span>
-                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced Line' : 'Analog Line')) : '+ Add to Rig'}</span>
+                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced Line' : 'Analog Line')) : (paPlan && paPlan.kind === 'product' ? '+ Add cable' : 'Confirm route')}</span>
                   </div>
                 </div>
 
@@ -1228,17 +1280,17 @@
             <!-- DJ Monitors Route -->
             ${monitorPlan && monitorPlan.conflict ? `
               <div class="cable-route-card cable-route-card--conflict">
-                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware Routing Limitation: No Independent Booth Output</div>
+                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware routing limitation</div>
                 <div class="conflict-content">
                   <div class="conflict-head">
                     <span class="conflict-icon">⚠️</span>
-                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently</strong>
+                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently in this plan</strong>
                   </div>
                   <p class="conflict-desc">
-                    ${escapeHtml(ctrlItem ? ctrlItem.model : 'This device')} only provides one stereo master output (${escapeHtml(ctrlItem && ctrlItem.master_outputs ? ctrlItem.master_outputs.join(', ') : 'Master')} which is currently feeding Crowd PA), and lacks a secondary booth monitor output.
+                    ${escapeHtml(monitorPlan.note || "This route needs a separate output. Confirm the hardware before buying cables.")}
                   </p>
                   <div class="conflict-solutions">
-                    <strong>Verified Solutions:</strong>
+                    <strong>Ways to explore (check connections first):</strong>
                     <ul>
                       <li>Practice using <strong>Cue Headphones</strong> only when crowd PA is active.</li>
                       <li>Upgrade to a 4-channel controller with dedicated <strong>Booth outputs</strong> (e.g. DDJ-FLX10 or XDJ-AZ).</li>
@@ -1261,10 +1313,10 @@
                     <div class="pipe-track">
                       ${monCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                     </div>
-                    <div class="pipe-cable-pill ${monCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!monCableConfirmed && monitorPlan && monitorPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${monitorPlan.itemId}"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
+                    <div class="pipe-cable-pill ${monCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!monCableConfirmed && monitorPlan && monitorPlan.kind === 'product' && monitorPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${monitorPlan.itemId}"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                       <span class="pill-icon">🔌</span>
                       <span class="pill-name">${escapeHtml(monitorPlan ? monitorPlan.name : 'Audio Cable')}</span>
-                      <span class="pill-badge">${monCableConfirmed ? (monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')) : 'Cable needed'}</span>
+                      <span class="pill-badge">${monCableConfirmed ? (monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')) : (monitorPlan && monitorPlan.kind === 'product' ? 'Cable needed' : 'Confirm route')}</span>
                     </div>
                   </div>
 
@@ -1313,10 +1365,12 @@
       ? dests.zzounds.url
       : "https://www.zzounds.com/prodsearch?q=" + encodeURIComponent(item.brand + " " + item.model);
     var zzSku = (dests && dests.zzounds && dests.zzounds.sku) ? dests.zzounds.sku : "";
-    var zzStatus = (dests && dests.zzounds && dests.zzounds.status) ? dests.zzounds.status : (zzSku ? "verified_in_stock" : "search_fallback");
+    var zzStatus = "unknown";
     var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
 
-    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
+    // Keep the configured Associates attribution on every planner shopping handoff.
+    // These are model searches, never claims of an exact Amazon product listing.
+    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&amp;tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
 
@@ -1331,13 +1385,13 @@
         ? OffbeatGear.connectionPlan(CATALOG, cItem, sItem, (spk ? spk.qty : 1) || 1)
         : null;
 
-      var isBoxCovered = cItem && sItem && includedSpeakerCableMatches(cItem, sItem);
+      var isBoxCovered = pPlan && pPlan.kind === "included";
       var isExactRequired = pPlan && pPlan.kind === "product" && pPlan.itemId === slot.itemId;
       var isAllowance = pPlan && pPlan.kind === "allowance" && pPlan.itemId === slot.itemId;
 
       if (isExactRequired) {
         if (pPlan.balanced) {
-          cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Required Balanced Cable (' + (pPlan.units || 1) + ' Pair)</span>';
+          cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Required Balanced Cable (' + (pPlan.units || 1) + ' units)</span>';
         } else {
           cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Required Analog Audio Lead</span>';
         }
@@ -1367,7 +1421,7 @@
 
     var stockAlertHtml = "";
     if (item.id === "denon-prime-4-plus" || (dests && dests.zzounds && dests.zzounds.status === "verified_unavailable")) {
-      stockAlertHtml = '<span class="stock-alert rs-shop-line-stock" style="display:block; color:#f87171; font-size:0.8rem; margin-top:0.25rem;">Discontinued / Out of stock at zZounds · In-stock alternative: Denon DJ PRIME 4 G2</span>';
+      stockAlertHtml = '<span class="stock-alert rs-shop-line-stock" style="display:block; color:#f87171; font-size:0.8rem; margin-top:0.25rem;">Availability may have changed. Check the retailer before ordering.</span>';
     }
 
     return `
@@ -1395,12 +1449,12 @@
           <div class="qty-stepper-wrap">
             <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 || isPlatformPlaceholder ? 'disabled' : ''}>-</button>
             <span class="qty-display">${qty}</span>
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 || isPlatformPlaceholder ? 'disabled' : ''}>+</button>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 8 || isPlatformPlaceholder ? 'disabled' : ''}>+</button>
           </div>
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn rs-own-toggle ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
-            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
+            ${item.host_type === "mobile" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
           </button>
         </td>
         <td class="cell-price">
@@ -1412,10 +1466,10 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}" ${slot.category === 'speakers' ? `data-speaker-role="${getSpeakerRole(slot)}"` : ''}>Swap</button>
-            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.id === "existing-mobile-device" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
+            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.host_type === "mobile" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
             <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
             ${item.id === "denon-prime-4-plus" ? `
-            <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="verified_in_stock" data-sku="DENPRIME4G2" title="In-stock alternative at zZounds">In-stock alternative: PRIME 4 G2</a>
+            <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" data-sku="DENPRIME4G2" title="Check PRIME 4 G2 at zZounds">Check alternative: PRIME 4 G2</a>
             ` : ''}
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon</a>
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
@@ -1435,11 +1489,7 @@
         return "Speaker Package Includes Audio Cable";
       }
       var controllerSlot = findSlot("controllers"), speakerSlot = findSlot("speakers");
-      if (controllerSlot && speakerSlot &&
-          includedSpeakerCableMatches(getSlotItem(controllerSlot), getSlotItem(speakerSlot))) {
-        return "Speaker Package Includes Audio Cable";
-      }
-      return "No Audio Cables Selected";
+            return "No Audio Cables Selected";
     }
     return cables.map(function (c) {
       var item = getSlotItem(c);
@@ -1522,7 +1572,7 @@
           </div>
 
           <div class="picker-search-bar">
-            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, Prime 4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
+            <input type="search" aria-label="Search equipment" placeholder="Search by brand, model or feature" data-modal-search autocomplete="off">
           </div>
 
           <div class="picker-grid" id="modal-items-grid">
@@ -1560,17 +1610,19 @@
 
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
+      var photo = usableProductPhoto(item);
       return `
         <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}" data-drawer-use="${item.id}">
           <div class="picker-card-img-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
-            <span class="picker-provenance-tag">Vector Schematic</span>
+            <span class="picker-provenance-tag">${photo ? 'Photo' : 'Vector Schematic'}</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
             <h4 class="picker-card-title">${escapeHtml(item.model)}</h4>
             <p class="picker-card-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+            ${photo ? productPhotoCredit(item) : ''}
             <div class="picker-specs-list">
               ${item.channels ? `<span>${item.channels} Channels</span>` : ''}
               ${item.master_outputs ? `<span>Outputs: ${item.master_outputs.join(", ")}</span>` : ''}
@@ -1911,7 +1963,7 @@
         role: role,
         itemId: itId,
         qty: 1,
-        owned: itId === "existing-mobile-device"
+        owned: Boolean(it && it.no_purchase === true)
       });
     });
     return items;
@@ -1982,7 +2034,15 @@
 
   /* ------------------------------------------------------------- Actions */
   function setupGlobalListeners() {
+    document.addEventListener("error", function (e) {
+      var image = e.target;
+      if (image && image.dataset && image.dataset.photoFallback) {
+        image.src = image.dataset.photoFallback;
+        delete image.dataset.photoFallback;
+      }
+    }, true);
     document.addEventListener("click", function (e) {
+      if (e.target.closest(".rig-photo-credit a")) return;
       // 1. Modal backdrop close
       if (e.target.classList.contains("picker-backdrop")) {
         closeModal();
@@ -2073,7 +2133,7 @@
         var sToStep = currentRig.items.find(function (s) { return s.slotId === stepSlotId; });
         if (sToStep) {
           var newQ = (sToStep.qty || 1) + stepVal;
-          if (newQ >= 1 && newQ <= 4) {
+          if (newQ >= 1 && newQ <= 8) {
             sToStep.qty = newQ;
             playClickSfx("toggle");
             saveActiveState();
@@ -2124,29 +2184,12 @@
         }
       } else if (action === "auto-fix-cable") {
         var cableId = btn.getAttribute("data-cable-id");
-        var cableItem = getItem(cableId);
-        if (cableItem && cableItem.category === "cables") {
-          // If this cable is already in the rig, but a secondary line needs an additional lead, increment qty
-          var existingCableSlot = currentRig.items.find(function (s) { return s.itemId === cableId; });
-          if (existingCableSlot) {
-            existingCableSlot.qty = (existingCableSlot.qty || 1) + 1;
-          } else {
-            var newSlotId = "auto-cable-" + Date.now();
-            var suffix = 0;
-            while (currentRig.items.some(function (s) { return s.slotId === newSlotId; })) {
-              newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
-            }
-            currentRig.items.push({
-              slotId: newSlotId,
-              category: "cables",
-              itemId: cableId,
-              qty: 1,
-              owned: false
-            });
-          }
+        if (addRequiredCableToRig(cableId)) {
           playClickSfx("select");
           saveActiveState();
           renderApp();
+        } else {
+          alert("Cannot add another cable: check the catalog and the 24-item rig limit before purchasing.");
         }
       } else if (action === "auto-fix-slot") {
         var fixSlotId = btn.getAttribute("data-slot-id");
@@ -2257,6 +2300,34 @@
     loadPresetData(CATALOG.presets[randomIdx]);
   }
 
+  // A purchased cable pack and an already-owned cable pack are different
+  // inventory. Never increase the owned quantity to satisfy a missing route:
+  // that would show a green connection while omitting the extra purchase.
+  function addRequiredCableToRig(cableId) {
+    var cableItem = getItem(cableId);
+    if (!cableItem || cableItem.category !== "cables") return false;
+    var toBuy = currentRig.items.find(function (slot) {
+      return slot.category === "cables" && slot.itemId === cableId &&
+        !slot.owned && (slot.qty || 1) < 8;
+    });
+    if (toBuy) {
+      toBuy.qty = (toBuy.qty || 1) + 1;
+      return true;
+    }
+    // An owned pack, or an unowned pack already at quantity eight, cannot
+    // absorb a new purchase. Keep the new units explicitly unowned.
+    if (currentRig.items.length >= 24) return false;
+    var newSlotId = "auto-cable-" + Date.now();
+    var suffix = 0;
+    while (currentRig.items.some(function (slot) { return slot.slotId === newSlotId; })) {
+      newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
+    }
+    currentRig.items.push({
+      slotId: newSlotId, category: "cables", itemId: cableId, qty: 1, owned: false
+    });
+    return true;
+  }
+
   function copyChecklistToClipboard() {
     var stats = calculateRigStats();
     var lines = [
@@ -2356,6 +2427,18 @@
       .replace(/'/g, "&#039;");
   }
 
+  // One planned route can consume multiple stereo output pairs (for example,
+  // three or four independent PA cabinets). Reserve every pair, not just one,
+  // before considering the next speaker line. An unresolved route reserves none.
+  function reservePlannedOutputs(plan, usedOutputs) {
+    if (!plan || !plan.output || plan.conflict || plan.kind === "unresolved" || plan.kind === "unknown") return;
+    var connector = plan.output.connector;
+    var count = Math.max(1, Math.round(Number(plan.outputsNeeded) || 1));
+    usedOutputs[connector] = (usedOutputs[connector] || 0) + count;
+    if (!usedOutputs.claimed) usedOutputs.claimed = [];
+    usedOutputs.claimed.push(plan.output);
+  }
+
   function computeAllRigConnections() {
     var ctrlSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
     var ctrlItem = ctrlSlot ? getSlotItem(ctrlSlot) : null;
@@ -2377,11 +2460,7 @@
       var item = getSlotItem(s);
       if (!item) return null;
       var plan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, item, s.qty || 1, { usedOutputs: usedOutputs });
-      if (plan && plan.output) {
-        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + 1;
-        if (!usedOutputs.claimed) usedOutputs.claimed = [];
-        usedOutputs.claimed.push(plan.output);
-      }
+      reservePlannedOutputs(plan, usedOutputs);
       return {
         speakerId: item.id,
         slotId: s.slotId,
@@ -2426,53 +2505,49 @@
       return window.location.origin + window.location.pathname + "?rig=" + encodeURIComponent(encoded);
     },
     checks: function () {
-      var stats = calculateRigStats();
       var checks = [];
       var ctrl = findSlot("controllers");
       var ctrlItem = ctrl ? getSlotItem(ctrl) : null;
-      if (ctrlItem && (/prime|sc6000|standalone|xdj/i.test(ctrlItem.id) || ctrlItem.is_standalone)) {
-        checks.push({ key: "host", level: "ok", title: "Standalone Playback", note: ctrlItem.brand + " " + ctrlItem.model + " runs its own playback without a computer." });
+      var host = findSlot("laptops");
+      var hostItem = host ? getSlotItem(host) : null;
+      if (!ctrlItem) {
+        checks.push({ key: "host", level: "warn", title: "Controller Required", note: "No DJ playback or mixing system is selected." });
+      } else if (ctrlItem.standalone) {
+        checks.push({ key: "host", level: "ok", title: "Standalone Capability Listed", note: "Confirm media, firmware and supported playback before performing." });
+      } else if (!hostItem || hostItem.id === "standalone-usb-only") {
+        checks.push({ key: "host", level: "warn", title: "Host Computer Required", note: "This controller cannot play tracks without a compatible host and DJ software." });
+      } else if (hostItem.host_type === "mobile") {
+        // The public read-only check must agree with the actual buying verdict,
+        // not label an unsupported phone route as merely "unverified".
+        var mobileVerdict = runDeepCompatibilityChecks();
+        var mobileCheck = mobileVerdict.checks.find(function (check) {
+          return /Mobile Host Not Verified|Mobile Host, USB|FLX2 Mobile Host|GRV6 Mobile|Numark Mobile/.test(check.title);
+        });
+        checks.push({
+          key: "host",
+          level: mobileCheck && mobileCheck.type === "error" ? "bad" : "warn",
+          title: mobileCheck ? mobileCheck.title : "Mobile host: verify app, power and audio",
+          note: mobileCheck ? mobileCheck.desc : "Confirm mobile app, device, power and audio before purchasing."
+        });
       } else {
-        checks.push({ key: "host", level: "ok", title: "Host Computer Connected", note: "Controller connected to host device." });
+        checks.push({ key: "host", level: "warn", title: "Host Compatibility Needs Verification", note: "A host is listed, not physically connected or software-verified. Confirm device, licensing, USB audio and power." });
       }
-      var spk = findSlot("speakers");
-      var sItem = spk ? getSlotItem(spk) : null;
-      var spkPlan = (ctrlItem && sItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan)
-        ? OffbeatGear.connectionPlan(CATALOG, ctrlItem, sItem, (spk ? spk.qty : 1) || 1)
-        : null;
-      var cablesOk = spkPlan && spkPlan.kind !== "unresolved";
-      if (cablesOk) {
-        checks.push({ key: "cables", level: "ok", title: "Cables Verified", note: "Audio routing cleanly matched for " + (sItem ? sItem.model : "speakers") + " and " + (ctrlItem ? ctrlItem.model : "controller") });
+      var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+      if (!speakers.length) {
+        checks.push({ key: "cables", level: "warn", title: "No Speaker Route Selected", note: "Headphone-only practice is possible; no speaker cabling has been established." });
+      } else if (areAllSpeakerRoutesConfirmed()) {
+        checks.push({ key: "cables", level: "ok", title: "Speaker Cable Routes Planned", note: "Included or selected cable quantities cover the modeled routes; verify physical connections before use." });
       } else {
-        checks.push({ key: "cables", level: "warn", title: "Routing Review Needed", note: "Check connections" });
+        checks.push({ key: "cables", level: "warn", title: "Speaker Cable Routes Need Review", note: "At least one route has missing cable packs, unsupported connectors or conflicting hardware outputs." });
       }
       return checks;
     },
     shoppingList: function () {
-      var conns = computeAllRigConnections();
-      var cableMap = {};
-      conns.forEach(function (p) {
-        if (p.kind === "product" && p.itemId) {
-          var cItem = getItem(p.itemId);
-          var price = cItem ? cItem.price : 28;
-          var units = p.units || 1;
-          if (!cableMap[p.itemId]) {
-            cableMap[p.itemId] = { itemId: p.itemId, name: cItem ? cItem.model : p.itemId, price: price, qty: 0, lineTotal: 0 };
-          }
-          cableMap[p.itemId].qty += units;
-          cableMap[p.itemId].lineTotal += (units * price);
-        }
-      });
-      var out = currentRig.items.map(function (s) {
+      return currentRig.items.map(function (s) {
         var it = getSlotItem(s);
         if (!it || s.owned || it.no_purchase) return null;
-        if (s.category === "cables" && cableMap[s.itemId]) return null;
         return { itemId: it.id, name: it.brand + " " + it.model, price: it.price, qty: s.qty || 1, lineTotal: it.price * (s.qty || 1) };
       }).filter(Boolean);
-      Object.keys(cableMap).forEach(function (k) {
-        out.push(cableMap[k]);
-      });
-      return out;
     },
     connections: computeAllRigConnections,
     speakers: function () {
