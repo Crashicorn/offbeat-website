@@ -6329,3 +6329,14 @@ tr.rs-item { display: table-row !important; }
    Do not let those tokens extend beyond the card's visible reading area. */
 .hub-grid > .hub-card { min-width: 0; }
 .hub-grid > .hub-card p { overflow-wrap: anywhere; }
+
+/* 2026-10-31: sitewide audit verified gear-hub long purchasing action.
+   Allow the complete affiliate destination label to wrap inside its card rather
+   than extending beyond the card's purchasing area at desktop widths. */
+.hub-grid > .hub-card > .btn-hub {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
