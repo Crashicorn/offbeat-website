@@ -50,7 +50,10 @@ MEASURE = r"""
     let c = '';
     try { c = typeof el.className === 'string' ? el.className : ''; } catch (e) {}
     c = c.trim().split(/\s+/).slice(0, 3).join('.');
-    return el.tagName.toLowerCase() + (c ? '.' + c : '');
+    const parent = el.parentElement;
+    const pc = parent && typeof parent.className === 'string'
+      ? parent.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+    return el.tagName.toLowerCase() + (c ? '.' + c : (pc ? ' @'+parent.tagName.toLowerCase()+'.'+pc : ''));
   };
   for (const el of document.querySelectorAll('body *')) {
     // SVG descendants use viewBox coordinates, not HTML clientWidth/scrollWidth.
@@ -179,7 +182,7 @@ def main():
                     why.append(f"pageOverflowX={r['pageOverflowX']}px")
                 if (r.get("spillVisible") or 0) > 0:
                     why.append(f"spillVisible={r['spillVisible']} "
-                               + "; ".join(f"{t['el']} +{t['by']}px" for t in r["spillTop"][:3]))
+                               + "; ".join(f"{t['el']} +{t['by']}px ({t['txt']!r})" for t in r["spillTop"][:3]))
                 if (r.get("imgBroken") or 0) > 0:
                     why.append(f"imgBroken={r['imgBroken']}")
                 if a.strict and (r.get("beyondViewport") or 0) > 0:
