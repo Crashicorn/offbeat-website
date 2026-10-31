@@ -308,11 +308,13 @@
         // link would silently share a different shopping list.
         window.history.replaceState({ rig: currentRig }, "", window.location.pathname);
         console.warn("This rig is too large for a share URL; saved local state remains available.");
-        return;
+        return false;
       }
       window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encodeURIComponent(encoded));
+      return true;
     } catch (e) {
       console.warn("Could not update rig share URL:", e);
+      return false;
     }
   }
 
@@ -1735,9 +1737,13 @@
 
   function openExportModal() {
     var stats = calculateRigStats();
-    var shareUrl = window.location.href;
+    // First-load and local-storage rigs may never have been edited. Persist
+    // the CURRENT state before copying a link; do not export the bare page
+    // or an old rig URL as if it contained this shopping list.
+    var canShare = saveActiveState();
+    var shareUrl = canShare ? window.location.href : "";
 
-    var redditMarkdown = `**[${currentRig.name}](${shareUrl})**\n\n` +
+    var redditMarkdown = (canShare ? `**[${currentRig.name}](${shareUrl})**\n\n` : `**${currentRig.name}**\n\n`) +
       `| Category | Equipment | Price |\n` +
       `| :--- | :--- | :--- |\n` +
       currentRig.items.map(function (s) {
@@ -1749,7 +1755,9 @@
       `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
       `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
       `* **Actual Out-of-Pocket Spend:** **$${stats.purchaseCost.toLocaleString()}**\n\n` +
-      `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`;
+      (canShare
+        ? `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`
+        : "*Generated with Offbeat DJ Rig Architect. This build exceeds the share-link limit; save it locally or reduce its size.*");
 
     var modalHtml = `
       <div class="picker-backdrop" data-action="close-modal">
@@ -1777,10 +1785,10 @@
           </div>
 
           <div class="export-tab-pane" id="pane-link" hidden>
-            <p class="export-help">Direct link to load your exact equipment and ownership selections:</p>
-            <input type="text" class="export-input-url" id="link-export-box" value="${escapeHtml(shareUrl)}" readonly>
+            <p class="export-help">${canShare ? "Direct link to load your exact equipment and ownership selections:" : "This build exceeds the share-link limit. Save it locally or reduce its size; no exact share link is available."}</p>
+            <input type="text" class="export-input-url" id="link-export-box" value="${escapeHtml(shareUrl)}" readonly ${canShare ? "" : "disabled"}>
             <div class="export-pane-footer">
-              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-share-url">🔗 Copy Link to Clipboard</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-share-url" ${canShare ? "" : "disabled"}>🔗 Copy Link to Clipboard</button>
             </div>
           </div>
 
