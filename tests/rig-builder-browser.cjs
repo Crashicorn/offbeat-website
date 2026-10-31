@@ -98,6 +98,33 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       await context.close();
       console.log("PASS: mobile consent is non-overlapping and analytics remains opt-in and withdrawable");
     }
+    // A multi-cabinet PA line can consume two stereo output pairs. A second
+    // monitor line must not reuse those occupied outputs merely because four
+    // XLR cable packs are selected in the shopping list.
+    {
+      const rig = { name: "Multi-output capacity", items: [
+        { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+        { slotId: "pa", category: "speakers", itemId: "jbl-eon-715", role: "crowd_pa", qty: 3, owned: false },
+        { slotId: "mon", category: "speakers", itemId: "krk-rokit-5-g4", role: "dj_monitor", qty: 4, owned: false },
+        { slotId: "leads", category: "cables", itemId: "cable-xlr-xlr", qty: 4, owned: false }
+      ] };
+      const encoded = encodeURIComponent(Buffer.from(encodeURIComponent(JSON.stringify(rig)), "utf8").toString("base64"));
+      const { page, context, errors } = await visit(browser, 1440, "?rig=" + encoded);
+      const routes = await page.evaluate(() => window.__rigStudio.connections());
+      assert.equal(routes.length, 2);
+      assert.equal(routes[0].outputsNeeded, 2, "three JBL PA cabinets need two output pairs");
+      assert.equal(routes[1].outputsNeeded, 2, "four KRK monitors need two more output pairs");
+      assert.equal(routes[1].conflict, true, "only three compatible XLR output pairs exist");
+      assert.match(await page.$eval(".visual-route", el => el.textContent), /Routing limitation|Incompatible/);
+      assert.match(await page.$eval(".compat-items-grid", el => el.textContent),
+        /Secondary Speaker Route Cannot Be Fed/);
+      assert.equal((await page.evaluate(() => window.__rigStudio.checks())).find(c => c.key === "cables").level,
+        "warn", "public checks must not declare a fourth XLR output verified");
+      assert.deepEqual(errors, [], "no browser JS errors during over-capacity routing");
+      await context.close();
+      console.log("PASS: multi-pair PA and monitor routes cannot reuse occupied XLR outputs");
+    }
+
     for (const width of [1440, 390]) {
       const { page, context, errors, metrics } = await visit(browser, width);
       // One visual editor; supporting sections remain independently expandable.
