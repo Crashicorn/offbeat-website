@@ -354,6 +354,55 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await cableFix.context.close();
     console.log("PASS: connection fix adds XLR without discarding owned RCA cables");
 
+    // Buyer-facing compatibility must agree with the booth: one XLR cable
+    // pack does not serve three PA cabinets, and an unsupported second output
+    // must never be reported as a verified cable route.
+    const routeRig = {
+      name: "Three PA cabinets",
+      items: [
+        { slotId: "ctrl", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+        { slotId: "hp", category: "headphones", itemId: "ath-m50x", qty: 1, owned: true },
+        { slotId: "pa", category: "speakers", role: "crowd_pa", itemId: "jbl-eon-715", qty: 3, owned: false },
+        { slotId: "xlr", category: "cables", itemId: "cable-xlr-xlr", qty: 1, owned: false }
+      ]
+    };
+    const rigQuery = rig => "?rig=" + encodeURIComponent(
+      Buffer.from(encodeURIComponent(JSON.stringify(rig)), "binary").toString("base64")
+    );
+    const shortCables = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await shortCables.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    assert.match(await shortCables.page.$eval("#rs-compatibility", e => e.textContent),
+      /Speaker Cable Quantity or Routing Needs Review/);
+    assert.match(await shortCables.page.$eval(".visual-pa", e => e.textContent), /Cable needed/);
+    assert.deepEqual(shortCables.errors, []);
+    await shortCables.context.close();
+
+    routeRig.items.find(s => s.category === "cables").qty = 2;
+    const enoughCables = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await enoughCables.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "ok");
+    assert.match(await enoughCables.page.$eval("#rs-compatibility", e => e.textContent),
+      /Listed Audio Connection Match/);
+    assert.match(await enoughCables.page.$eval(".visual-pa", e => e.textContent), /Cable in plan/);
+    assert.deepEqual(enoughCables.errors, []);
+    await enoughCables.context.close();
+
+    routeRig.items[0].itemId = "pioneer-ddj-flx4";
+    routeRig.items[2].qty = 1;
+    routeRig.items.push({ slotId: "mon", category: "speakers", role: "dj_monitor",
+      itemId: "pioneer-dm40d", qty: 1, owned: false });
+    const outputConflict = await visit(browser, 390, rigQuery(routeRig));
+    assert.equal(await outputConflict.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "cables").level), "warn");
+    assert.equal(await outputConflict.page.evaluate(() =>
+      __rigStudio.checks().find(c => c.key === "host").level), "warn",
+      "standalone USB-only host cannot be reported as connected to FLX4");
+    assert.match(await outputConflict.page.$eval(".visual-route", e => e.textContent), /limitation/i);
+    assert.deepEqual(outputConflict.errors, []);
+    await outputConflict.context.close();
+    console.log("PASS: insufficient PA cable packs and FLX4 dual-output conflict never show green readiness");
+
     // Guide-to-planner links must not wipe an existing saved shopping list.
     // Replacing a controller resets only its own purchase/quantity state;
     // accessory links append rather than replacing a different cable.
