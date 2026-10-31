@@ -38,6 +38,7 @@ function harness(storageDisabled, withGear = false) {
     setCatalog: function (x) { CATALOG = x; },
     sanitizeRigState: sanitizeRigState,
     normalizeRigState: normalizeRigState,
+    wasShareRejected: function () { return sharedRigRejected; },
     parseUrlOrLocalState: parseUrlOrLocalState,
     saveActiveState: saveActiveState,
     getRig: function () { return currentRig; },
@@ -182,6 +183,48 @@ test("unknown catalog items, category mismatches and oversized payloads fail clo
   assert.equal(api.sanitizeRigState({ items: [{ ...slot(), category: "headphones" }] }), null);
   assert.equal(api.sanitizeRigState({ items: Array.from({ length: 25 }, () => slot()) }), null);
   assert.equal(api.sanitizeRigState({ items: [] }), null);
+});
+
+test("mixed valid and missing equipment lines reject the entire imported shopping list", () => {
+  const { api } = harness(false);
+  const valid = slot("valid-controller");
+  const missing = { ...slot("retired-controller"), itemId: "no-longer-in-catalog" };
+  assert.equal(api.sanitizeRigState({ name: "Underpriced", items: [valid, missing] }), null);
+  assert.equal(api.sanitizeRigState({ items: [valid, null] }), null);
+  assert.equal(api.sanitizeRigState({ i: [
+    ["valid-controller", "controllers", "pioneer-ddj-flx4", 1, 0, ""],
+    ["retired-controller", "controllers", "no-longer-in-catalog", 1, 0, ""]
+  ] }), null);
+  assert.equal(api.sanitizeRigState({
+    slots: { controllers: "pioneer-ddj-flx4", headphones: "no-longer-in-catalog" }
+  }), null);
+});
+
+test("invalid explicit share never falls back to unrelated browser equipment", () => {
+  const { api, memory, window } = harness(false);
+  assert.equal(api.normalizeRigState({ name: "Starter", items: [slot()] }), true);
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Unrelated local shopping list",
+    items: [{ slotId: "local-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 2, owned: true }]
+  });
+  const broken = { name: "Incomplete shared build", items: [
+    slot(), { ...slot("missing"), itemId: "no-longer-in-catalog" }
+  ] };
+  const rigParam = encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  window.location.search = "?rig=" + rigParam;
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Starter");
+  assert.equal(api.getRig().items.length, 1);
+  assert.equal(api.wasShareRejected(), true);
+  window.location.search = "?add=sennheiser-hd25&rig=" + rigParam;
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 1, "broken shared deep link must not add to an unrelated rig");
+  assert.equal(api.wasShareRejected(), true);
+  const valid = { name: "Valid shared build", items: [slot()] };
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(valid))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Valid shared build");
+  assert.equal(api.wasShareRejected(), false);
 });
 
 test("duplicate IDs are unique and legacy preset links still work", () => {
