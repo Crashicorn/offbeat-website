@@ -659,7 +659,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
         Buffer.from(encodeURIComponent(JSON.stringify(damaged)), "binary").toString("base64")
       );
       const imported = await visit(browser, 390, damagedQuery);
-      const warning = await imported.page.$eval('[role="alert"]', el => el.textContent);
+      const warning = await imported.page.$eval('#rig-app-root .highlight-box[role="alert"]', el => el.textContent);
       assert.match(warning, /Shared DJ setup could not be restored/);
       assert.match(warning, /NOT the shared shopping list/);
       assert.deepEqual(imported.errors, [], "corrupt purchase quantities must not crash the planner");
