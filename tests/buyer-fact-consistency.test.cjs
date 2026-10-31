@@ -85,3 +85,34 @@ test("Rig Spotlight deep links match catalog product identity, unit and planning
     assert.ok(seen.has(id), id + " must have a separate search deep link");
   }
 });
+
+
+test("MixTrack Go included stereo RCA lead covers two independent Classic 5 monitors", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const { OffbeatGear } = require("../assets/gear-connections.js");
+  const byId = id => catalog.items.find(item => item.id === id);
+  const controller = byId("numark-mixtrack-go");
+  const pair = byId("krk-classic-5-pair");
+  assert.equal(controller.included_cables[0].feeds_covered, 2,
+    "the supplied stereo 3.5mm-to-dual-RCA lead has two independent RCA speaker-end plugs");
+  const plan = OffbeatGear.connectionPlan(catalog, controller, pair, 1);
+  assert.equal(plan.feeds, 2, "the Classic 5 pair requires two mono feeds");
+  assert.equal(plan.kind, "included", "one supplied dual-RCA lead reaches both cabinets");
+  assert.equal(plan.units, 0, "do not charge a second lead for a complete included path");
+  assert.equal(plan.outputsNeeded, 1, "the stereo adapter uses one stereo master output");
+  assert.equal(plan.conflict, false, "a valid pair must not be marked impossible");
+
+  // Future partial-coverage regression: two feeds included, three required.
+  // An extra output and purchased cable must be charged, not labelled free.
+  const threeFeedPair = JSON.parse(JSON.stringify(pair));
+  threeFeedPair.connection.feeds_per_box = 3;
+  const twoOutputController = JSON.parse(JSON.stringify(controller));
+  twoOutputController.outputs.push({ ...twoOutputController.outputs[0], role: "booth", label: "Second stereo output" });
+  const partial = OffbeatGear.connectionPlan(catalog, twoOutputController, threeFeedPair, 1);
+  assert.equal(partial.feeds, 3);
+  assert.equal(partial.coveredFeeds, 2);
+  assert.equal(partial.kind, "allowance", "remaining feed needs a priced lead, not included status");
+  assert.equal(partial.units, 1, "one additional cable purchase required");
+  assert.equal(partial.outputsNeeded, 2, "included and purchased leads consume two sockets");
+  assert.match(partial.note, /2 of 3 feeds already come with/);
+});

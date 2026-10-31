@@ -990,7 +990,7 @@
         {
           "from": "jack35",
           "to": "rca",
-          "feeds_covered": 1,
+          "feeds_covered": 2,
           "label": "1/8\" (3.5 mm) to stereo RCA adapter cable",
           "note": "Included in the box with MixTrack Go for direct connection to RCA monitors without buying an adapter.",
           "passive": true
