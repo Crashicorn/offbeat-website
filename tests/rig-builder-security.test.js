@@ -76,6 +76,18 @@ function slot(id = "core-ctrl") {
   return { slotId: id, category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false };
 }
 
+test("shopping quantities through eight survive shared-state sanitation without silent resets", () => {
+  const { api } = harness(false);
+  for (const qty of [1, 4, 5, 8]) {
+    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
+    assert.equal(clean.items[0].qty, qty, "valid quantity " + qty + " must persist");
+  }
+  for (const qty of [0, 9, 1000]) {
+    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
+    assert.equal(clean.items[0].qty, 1, "invalid quantity " + qty + " must fail closed");
+  }
+});
+
 test("hostile shared identifiers cannot become HTML attributes", () => {
   const { api } = harness(false);
   const rig = api.sanitizeRigState({
@@ -602,6 +614,9 @@ test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
     qty: 1, owned: false
   });
   assert.match(realItem, /amazon\.com/);
+  assert.match(realItem, /amazon\.com\/s\?k=[^"]+&amp;tag=offbeatdj-20/,
+    "planner Amazon search handoffs must retain the configured Associates attribution");
+  assert.match(realItem, /rel="nofollow noopener sponsored"/);
   assert.match(realItem, /sweetwater\.com/);
 });
 
