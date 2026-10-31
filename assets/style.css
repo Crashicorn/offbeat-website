@@ -6117,3 +6117,200 @@ tr.rs-item { display: table-row !important; }
   letter-spacing: .08em;
   color: #7dd3fc;
 }
+
+/* =============================================================================
+   2026-10 sitewide release pass
+   1. Hero metadata separators that wrap with their label
+   2. Tools hub (dj-tools.html): hero index, tool rows, link rail
+   3. Content rhythm on long hub pages
+   ========================================================================== */
+
+/* ---------- 1. Hero metadata ---------- */
+/* The separator used to be a flex pseudo-element inside an inline-flex span,
+   so on narrow screens the dot could orphan onto its own line before the
+   label. Text separators wrap with the words they belong to. */
+.hero-meta, .ofb-meta { column-gap: 0; row-gap: .25rem; }
+.hero-meta span, .ofb-meta span { display: inline; }
+.hero-meta span + span::before,
+.ofb-meta span + span::before {
+  content: "·";
+  display: inline;
+  width: auto; height: auto; border-radius: 0; background: none;
+  margin: 0 .45rem;
+  color: var(--muted-2);
+}
+
+/* ---------- 2. Tools hub ---------- */
+.hero--index .hero-inner {
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr);
+  align-items: start;
+}
+.hero-index {
+  border-left: 1px solid var(--line);
+  padding: .2rem 0 0 clamp(1rem, 2vw, 1.6rem);
+  align-self: stretch;
+}
+.hero-index-label {
+  display: block;
+  font-family: var(--display);
+  font-size: .7rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted-2); margin-bottom: .65rem;
+}
+.hero-index ol { list-style: none; margin: 0; padding: 0; }
+.hero-index a {
+  display: flex; align-items: baseline; gap: .7rem;
+  padding: .48rem .1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  color: var(--text-2); font-size: .92rem; text-decoration: none;
+  transition: color .15s ease, padding-left .15s ease;
+}
+.hero-index a span {
+  font-family: var(--display); font-size: .72rem; letter-spacing: .06em;
+  color: var(--flame-2); min-width: 1.3rem;
+}
+.hero-index a:hover { color: #fff; padding-left: .3rem; }
+
+.tool-index { display: grid; gap: clamp(1.4rem, 3vw, 2.4rem); }
+.tool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+  gap: clamp(1.1rem, 3vw, 2.4rem);
+  align-items: center;
+  padding-top: clamp(1.4rem, 3vw, 2.2rem);
+  border-top: 1px solid var(--line);
+}
+.tool-row:first-of-type { border-top: 0; padding-top: 0; }
+.tool-row:nth-child(even) .tool-row-media { order: 2; }
+.tool-row-media {
+  margin: 0; overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  box-shadow: var(--shadow);
+}
+.tool-row-media img {
+  display: block; width: 100%; height: auto;
+  aspect-ratio: 1280 / 700; object-fit: cover; object-position: top center;
+}
+.tool-row-body h2 { margin: .35rem 0 .45rem; font-size: clamp(1.35rem, 2.4vw, 1.8rem); }
+.tool-row-kicker {
+  font-family: var(--display); font-size: .74rem; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--flame-2);
+}
+.tool-row-lead { margin: 0 0 .5rem; color: #fff; font-weight: 600; font-size: clamp(1rem, 1.5vw, 1.12rem); }
+.tool-row-body > p { color: var(--text-2); max-width: 48ch; }
+.tool-facts {
+  display: flex; flex-wrap: wrap; gap: .6rem 1.6rem;
+  margin: 1rem 0 .7rem; padding: .7rem 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.tool-facts div { display: grid; gap: .12rem; }
+.tool-facts dt {
+  font-size: .66rem; letter-spacing: .11em; text-transform: uppercase; color: var(--muted-2);
+}
+.tool-facts dd { margin: 0; font-size: .86rem; color: var(--text-2); }
+.tool-row-caveat { font-size: .8rem !important; color: var(--muted) !important; max-width: 52ch; margin: 0 0 1rem; }
+.tool-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.1rem; }
+.tool-row-guide { font-size: .88rem; font-weight: 600; color: var(--text-2); }
+.tool-row-guide:hover { color: #fff; }
+
+.link-rail { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .7rem; max-width: 60rem; }
+.link-rail a {
+  display: grid; gap: .25rem; padding: .95rem 1.05rem;
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, .015);
+  text-decoration: none;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.link-rail a:hover { border-color: var(--line-accent); background: rgba(139, 92, 246, .07); transform: translateY(-1px); }
+.link-rail strong { color: #fff; font-size: .95rem; }
+.link-rail span { color: var(--muted); font-size: .84rem; line-height: 1.5; }
+
+@media (max-width: 900px) {
+  .hero--index .hero-inner { grid-template-columns: minmax(0, 1fr); }
+  .hero-index { border-left: 0; border-top: 1px solid var(--line); padding: 1.1rem 0 0; }
+  .hero-index ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); column-gap: 1.2rem; }
+  .tool-row { grid-template-columns: minmax(0, 1fr); }
+  .tool-row:nth-child(even) .tool-row-media { order: 0; }
+  .tool-row-media { box-shadow: none; }
+}
+
+/* Library page: the tools band (dj-tools.html entry point) */
+.library-toolband {
+  margin: 0 0 clamp(1.8rem, 4vw, 2.8rem);
+  padding: clamp(1.1rem, 2.6vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(600px 220px at 100% 0, rgba(56, 189, 248, .07), transparent 70%),
+    linear-gradient(150deg, rgba(139, 92, 246, .07), transparent 55%),
+    var(--ink-2);
+}
+.library-toolband-head {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: .8rem 1.6rem;
+}
+.library-toolband-head > div { min-width: 0; max-width: 46rem; }
+.library-toolband-head h2 { margin: .3rem 0 .5rem; }
+.library-toolband-head .section-sub { margin: 0 0 .2rem; }
+.library-toolband-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: .1rem; margin-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.library-toolband-grid a {
+  display: grid; gap: .18rem;
+  padding: .8rem .9rem .8rem 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  transition: color .15s ease;
+}
+.library-toolband-grid a::before {
+  content: "↗"; position: absolute; opacity: 0;
+}
+.library-toolband-grid strong { color: #fff; font-size: .93rem; }
+.library-toolband-grid span { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.library-toolband-grid a:hover strong { color: var(--cyan-2); }
+@media (max-width: 640px) {
+  .library-toolband-grid { grid-template-columns: minmax(0, 1fr); }
+  .library-toolband-head .btn { width: 100%; justify-content: center; }
+}
+
+/* Homepage: four "start where you are" paths read as a 2x2, not 3+1 */
+.home-paths { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) { .home-paths { grid-template-columns: minmax(0, 1fr); } }
+
+/* Section-head links that sit where a tag used to */
+.section-head > a:only-of-type { align-self: center; }
+
+/* Homepage: the other two four-item grids also fell into 3+1 at ~830px */
+.controller-budget-grid,
+.taxonomy-matrix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 700px) {
+  .controller-budget-grid,
+  .taxonomy-matrix { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* On phones, put the consent choice in document flow before page content.
+   The loader appends it to body; the rig page has its own in-flow placement. */
+@media screen and (max-width: 700px) {
+  body:not(.page-rig):has(> .ob-consent) {
+    display: flex;
+    flex-direction: column;
+  }
+  body:not(.page-rig) > .ob-consent {
+    position: static;
+    order: -1;
+    max-width: none;
+    margin: .5rem;
+    box-shadow: none;
+  }
+}
+
+/* Official product videos: no third-party request until the visitor opts in. */
+.official-video { margin: 2rem 0; }
+.official-video__stage { aspect-ratio: 16 / 9; display: grid; place-items: center; background: #161920; border: 1px solid #414957; border-radius: 12px; overflow: hidden; }
+.official-video__load { padding: .85rem 1.35rem; border: 2px solid #fff; border-radius: 999px; background: #242b36; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.official-video__load:hover, .official-video__load:focus-visible { background: #fff; color: #161920; outline: 3px solid #f3bc53; outline-offset: 3px; }
+.official-video__stage iframe { width: 100%; height: 100%; border: 0; }
+.official-video figcaption { margin-top: .7rem; }

@@ -8,6 +8,7 @@ runtime dependencies — open a file or serve the folder and it works.
 
 ```
 *.html                     one file per guide (115 published pages)
+dj-tools.html              the interactive-tools hub (not a guide entry)
 index.html                 homepage
 all-dj-guides.html         generated library page (filters + full index)
 assets/style.css           the whole design system
@@ -41,12 +42,15 @@ All scripts are idempotent and safe to re-run.
 | `python3 tools/pick_headings.py` | Converts `Product — Role` headings into the ranked pick heading component. |
 | `python3 tools/buy_rows.py` | Rewrites repetitive "Check current prices" strips into the compact buy bar. |
 | `python3 tools/hero_cta.py` | Keeps hero action rows section-specific. |
+| `python3 tools/unify_nav.py` | Writes the canonical seven-item header on every page (idempotent; `--check` fails if any page drifts). Run after adding or renaming a hub. |
 
 ## Checks
 
 ```bash
 python3 tools/check_site.py            # links, alt text, ids, shell, JSON-LD, assets
 python3 tests/check_site_structure.py  # nesting, ItemList vs visible headings, internal copy
+node tests/sweep_all_pages.js          # every page at 1440 and 390 px: overflow, errors, h1, nav
+node tests/test_journeys.js            # six rendered visitor journeys (needs a server on :8099)
 ```
 
 `tests/ga4-*.test.sh` cover the consent-gated analytics loader and need a local

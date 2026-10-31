@@ -2,6 +2,8 @@
 // Uses a local HTTP server and installed Chromium; never deploys or changes content.
 "use strict";
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const puppeteer = require("puppeteer-core");
 const base = process.env.RIG_BASE_URL || "http://127.0.0.1:8099";
 const chrome = process.env.CHROME_BIN || "/usr/bin/google-chrome";
@@ -17,6 +19,39 @@ function visibleCount(page) {
   return page.$$eval(".library-item:not([hidden])", els => els.length);
 }
 (async () => {
+  // Audit the documented priority shortlist and the contextual Commons additions.
+  // These are not catalog product photos; exact-model catalog media is checked separately.
+  const root = path.join(__dirname, "..");
+  const shortlistDoc = fs.readFileSync(path.join(root, "evidence/hero-recovery-20261030/README.md"), "utf8");
+  const topPages = [...shortlistDoc.matchAll(/^\| `([^`]+\.html)` \|/gm)].map(m => m[1]);
+  assert.equal(topPages.length, 30, "priority shortlist should contain 30 pages");
+  const offenders = ["software-desk.jpg", "production-hero.jpg", "controller-macro.jpg",
+    "gear-flatlay.jpg", "hero-breakdown.jpg", "booth-wide.jpg"];
+  const topCounts = Object.fromEntries(offenders.map(file => [file, 0]));
+  for (const name of topPages) {
+    const html = fs.readFileSync(path.join(root, name), "utf8");
+    const hero = html.match(/<figure class="hero-figure">[\s\S]*?<\/figure>/);
+    assert.ok(hero, name + " needs a hero figure");
+    for (const file of offenders) if (hero[0].includes(file)) topCounts[file]++;
+  }
+  for (const [file, count] of Object.entries(topCounts))
+    assert.ok(count <= 2, file + " exceeds the top-30 hero cap: " + count);
+  const photos = JSON.parse(fs.readFileSync(path.join(root, "evidence/commons-heroes-20261030/commons-photo-manifest.json"), "utf8"));
+  const htmlFiles = fs.readdirSync(root).filter(name => name.endsWith(".html"));
+  for (const photo of photos) {
+    for (const key of ["src", "alt", "credit", "source", "license", "license_url", "modification"])
+      assert.ok(photo[key], "Commons photo missing " + key);
+    assert.match(photo.source, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+    assert.match(photo.license_url, /^https:\/\/creativecommons\.org\/licenses\/by(?:-sa)?\//);
+    assert.ok(fs.existsSync(path.join(root, photo.src)), photo.src + " missing");
+    const uses = htmlFiles.filter(name => fs.readFileSync(path.join(root, name), "utf8").includes(photo.src));
+    assert.ok(uses.length <= 2, photo.src + " exceeds two pages sitewide");
+    assert.deepEqual(uses.sort(), [...photo.pages].sort(), photo.src + " usage manifest drift");
+    for (const name of photo.pages) {
+      const text = fs.readFileSync(path.join(root, name), "utf8");
+      assert.ok(text.includes(photo.license_url), name + " missing license link");
+    }
+  }
   const browser = await puppeteer.launch({
     executablePath: chrome, headless: true,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
@@ -44,6 +79,36 @@ function visibleCount(page) {
         assert.ok(state.title.trim(), path + " must have a title");
         assert.ok(state.overflow <= 1, path + " overflows at " + width + "px: " + state.overflow);
         assert.deepEqual(errors, [], path + " browser errors at " + width + "px");
+      }
+      // Product video facades must not contact YouTube until the visitor loads one.
+      const videos = {
+        "ddj-flx2-review.html": "OnNkSZK45jo",
+        "ddj-grv6-review.html": "I3832XEsxX4",
+        "pioneer-ddj-flx10-review.html": "N0dg3GNnoRw",
+        "pioneer-cdj-3000-review.html": "MxRKpTI5dqo",
+        "denon-prime-go-review.html": "dMQb0GShVaQ",
+        "denon-sc6000-review.html": "T84COjxlAOo",
+        "numark-scratch-review.html": "95hmwMn6pFQ",
+        "rane-one-review.html": "F85xClO8MCA",
+        "ableton-live-review.html": "xBk_GVgfm1Y",
+        "fl-studio-review.html": "IvJ1EAs8Sxw"
+      };
+      for (const [path, id] of Object.entries(videos)) {
+        const youtubeRequests = [];
+        const track = request => {
+          if (/youtube|ytimg/i.test(request.url())) youtubeRequests.push(request.url());
+        };
+        page.on("request", track);
+        await page.goto(base + "/" + path, { waitUntil: "load" });
+        assert.deepEqual(youtubeRequests, [], path + " must not load YouTube before consent");
+        assert.equal(await page.$$(".official-video iframe").then(frames => frames.length), 0);
+        assert.ok((await page.$eval(".official-video figcaption", el => el.textContent)).includes("official channel"));
+        assert.ok(await page.$eval(".official-video a", (el, videoId) => el.href.endsWith(videoId), id), "direct video link");
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), path + " video layout overflow");
+        await page.click(".official-video__load");
+        assert.equal(await page.$eval(".official-video iframe", el => el.getAttribute("src")),
+          "https://www.youtube-nocookie.com/embed/" + id + "?rel=0");
+        page.off("request", track);
       }
       await page.goto(base + "/all-dj-guides.html", { waitUntil: "load" });
       const total = await page.$$eval(".library-item", els => els.length);
@@ -83,17 +148,39 @@ function visibleCount(page) {
       assert.ok(index.some(item => item.u.includes("?add=")),
         "curated hardware deep links must remain in the search index");
       const guideEntries = index.filter(item => /^[^?]+\.html$/.test(item.u));
-      assert.equal(guideEntries.length, 118, "all 118 guide/page search records retained");
+      assert.ok(guideEntries.length >= 119, "all original pages and the new tools hub remain indexed");
+      const guideUrls = guideEntries.map(item => item.u);
+      assert.ok(guideUrls.includes("dj-tools.html"), "new tools hub must be searchable");
+      assert.equal(new Set(guideUrls).size, guideUrls.length, "page search URLs must be unique");
       for (const entry of guideEntries) {
         assert.ok(typeof entry.desc === "string" && entry.desc.trim().length >= 20,
           entry.u + " must have a useful, source-grounded Spotlight summary");
         assert.equal(entry.d, entry.desc, entry.u + " legacy and public descriptions must agree");
       }
-      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-rokit-5-g4");
-      assert.match(krk.title, /KRK Classic 5 \(Pair\)/,
-        "buyer search must match the actual Classic 5 catalog product");
-      assert.doesNotMatch(krk.title + " " + krk.desc, /ROKIT 5 G4/,
-        "buyer search must not advertise a different monitor model");
+      // Compare every product deep-link title against the model it actually adds.
+      // Ignore punctuation and spacing, but do not confuse similar product lines.
+      const catalog = await page.evaluate(async () =>
+        (await (await fetch("assets/dj-gear-catalog.json")).json()).items
+      );
+      const catalogById = new Map(catalog.map(item => [item.id, item]));
+      const normalizeModel = value => value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const matchingModel = (title, model) => normalizeModel(title).includes(normalizeModel(model));
+      assert.equal(matchingModel("KRK Classic 5 (Pair, Monitor Pack)", "ROKIT 5 G4"), false,
+        "regression test must reject an unrelated KRK model");
+      let checkedProducts = 0;
+      for (const entry of index) {
+        const url = new URL(entry.u, base + "/");
+        const id = url.searchParams.get("add");
+        if (!url.pathname.endsWith("/build-your-dj-setup.html") || !id) continue;
+        const product = catalogById.get(id);
+        assert.ok(product, entry.u + " must point to an existing catalog item");
+        assert.ok(matchingModel(entry.title, product.model),
+          entry.title + " must identify catalog model " + product.model + " (" + id + ")");
+        checkedProducts++;
+      }
+      assert.ok(checkedProducts >= 29, "curated product deep links must be checked");
+      const krk = index.find(item => item.u === "build-your-dj-setup.html?add=krk-classic-5-pair");
+      assert.ok(krk && /Classic 5/i.test(krk.title), "Classic 5 must link to the Classic 5 pack");
       const expected = Math.min(12, index.filter(item =>
         item.g === "controllers" &&
         (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase().includes("dj")

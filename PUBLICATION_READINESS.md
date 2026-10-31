@@ -1,5 +1,18 @@
 # Publication readiness — Offbeat Arena dev candidate
 
+> **Latest pass: 2026-10-30 — sitewide release candidate (everything except Rig
+> Architect).** Branch `arena/110caa00-offbeat-website`, cut from `82e45f9`.
+> See [`evidence/sitewide-release-2026-10-30/README.md`](evidence/sitewide-release-2026-10-30/README.md)
+> for what was fixed, the rendered before/after evidence, the validation runs,
+> the ranked remaining blockers and the integration notes for this branch.
+>
+> Headline fixes: the header's "Tools" link pointed at an anchor that does not
+> exist on any page (112 pages); the headphone fit finder that two guides
+> promised was missing; the homepage carried "genuine hardware tests" and
+> "Field Tested" while the site does no hands-on testing; the budget guide asked
+> for the price of one monitor while describing a stereo pair; spotlight search
+> ranked a product line above the review it was asked for.
+
 _Status at 2026-10-26 · branch `arena/7c2cadef-offbeat-website` · PR #5
 (base: `arena/cde31182-offbeat-website`, the PR #4 head)._
 
