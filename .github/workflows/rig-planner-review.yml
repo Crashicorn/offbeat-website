@@ -20,6 +20,8 @@ on:
       - assets/rig-studio.css
       - assets/gear-connections.js
       - assets/style.css
+      - assets/beginner-controller-guide.css
+      - assets/beginner-controller-guide.js
       - '**/*.html'
       - assets/beatmatch-trainer.js
       - tests/beatmatch-cue.test.js
