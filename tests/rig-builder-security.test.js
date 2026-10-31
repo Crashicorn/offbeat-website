@@ -83,16 +83,46 @@ function slot(id = "core-ctrl") {
   return { slotId: id, category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false };
 }
 
-test("shopping quantities through eight survive shared-state sanitation without silent resets", () => {
+test("shopping quantities preserve valid units and reject corrupt explicit counts", () => {
   const { api } = harness(false);
   for (const qty of [1, 4, 5, 8]) {
     const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
     assert.equal(clean.items[0].qty, qty, "valid quantity " + qty + " must persist");
   }
-  for (const qty of [0, 9, 1000]) {
-    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
-    assert.equal(clean.items[0].qty, 1, "invalid quantity " + qty + " must fail closed");
+  // A corrupted 8-unit purchase must not become one unit and understate cost.
+  for (const qty of [0, 9, 1000, -1, 1.5, "8", null, NaN]) {
+    assert.equal(api.sanitizeRigState({ items: [{ ...slot(), qty }] }), null,
+      "invalid explicit quantity " + String(qty) + " must reject the entire rig");
   }
+  const legacy = slot();
+  delete legacy.qty;
+  assert.equal(api.sanitizeRigState({ items: [legacy] }).items[0].qty, 1,
+    "older saved object rigs without a quantity still mean one unit");
+  assert.equal(api.sanitizeRigState({
+    i: [["ctrl", "controllers", "pioneer-ddj-flx4", 100, 0, ""]]
+  }), null, "corrupt compact-share quantities must also reject the entire rig");
+});
+
+test("corrupt quantity in an explicit shared rig cannot substitute unrelated saved gear", () => {
+  const { api, memory, window } = harness(false);
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Unrelated owned equipment",
+    items: [{ ...slot(), qty: 8, owned: true }]
+  });
+  const broken = {
+    name: "Two purchase lines",
+    items: [
+      slot(),
+      { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 100, owned: false }
+    ]
+  };
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.wasShareRejected(), true, "a partial shopping list must be visibly rejected");
+  assert.equal(api.getRig().items.some(s => s.itemId === "sennheiser-hd25"), false,
+    "do not silently drop the damaged line and show a misleading purchase total");
+  assert.equal(api.getRig().items.some(s => s.owned), false,
+    "do not substitute unrelated browser-owned equipment for a corrupt shared rig");
 });
 
 test("auto-fix purchases extra cable without inventing owned inventory", () => {
