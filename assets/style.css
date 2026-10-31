@@ -464,6 +464,7 @@ a.card:hover .card-media img, a.guide-card:hover .card-media img, a.pick-card:ho
     var(--panel);
   box-shadow: var(--shadow-sm);
 }
+.product-buy-row--budget-inpulse { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .product-buy-row > *:first-child, .affiliate-cta-box > *:first-child { min-width: 0; }
 .product-buy-row strong, .affiliate-cta-box h2, .affiliate-cta-box h3, .top-pick-section h3 { display: block; color: var(--text); margin: 0 0 .15rem; font-size: 1rem; }
 .product-buy-row p, .affiliate-cta-box p, .top-pick-section p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.5; }
@@ -4425,9 +4426,9 @@ tr.rs-item { display: table-row !important; }
 .product-section-card[id^="pick-"] { scroll-margin-top: 84px; }
 .product-section-card--workflow { margin:1.15rem 0 1.55rem; padding:clamp(1rem,2.1vw,1.35rem); border:1px solid rgba(56,189,248,.2); border-radius:var(--r-md); background:radial-gradient(650px 220px at 100% 0,rgba(56,189,248,.07),transparent 75%),linear-gradient(140deg,rgba(124,58,237,.055),transparent 48%),#0d0e15; }
 .product-section-card--workflow > h2:first-child { margin-top:0; }
-.dj707-routing { display:grid; grid-template-columns:minmax(120px,.7fr) minmax(220px,1.2fr) minmax(135px,.75fr); align-items:center; gap:.65rem; margin:1.1rem 0 1rem; padding:1rem; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(7,9,15,.55); }
-.dj707-inputs,.dj707-outputs { display:grid; gap:.4rem; }
-.dj707-inputs span,.dj707-outputs span { position:relative; display:flex; align-items:center; min-height:36px; padding:.45rem .55rem; border:1px solid rgba(255,255,255,.09); border-radius:7px; background:rgba(255,255,255,.025); color:#b7bbca; font-size:.68rem; line-height:1.35; }
+.dj707-routing { display:grid; grid-template-columns:minmax(0,.7fr) minmax(0,1.2fr) minmax(0,.75fr); align-items:center; gap:.65rem; margin:1.1rem 0 1rem; padding:1rem; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(7,9,15,.55); }
+.dj707-inputs,.dj707-outputs { display:grid; gap:.4rem; min-width:0; }
+.dj707-inputs span,.dj707-outputs span { position:relative; display:flex; align-items:center; min-width:0; overflow-wrap:anywhere; min-height:36px; padding:.45rem .55rem; border:1px solid rgba(255,255,255,.09); border-radius:7px; background:rgba(255,255,255,.025); color:#b7bbca; font-size:.68rem; line-height:1.35; }
 .dj707-inputs span::after { content:""; position:absolute; right:-.7rem; width:.65rem; border-top:1px solid rgba(56,189,248,.52); }
 .dj707-controller { display:grid; justify-items:center; gap:.3rem; min-height:98px; padding:.8rem; border:1px solid rgba(139,92,246,.3); border-radius:9px; background:linear-gradient(140deg,rgba(124,58,237,.14),rgba(56,189,248,.045)); text-align:center; }
 .dj707-controller small { color:#8bdcf1; font-size:.58rem; font-weight:750; letter-spacing:.12em; }
