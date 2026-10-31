@@ -527,6 +527,25 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.deepEqual(mobileGRV6.errors, [], "GRV6 mobile UI must not throw");
       await mobileGRV6.context.close();
     }
+    // Numark's official mobile djay support must not be rejected. Equally,
+    // a selected controller-to-speaker cable cannot carry Bluetooth MIDI audio:
+    // both master and cue outputs are disabled in that mode.
+    for (const controllerId of ["numark-mixtrack-go", "numark-party-mix-3"]) {
+      for (const width of [1440, 390]) {
+        const mobileNumark = await visit(browser, width, mobileRigLink(controllerId));
+        const shown = await mobileNumark.page.evaluate(() => ({
+          status: document.querySelector(".compat-status-tag")?.textContent.trim() || "",
+          alerts: document.querySelector(".compat-items-grid")?.textContent || ""
+        }));
+        assert.match(shown.alerts, /Numark Mobile: USB-C vs Bluetooth Audio Routing/);
+        assert.match(shown.alerts, /Bluetooth MIDI disables the controller's master AND headphone audio outputs/);
+        assert.match(shown.alerts, /5V\/500mA/);
+        assert.doesNotMatch(shown.alerts, /Mobile Host Not Verified for This Controller/);
+        assert.doesNotMatch(shown.status, /Incompatible/);
+        assert.deepEqual(mobileNumark.errors, [], "Numark mobile browser journey must not throw");
+        await mobileNumark.context.close();
+      }
+    }
     const mobileUnsupported = await visit(browser, 390, mobileRigLink("pioneer-ddj-flx10"));
     const blocked = await mobileUnsupported.page.$eval(".compat-items-grid", el => el.textContent);
     assert.match(blocked, /Mobile Host Not Verified for This Controller/);
