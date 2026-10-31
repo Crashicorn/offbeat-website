@@ -10,8 +10,10 @@ Exit code 0 = clean; 1 = violations found (use as a CI gate).
 Pages list file: one URL path per line (e.g. `index.html`, `guides/foo.html`).
 Same measurement semantics as the 2026-10-31 coordination audit (README in
 evidence/coordination/): page-level horizontal overflow, elements beyond the
-viewport, container-level spill (scrollWidth > clientWidth with
-overflow-x: visible), clipped containers, broken images, external image hosts.
+viewport, HTML container spill (scrollWidth > clientWidth with
+overflow-x: visible), broken images, and foreign image hosts. Clipped
+containers remain diagnostic, and SVG geometry is checked at the outer
+viewport rather than treating inner SVG text as an HTML scroll container.
 """
 import argparse
 import json
@@ -51,6 +53,9 @@ MEASURE = r"""
     return el.tagName.toLowerCase() + (c ? '.' + c : '');
   };
   for (const el of document.querySelectorAll('body *')) {
+    // SVG descendants use viewBox coordinates, not HTML clientWidth/scrollWidth.
+    // Check the outer <svg> viewport; inner <text>/<path> are not CSS scroll boxes.
+    if (el.ownerSVGElement) continue;
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden') continue;
     const r = el.getBoundingClientRect();
@@ -99,6 +104,17 @@ def load_pages(a):
             loc = loc[len(a.base.rstrip("/")):].lstrip("/")
         pages.append(loc or "index.html")
     return pages
+
+
+def external_image_hosts(image_urls, base_url):
+    """Find genuinely foreign hosts (never substring-match a trusted host)."""
+    base_host = urlparse(base_url).netloc.lower()
+    hosts = set()
+    for src in image_urls:
+        host = urlparse(src).netloc.lower()
+        if host and host != base_host:
+            hosts.add(host)
+    return sorted(hosts)
 
 
 def main():
@@ -176,12 +192,13 @@ def main():
     (out_dir / "audit.json").write_text(json.dumps(results, indent=1))
 
     ext = Counter()
-    for r in results.values():
+    for key, r in results.items():
         if isinstance(r, dict):
-            for s in set(r.get("imgSrcs", [])):
-                host = urlparse(s).netloc
-                if host and urlparse(a.base).netloc not in host:
+            hosts = external_image_hosts(r.get("imgSrcs", []), a.base)
+            if hosts:
+                for host in hosts:
                     ext[host] += 1
+                fails.append((key, "externalImageHosts=" + ",".join(hosts)))
 
     print(f"Audited {len(pages)} pages x {len(widths)} viewports against {a.base}")
     if fails:
@@ -191,7 +208,7 @@ def main():
     else:
         print("\nPASS — no page-level overflow, no container spill, no broken images.")
     if ext:
-        print(f"\nWARNING — external image hosts present: {dict(ext)}")
+        print(f"\nFAIL — external image hosts present: {dict(ext)}")
     else:
         print("Image hosts: all local.")
     print(f"Raw data: {out_dir / 'audit.json'}")
