@@ -128,3 +128,17 @@ test("Inpulse 500 buyer facts match Hercules across the budget and main guides",
   assert.match(main, /Hercules DJControl Inpulse 500[\s\S]*?140mm jog wheels/);
   assert.doesNotMatch(budget, /114\s*mm|DJUCED\/Rekordbox learning lights|Serato users get the hardware without those cues/);
 });
+
+test("FLX2 buyer guides distinguish limited djay hardware unlock from paid PRO", () => {
+  const budget = page("best-dj-controllers-under-300.html");
+  const review = page("ddj-flx2-review.html");
+  assert.match(budget, /unlocking pre-cueing and the Sampler/);
+  assert.match(budget, /does not unlock the full djay PRO subscription/);
+  assert.match(review, /unlocks djay pre-cueing and Sampler controls, not a full djay PRO subscription/);
+  for (const [name, html] of [["budget guide", budget], ["FLX2 review", review]]) {
+    assert.match(html, /https:\/\/help\.algoriddim\.com\/topic\/first-steps\/free-vs-pro/,
+      name + " must link to the official free-versus-PRO license explanation");
+    assert.doesNotMatch(html, /unlocks djay Pro|djay without a subscription/i,
+      name + " must not imply the full PRO subscription is included");
+  }
+});
