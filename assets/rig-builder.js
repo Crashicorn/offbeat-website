@@ -555,10 +555,7 @@
       if (paItem && monItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
         var usedOuts = {};
         var pPlan = OffbeatGear.connectionPlan(CATALOG, controller, paItem, spkGroup.paSlot.qty || 1, { usedOutputs: usedOuts });
-        if (pPlan && pPlan.output) {
-          usedOuts[pPlan.output.connector] = (usedOuts[pPlan.output.connector] || 0) + 1;
-          usedOuts.claimed = [pPlan.output];
-        }
+        reservePlannedOutputs(pPlan, usedOuts);
         var mPlan = OffbeatGear.connectionPlan(CATALOG, controller, monItem, spkGroup.monitorSlot.qty || 1, { usedOutputs: usedOuts });
         if (mPlan && mPlan.conflict) {
           fatalErrors++;
@@ -1154,21 +1151,13 @@
       // 1. Crowd PA takes priority for Master Output
       if (paSlot && paItem) {
         paPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, paItem, paQty, { usedOutputs: usedOutputs });
-        if (paPlan && paPlan.output) {
-          usedOutputs[paPlan.output.connector] = (usedOutputs[paPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(paPlan.output);
-        }
+        reservePlannedOutputs(paPlan, usedOutputs);
       }
 
       // 2. DJ Monitors take Booth output (or Master output if PA is absent)
       if (monitorSlot && monItem) {
         monitorPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, monItem, monQty, { usedOutputs: usedOutputs });
-        if (monitorPlan && monitorPlan.output) {
-          usedOutputs[monitorPlan.output.connector] = (usedOutputs[monitorPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(monitorPlan.output);
-        }
+        reservePlannedOutputs(monitorPlan, usedOutputs);
       }
     }
 
@@ -2405,6 +2394,18 @@
       .replace(/'/g, "&#039;");
   }
 
+  // One planned route can consume multiple stereo output pairs (for example,
+  // three or four independent PA cabinets). Reserve every pair, not just one,
+  // before considering the next speaker line. An unresolved route reserves none.
+  function reservePlannedOutputs(plan, usedOutputs) {
+    if (!plan || !plan.output || plan.conflict || plan.kind === "unresolved" || plan.kind === "unknown") return;
+    var connector = plan.output.connector;
+    var count = Math.max(1, Math.round(Number(plan.outputsNeeded) || 1));
+    usedOutputs[connector] = (usedOutputs[connector] || 0) + count;
+    if (!usedOutputs.claimed) usedOutputs.claimed = [];
+    usedOutputs.claimed.push(plan.output);
+  }
+
   function computeAllRigConnections() {
     var ctrlSlot = currentRig.items.find(function (s) { return s.category === "controllers"; });
     var ctrlItem = ctrlSlot ? getSlotItem(ctrlSlot) : null;
@@ -2426,11 +2427,7 @@
       var item = getSlotItem(s);
       if (!item) return null;
       var plan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, item, s.qty || 1, { usedOutputs: usedOutputs });
-      if (plan && plan.output) {
-        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + 1;
-        if (!usedOutputs.claimed) usedOutputs.claimed = [];
-        usedOutputs.claimed.push(plan.output);
-      }
+      reservePlannedOutputs(plan, usedOutputs);
       return {
         speakerId: item.id,
         slotId: s.slotId,
