@@ -97,7 +97,8 @@
  .turntable-opening { grid-template-columns:1fr; gap:1rem; margin-top:.6rem; padding:.85rem; }
  .tt-mk2-photo { max-width:600px; }
  .tt-section-heading { align-items:flex-start; flex-direction:column; gap:.4rem; }
- .tt-route { grid-template-columns:42px minmax(0,1fr); gap:.3rem .7rem; padding:.85rem 0; }
+ /* The seven-letter 'Perform' route label needs more than 42px at 390px. */
+ .tt-route { grid-template-columns:60px minmax(0,1fr); gap:.3rem .7rem; padding:.85rem 0; }
  .tt-route-index { grid-row:1/4; }
  .tt-route-model,.tt-route-detail,.tt-route-links { grid-column:2; }
  .tt-route-detail { grid-row:auto; }
