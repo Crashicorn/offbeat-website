@@ -1513,3 +1513,11 @@
   .visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
   .page-rig .picker-card-body .rig-photo-credit { grid-column:1 / -1; }
 }
+
+/* Arena A round 7: keep the secondary picker and its separate ownership
+   control within the booth column; photo attribution remains below both. */
+.visual-headphones .visual-pick, .visual-host .visual-pick { flex-wrap:wrap; min-width:0; }
+.visual-headphones .visual-pick strong, .visual-host .visual-pick strong { flex:1 1 5rem; min-width:0; overflow-wrap:anywhere; }
+.visual-headphones .visual-pick > span:last-child, .visual-host .visual-pick > span:last-child { min-width:0; overflow-wrap:anywhere; }
+.visual-headphones, .visual-host { flex-wrap:wrap; }
+.visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
