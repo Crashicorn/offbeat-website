@@ -235,6 +235,49 @@ test("mixed valid and missing equipment lines reject the entire imported shoppin
   }), null);
 });
 
+test("shared speaker roles fail closed instead of silently changing PA to monitor", () => {
+  const { api, memory, window } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "studio-monitor", category: "speakers", price: 350,
+        roles_supported: ["dj_monitor"] },
+      { id: "crowd-pa", category: "speakers", price: 650,
+        roles_supported: ["crowd_pa"] }
+    ], categories: [], presets: []
+  });
+  const monitor = { slotId: "speaker", category: "speakers",
+    itemId: "studio-monitor", qty: 2, owned: false };
+  const pa = { slotId: "speaker", category: "speakers",
+    itemId: "crowd-pa", qty: 2, owned: false };
+  assert.equal(api.sanitizeRigState({ items: [{ ...monitor, role: "crowd_pa" }] }), null,
+    "a studio monitor must not silently replace an explicitly requested crowd PA");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "dj_monitor" }] }), null,
+    "a crowd PA must not silently replace an explicitly requested booth monitor");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "unknown" }] }), null,
+    "unknown explicit speaker roles must not become a plausible shopping list");
+  assert.equal(api.sanitizeRigState({ i: [
+    ["speaker", "speakers", "studio-monitor", 2, 0, "crowd_pa"]
+  ] }), null, "compact shared links must enforce the same role contract");
+  assert.equal(api.sanitizeRigState({ items: [{ ...monitor, role: "dj_monitor" }] }).items[0].role,
+    "dj_monitor", "valid explicit monitor roles remain intact");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "crowd_pa" }] }).items[0].role,
+    "crowd_pa", "valid explicit PA roles remain intact");
+  assert.equal(api.sanitizeRigState({ items: [monitor] }).items[0].role,
+    "dj_monitor", "older role-free monitor links still restore");
+  assert.equal(api.sanitizeRigState({ items: [pa] }).items[0].role,
+    "crowd_pa", "older role-free PA links still restore");
+
+  memory["offbeat.rig.active"] = JSON.stringify({ items: [pa] });
+  const before = JSON.stringify(api.getRig());
+  const broken = { name: "Misrepresented PA", items: [slot(), { ...monitor, role: "crowd_pa" }] };
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.wasShareRejected(), true, "a mismatched shared PA must be rejected");
+  assert.equal(JSON.stringify(api.getRig()), before,
+    "invalid shared speaker role must not partially load or use unrelated saved gear");
+});
+
 test("invalid explicit share never falls back to unrelated browser equipment", () => {
   const { api, memory, window } = harness(false);
   assert.equal(api.normalizeRigState({ name: "Starter", items: [slot()] }), true);
