@@ -1794,7 +1794,7 @@
     var shareUrl = canShare ? window.location.href : "";
 
     var redditMarkdown = (canShare ? `**[${currentRig.name}](${shareUrl})**\n\n` : `**${currentRig.name}**\n\n`) +
-      `| Category | Equipment | Qty | Status | Unit estimate | Line value | To buy |\n` +
+      `| Category | Equipment | Qty | Status | Unit USD | Line USD | To buy USD |\n` +
       `| :--- | :--- | ---: | :--- | ---: | ---: | ---: |\n` +
       currentRig.items.map(function (s) {
         var it = getSlotItem(s);
