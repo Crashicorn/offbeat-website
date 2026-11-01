@@ -9,6 +9,7 @@
   var CATALOG = null;
   var sharedRigRejected = false;
   var guideAddRejected = false;
+  var savedRigWriteFailed = false;
   var audioCtx = null;
   var soundEnabled = safeStorageGet("offbeat.rig.sfx") !== "muted";
 
@@ -937,6 +938,7 @@
     var html = `
       ${sharedRigRejected ? '<div class="highlight-box" role="alert"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid or unavailable. The starter rig shown below is NOT the shared shopping list; do not rely on its prices or compatibility for the original build.</div>' : ''}
       ${guideAddRejected ? '<div class="highlight-box" role="alert"><strong>Equipment not added.</strong> This setup already contains 24 equipment lines. Remove an existing line before adding the item from the guide. Your existing shopping list was preserved unchanged.</div>' : ''}
+      ${savedRigWriteFailed ? '<div class="highlight-box" role="alert"><strong>Rig not saved.</strong> This browser blocked or exhausted local storage. Your equipment is still visible here, but the saved-build action did not persist it. Copy the exact share link or export a checklist before leaving this page.</div>' : ''}
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
@@ -2532,7 +2534,9 @@
     });
 
     if (saved.length > 15) saved = saved.slice(0, 15);
-    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
+    // A storage quota/privacy failure must never look like a successful save.
+    // Preserve the current editor and offer the independent share/export path.
+    savedRigWriteFailed = !safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     saveActiveState();
     renderApp();
   }
@@ -2550,7 +2554,7 @@
   function deleteSavedRig(index) {
     var saved = getSavedRigs();
     saved.splice(index, 1);
-    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
+    savedRigWriteFailed = !safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     renderApp();
   }
 
