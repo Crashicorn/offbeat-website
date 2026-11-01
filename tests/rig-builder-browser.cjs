@@ -178,6 +178,24 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.equal(card.png, true, "full buyer card must export a valid PNG");
       assert.deepEqual(full.errors, [], "24-line PNG must not throw browser errors");
       await full.context.close();
+
+      // A guide handoff to an already-full 24-line rig must not silently
+      // discard the requested purchase or imply that it was added.
+      const fullGuide = await visit(browser, width, fullQuery + "&add=cable-xlr-xlr");
+      const rejected = await fullGuide.page.evaluate(() => ({
+        warning: Array.from(document.querySelectorAll('.highlight-box[role="alert"]'))
+          .map(el => el.textContent).find(text => text.includes("Equipment not added.")) || "",
+        items: window.__rigStudio.state().items,
+        url: location.search
+      }));
+      assert.match(rejected.warning, /already contains 24 equipment lines/);
+      assert.match(rejected.warning, /existing shopping list was preserved unchanged/);
+      assert.equal(rejected.items.length, 24, "full rig must retain every existing item");
+      assert.equal(rejected.items.some(item => item.itemId === "cable-xlr-xlr"), false,
+        "failed guide addition must not be represented as purchased");
+      assert.match(rejected.url, /^\?rig=/, "share URL must still describe the original full rig");
+      assert.deepEqual(fullGuide.errors, [], "full guide handoff must not throw browser errors");
+      await fullGuide.context.close();
     }
     console.log("PASS: 24-line PNG exports all gear, quantities and ownership on desktop/mobile");
 
