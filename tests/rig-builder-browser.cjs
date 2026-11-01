@@ -740,6 +740,69 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: unavailable retailer SKUs are non-clickable with labelled alternatives at desktop and mobile");
 
+    // Export must remain usable when clipboard permission is absent, denied,
+    // or throws synchronously. All three buyer handoffs must show the exact
+    // current text in a manual-copy dialog, at both desktop and mobile sizes.
+    for (const width of [1440, 390]) {
+      const copy = await visit(browser, width);
+      await copy.page.click("#rig-manage > summary");
+      await copy.page.click('[data-action="open-export-modal"]');
+      await copy.page.waitForSelector("#reddit-export-box");
+      await copy.page.evaluate(() => {
+        window.__manualCopies = [];
+        window.prompt = (label, value) => {
+          window.__manualCopies.push({ label, value });
+          return null;
+        };
+        Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+      });
+      const markdown = await copy.page.$eval("#reddit-export-box", el => el.value);
+      await copy.page.click('[data-action="copy-reddit-md"]');
+      const first = await copy.page.evaluate(() => window.__manualCopies[0]);
+      assert.equal(first.value, markdown, "Markdown fallback must contain the exact export");
+      assert.match(first.label, /Reddit Markdown/);
+
+      await copy.page.click('[data-export-tab="link"]');
+      const exactLink = await copy.page.$eval("#link-export-box", el => el.value);
+      assert.match(exactLink, /[?&]rig=/, "share fallback must use the exact rig");
+      await copy.page.click('[data-action="copy-share-url"]');
+      const second = await copy.page.evaluate(() => window.__manualCopies[1]);
+      assert.equal(second.value, exactLink, "share fallback must not lose rig selections");
+      assert.match(second.label, /exact rig share link/);
+
+      await copy.page.click('[aria-label="Close dialog"]');
+      await copy.page.click("#rig-shopping > summary");
+      await copy.page.click('[data-action="copy-checklist"]');
+      const third = await copy.page.evaluate(() => window.__manualCopies[2]);
+      assert.match(third.value, /OFFBEAT DJ RIG SHOPPING CHECKLIST/);
+      assert.match(third.value, /Total Out-of-Pocket Spend/);
+      assert.match(third.value, /[?&]rig=/, "checklist must include the actual current share URL");
+
+      // A browser that exposes the API but rejects permission still falls back.
+      await copy.page.evaluate(() => {
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true, value: { writeText: () => Promise.reject(new Error("permission denied")) }
+        });
+      });
+      await copy.page.click('[data-action="copy-checklist"]');
+      await copy.page.waitForFunction(() => window.__manualCopies.length === 4);
+      const fourth = await copy.page.evaluate(() => window.__manualCopies[3]);
+      assert.equal(fourth.value, third.value, "permission denial must preserve the full checklist");
+
+      // Synchronous browser policy exceptions also get a usable manual copy.
+      await copy.page.evaluate(() => {
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true, value: { writeText: () => { throw new Error("blocked"); } }
+        });
+      });
+      await copy.page.click('[data-action="copy-checklist"]');
+      const fifth = await copy.page.evaluate(() => window.__manualCopies[4]);
+      assert.equal(fifth.value, third.value, "synchronous denial must preserve the full checklist");
+      assert.deepEqual(copy.errors, [], "clipboard restrictions must not crash the rig planner");
+      await copy.context.close();
+    }
+    console.log("PASS: desktop/mobile export fallback preserves exact Markdown, rig link and checklist");
+
     const denied = await visit(browser, 390, "", true);
     assert.deepEqual(denied.errors, [], "storage-denied browser must remain usable");
     await denied.context.close();
