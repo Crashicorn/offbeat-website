@@ -2729,6 +2729,8 @@
   }
 
   function saveAndRender() {
+    // A fresh user-created rig clears the warning from a rejected share.
+    state.shareRejected = false;
     var reconciled = reconcileCables();
     save();
     render();
@@ -3110,6 +3112,7 @@
       saveAndRender();
     },
     "start-over": function () {
+      state.shareRejected = false;
       state.menuOpen = false;
       state.view = "start";
       state.drawer = null;
