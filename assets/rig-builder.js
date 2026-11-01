@@ -1449,7 +1449,10 @@
       ? dests.zzounds.url
       : "https://www.zzounds.com/prodsearch?q=" + encodeURIComponent(item.brand + " " + item.model);
     var zzSku = (dests && dests.zzounds && dests.zzounds.sku) ? dests.zzounds.sku : "";
-    var zzStatus = "unknown";
+    var zzStatus = (dests && dests.zzounds && dests.zzounds.status) || "unknown";
+    var zzUnavailable = zzStatus === "verified_unavailable";
+    var zzAlternativeUrl = zzUnavailable && dests.zzounds.alternative_url;
+    var zzAlternativeName = zzUnavailable && dests.zzounds.alternative_name;
     var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
 
     // Keep the configured Associates attribution on every planner shopping handoff.
@@ -1551,10 +1554,10 @@
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}" ${slot.category === 'speakers' ? `data-speaker-role="${getSpeakerRole(slot)}"` : ''}>Swap</button>
             ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.host_type === "mobile" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
-            <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
-            ${item.id === "denon-prime-4-plus" ? `
-            <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" data-sku="DENPRIME4G2" title="Check PRIME 4 G2 at zZounds">Check alternative: PRIME 4 G2</a>
-            ` : ''}
+            ${zzUnavailable
+              ? '<span class="btn-retail btn-retail--zz" aria-disabled="true" data-status="verified_unavailable" title="This exact product is listed as unavailable at zZounds">Unavailable at zZounds</span>'
+              : `<a href="${escapeHtml(zzoundsUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${escapeHtml(zzType)}" data-status="${escapeHtml(zzStatus)}" data-sku="${escapeHtml(zzSku)}" title="Check on zZounds">zZounds</a>`}
+            ${zzAlternativeUrl && zzAlternativeName ? `<a href="${escapeHtml(zzAlternativeUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" title="Check the suggested alternative at zZounds">Check alternative: ${escapeHtml(zzAlternativeName)}</a>` : ''}
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon</a>
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb</a>
