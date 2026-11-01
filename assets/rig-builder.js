@@ -1794,13 +1794,16 @@
     var shareUrl = canShare ? window.location.href : "";
 
     var redditMarkdown = (canShare ? `**[${currentRig.name}](${shareUrl})**\n\n` : `**${currentRig.name}**\n\n`) +
-      `| Category | Equipment | Price |\n` +
-      `| :--- | :--- | :--- |\n` +
+      `| Category | Equipment | Qty | Status | Unit estimate | Line value | To buy |\n` +
+      `| :--- | :--- | ---: | :--- | ---: | ---: | ---: |\n` +
       currentRig.items.map(function (s) {
         var it = getSlotItem(s);
         if (!it) return "";
-        var status = s.owned ? "*(Already Owned)*" : "";
-        return `| **${s.category.toUpperCase()}** | ${it.brand} ${it.model} ${status} | $${it.price * (s.qty || 1)} |`;
+        var qty = s.qty || 1;
+        var owned = Boolean(s.owned || it.no_purchase === true);
+        var lineValue = it.price * qty;
+        var status = it.no_purchase === true ? "Existing device / mode (verify)" : (owned ? "Already owned" : "Need to buy");
+        return `| **${s.category.toUpperCase()}** | ${it.brand} ${it.model} | ${qty} | ${status} | ${it.price.toLocaleString("en-US")} | ${lineValue.toLocaleString("en-US")} | ${(owned ? 0 : lineValue).toLocaleString("en-US")} |`;
       }).filter(Boolean).join("\n") +
       `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
       `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
