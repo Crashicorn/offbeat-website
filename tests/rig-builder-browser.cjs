@@ -123,6 +123,64 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       console.log("PASS: first-load export shares actual starter gear without prior edits");
     }
 
+    // The exported PNG must contain the complete buyer list. The former
+    // fixed-size card silently dropped lines 7–24 while showing their costs.
+    // Exercise the real loaded rig-builder on desktop and mobile, recording
+    // actual canvas draw calls rather than inspecting dormant Studio code.
+    for (const width of [1440, 390]) {
+      const fullRig = {
+        n: "Twenty-four line purchase plan",
+        i: [
+          ["ctrl", "controllers", "pioneer-ddj-flx4", 1, 0, ""],
+          ["host", "laptops", "existing-mobile-device", 1, 1, ""],
+          ["spk", "speakers", "pioneer-dm40d", 1, 0, "dj_monitor"],
+          ...Array.from({ length: 21 }, (_, i) =>
+            ["hp-" + i, "headphones", "sennheiser-hd25", i % 3 === 0 ? 2 : 1, i % 2 === 0 ? 1 : 0, ""])
+        ]
+      };
+      const fullQuery = "?rig=" + encodeURIComponent(
+        Buffer.from(encodeURIComponent(JSON.stringify(fullRig)), "binary").toString("base64")
+      );
+      const full = await visit(browser, width, fullQuery);
+      assert.equal((await full.page.evaluate(() => window.__rigStudio.state())).items.length, 24);
+      await full.page.click("#rig-manage > summary");
+      await full.page.click('[data-action="open-export-modal"]');
+      await full.page.waitForSelector("#rig-export-canvas");
+      await full.page.evaluate(() => {
+        window.__rigCardText = [];
+        const original = CanvasRenderingContext2D.prototype.fillText;
+        CanvasRenderingContext2D.prototype.fillText = function (value, x, y, maxWidth) {
+          if (this.canvas.id === "rig-export-canvas") {
+            window.__rigCardText.push({ text: String(value), x, y });
+          }
+          return original.apply(this, arguments);
+        };
+      });
+      await full.page.click('[data-export-tab="image"]');
+      const card = await full.page.evaluate(() => {
+        const canvas = document.getElementById("rig-export-canvas");
+        return { width: canvas.width, height: canvas.height,
+          text: window.__rigCardText, png: canvas.toDataURL("image/png").startsWith("data:image/png;base64,") };
+      });
+      assert.equal(card.width, 800);
+      assert.ok(card.height > 480, "24-line PNG must grow beyond the six-line teaser");
+      assert.equal(card.text.filter(t => t.text === "Sennheiser HD 25").length, 21,
+        "all 21 repeated headphone lines must be drawn, not silently truncated");
+      assert.equal(card.text.filter(t => /\\b(?:UNIT|UNITS)$/.test(t.text)).length, 24,
+        "all 24 equipment lines must include explicit unit counts");
+      assert.equal(card.text.filter(t => /2 UNITS$/.test(t.text)).length, 7,
+        "multi-unit purchases must retain their quantities");
+      assert.equal(card.text.filter(t => t.text.startsWith("Owned · $0 to buy")).length, 12,
+        "owned equipment must be distinguished from remaining purchases");
+      assert.ok(card.text.some(t => /All 24 equipment lines shown/.test(t.text)));
+      assert.ok(card.text.every(t => t.y < card.height - 12),
+        "no canvas label may extend below the exported image");
+      assert.equal(card.png, true, "full buyer card must export a valid PNG");
+      assert.deepEqual(full.errors, [], "24-line PNG must not throw browser errors");
+      await full.context.close();
+    }
+    console.log("PASS: 24-line PNG exports all gear, quantities and ownership on desktop/mobile");
+
     // A multi-cabinet PA line can consume two stereo output pairs. A second
     // monitor line must not reuse those occupied outputs merely because four
     // XLR cable packs are selected in the shopping list.
