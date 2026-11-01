@@ -2605,9 +2605,11 @@
       };
     },
     shareUrl: function () {
-      var serialized = JSON.stringify(currentRig);
-      var encoded = btoa(encodeURIComponent(serialized));
-      return window.location.origin + window.location.pathname + "?rig=" + encodeURIComponent(encoded);
+      // Use the same bounded, compact-capable exporter as the visible Share
+      // dialog. A full 24-line rig may exceed the 8192-character import guard;
+      // never hand other site integrations a link that cannot be restored.
+      // An unshareable rig has no exact URL, rather than a stale or partial one.
+      return saveActiveState() ? window.location.href : null;
     },
     checks: function () {
       var checks = [];
