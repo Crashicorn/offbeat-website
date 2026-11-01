@@ -667,6 +667,29 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: corrupt shared quantities reject the full shopping list visibly");
 
+    // A shared PA selection must never silently become a studio monitor.
+    // Both desktop and mobile must warn instead of showing a different rig.
+    for (const width of [1440, 390]) {
+      const wrongRole = {
+        name: "Unsafe PA substitution",
+        items: [
+          { slotId: "ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false },
+          { slotId: "pa", category: "speakers", itemId: "pioneer-dm40d",
+            role: "crowd_pa", qty: 2, owned: false }
+        ]
+      };
+      const wrongRoleQuery = "?rig=" + encodeURIComponent(
+        Buffer.from(encodeURIComponent(JSON.stringify(wrongRole)), "binary").toString("base64")
+      );
+      const imported = await visit(browser, width, wrongRoleQuery);
+      const warning = await imported.page.$eval('#rig-app-root .highlight-box[role="alert"]', el => el.textContent);
+      assert.match(warning, /Shared DJ setup could not be restored/);
+      assert.match(warning, /NOT the shared shopping list/);
+      assert.deepEqual(imported.errors, [], "invalid PA roles must not crash the planner");
+      await imported.context.close();
+    }
+    console.log("PASS: incompatible shared PA roles reject visibly at desktop and mobile widths");
+
     const payload = {
       name: '<img src=x onerror="alert(1)">',
       items: [{ slotId: 'x" onmouseover="alert(1)', category: "controllers",
