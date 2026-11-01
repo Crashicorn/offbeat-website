@@ -30,6 +30,39 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
       assert.match(rejection, /Shared DJ setup could not be restored/);
       assert.match(rejection, /NOT the shared shopping list/);
       assert.doesNotMatch(await page.$eval('.rig-main-title', el => el.textContent), /Missing gear in shared build/);
+      // The new Rig Studio and the legacy planner both consume ?rig=. A
+      // retired line must not vanish in the studio while it still displays
+      // a plausible, underpriced shopping list or unrelated saved equipment.
+      const studioWarning = await page.$eval('#rig-app-root [role="alert"]', el => el.textContent);
+      assert.match(studioWarning, /Shared DJ setup could not be restored/);
+      assert.match(studioWarning, /No partial shopping list was loaded/);
+      assert.equal(await page.evaluate(() => __rigStudio.state().items.length), 0,
+        'invalid explicit share must not restore the previously saved local rig');
+
+      const corruptQuantity = {name:'Corrupt purchase quantity',items:[
+        {slotId:'ctrl',category:'controllers',itemId:'pioneer-ddj-flx4',qty:1,owned:false},
+        {slotId:'hp',category:'headphones',itemId:'sennheiser-hd25',qty:9,owned:false}
+      ]};
+      const encodedQuantity = Buffer.from(encodeURIComponent(JSON.stringify(corruptQuantity))).toString('base64');
+      await page.goto(base+'/build-your-dj-setup.html?rig='+encodeURIComponent(encodedQuantity), {waitUntil:'networkidle0'});
+      assert.match(await page.$eval('#rig-app-root [role="alert"]', el => el.textContent),
+        /Shared DJ setup could not be restored/);
+      assert.equal(await page.evaluate(() => __rigStudio.state().items.length), 0,
+        'invalid quantity cannot be silently changed from nine to one');
+
+      // A valid complete share still restores the exact equipment, quantity
+      // and ownership after the two negative cases.
+      const validShare = {name:'Valid shared buyer build',items:[
+        {slotId:'ctrl',category:'controllers',itemId:'pioneer-ddj-flx4',qty:1,owned:false},
+        {slotId:'hp',category:'headphones',itemId:'sennheiser-hd25',qty:2,owned:true}
+      ]};
+      const encodedValid = Buffer.from(encodeURIComponent(JSON.stringify(validShare))).toString('base64');
+      await page.goto(base+'/build-your-dj-setup.html?rig='+encodeURIComponent(encodedValid), {waitUntil:'networkidle0'});
+      const restoredStudio = await page.evaluate(() => __rigStudio.state());
+      assert.equal(restoredStudio.name, validShare.name);
+      assert.deepEqual(restoredStudio.items.map(s => [s.itemId,s.qty,s.owned]),
+        validShare.items.map(s => [s.itemId,s.qty,s.owned]));
+      assert.equal(await page.$('#rig-app-root [role="alert"]'), null);
       await page.goto(base+'/build-your-dj-setup.html?preset=mobile-pro', {waitUntil:'networkidle0'});
       await page.click('.visual-monitor .visual-pick');
       await page.waitForSelector('[data-action="select-item"][data-item-id="yamaha-hs5"]', {visible:true});
