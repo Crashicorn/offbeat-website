@@ -83,6 +83,36 @@ function slot(id = "core-ctrl") {
   return { slotId: id, category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false };
 }
 
+test("unavailable zZounds listings cannot masquerade as buy-now links", () => {
+  const { api } = harness(false, true);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const unavailable = catalog.items.filter(item =>
+    item.retailer_destinations && item.retailer_destinations.zzounds &&
+    item.retailer_destinations.zzounds.status === "verified_unavailable");
+  assert.ok(unavailable.length >= 6, "exercise the catalog's known unavailable SKUs");
+  for (const item of unavailable) {
+    const zz = item.retailer_destinations.zzounds;
+    const html = api.renderModularTableRow({
+      slotId: "test-" + item.id, category: item.category, itemId: item.id, qty: 1, owned: false
+    });
+    assert.match(html, /aria-disabled="true" data-status="verified_unavailable"/,
+      item.id + " must display an explicit unavailable state");
+    assert.ok(!html.includes('href="' + zz.url + '"'),
+      item.id + " must not advertise a discontinued SKU as a shopping destination");
+    assert.ok(html.includes('href="' + zz.alternative_url + '"'),
+      item.id + " must offer the catalogued replacement destination");
+    assert.ok(html.includes("Check alternative: " + zz.alternative_name),
+      item.id + " must identify the replacement as an alternative, not the selected model");
+  }
+  const current = catalog.items.find(item => item.id === "pioneer-ddj-flx4");
+  const availableHtml = api.renderModularTableRow({
+    slotId: "core-ctrl", category: current.category, itemId: current.id, qty: 1, owned: false
+  });
+  assert.match(availableHtml, /<a[^>]*class="btn-retail btn-retail--zz"[^>]*>zZounds<\/a>/,
+    "ordinary retailer destinations must remain usable");
+});
+
 test("shopping quantities preserve valid units and reject corrupt explicit counts", () => {
   const { api } = harness(false);
   for (const qty of [1, 4, 5, 8]) {
