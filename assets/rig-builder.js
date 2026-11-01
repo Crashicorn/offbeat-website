@@ -1872,42 +1872,50 @@
   function drawRigCanvas() {
     var canvas = document.getElementById("rig-export-canvas");
     if (!canvas) return;
-    var ctx = canvas.getContext("2d");
     var stats = calculateRigStats();
+    var lines = currentRig.items.map(function (slot) {
+      var item = getSlotItem(slot);
+      return item ? { slot: slot, item: item } : null;
+    }).filter(Boolean);
 
-    // Background Gradient
-    var bgGrad = ctx.createLinearGradient(0, 0, 800, 480);
+    // The PNG is a shopping-plan export, not a six-item teaser. The previous
+    // fixed 480px card silently omitted every item after line six while still
+    // displaying the FULL spend total. Expand to show all 24 permitted lines.
+    var rows = Math.max(3, Math.ceil(lines.length / 2));
+    var rowGap = 64;
+    var height = Math.max(480, 184 + rows * rowGap + 72);
+    canvas.width = 800;
+    canvas.height = height;
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    var bgGrad = ctx.createLinearGradient(0, 0, 800, height);
     bgGrad.addColorStop(0, "#0c0b14");
     bgGrad.addColorStop(0.6, "#141224");
     bgGrad.addColorStop(1, "#07070c");
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 800, 480);
+    ctx.fillRect(0, 0, 800, height);
 
-    // Accent Border
     ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
     ctx.lineWidth = 4;
-    ctx.strokeRect(12, 12, 776, 456);
+    ctx.strokeRect(12, 12, 776, height - 24);
 
-    // Header Glow
     ctx.fillStyle = "#a78bfa";
     ctx.font = "bold 14px 'Syne', system-ui, sans-serif";
-    ctx.fillText("OFFBEAT. MY DJ RIG ARCHITECT (2026)", 36, 50);
+    ctx.fillText("OFFBEAT. MY DJ RIG ARCHITECT (2026)", 36, 50, 728);
 
-    // Title
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 26px 'Syne', system-ui, sans-serif";
-    ctx.fillText(currentRig.name, 36, 88);
+    ctx.fillText(currentRig.name, 36, 88, 728);
 
-    // Price Badges
     ctx.fillStyle = "#38bdf8";
     ctx.font = "bold 18px system-ui, sans-serif";
-    ctx.fillText("Spend: $" + stats.purchaseCost.toLocaleString(), 36, 122);
+    ctx.fillText("Spend: $" + stats.purchaseCost.toLocaleString(), 36, 122, 165);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "14px system-ui, sans-serif";
-    ctx.fillText("(Valuation: $" + stats.totalValue.toLocaleString() + " · Saved: -$" + stats.ownedValue.toLocaleString() + ")", 210, 122);
+    ctx.fillText("(Valuation: $" + stats.totalValue.toLocaleString() + " · Saved: -$" + stats.ownedValue.toLocaleString() + ")", 210, 122, 555);
 
-    // Separator line
     ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -1915,35 +1923,34 @@
     ctx.lineTo(764, 142);
     ctx.stroke();
 
-    // Gear List Grid
-    var yPos = 176;
-    currentRig.items.forEach(function (slot, idx) {
-      var it = getSlotItem(slot);
-      if (!it || idx > 5) return;
+    lines.forEach(function (entry, idx) {
+      var slot = entry.slot;
+      var item = entry.item;
+      var qty = slot.qty || 1;
+      var lineTotal = item.price * qty;
+      var col = idx < rows ? 36 : 410;
+      var rowY = 176 + (idx % rows) * rowGap;
 
-      var col = idx < 3 ? 36 : 410;
-      var rowY = yPos + (idx % 3) * 80;
-
-      // Role tag
       ctx.fillStyle = "#a78bfa";
       ctx.font = "bold 11px system-ui, sans-serif";
-      ctx.fillText(slot.category.toUpperCase(), col, rowY);
+      ctx.fillText(slot.category.toUpperCase() + " · " + qty + (qty === 1 ? " UNIT" : " UNITS"), col, rowY, 325);
 
-      // Model name
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 16px system-ui, sans-serif";
-      ctx.fillText(it.brand + " " + it.model, col, rowY + 22);
+      ctx.fillText(item.brand + " " + item.model, col, rowY + 22, 325);
 
-      // Price & status
       ctx.fillStyle = slot.owned ? "#4ade80" : "#cbd5e1";
       ctx.font = "13px system-ui, sans-serif";
-      ctx.fillText((slot.owned ? "✓ Owned ($0 out of pocket)" : "$" + (it.price * (slot.qty || 1))), col, rowY + 42);
+      ctx.fillText(slot.owned
+        ? "Owned · $0 to buy (value $" + lineTotal.toLocaleString() + ")"
+        : "To buy: $" + lineTotal.toLocaleString(), col, rowY + 42, 325);
     });
 
-    // Watermark Footer
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = "#94a3b8";
     ctx.font = "12px system-ui, sans-serif";
-    ctx.fillText("offbeatinc.com/build-your-dj-setup.html", 36, 442);
+    ctx.fillText("All " + lines.length + " equipment lines shown · Prices are estimates", 36, height - 42, 728);
+    ctx.fillStyle = "#64748b";
+    ctx.fillText("offbeatinc.com/build-your-dj-setup.html", 36, height - 24, 728);
   }
 
   function downloadCanvasImage() {
