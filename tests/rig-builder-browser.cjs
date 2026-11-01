@@ -166,7 +166,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.ok(card.height > 480, "24-line PNG must grow beyond the six-line teaser");
       assert.equal(card.text.filter(t => t.text === "Sennheiser HD 25").length, 21,
         "all 21 repeated headphone lines must be drawn, not silently truncated");
-      assert.equal(card.text.filter(t => /\\b(?:UNIT|UNITS)$/.test(t.text)).length, 24,
+      assert.equal(card.text.filter(t => /\b(?:UNIT|UNITS)$/.test(t.text)).length, 24,
         "all 24 equipment lines must include explicit unit counts");
       assert.equal(card.text.filter(t => /2 UNITS$/.test(t.text)).length, 7,
         "multi-unit purchases must retain their quantities");
