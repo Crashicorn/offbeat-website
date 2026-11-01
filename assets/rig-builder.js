@@ -8,6 +8,7 @@
 
   var CATALOG = null;
   var sharedRigRejected = false;
+  var guideAddRejected = false;
   var audioCtx = null;
   var soundEnabled = safeStorageGet("offbeat.rig.sfx") !== "muted";
 
@@ -192,6 +193,9 @@
           };
           if (targetRole) newSlot.role = targetRole;
           if (!appendRigSlot(newSlot)) {
+            // Never silently omit a guide-selected purchase from a full rig.
+            // Keep all 24 existing lines intact and warn the buyer in the UI.
+            guideAddRejected = true;
             console.warn("Cannot add guide equipment: this rig already has 24 equipment lines.");
           }
         }
@@ -932,6 +936,7 @@
 
     var html = `
       ${sharedRigRejected ? '<div class="highlight-box" role="alert"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid or unavailable. The starter rig shown below is NOT the shared shopping list; do not rely on its prices or compatibility for the original build.</div>' : ''}
+      ${guideAddRejected ? '<div class="highlight-box" role="alert"><strong>Equipment not added.</strong> This setup already contains 24 equipment lines. Remove an existing line before adding the item from the guide. Your existing shopping list was preserved unchanged.</div>' : ''}
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
