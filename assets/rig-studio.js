@@ -308,7 +308,15 @@
   function decodePayload(str) {
     var b64 = str.replace(/-/g, "+").replace(/_/g, "/");
     while (b64.length % 4) b64 += "=";
-    return JSON.parse(decodeURIComponent(escape(atob(b64))));
+    var bytes = atob(b64);
+    try {
+      // Rig Studio links carry UTF-8 JSON directly.
+      return JSON.parse(decodeURIComponent(escape(bytes)));
+    } catch (e) {
+      // Legacy Rig Builder links carry encodeURIComponent(JSON) inside base64.
+      // Without this fallback, valid legacy links fail in the new studio.
+      return JSON.parse(decodeURIComponent(bytes));
+    }
   }
 
   /* Purchases, not cabinets: one line of quantity can hold two leads. */
