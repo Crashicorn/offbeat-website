@@ -109,6 +109,7 @@
     modal: null,
     quiz: null,
     menuOpen: false,
+    shareRejected: false,
     /* Cables retired by reconciliation, so a swap back can restore them, and
        cable lines the buyer deliberately removed. */
     cableMemory: {},
@@ -151,18 +152,24 @@
     return ROLE_ORDER.indexOf(cat) !== -1;
   }
   // Validate a raw slot-like object against the loaded catalog and known
-  // categories; drop anything that cannot map to a real item. `fallbackIdx`
+  // categories; reject the entire imported rig if any line is invalid. `fallbackIdx`
   // is used to mint a safe synthetic slotId when the supplied one is bad.
   function sanitizeSlot(raw, fallbackIdx) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
     if (typeof raw.category !== "string" || !validCategory(raw.category)) return null;
     // itemId is optional for empty slots (e.g. 'Choose a controller') but
     // when present must name a real catalog item in the same category.
+    var it = null;
     if (raw.itemId != null && raw.itemId !== "") {
       if (typeof raw.itemId !== "string") return null;
-      var it = byId(raw.itemId);
+      it = byId(raw.itemId);
       if (!it || it.category !== raw.category) return null;
     }
+    // A corrupt purchase quantity must not silently become one item and
+    // understate the shopping list. Existing-device placeholders are always
+    // one owned host and may normalize historical bogus counts to one.
+    if (raw.qty !== undefined && (!Number.isInteger(raw.qty) || raw.qty < 1 || raw.qty > 4) && !(it && it.no_purchase === true)) return null;
+    if (raw.owned !== undefined && typeof raw.owned !== "boolean") return null;
     var fallbackId = "s-" + raw.category + "-" + String(fallbackIdx).padStart(2, "0");
     return {
       slotId: cleanSlotId(raw.slotId, fallbackId),
@@ -178,7 +185,9 @@
     var used = Object.create(null), out = [];
     for (var i = 0; i < rawItems.length; i++) {
       var clean = sanitizeSlot(rawItems[i], i);
-      if (!clean) continue;
+      // Never display a partly restored rig with missing equipment, altered
+      // ownership or a deceptively low purchase total.
+      if (!clean) return null;
       var id = clean.slotId, n = 0;
       while (used[id]) { n++; id = clean.slotId + "-" + n; }
       if (id.length > 64) id = id.slice(0, 64);
@@ -890,6 +899,7 @@
     }).join("");
 
     return '' +
+      (state.shareRejected ? '<div class="rs-ribbon" role="alert"><div class="rs-ribbon-body"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid, missing, or exceed the share limit. No partial shopping list was loaded; start a new rig or request a fresh link.</div></div>' : '') +
       '<section class="rs-start">' +
         '<div class="rs-start-head">' +
           '<span class="rs-eyebrow">' + icon("spark") + "Start a rig</span>" +
@@ -2952,8 +2962,8 @@
     var rigParam = params.get("rig");
     var start = params.get("start");
 
-    if (rigParam) {
-      if (rigParam.length <= 8192) {
+    if (params.has("rig")) {
+      if (rigParam && rigParam.length <= 8192) {
         try {
           var parsed = decodePayload(rigParam);
           var rawItems = parsed.i || parsed.items;
@@ -2967,8 +2977,15 @@
             state.ribbon = { kind: parsed.g === "guide" ? "imported" : "shared" };
             return true;
           }
-        } catch (e) { /* fall through to stored state */ }
+        } catch (e) { /* reject corrupt explicit shares */ }
       }
+      // A broken explicit share must not fall back to unrelated local gear.
+      // The visitor cannot safely price or buy a silently truncated build.
+      state.shareRejected = true;
+      state.name = "My setup";
+      state.items = [];
+      state.view = "start";
+      return true;
     }
 
     if (preset) {
