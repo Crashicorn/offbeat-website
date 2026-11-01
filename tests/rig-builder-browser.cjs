@@ -123,6 +123,32 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       console.log("PASS: first-load export shares actual starter gear without prior edits");
     }
 
+    // A privacy-restricted or full browser storage must not silently claim
+    // a saved build. The exact share/export escape route must remain usable.
+    for (const width of [1440, 390]) {
+      const blocked = await visit(browser, width, "", true);
+      await blocked.page.click("#rig-manage > summary");
+      blocked.page.once("dialog", dialog => dialog.accept("Unsaved buyer plan"));
+      await blocked.page.click('[data-action="save-rig"]');
+      const result = await blocked.page.evaluate(() => ({
+        warning: Array.from(document.querySelectorAll('.highlight-box[role="alert"]'))
+          .map(el => el.textContent).find(text => text.includes("Rig not saved.")) || "",
+        savedPills: document.querySelectorAll(".saved-rig-pill").length,
+        title: window.__rigStudio.state().name,
+        url: location.href,
+        items: window.__rigStudio.state().items.length
+      }));
+      assert.match(result.warning, /blocked or exhausted local storage/);
+      assert.match(result.warning, /Copy the exact share link or export a checklist/);
+      assert.equal(result.savedPills, 0, "blocked save must not fabricate a saved rig");
+      assert.equal(result.title, "Unsaved buyer plan", "editing must preserve the current buyer plan");
+      assert.ok(result.items >= 3, "storage denial must not erase selected gear");
+      assert.match(result.url, /[?&]rig=/, "visitor must retain an independent exact share URL");
+      assert.deepEqual(blocked.errors, [], "storage denial must not throw browser errors");
+      await blocked.context.close();
+    }
+    console.log("PASS: failed local rig saves warn on desktop/mobile without losing the shareable plan");
+
     // The exported PNG must contain the complete buyer list. The former
     // fixed-size card silently dropped lines 7–24 while showing their costs.
     // Exercise the real loaded rig-builder on desktop and mobile, recording
