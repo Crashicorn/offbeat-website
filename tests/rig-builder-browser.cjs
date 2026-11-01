@@ -132,7 +132,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       await blocked.page.click('[data-action="save-rig"]');
       const result = await blocked.page.evaluate(() => ({
         warning: Array.from(document.querySelectorAll('.highlight-box[role="alert"]'))
-          .map(el => el.textContent).find(text => text.includes("Rig not saved.")) || "",
+          .map(el => el.textContent).find(text => text.includes("Saved builds not updated.")) || "",
         savedPills: document.querySelectorAll(".saved-rig-pill").length,
         title: window.__rigStudio.state().name,
         url: location.href,
