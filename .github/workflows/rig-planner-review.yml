@@ -147,13 +147,13 @@ jobs:
           fi
 
   overflow-audit:
-    name: Sitewide overflow (report only)
+    name: Sitewide overflow (blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # The supplied auditor exits 1 on violations. For now, capture its failure
-    # without blocking PR qualification. Remove continue-on-error after
-    # Arena A's remaining overflow repair is merged and the exact-head scan is clean.
-    continue-on-error: true
+    # The merged review candidate passed the complete 119-page, two-viewport
+    # Chromium audit on 2026-11-01 (run 41306101424, exact PR head
+    # 738a5623f012aa50aff02da467dee4654df56173). Fail closed on any
+    # renewed overflow, container spill, broken image, or external image host.
     permissions:
       contents: read
     steps:
@@ -177,9 +177,8 @@ jobs:
           python -m pip install --disable-pip-version-check playwright==1.55.0
       - name: Verify audit semantics against real Chromium
         run: python -m unittest discover -s tests -p test_overflow_audit_semantics.py -v
-      - name: Audit all checked-out HTML pages at 1280 and 390 (report only)
+      - name: Audit all checked-out HTML pages at 1280 and 390 (blocking)
         id: overflow
-        continue-on-error: true
         shell: bash
         run: |
           set -uo pipefail
@@ -221,12 +220,12 @@ jobs:
           audit_rc=${PIPESTATUS[0]}
           printf '%s\n' "$audit_rc" > overflow-audit-out/exit-code.txt
           {
-            echo '## Sitewide browser overflow audit — report only'
+            echo '## Sitewide browser overflow audit — blocking'
             echo "Exact SHA: \`$(git rev-parse HEAD)\`"
             echo "Pages: $(wc -l < overflow-audit-out/pages.txt), viewports: 1280x800 and 390x844"
             echo "Audit exit code: \`$audit_rc\` (0 = clean, 1 = violations)"
             echo 'All findings and raw per-page measurements are saved in the workflow artifact.'
-            echo 'This check does not block the draft PR until the owner authorizes enforcement.'
+            echo 'This audit is a blocking review gate. A violation fails the workflow; it does not approve a release.'
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$audit_rc"
       - name: Upload full overflow evidence (even on violation)
