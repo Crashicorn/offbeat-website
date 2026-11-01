@@ -816,6 +816,56 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: unavailable retailer SKUs are non-clickable with labelled alternatives at desktop and mobile");
 
+    // Reddit/Discord handoff must disclose each unit quantity and distinguish
+    // owned valuation from actual shopping spend. The old three-column table
+    // displayed multiplied line prices with no quantity or owned-to-buy cost.
+    for (const width of [1440, 390]) {
+      const markdownRig = {
+        name: "Quantity-aware buyer export",
+        items: [
+          { slotId: "ctrl", category: "controllers", itemId: "pioneer-ddj-flx4", qty: 2, owned: false },
+          { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 3, owned: true },
+          { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+        ]
+      };
+      const markdownQuery = "?rig=" + encodeURIComponent(
+        Buffer.from(encodeURIComponent(JSON.stringify(markdownRig)), "binary").toString("base64")
+      );
+      const shared = await visit(browser, width, markdownQuery);
+      await shared.page.click("#rig-manage > summary");
+      await shared.page.click('[data-action="open-export-modal"]');
+      const markdown = await shared.page.$eval("#reddit-export-box", el => el.value);
+      const pricing = await shared.page.evaluate(() => ({
+        controller: __rigStudio.item("pioneer-ddj-flx4"),
+        headphones: __rigStudio.item("sennheiser-hd25"),
+        host: __rigStudio.item("existing-mobile-device"),
+        totals: __rigStudio.cost()
+      }));
+      const fmt = value => Number(value).toLocaleString("en-US");
+      const controllerLine = "| **CONTROLLERS** | " + pricing.controller.brand + " " +
+        pricing.controller.model + " | 2 | Need to buy | $" + fmt(pricing.controller.price) +
+        " | $" + fmt(pricing.controller.price * 2) + " | $" + fmt(pricing.controller.price * 2) + " |";
+      const headphoneLine = "| **HEADPHONES** | " + pricing.headphones.brand + " " +
+        pricing.headphones.model + " | 3 | Already owned | $" + fmt(pricing.headphones.price) +
+        " | $" + fmt(pricing.headphones.price * 3) + " | $0 |";
+      const hostLine = "| **LAPTOPS** | " + pricing.host.brand + " " +
+        pricing.host.model + " | 1 | Existing device / mode (verify) | $" +
+        fmt(pricing.host.price) + " | $" + fmt(pricing.host.price) + " | $0 |";
+      assert.ok(markdown.includes("| Category | Equipment | Qty | Status | Unit estimate | Line value | To buy |"),
+        "Markdown must explain quantity, ownership and out-of-pocket costs");
+      assert.ok(markdown.includes(controllerLine), "two unowned controllers must show two units and full purchase cost");
+      assert.ok(markdown.includes(headphoneLine), "three owned headphones must have zero purchase cost");
+      assert.ok(markdown.includes(hostLine), "existing device placeholder must not appear as a new purchase");
+      assert.equal(markdown.split("\n").filter(line => line.startsWith("| **")).length, 3,
+        "all selected equipment lines must appear in the exported table");
+      assert.ok(markdown.includes("**$" + fmt(pricing.totals.purchase) + "**"),
+        "Markdown purchase total must match live rig calculation");
+      assert.match(markdown, /[?&]rig=/, "export must retain a restorable share link");
+      assert.deepEqual(shared.errors, [], "Markdown export must not cause browser errors");
+      await shared.context.close();
+    }
+    console.log("PASS: desktop/mobile Markdown exports quantities, ownership and exact to-buy totals");
+
     // Export must remain usable when clipboard permission is absent, denied,
     // or throws synchronously. All three buyer handoffs must show the exact
     // current text in a manual-copy dialog, at both desktop and mobile sizes.
