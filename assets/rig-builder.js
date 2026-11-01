@@ -938,7 +938,7 @@
     var html = `
       ${sharedRigRejected ? '<div class="highlight-box" role="alert"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid or unavailable. The starter rig shown below is NOT the shared shopping list; do not rely on its prices or compatibility for the original build.</div>' : ''}
       ${guideAddRejected ? '<div class="highlight-box" role="alert"><strong>Equipment not added.</strong> This setup already contains 24 equipment lines. Remove an existing line before adding the item from the guide. Your existing shopping list was preserved unchanged.</div>' : ''}
-      ${savedRigWriteFailed ? '<div class="highlight-box" role="alert"><strong>Rig not saved.</strong> This browser blocked or exhausted local storage. Your equipment is still visible here, but the saved-build action did not persist it. Copy the exact share link or export a checklist before leaving this page.</div>' : ''}
+      ${savedRigWriteFailed ? '<div class="highlight-box" role="alert"><strong>Saved builds not updated.</strong> This browser blocked or exhausted local storage. Your equipment is still visible here, but the save or delete action did not persist. Copy the exact share link or export a checklist before leaving this page.</div>' : ''}
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
