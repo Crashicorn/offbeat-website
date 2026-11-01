@@ -279,11 +279,17 @@
       used[id] = true;
       var role = slot.role;
       if (item.category === "speakers") {
-        if (role === "crowd_pa" && isSpeakerEligibleForRole(item, "crowd_pa")) {
-          // valid crowd_pa
-        } else if (role === "dj_monitor" && isSpeakerEligibleForRole(item, "dj_monitor")) {
-          // valid dj_monitor
-        } else {
+        // A shared shopping list may explicitly assign a speaker to crowd PA
+        // or DJ monitoring. Reassigning an ineligible product silently changes
+        // the intended sound system and can make an unsafe PA look compatible.
+        // Reject the entire imported rig; only legacy records with no role
+        // may infer one from the catalog.
+        if (role !== undefined && role !== null && role !== "" &&
+            !isSpeakerEligibleForRole(item, role)) {
+          invalidLine = true;
+          return;
+        }
+        if (role === undefined || role === null || role === "") {
           role = isSpeakerEligibleForRole(item, "crowd_pa") ? "crowd_pa" : "dj_monitor";
         }
       }
