@@ -709,6 +709,37 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await hostile.context.close();
     console.log("PASS: malicious shared URL cannot inject event handlers");
 
+    // Catalogued unavailable SKUs must never look like live buy-now links.
+    // The replacement is a separately labelled option, not the selected item.
+    for (const width of [1440, 390]) {
+      for (const [id, alternative] of [
+        ["denon-prime-4-plus", "Denon DJ PRIME 4 G2"],
+        ["sony-mdr-7506", "Sennheiser HD 25"]
+      ]) {
+        const shopping = await visit(browser, width, "?add=" + id);
+        const retailer = await shopping.page.evaluate((itemId) => {
+          const rows = [...document.querySelectorAll(".rig-row.rs-item")];
+          const row = rows.find(el => el.querySelector('[data-action="inspect-item"][data-item-id="' + itemId + '"]'));
+          if (!row) return null;
+          const zz = row.querySelector(".btn-retail--zz");
+          const alt = row.querySelector(".btn-retail--alt");
+          return { tag: zz?.tagName, disabled: zz?.getAttribute("aria-disabled"),
+            status: zz?.getAttribute("data-status"), alternative: alt?.textContent.trim(),
+            altHref: alt?.getAttribute("href"), unavailableHref: zz?.getAttribute("href") };
+        }, id);
+        assert.ok(retailer, "selected item must appear in the real shopping list");
+        assert.equal(retailer.tag, "SPAN", "unavailable listing must not be clickable");
+        assert.equal(retailer.disabled, "true");
+        assert.equal(retailer.status, "verified_unavailable");
+        assert.equal(retailer.unavailableHref, null);
+        assert.ok(retailer.alternative.includes(alternative));
+        assert.match(retailer.altHref, /^https:\/\/www\.zzounds\.com\/item--/);
+        assert.deepEqual(shopping.errors, [], "retailer alternatives must not break the buyer journey");
+        await shopping.context.close();
+      }
+    }
+    console.log("PASS: unavailable retailer SKUs are non-clickable with labelled alternatives at desktop and mobile");
+
     const denied = await visit(browser, 390, "", true);
     assert.deepEqual(denied.errors, [], "storage-denied browser must remain usable");
     await denied.context.close();
