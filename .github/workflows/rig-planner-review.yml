@@ -50,7 +50,7 @@ permissions:
 jobs:
   rig-planner:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - name: Check out exact candidate
         uses: actions/checkout@v4
@@ -70,6 +70,8 @@ jobs:
       - name: Parse planner and tests
         run: |
           node --check assets/rig-builder.js
+          node --check assets/rig-studio.js
+          node --check tests/rig-architect-journeys.cjs
           node --check assets/beatmatch-trainer.js
           node --check tests/beatmatch-cue.test.js
           node --check tests/test_trainer_e2e.js
@@ -102,6 +104,9 @@ jobs:
             sleep 0.25
           done
           CHROME_BIN="$CHROME_BIN" node tests/rig-builder-browser.cjs
+          # Exercise the current Rig Studio as well as the legacy builder;
+          # a malformed shared URL must not become an underpriced purchase list.
+          CHROME_BIN="$CHROME_BIN" BASE_URL=http://127.0.0.1:8099 node tests/rig-architect-journeys.cjs
           CHROME_BIN="$CHROME_BIN" BASE_URL=http://127.0.0.1:8099 node tests/rig-visual-interactions.cjs
           CHROME_BIN="$CHROME_BIN" BASE_URL=http://127.0.0.1:8099 node tests/test_role_based_booth_journeys.js
           CHROME_BIN="$CHROME_BIN" node tests/test_owner_design_recovery.cjs
