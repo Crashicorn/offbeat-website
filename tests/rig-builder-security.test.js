@@ -370,6 +370,8 @@ test("24-line builds use a compact share URL when full JSON exceeds the URL limi
   assert.equal(api.normalizeRigState({ name: "L".repeat(80), items }), true);
   api.saveActiveState();
   const url = lastUrl();
+  assert.equal(window.__rigStudio.shareUrl(), new URL(url, "https://offbeatinc.com").href,
+    "public share API must use the same compact, restorable URL as the export dialog");
   assert.match(url, /\\?rig=/, "valid 24-line build must remain shareable");
   const encoded = new URL(url, "https://offbeatinc.com").searchParams.get("rig");
   const payload = JSON.parse(decodeURIComponent(atob(encoded)));
@@ -396,7 +398,8 @@ test("oversized unsendable rigs remove stale share URLs instead of exporting wro
   }));
   assert.equal(api.normalizeRigState({ name: "Oversized", items }), true);
   window.location.search = "?rig=stale-build";
-  api.saveActiveState();
+  assert.equal(window.__rigStudio.shareUrl(), null,
+    "public share API must refuse oversized rigs instead of returning an unimportable URL");
   assert.equal(lastUrl(), "/build-your-dj-setup.html", "stale rig URL must be cleared");
   assert.equal(api.getRig().items.length, 24, "active gear must remain intact");
 });
