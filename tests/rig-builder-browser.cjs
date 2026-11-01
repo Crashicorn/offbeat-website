@@ -843,15 +843,15 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       }));
       const fmt = value => Number(value).toLocaleString("en-US");
       const controllerLine = "| **CONTROLLERS** | " + pricing.controller.brand + " " +
-        pricing.controller.model + " | 2 | Need to buy | $" + fmt(pricing.controller.price) +
-        " | $" + fmt(pricing.controller.price * 2) + " | $" + fmt(pricing.controller.price * 2) + " |";
+        pricing.controller.model + " | 2 | Need to buy | " + fmt(pricing.controller.price) +
+        " | " + fmt(pricing.controller.price * 2) + " | " + fmt(pricing.controller.price * 2) + " |";
       const headphoneLine = "| **HEADPHONES** | " + pricing.headphones.brand + " " +
-        pricing.headphones.model + " | 3 | Already owned | $" + fmt(pricing.headphones.price) +
-        " | $" + fmt(pricing.headphones.price * 3) + " | $0 |";
+        pricing.headphones.model + " | 3 | Already owned | " + fmt(pricing.headphones.price) +
+        " | " + fmt(pricing.headphones.price * 3) + " | 0 |";
       const hostLine = "| **LAPTOPS** | " + pricing.host.brand + " " +
-        pricing.host.model + " | 1 | Existing device / mode (verify) | $" +
-        fmt(pricing.host.price) + " | $" + fmt(pricing.host.price) + " | $0 |";
-      assert.ok(markdown.includes("| Category | Equipment | Qty | Status | Unit estimate | Line value | To buy |"),
+        pricing.host.model + " | 1 | Existing device / mode (verify) | " +
+        fmt(pricing.host.price) + " | " + fmt(pricing.host.price) + " | 0 |";
+      assert.ok(markdown.includes("| Category | Equipment | Qty | Status | Unit USD | Line USD | To buy USD |"),
         "Markdown must explain quantity, ownership and out-of-pocket costs");
       assert.ok(markdown.includes(controllerLine), "two unowned controllers must show two units and full purchase cost");
       assert.ok(markdown.includes(headphoneLine), "three owned headphones must have zero purchase cost");
