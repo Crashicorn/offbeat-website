@@ -142,3 +142,28 @@ test("FLX2 buyer guides distinguish limited djay hardware unlock from paid PRO",
       name + " must not imply the full PRO subscription is included");
   }
 });
+
+
+test("sitewide retailer links never direct buyers to catalogued unavailable exact SKUs", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const unavailable = new Map(catalog.items
+    .filter(item => item.retailer_destinations?.zzounds?.status === "verified_unavailable")
+    .map(item => [new URL(item.retailer_destinations.zzounds.url).pathname, item.id]));
+  assert.ok(unavailable.size >= 6, "check all explicitly unavailable exact catalog SKUs");
+
+  const root = path.join(__dirname, "..");
+  const htmlPages = fs.readdirSync(root).filter(name => name.endsWith(".html"));
+  assert.ok(htmlPages.length >= 100, "inspect the complete published HTML page set");
+  for (const filename of htmlPages) {
+    const html = page(filename);
+    for (const match of html.matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)) {
+      let url;
+      try { url = new URL(match[2].replace(/&amp;/g, "&"), "https://offbeatinc.com/"); }
+      catch { continue; }
+      if (url.hostname !== "www.zzounds.com") continue;
+      assert.ok(!unavailable.has(url.pathname),
+        filename + " links directly to unavailable " + unavailable.get(url.pathname) +
+        "; use a non-clickable availability notice and a separately identified replacement");
+    }
+  }
+});
