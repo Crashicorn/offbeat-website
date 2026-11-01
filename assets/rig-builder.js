@@ -2246,16 +2246,12 @@
       } else if (action === "copy-reddit-md") {
         var redBox = document.getElementById("reddit-export-box");
         if (redBox) {
-          navigator.clipboard.writeText(redBox.value).then(function () {
-            alert("✓ Reddit Markdown copied to clipboard!");
-          });
+          copyTextWithFallback(redBox.value, "Reddit Markdown copied to clipboard!", "Copy your Reddit Markdown below:");
         }
       } else if (action === "copy-share-url") {
         var linkBox = document.getElementById("link-export-box");
-        if (linkBox) {
-          navigator.clipboard.writeText(linkBox.value).then(function () {
-            alert("✓ Shareable link copied to clipboard!");
-          });
+        if (linkBox && !linkBox.disabled && linkBox.value) {
+          copyTextWithFallback(linkBox.value, "Shareable link copied to clipboard!", "Copy your exact rig share link below:");
         }
       } else if (action === "download-canvas-image") {
         downloadCanvasImage();
@@ -2461,13 +2457,31 @@
     return lines.join("\n");
   }
 
+  // Clipboard writes are unavailable in some browser/privacy contexts and
+  // can reject even on HTTPS. Every export must still expose the EXACT
+  // current content for manual copying, never silently fail or substitute a
+  // stale share URL. Handle missing API, synchronous throws and rejections.
+  function copyTextWithFallback(text, successMessage, fallbackMessage) {
+    var manualCopy = function () { window.prompt(fallbackMessage, text); };
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        manualCopy();
+        return;
+      }
+      Promise.resolve(navigator.clipboard.writeText(text)).then(function () {
+        window.alert(successMessage);
+      }, manualCopy);
+    } catch (e) {
+      manualCopy();
+    }
+  }
+
   function copyChecklistToClipboard() {
-    var text = buildShoppingChecklistText();
-    navigator.clipboard.writeText(text).then(function () {
-      alert("✓ Shopping checklist copied to clipboard!");
-    }).catch(function () {
-      prompt("Copy your shopping checklist below:", text);
-    });
+    copyTextWithFallback(
+      buildShoppingChecklistText(),
+      "Shopping checklist copied to clipboard!",
+      "Copy your shopping checklist below:"
+    );
   }
 
   function getSavedRigs() {
