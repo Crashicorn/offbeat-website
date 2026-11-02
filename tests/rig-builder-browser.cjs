@@ -892,6 +892,40 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     await hostile.context.close();
     console.log("PASS: malicious shared URL cannot inject event handlers");
 
+    // Exact retailer links can sell individual cabinets/leads even when the
+    // rig's budget and stepper describe a pair. The purchase handoff must
+    // expose the real number of individual units at both viewport sizes.
+    for (const width of [1440, 390]) {
+      for (const id of ["yamaha-hs5", "cable-xlr-xlr"]) {
+        const shopping = await visit(browser, width, "?add=" + id);
+        const getRow = () => shopping.page.evaluate((itemId) => {
+          const row = [...document.querySelectorAll(".rig-row.rs-item")].find(el =>
+            el.querySelector('[data-action="inspect-item"][data-item-id="' + itemId + '"]'));
+          if (!row) return null;
+          return {
+            note: row.querySelector(".rs-shop-line-retail-quantity")?.textContent.trim() || "",
+            link: row.querySelector(".btn-retail--zz")?.textContent.trim() || "",
+            qty: row.querySelector(".qty-display")?.textContent.trim() || "",
+            plusSlot: row.querySelector('[data-action="step-qty"][data-step="1"]')?.getAttribute("data-slot-id")
+          };
+        }, id);
+        const one = await getRow();
+        assert.ok(one, "selected pair must appear in the buyer shopping list");
+        assert.equal(one.qty, "1");
+        assert.match(one.note, /2 separate units/);
+        assert.match(one.link, /order 2/);
+        assert.ok(one.plusSlot, "quantity stepper must be available");
+        await shopping.page.click('[data-action="step-qty"][data-step="1"][data-slot-id="' + one.plusSlot + '"]');
+        const two = await getRow();
+        assert.equal(two.qty, "2");
+        assert.match(two.note, /4 separate units/);
+        assert.match(two.link, /order 4/);
+        assert.deepEqual(shopping.errors, [], "retailer quantity warning must not break the buyer journey");
+        await shopping.context.close();
+      }
+    }
+    console.log("PASS: single-unit retailer links disclose pair-to-unit checkout quantities on desktop/mobile");
+
     // Catalogued unavailable SKUs must never look like live buy-now links.
     // The replacement is a separately labelled option, not the selected item.
     for (const width of [1440, 390]) {
