@@ -216,3 +216,19 @@ test("beginner mixer buying guide distinguishes Xone:23 analog, Pioneer licensin
   assert.match(html, /https:\/\/www\.allen-heath\.com\/content\/uploads\/2023\/06\/Xone_23_Flyer_Complete_sm\.pdf/);
   assert.doesNotMatch(html, /Serato DJ Pro included in the box|Yes — 2-in\/2-out USB \(24-bit\)|High-quality magnetic crossfader|Rane Sixty-One or Innofader upgrade|~\$599 \(used \$350\)|Magma-style filter|click any EQ band fully off/);
 });
+
+
+test("original PRIME GO primary buy action searches the controller, not accessories or GO+", () => {
+  const html = page("denon-prime-go-review.html");
+  const hero = html.match(/<div class="product-hero">([\s\S]*?)<div class="pros-cons">/);
+  assert.ok(hero, "original PRIME GO product hero exists");
+  const action = hero[1].match(/<a class="btn-primary" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+  assert.ok(action, "hero must have a primary shopping action");
+  const url = new URL(action[1].replace(/&amp;/g, "&"));
+  assert.equal(url.hostname, "www.amazon.com");
+  assert.match(url.searchParams.get("k") || "", /Denon DJ Prime GO/i);
+  assert.doesNotMatch(url.searchParams.get("k") || "", /accessories|GO\+/i);
+  assert.match(action[2], /original PRIME GO listings/);
+  assert.doesNotMatch(action[2], /accessories|GO\+/i);
+  assert.match(html, /Confirm whether a listing is for the original PRIME GO or the distinct PRIME GO\+/);
+});
