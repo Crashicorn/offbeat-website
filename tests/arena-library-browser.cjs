@@ -10,6 +10,7 @@ const paths = [
   "controller-software-compatibility-matrix.html",
   "dj-controllers-hub.html", "dj-software-hub.html", "dj-gear-hub.html",
   "dj-skills-performance-hub.html", "best-dj-controllers-2026.html",
+  "best-dj-controllers-under-500-2026.html",
   "best-dj-headphones-2026.html", "editorial-standards.html",
   "disclosure.html", "contact.html", "beatmatch-trainer.html"
 ];
@@ -45,6 +46,48 @@ function visibleCount(page) {
         assert.ok(state.overflow <= 1, path + " overflows at " + width + "px: " + state.overflow);
         assert.deepEqual(errors, [], path + " browser errors at " + width + "px");
       }
+      // Buyer-trust gate: a discontinued or out-of-budget controller must not
+      // be presented as the current new under-$500 top pick. Verify the actual
+      // desktop/mobile rendered copy AND FAQ structured-data agreement.
+      await page.goto(base + "/best-dj-controllers-under-500-2026.html", { waitUntil: "load" });
+      const buying = await page.evaluate(() => {
+        const main = document.querySelector("main");
+        const faq = [...document.querySelectorAll('script[type="application/ld+json"]')]
+          .map(el => JSON.parse(el.textContent))
+          .find(entry => entry["@type"] === "FAQPage");
+        return {
+          text: main.innerText,
+          h2: [...main.querySelectorAll("h2")].map(el => el.textContent.trim()),
+          badge: main.querySelector(".badge")?.textContent.trim(),
+          visibleFAQ: [...main.querySelectorAll("#faq details")].map(el => ({
+            q: el.querySelector("summary")?.textContent.trim(),
+            a: el.querySelector("p")?.textContent.trim()
+          })),
+          schemaFAQ: faq.mainEntity.map(entry => ({
+            q: entry.name,
+            a: entry.acceptedAnswer.text
+          })),
+          sources: [...main.querySelectorAll('a[href]')].map(el => el.href)
+        };
+      });
+      assert.ok(buying.h2.some(v => /Inpulse 500: Current In-Budget/.test(v)),
+        "current marketed controller must be identified as the new-buy starting point");
+      assert.ok(buying.h2.some(v => /FLX6-GT: Archived/.test(v)),
+        "archived FLX6-GT must be classified as conditional used/clearance");
+      assert.ok(buying.h2.some(v => /Beatmix 4: Discontinued/.test(v)),
+        "discontinued Beatmix 4 must not be a current new-buy recommendation");
+      assert.match(buying.badge, /Archived.*sub-\\$500/);
+      assert.match(buying.text, /Pioneer DJ Store's refurbished offer was \\$551\\.65 and out of stock/);
+      assert.match(buying.text, /Reloop explicitly marks both the Beatmix 4 and Beatmix 4 MK2 as discontinued/);
+      assert.doesNotMatch(buying.text, /top overall pick under \\$500|All three top picks include software/i);
+      assert.deepEqual(buying.visibleFAQ, buying.schemaFAQ,
+        "visible purchasing FAQ and JSON-LD answers must match exactly");
+      for (const source of [
+        "https://www.reloop.com/reloop-beatmix-4",
+        "https://www.reloop.com/reloop-beatmix-4-mk2",
+        "https://pioneerdjstore.com/products/ddj-flx6-gt-b",
+        "https://www.hercules.com/en/product/djcontrol-inpulse-500/"
+      ]) assert.ok(buying.sources.includes(source), "manufacturer/source link missing: " + source);
       // Product video facades must not contact YouTube until the visitor loads one.
       const videos = {
         "ddj-flx2-review.html": "OnNkSZK45jo",
