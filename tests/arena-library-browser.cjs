@@ -70,6 +70,8 @@ function visibleCount(page) {
           sources: [...main.querySelectorAll('a[href]')].map(el => el.href)
         };
       });
+      assert.match(buying.h2[0], /Hercules DJControl Inpulse 500: Current In-Budget/,
+        "first product must be the currently marketed under-$500 starting point");
       assert.ok(buying.h2.some(v => /Inpulse 500: Current In-Budget/.test(v)),
         "current marketed controller must be identified as the new-buy starting point");
       assert.ok(buying.h2.some(v => /FLX6-GT: Archived/.test(v)),
