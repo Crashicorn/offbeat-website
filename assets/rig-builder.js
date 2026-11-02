@@ -1701,7 +1701,7 @@
         var tokens = query ? query.split(/\s+/) : [];
         var filtered = items.filter(function (i) {
           if (tokens.length === 0) return true;
-          var text = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " + (i.software_unlocks ? i.software_unlocks.join(" ") : "")).toLowerCase();
+          var text = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " + (i.software_unlocks ? i.software_unlocks.join(" ") : "") + " " + (i.software_support ? i.software_support.join(" ") : "")).toLowerCase();
           return tokens.every(function (t) { return text.indexOf(t) !== -1; });
         });
         document.getElementById("modal-items-grid").innerHTML = renderModalGridItems(filtered, currentItemId);
@@ -1733,7 +1733,8 @@
               ${item.channels ? `<span>${item.channels} Channels</span>` : ''}
               ${item.master_outputs ? `<span>Outputs: ${item.master_outputs.join(", ")}</span>` : ''}
               ${item.inputs ? `<span>Inputs: ${item.inputs.join(", ")}</span>` : ''}
-              ${item.software_unlocks ? `<span>Unlocks: ${item.software_unlocks.join(", ")}</span>` : ''}
+              ${item.software_unlocks ? `<span>Included / unlocked: ${escapeHtml(item.software_unlocks.join(", "))}</span>` : ''}
+              ${item.software_support ? `<span>Other compatible apps (check license): ${escapeHtml(item.software_support.join(", "))}</span>` : ''}
             </div>
           </div>
           <div class="picker-card-footer">
@@ -1779,7 +1780,9 @@
                 ${item.master_outputs ? `<div class="insp-row"><span>Master Outputs:</span><strong>${item.master_outputs.join(", ")}</strong></div>` : ''}
                 ${item.inputs ? `<div class="insp-row"><span>Audio Inputs:</span><strong>${item.inputs.join(", ")}</strong></div>` : ''}
                 ${item.headphone_jack ? `<div class="insp-row"><span>Headphone Jack:</span><strong>${item.headphone_jack}</strong></div>` : ''}
-                ${item.software_unlocks ? `<div class="insp-row"><span>Software Unlocks:</span><strong>${item.software_unlocks.join(", ")}</strong></div>` : ''}
+                ${item.software_unlocks ? `<div class="insp-row"><span>Included / hardware-unlocked:</span><strong>${escapeHtml(item.software_unlocks.join(", "))}</strong></div>` : ''}
+                ${item.software_support ? `<div class="insp-row"><span>Other compatible apps (check license):</span><strong>${escapeHtml(item.software_support.join(", "))}</strong></div>` : ''}
+                ${item.software_notes ? `<div class="insp-row"><span>License and compatibility notes:</span><strong>${escapeHtml(item.software_notes)}</strong></div>` : ''}
                 ${item.driver_mm ? `<div class="insp-row"><span>Driver Size:</span><strong>${item.driver_mm} mm</strong></div>` : ''}
                 ${item.impedance_ohm ? `<div class="insp-row"><span>Impedance:</span><strong>${item.impedance_ohm} Ω</strong></div>` : ''}
                 ${item.driver_size ? `<div class="insp-row"><span>Woofer / Driver:</span><strong>${item.driver_size}</strong></div>` : ''}
