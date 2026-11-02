@@ -121,6 +121,49 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.deepEqual(fresh.errors, [], "first-load export must not throw browser errors");
       await fresh.context.close();
       console.log("PASS: first-load export shares actual starter gear without prior edits");
+
+    // Paid app compatibility must not be presented as a hardware-unlocked
+    // license in the actual controller picker. A buyer searching by a paid
+    // compatible app must still find the hardware and see the extra cost.
+    for (const width of [1440, 390]) {
+      const license = await visit(browser, width);
+      await license.page.click(".visual-controller .visual-pick");
+      await license.page.waitForSelector(".picker-dialog");
+      const rows = await license.page.evaluate(() => {
+        const ids = ["pioneer-ddj-flx2", "denon-prime-4-plus", "denon-prime-go",
+          "rane-system-one", "alphatheta-djm-v5"];
+        return Object.fromEntries(ids.map(id => [id,
+          [...(document.querySelector('.picker-card[data-item-id="' + id + '"]')
+            ?.querySelectorAll(".picker-specs-list span") || [])].map(el => el.textContent.trim())]));
+      });
+      const unlock = id => rows[id].find(text => text.startsWith("Included / unlocked:")) || "";
+      const extra = id => rows[id].find(text => text.startsWith("Other compatible apps")) || "";
+      assert.match(unlock("pioneer-ddj-flx2"), /Serato DJ Lite/);
+      assert.doesNotMatch(unlock("pioneer-ddj-flx2"), /djay Pro/);
+      assert.match(extra("pioneer-ddj-flx2"), /djay Pro.*paid subscription/);
+      assert.doesNotMatch(unlock("denon-prime-4-plus"), /VirtualDJ/);
+      assert.match(extra("denon-prime-4-plus"), /VirtualDJ.*paid/);
+      assert.doesNotMatch(unlock("denon-prime-go"), /djay Pro|VirtualDJ/);
+      assert.match(extra("denon-prime-go"), /VirtualDJ.*paid/);
+      assert.doesNotMatch(unlock("rane-system-one"), /djay Pro/);
+      assert.match(extra("rane-system-one"), /djay Pro.*paid subscription/);
+      assert.doesNotMatch(unlock("alphatheta-djm-v5"), /Serato DJ Pro/);
+      assert.match(extra("alphatheta-djm-v5"), /Serato DJ Pro.*paid license/);
+      await license.page.type("[data-modal-search]", "VirtualDJ");
+      const found = await license.page.$eval(".picker-card", els => els.map(el => el.dataset.itemId));
+      assert.ok(found.includes("denon-prime-go"), "paid-compatible PRIME GO must remain searchable");
+      assert.ok(found.includes("denon-prime-4-plus"), "paid-compatible PRIME 4+ must remain searchable");
+      await license.page.click('.picker-card[data-item-id="denon-prime-go"] .picker-inspect-btn');
+      await license.page.waitForSelector(".picker-dialog--inspector");
+      const detail = await license.page.$eval(".inspector-specs-table", el => el.textContent);
+      assert.match(detail, /Other compatible apps.*VirtualDJ.*paid Pro license/);
+      assert.match(detail, /djay Pro is not included/);
+      assert.match(detail, /Serato DJ Pro is not supported/);
+      assert.deepEqual(license.errors, [], "license disclosure must not throw browser errors");
+      await license.context.close();
+    }
+    console.log("PASS: desktop/mobile picker distinguishes paid software from hardware unlocks");
+
     }
 
     // A privacy-restricted or full browser storage must not silently claim
