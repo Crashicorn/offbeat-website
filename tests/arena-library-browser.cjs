@@ -76,10 +76,10 @@ function visibleCount(page) {
         "archived FLX6-GT must be classified as conditional used/clearance");
       assert.ok(buying.h2.some(v => /Beatmix 4: Discontinued/.test(v)),
         "discontinued Beatmix 4 must not be a current new-buy recommendation");
-      assert.match(buying.badge, /Archived.*sub-\\$500/);
-      assert.match(buying.text, /Pioneer DJ Store's refurbished offer was \\$551\\.65 and out of stock/);
+      assert.match(buying.badge, /Archived.*sub-\$500/);
+      assert.match(buying.text, /Pioneer DJ Store's refurbished offer was \$551\.65 and out of stock/);
       assert.match(buying.text, /Reloop explicitly marks both the Beatmix 4 and Beatmix 4 MK2 as discontinued/);
-      assert.doesNotMatch(buying.text, /top overall pick under \\$500|All three top picks include software/i);
+      assert.doesNotMatch(buying.text, /top overall pick under \$500|All three top picks include software/i);
       assert.deepEqual(buying.visibleFAQ, buying.schemaFAQ,
         "visible purchasing FAQ and JSON-LD answers must match exactly");
       for (const source of [
