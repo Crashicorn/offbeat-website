@@ -149,6 +149,44 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: failed local rig saves warn on desktop/mobile without losing the shareable plan");
 
+    // A KRK Classic 5 monitor pack includes two XLR leads. The detailed
+    // compatibility verdict must agree with the routing engine and must not
+    // recommend purchasing a cable that is already in the box. A separate
+    // single-cabinet ROKIT G4 pair has no bundled signal leads.
+    for (const width of [1440, 390]) {
+      for (const speaker of ["krk-classic-5-pair", "krk-rokit-5-g4"]) {
+        const bundled = speaker === "krk-classic-5-pair";
+        const rig = { name: "Monitor cabling truth", items: [
+          { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+          { slotId: "monitor", category: "speakers", itemId: speaker, role: "dj_monitor", qty: bundled ? 1 : 2, owned: false }
+        ] };
+        const encoded = encodeURIComponent(Buffer.from(encodeURIComponent(JSON.stringify(rig)), "utf8").toString("base64"));
+        const { page, context, errors } = await visit(browser, width, "?rig=" + encoded);
+        const actual = await page.evaluate(() => ({
+          routes: window.__rigStudio.connections(),
+          verdicts: window.__rigStudio.compatibility().checks.map(c => c.title),
+          cables: window.__rigStudio.checks().find(c => c.key === "cables")
+        }));
+        assert.equal(actual.routes.length, 1);
+        if (bundled) {
+          assert.equal(actual.routes[0].kind, "included", "KRK Classic pack ships matching XLR leads");
+          assert.equal(actual.cables.level, "ok", "bundled leads satisfy the modeled signal route");
+          assert.ok(actual.verdicts.includes("Included Speaker Leads Cover Planned Routes"),
+            "buyer compatibility advice must recognize the bundled cables");
+          assert.ok(!actual.verdicts.includes("Audio Cable Needed"),
+            "buyer must not be told to purchase already-included XLR cables");
+        } else {
+          assert.notEqual(actual.routes[0].kind, "included", "ROKIT G4 cabinets ship no signal leads");
+          assert.equal(actual.cables.level, "warn", "unselected cables remain a purchase requirement");
+          assert.ok(!actual.verdicts.includes("Included Speaker Leads Cover Planned Routes"),
+            "unbundled speakers must never receive the bundled-cable verdict");
+        }
+        assert.deepEqual(errors, [], "monitor cabling check must not throw browser errors");
+        await context.close();
+      }
+    }
+    console.log("PASS: bundled KRK Classic XLR leads and unbundled ROKIT cabinets get distinct buyer advice");
+
     // The exported PNG must contain the complete buyer list. The former
     // fixed-size card silently dropped lines 7–24 while showing their costs.
     // Exercise the real loaded rig-builder on desktop and mobile, recording
