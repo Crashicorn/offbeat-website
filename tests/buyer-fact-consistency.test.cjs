@@ -209,7 +209,7 @@ test("beginner mixer buying guide distinguishes Xone:23 analog, Pioneer licensin
   assert.match(html, /No — analog only; the Xone:23C is the USB variant/);
   assert.match(html, /three-band total-kill EQ/);
   assert.match(html, /Serato DJ Pro and its DVS expansion are separately paid/);
-  assert.match(html, /no Send\/Return loop or an onboard reverb\/delay bank/);
+  assert.match(html, /does not have a Send\/Return loop or an onboard reverb\/delay bank/);
   assert.match(html, /Innofader Pro2 as an M2-compatible option/);
   assert.match(html, /four-channel premium rotary mixer, not a budget two-channel pick/);
   assert.match(html, /https:\/\/serato\.com\/dj\/hardware\/pioneer-djm-250mk2/);
