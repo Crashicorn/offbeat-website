@@ -83,9 +83,9 @@ function visibleCount(page) {
       assert.match(buying.text, /Pioneer DJ Store's refurbished offer was \$551\.65 and out of stock/);
       assert.match(buying.text, /Reloop explicitly marks both the Beatmix 4 and Beatmix 4 MK2 as discontinued/);
       assert.doesNotMatch(buying.text, /top overall pick under \$500|All three top picks include software/i);
-      assert.match(buying.comparison, /Hercules Inpulse 500 \\(current\\)/);
-      assert.match(buying.comparison, /Pioneer DDJ-FLX6-GT \\(archived\\)/);
-      assert.match(buying.comparison, /\\$349\\.99 manufacturer listing/);
+      assert.match(buying.comparison, /Hercules Inpulse 500 \(current\)/);
+      assert.match(buying.comparison, /Pioneer DDJ-FLX6-GT \(archived\)/);
+      assert.match(buying.comparison, /\$349\.99 manufacturer listing/);
       assert.match(buying.comparison, /External AUX input/);
       assert.match(buying.comparison, /Serato DJ Lite; Pro requires separate licence/);
       assert.doesNotMatch(buying.comparison, /Rane One/i,
