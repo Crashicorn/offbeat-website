@@ -167,3 +167,32 @@ test("sitewide retailer links never direct buyers to catalogued unavailable exac
     }
   }
 });
+
+test("Rig Architect distinguishes included software from separately paid compatibility", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const byId = id => {
+    const item = catalog.items.find(item => item.id === id);
+    assert.ok(item, "missing controller " + id);
+    return item;
+  };
+  const paid = [
+    ["pioneer-ddj-flx2", /djay Pro/i],
+    ["denon-prime-4-plus", /VirtualDJ/i],
+    ["denon-prime-go", /VirtualDJ/i],
+    ["rane-system-one", /djay Pro/i],
+    ["alphatheta-djm-v5", /Serato DJ Pro/i]
+  ];
+  for (const [id, license] of paid) {
+    const item = byId(id);
+    assert.ok(item.software_support.some(name => license.test(name)), id + " paid path must be visible");
+    assert.ok(!item.software_unlocks.some(name => license.test(name)), id + " paid path must not be called unlocked");
+    assert.match(item.software_notes, /license|subscription|not included/i, id + " needs an explicit licensing caveat");
+  }
+  assert.ok(byId("pioneer-ddj-flx2").software_unlocks.includes("Serato DJ Lite"),
+    "free FLX2 Serato DJ Lite path must remain visible");
+  assert.ok(byId("denon-prime-4-plus").software_unlocks.includes("Serato DJ Pro"),
+    "PRIME 4+ really does hardware-unlock Serato DJ Pro");
+  assert.ok(!byId("denon-prime-go").software_unlocks.some(x => /Serato|djay Pro/i.test(x)),
+    "original PRIME GO must not claim a Pro unlock");
+  assert.match(byId("denon-prime-go").software_notes, /Serato DJ Pro is not supported/);
+});
