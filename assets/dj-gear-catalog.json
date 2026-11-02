@@ -147,8 +147,13 @@
       "channels": 2,
       "software_unlocks": [
         "rekordbox",
-        "djay Pro"
+        "Serato DJ Lite",
+        "djay basic pre-cueing / Sampler"
       ],
+      "software_support": [
+        "djay Pro for Mac/Windows (full PRO requires paid subscription)"
+      ],
+      "software_notes": "FLX2 unlocks selected djay hardware features, not the full djay PRO subscription. Serato DJ Lite is free; Serato DJ Pro requires a separate license.",
       "mobile_support": "rekordbox and djay on compatible iOS/Android devices via supported USB-C or Bluetooth MIDI modes; verify app, power and audio routing.",
       "mobile_app_support": ["rekordbox for iOS/Android","djay for iOS/Android"],
       "mobile_support_source": "https://alphatheta.com/en/information/introducing-ddj-flx2-compact-2-channel-dj-controller/",
@@ -436,9 +441,12 @@
       "channels": 4,
       "software_unlocks": [
         "Engine DJ Standalone",
-        "Serato DJ Pro",
-        "VirtualDJ"
+        "Serato DJ Pro"
       ],
+      "software_support": [
+        "VirtualDJ (paid Pro Infinity or Pro subscription required)"
+      ],
+      "software_notes": "Serato DJ Pro hardware-unlocks in computer mode. VirtualDJ works in computer mode but requires a separately paid VirtualDJ Pro license.",
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
@@ -524,9 +532,12 @@
       "price": 999,
       "channels": 2,
       "software_unlocks": [
-        "Engine DJ Standalone",
-        "djay Pro"
+        "Engine DJ Standalone"
       ],
+      "software_support": [
+        "VirtualDJ (paid Pro license; Engine OS 2.3.0+)"
+      ],
+      "software_notes": "Original PRIME GO supports VirtualDJ in computer mode with a paid Pro license. djay Pro is not included; confirm its exact host OS, app version and licensing independently before relying on that workflow. Serato DJ Pro is not supported.",
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
@@ -910,10 +921,12 @@
       "channels": 2,
       "software_unlocks": [
         "Engine DJ 5.0 Standalone",
-        "Serato DJ Pro (Hardware Unlock)",
-        "Algoriddim djay Pro (Engine DJ 5.2.0+)"
+        "Serato DJ Pro (Hardware Unlock)"
       ],
-      "software_notes": "Serato DJ Pro requires Engine DJ 4.6.0+ and Serato DJ Pro 4.0.3+ (includes Serato Pitch 'n Time download card with serial number). Algoriddim djay Pro requires Engine DJ 5.2.0 and djay Pro 5.6.9. VirtualDJ support is anticipated in a future update.",
+      "software_support": [
+        "Algoriddim djay Pro (paid subscription; Engine OS 5.2.0+, djay 5.6.9+)"
+      ],
+      "software_notes": "Serato DJ Pro requires Engine DJ 4.6.0+ and Serato DJ Pro 4.0.3+ (includes Serato Pitch 'n Time download card). Algoriddim djay Pro is compatible on supported hosts with a separate paid subscription, Engine OS 5.2.0+ and djay 5.6.9+. VirtualDJ support is anticipated in a future update.",
       "master_outputs": [
         "XLR (Balanced)",
         "RCA (Unbalanced)",
@@ -1127,9 +1140,12 @@
       "price": 2199,
       "channels": 3,
       "software_unlocks": [
-        "rekordbox Performance (Hardware Unlock)",
-        "Serato DJ Pro (license needed)"
+        "rekordbox Performance (Hardware Unlock)"
       ],
+      "software_support": [
+        "Serato DJ Pro (separate paid license required)"
+      ],
+      "software_notes": "AlphaTheta explicitly requires a separate Serato DJ Pro license for the DJM-V5. Rekordbox Performance is the hardware-unlocked path.",
       "master_outputs": [
         "XLR (Balanced)",
         "Booth (1/4\" TRS)",
