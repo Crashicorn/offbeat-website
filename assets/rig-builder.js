@@ -1870,7 +1870,7 @@
       }).filter(Boolean).join("\n") +
       `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
       `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
-      `* **Actual Out-of-Pocket Spend:** **${stats.purchaseCost.toLocaleString()}**\n\n` +
+      `* **Actual Out-of-Pocket Spend:** **` + "$" + stats.purchaseCost.toLocaleString() + `**\n\n` +
       (retailerOrderNotes.length ? "**Exact-retailer checkout quantities**\n" +
         retailerOrderNotes.map(function (note) { return "* " + note; }).join("\n") + "\n\n" : "") +
       (canShare
