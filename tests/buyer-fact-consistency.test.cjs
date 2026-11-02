@@ -201,18 +201,18 @@ test("Rig Architect distinguishes included software from separately paid compati
 test("beginner mixer buying guide distinguishes Xone:23 analog, Pioneer licensing and actual mixer models", () => {
   const html = page("best-dj-mixers-beginners.html");
   faqPairs(html);
-  const first = html.match(/<table class="comparison-table">([\\s\\S]*?)<\\/table>/);
+  const first = html.match(/<table class="comparison-table">([\s\S]*?)<\/table>/);
   assert.ok(first, "buyer table exists");
-  const rows = [...first[1].matchAll(/<tr>([\\s\\S]*?)<\\/tr>/g)];
+  const rows = [...first[1].matchAll(/<tr>([\s\S]*?)<\/tr>/g)];
   assert.equal(rows.length, 4, "header and three genuinely comparable two-channel mixers");
   assert.match(html, /Xone:23C is the USB variant/);
   assert.match(html, /No — analog only; the Xone:23C is the USB variant/);
   assert.match(html, /three-band total-kill EQ/);
   assert.match(html, /Serato DJ Pro and its DVS expansion are separately paid/);
-  assert.match(html, /no Send\\/Return loop or an onboard reverb\\/delay bank/);
+  assert.match(html, /no Send\/Return loop or an onboard reverb\/delay bank/);
   assert.match(html, /Innofader Pro2 as an M2-compatible option/);
   assert.match(html, /four-channel premium rotary mixer, not a budget two-channel pick/);
-  assert.match(html, /https:\\/\\/serato\\.com\\/dj\\/hardware\\/pioneer-djm-250mk2/);
-  assert.match(html, /https:\\/\\/www\\.allen-heath\\.com\\/content\\/uploads\\/2023\\/06\\/Xone_23_Flyer_Complete_sm\\.pdf/);
-  assert.doesNotMatch(html, /Serato DJ Pro included in the box|Yes — 2-in\\/2-out USB \\(24-bit\\)|High-quality magnetic crossfader|Rane Sixty-One or Innofader upgrade|~\\$599 \\(used \\$350\\)|Magma-style filter|click any EQ band fully off/);
+  assert.match(html, /https:\/\/serato\.com\/dj\/hardware\/pioneer-djm-250mk2/);
+  assert.match(html, /https:\/\/www\.allen-heath\.com\/content\/uploads\/2023\/06\/Xone_23_Flyer_Complete_sm\.pdf/);
+  assert.doesNotMatch(html, /Serato DJ Pro included in the box|Yes — 2-in\/2-out USB \(24-bit\)|High-quality magnetic crossfader|Rane Sixty-One or Innofader upgrade|~\$599 \(used \$350\)|Magma-style filter|click any EQ band fully off/);
 });
