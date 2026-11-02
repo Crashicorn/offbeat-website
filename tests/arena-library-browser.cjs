@@ -59,6 +59,7 @@ function visibleCount(page) {
           text: main.innerText,
           h2: [...main.querySelectorAll("h2")].map(el => el.textContent.trim()),
           badge: main.querySelector(".badge")?.textContent.trim(),
+          comparison: main.querySelector(".comparison-table")?.innerText,
           visibleFAQ: [...main.querySelectorAll("#faq details")].map(el => ({
             q: el.querySelector("summary")?.textContent.trim(),
             a: el.querySelector("p")?.textContent.trim()
@@ -82,13 +83,21 @@ function visibleCount(page) {
       assert.match(buying.text, /Pioneer DJ Store's refurbished offer was \$551\.65 and out of stock/);
       assert.match(buying.text, /Reloop explicitly marks both the Beatmix 4 and Beatmix 4 MK2 as discontinued/);
       assert.doesNotMatch(buying.text, /top overall pick under \$500|All three top picks include software/i);
+      assert.match(buying.comparison, /Hercules Inpulse 500 \\(current\\)/);
+      assert.match(buying.comparison, /Pioneer DDJ-FLX6-GT \\(archived\\)/);
+      assert.match(buying.comparison, /\\$349\\.99 manufacturer listing/);
+      assert.match(buying.comparison, /External AUX input/);
+      assert.match(buying.comparison, /Serato DJ Lite; Pro requires separate licence/);
+      assert.doesNotMatch(buying.comparison, /Rane One/i,
+        "comparison must feature the actual in-budget choice, not only an over-budget reference");
       assert.deepEqual(buying.visibleFAQ, buying.schemaFAQ,
         "visible purchasing FAQ and JSON-LD answers must match exactly");
       for (const source of [
         "https://www.reloop.com/reloop-beatmix-4",
         "https://www.reloop.com/reloop-beatmix-4-mk2",
         "https://pioneerdjstore.com/products/ddj-flx6-gt-b",
-        "https://www.hercules.com/en/product/djcontrol-inpulse-500/"
+        "https://www.hercules.com/en/product/djcontrol-inpulse-500/",
+        "https://www.hercules.com/en-us/product/djcontrol-inpulse-500/"
       ]) assert.ok(buying.sources.includes(source), "manufacturer/source link missing: " + source);
       // Product video facades must not contact YouTube until the visitor loads one.
       const videos = {
