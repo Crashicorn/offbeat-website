@@ -27,13 +27,26 @@
     return fetch("assets/search-index.json")
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        searchIndex = data;
+        searchIndex = (Array.isArray(data) ? data : []).map(normaliseEntry);
         return searchIndex;
       })
       .catch(function (err) {
         console.warn("Could not load search index:", err);
         return [];
       });
+  }
+
+  /* tools/build_index.py appends entries keyed t/d/u/c; the curated entries
+     use title/desc/url/category. Normalise both so nothing renders as
+     "undefined" and no search result links to "undefined". */
+  function normaliseEntry(entry) {
+    var out = Object.assign({}, entry);
+    out.title = entry.title || entry.t || "";
+    out.desc = entry.desc || entry.d || "";
+    out.url = entry.url || entry.u || "";
+    out.category = entry.category || entry.c || "Guide";
+    out.k = entry.k || (out.title + " " + out.desc).toLowerCase();
+    return out;
   }
 
   function injectSearchModalHtml() {
@@ -60,10 +73,11 @@
         </div>
         <div class="qs-results-container" id="qs-results-list" role="listbox">
           <div class="qs-placeholder-state">
-            <p>Type to search 118+ guides, 29 hardware models, and interactive tools.</p>
+            <p>Type to search 115 guides, 29 hardware models and 7 interactive tools.</p>
             <div class="qs-quick-links">
               <span>Popular shortcuts:</span>
-              <a href="build-your-dj-setup.html" class="qs-quick-chip">🎛️ My DJ Rig Architect</a>
+              <a href="dj-tools.html" class="qs-quick-chip">🧰 All seven tools</a>
+            <a href="build-your-dj-setup.html" class="qs-quick-chip">🎛️ Rig planner</a>
               <a href="beatmatch-trainer.html" class="qs-quick-chip">🎧 Beatmatch Trainer</a>
               <a href="dj-skills-learning-path.html" class="qs-quick-chip">🎡 Harmonic Wheel</a>
               <a href="pioneer-ddj-flx4-review.html" class="qs-quick-chip">DDJ-FLX4 Review</a>
@@ -141,10 +155,11 @@
     if (!query && categoryFilter === "all") {
       resultsList.innerHTML = `
         <div class="qs-placeholder-state">
-          <p>Type to search 118+ guides, 29 hardware models, and interactive tools.</p>
+          <p>Type to search 115 guides, 29 hardware models and 7 interactive tools.</p>
           <div class="qs-quick-links">
             <span>Popular shortcuts:</span>
-            <a href="build-your-dj-setup.html" class="qs-quick-chip">🎛️ My DJ Rig Architect</a>
+            <a href="dj-tools.html" class="qs-quick-chip">🧰 All seven tools</a>
+            <a href="build-your-dj-setup.html" class="qs-quick-chip">🎛️ Rig planner</a>
             <a href="beatmatch-trainer.html" class="qs-quick-chip">🎧 Beatmatch Trainer</a>
             <a href="dj-skills-learning-path.html" class="qs-quick-chip">🎡 Harmonic Wheel</a>
             <a href="pioneer-ddj-flx4-review.html" class="qs-quick-chip">DDJ-FLX4 Review</a>
@@ -169,6 +184,34 @@
       var text = (item.title + " " + item.desc + " " + item.category + " " + (item.k || "")).toLowerCase();
       return tokens.every(function (t) { return text.indexOf(t) !== -1; });
     });
+
+    /* Rank before slicing. The index is ordered by curation date, not by how
+       well an entry answers the query, so "flx4 review" used to return a
+       rig-planner product line above the actual review. */
+    if (tokens.length) {
+      var joined = tokens.join(" ");
+      var scored = filtered.map(function (item, order) {
+        var title = (item.title || "").toLowerCase();
+        var desc = (item.desc || "").toLowerCase();
+        var score = 0;
+        if (title === joined) score += 40;
+        if (title.indexOf(joined) === 0) score += 18;
+        else if (title.indexOf(joined) !== -1) score += 10;
+        tokens.forEach(function (t) {
+          if (title.indexOf(t) !== -1) score += 6;
+          else if (desc.indexOf(t) !== -1) score += 2;
+        });
+        // Editorial pages answer questions; "?add=" lines are planner shortcuts.
+        var isDeepLink = item.url.indexOf("?") !== -1;
+        score += isDeepLink ? 0 : 5;
+        if (item.f) score += 2;
+        return { item: item, score: score, order: order };
+      });
+      scored.sort(function (a, b) {
+        return b.score - a.score || a.order - b.order;
+      });
+      filtered = scored.map(function (entry) { return entry.item; });
+    }
 
     currentFilteredResults = filtered.slice(0, 12);
     selectedIndex = currentFilteredResults.length > 0 ? 0 : -1;

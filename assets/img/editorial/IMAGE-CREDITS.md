@@ -1,18 +1,24 @@
 # Editorial image credits and use notes
 
-These genuine editorial photographs were restored from Offbeat's rights-reviewed
-website releases and external image research (CrashyCrash/offbeat-website PR #936 and issue #1042).
-They are locally stored, optimized, and credited on the pages where they appear;
-they are not photographs of every specific product discussed.
+This ledger records verified credits where source information is available, plus an
+explicit inventory of legacy files whose provenance is not yet verified. Do not
+interpret an unknown source as permission to reuse it. Files are locally hosted;
+contextual photographs do not depict every product discussed.
 
 | Local asset | Use | Credit / source | License |
 | --- | --- | --- | --- |
 | `pexels-mixer-knobs-744318.jpg` | Best DJ mixers; Best DJ mixers under $500 | Hendrik B, [Pexels photo 744318](https://www.pexels.com/photo/macro-shot-audio-equalizer-744318/) | [Pexels License](https://www.pexels.com/license/) |
-| `pexels-dj-console-portrait-20116408.jpg` | How to become a DJ (hero) | FOERDER ZONE, Pexels photo ID 20116408; [photographer profile](https://www.pexels.com/@foerder-zone-441814813/) | [Pexels License](https://www.pexels.com/license/) |
+| `pexels-dj-console-portrait-20116408.jpg` | How to become a DJ (hero) | FOERDER ZONE, [Pexels photo 20116408](https://www.pexels.com/photo/dark-photo-of-a-dj-wearing-headphones-and-using-a-console-20116408/) | [Pexels License](https://www.pexels.com/license/) |
 | `wikimedia-stylus-cartridge-detail.jpg` | Best turntable cartridges | Franz van Duns, [Wikimedia Commons original](https://commons.wikimedia.org/wiki/File:Groove_and_needle_in_close_embrace_from_beginning_to_end.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), attribution required; image resized to 1600 × 640 |
 | `pexels-dj-laptop-mixing-17858169.jpg` | How to set up a DJ laptop and Rig Architect (hero) | Oliver Morgan Media, [Pexels photo 17858169](https://www.pexels.com/photo/dj-using-sound-mixer-and-laptop-17858169/) | [Pexels License](https://www.pexels.com/license/); optimized to 1200 × 750 (16:10) |
 | `pexels-dj-nightclub-booth-4062561.jpg` | DJ software hub (hero) | Erik Mclean, [Pexels photo 4062561](https://www.pexels.com/photo/dj-with-mixer-controller-in-night-club-4062561/) | [Pexels License](https://www.pexels.com/license/); optimized to 1200 × 750 (16:10) |
 | `pexels-music-production-workstation-27495246.jpg` | Best MIDI controllers for music production (hero) | Giuseppe Di Maria, [Pexels photo 27495246](https://www.pexels.com/photo/a-laptop-and-a-mixer-on-a-table-27495246/) | [Pexels License](https://www.pexels.com/license/); optimized to 1200 × 750 (16:10) |
+
+| `commons-rekordbox-ddj-rx-leffmann.jpg` | Rekordbox review hero | Jonn Leffmann, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Pioneer_DDJ-RX_DJ-Controller_(front)_with_computer_running_mixing_software_Rekordbox.jpg) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/); displayed with a CSS crop |
+| `commons-dj-mixing-argenberg.jpg` | How to mix music for beginners hero | Vyacheslav Argenberg, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Vagator,_Goa,_India,_DJ_playing_music_on_turntable.jpg) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); resized to 960 × 640 and displayed with a CSS crop |
+| `pexels-dj-mixer-7271792.jpg` | Best free DJ software hero | MART PRODUCTION, [Pexels photo 7271792](https://www.pexels.com/photo/close-up-shot-of-a-dj-using-a-mixing-console-7271792/) | [Pexels License](https://www.pexels.com/license/); 1125 × 750 copy, CSS crop |
+| `pexels-recording-studio-8198136.jpg` | Best DAW for music production hero | RDNE Stock project, [Pexels photo 8198136](https://www.pexels.com/photo/amplifiers-and-sound-mixer-in-recording-studio-8198136/) | [Pexels License](https://www.pexels.com/license/); 1125 × 750 copy, CSS crop |
+| `technics-sl-1200mk2-wikimedia.jpg` | Turntables guide; home page thumbnail | Dydric; derivative by 32bitmaschine, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Technics_SL-1200MK2-2.jpg) | [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/); trimmed, sharpened and resampled. See adjacent LICENSE file. |
 
 SHA-256 (restored files):
 
@@ -27,3 +33,34 @@ The Pexels photographs are contextual/editorial: they must not imply that a
 pictured person endorses Offbeat or that the pictured mixer/controller is one of the
 named models. Product-specific examples use the site's openly-labelled schematic
 illustrations unless an actual model photo is separately credited.
+
+## Full local image inventory and page references
+
+This inventory includes all root HTML pages referencing each file, including thumbnail/non-hero uses. “Unknown” means source, creator, license, and whether the image is AI-generated are not established in the repository; replacing or independently verifying those legacy assets remains necessary.
+
+| Asset | Provenance | Referencing pages |
+| --- | --- | --- |
+| `booth-wide.jpg` | **Unknown — verification required** | `404.html`, `about.html`, `beginner-dj-hub.html`, `best-dj-apps-ipad.html`, `best-dj-controllers-for-serato.html`, `best-standalone-dj-systems.html`, `controller-software-compatibility-matrix.html`, `denon-prime-go-review.html`, `denon-sc6000-review.html`, `dj-controllers-hub.html`, `dj-glossary.html`, `dj-software-selection.html`, `djay-pro-review.html`, `editorial-standards.html`, `how-to-create-dj-mixes-for-youtube.html`, `index.html`, `pioneer-cdj-3000-review.html`, `privacy.html`, `xdj-az-vs-denon-prime-4-plus.html` |
+| `commons-dj-mixing-argenberg.jpg` | See verified credit above | `how-to-mix-music-beginners.html` |
+| `commons-rekordbox-ddj-rx-leffmann.jpg` | See verified credit above | `rekordbox-review.html` |
+| `controller-macro.jpg` | **Unknown — verification required** | `beginner-dj-hub.html`, `best-dj-controllers-for-beginners.html`, `best-dj-controllers-for-rekordbox.html`, `best-dj-controllers-for-serato.html`, `best-dj-controllers-under-1000.html`, `best-dj-controllers-under-200.html`, `best-dj-controllers-under-300.html`, `best-dj-controllers-under-500-2026.html`, `best-motorized-dj-controllers.html`, `can-you-dj-without-a-controller.html`, `controller-buying-journey.html`, `controller-software-compatibility-matrix.html`, `ddj-flx2-review.html`, `ddj-grv6-review.html`, `dj-controllers-hub.html`, `dj-software-hub.html`, `index.html`, `numark-mixtrack-pro-fx-vs-ddj-200.html`, `pioneer-ddj-400-vs-flx4.html`, `pioneer-ddj-flx10-review.html`, `pioneer-ddj-flx4-review.html`, `pioneer-ddj-flx4-vs-flx6.html`, `rane-one-review.html` |
+| `gear-flatlay.jpg` | **Unknown — verification required** | `audio-interface-guide-djs.html`, `beginner-dj-hub.html`, `beginner-dj-setup-guide-2026.html`, `best-budget-dj-equipment.html`, `best-dj-stands-accessories.html`, `best-dj-usb-drives.html`, `build-your-dj-setup.html`, `disclosure.html`, `dj-equipment-beginners.html`, `dj-equipment-maintenance-tips.html`, `dj-gear-hub.html`, `dj-glossary.html`, `dj-software-hub.html`, `index.html` |
+| `headphones-hero.jpg` | **Unknown — verification required** | `best-dj-headphones-2026.html`, `best-dj-headphones-professional.html`, `best-dj-headphones-under-100-2026.html`, `best-dj-headphones-under-50.html`, `best-wireless-dj-headphones.html`, `dj-gear-hub.html`, `index.html` |
+| `hero-breakdown.jpg` | **Unknown — verification required** | `ableton-live-review.html`, `amuse-vs-distrokid.html`, `best-daw-for-music-production.html`, `best-dj-sample-packs-2026.html`, `best-dj-software-beginners-2026.html`, `best-music-production-plugins.html`, `best-music-production-software-2026.html`, `distrokid-vs-tunecore.html`, `fl-studio-review.html`, `fl-studio-vs-ableton.html`, `fl-studio-vs-logic-pro.html`, `landr-vs-splice.html`, `music-distribution.html`, `music-production-software-free.html`, `music-production-software.html`, `music-production-tools.html`, `music-production.html`, `native-instruments-komplete-review.html`, `rekordbox-pro-review.html`, `serato-dj-pro-review.html`, `soundcloud-vs-bandcamp.html`, `splice-vs-loopmasters.html` |
+| `hero-gig-small.jpg` | **Unknown — verification required** | `contact.html`, `festival-dj-gear-checklist.html`, `how-to-get-dj-gigs.html`, `how-to-promote-dj-mixes.html` |
+| `hero-wedding.jpg` | **Unknown — verification required** | `how-to-dj-at-a-wedding.html` |
+| `mixer-hero.jpg` | **Unknown — verification required** | `best-dj-mixers-beginners.html`, `best-online-dj-courses.html`, `dj-gear-hub.html`, `how-to-record-dj-mix.html`, `index.html` |
+| `mobile-dj-hero.jpg` | **Unknown — verification required** | `dj-equipment-checklist.html`, `dj-skills-performance-hub.html` |
+| `pexels-dj-console-portrait-20116408.jpg` | See verified credit above | `dj-equipment-checklist.html`, `how-to-become-a-dj.html`, `index.html` |
+| `pexels-dj-laptop-mixing-17858169.jpg` | See verified credit above | `build-your-dj-setup.html`, `dj-laptop-setup-guide.html`, `index.html` |
+| `pexels-dj-mixer-7271792.jpg` | See verified credit above | `best-free-dj-software-2026.html` |
+| `pexels-dj-nightclub-booth-4062561.jpg` | See verified credit above | `dj-software-hub.html` |
+| `pexels-mixer-knobs-744318.jpg` | See verified credit above | `best-dj-mixer-under-500.html`, `best-dj-mixers-2026.html` |
+| `pexels-music-production-workstation-27495246.jpg` | See verified credit above | `midi-controllers-for-music-production.html` |
+| `pexels-recording-studio-8198136.jpg` | See verified credit above | `best-daw-for-music-production.html` |
+| `production-hero.jpg` | **Unknown — verification required** | `amuse-vs-distrokid.html`, `best-dj-monitor-speakers.html`, `best-dj-sample-packs-2026.html`, `best-music-production-plugins.html`, `best-music-production-software-2026.html`, `best-studio-monitors.html`, `fl-studio-vs-logic-pro.html`, `how-to-connect-dj-controller-to-speakers.html`, `how-to-create-dj-mixes-for-youtube.html`, `index.html`, `landr-vs-splice.html`, `music-production-software-free.html`, `native-instruments-komplete-review.html`, `splice-vs-loopmasters.html` |
+| `skills-hero.jpg` | **Unknown — verification required** | `beatmatch-trainer.html`, `beginner-dj-hub.html`, `best-motorized-dj-controllers.html`, `best-online-dj-courses.html`, `dj-skills-learning-path.html`, `dj-skills-performance-hub.html`, `how-to-beatmatch-manually.html`, `how-to-become-a-dj.html`, `how-to-mix-music-beginners.html`, `how-to-record-dj-mix.html`, `how-to-start-djing.html`, `index.html`, `learn-djing.html` |
+| `software-desk.jpg` | **Unknown — verification required** | `beatport-vs-traxsource.html`, `beginner-dj-hub.html`, `best-dj-apps-ipad.html`, `best-dj-laptop-2026.html`, `best-dj-software.html`, `best-dj-usb-drives.html`, `best-free-dj-software-2026.html`, `can-you-dj-without-a-controller.html`, `dj-gear-hub.html`, `dj-skills-performance-hub.html`, `dj-software-apple-music.html`, `dj-software-faq.html`, `dj-software-hub.html`, `dj-software-selection.html`, `djay-pro-review.html`, `how-to-dj-with-spotify.html`, `index.html`, `rekordbox-pro-review.html`, `rekordbox-review.html`, `rekordbox-vs-serato.html`, `serato-dj-lite-vs-pro.html`, `serato-dj-pro-review.html`, `serato-vs-rekordbox-vs-traktor.html`, `traktor-pro-review.html`, `virtual-dj-vs-serato.html` |
+| `technics-sl-1200mk2-wikimedia.jpg` | See verified credit above | `best-dj-turntables-2026.html`, `index.html` |
+| `vinyl-hero.jpg` | **Unknown — verification required** | `best-dj-software-vinyl-scratch.html`, `best-dj-turntables-2026.html`, `dj-controllers-hub.html`, `dj-gear-hub.html`, `dj-music-stores.html`, `dj-skills-performance-hub.html`, `numark-scratch-review.html` |
+| `wikimedia-stylus-cartridge-detail.jpg` | See verified credit above | `best-turntable-cartridges.html` |

@@ -102,7 +102,9 @@
   .beginner-lab-owned { align-self: start; }
 }
 @media (max-width: 620px) {
-  .beginner-lab { margin: 1rem -0.2rem 1.4rem; padding: 1rem; border-radius: 18px; }
+  /* Keep the chooser within the article content box at 390px; the former
+     -0.2rem side margins caused the remaining 3px sitewide audit spill. */
+  .beginner-lab { margin: 1rem 0 1.4rem; padding: 1rem; border-radius: 18px; }
   .beginner-lab-head { align-items: start; }
   .beginner-lab-edition { display: none; }
   .beginner-lab-profiles { gap: .45rem; }

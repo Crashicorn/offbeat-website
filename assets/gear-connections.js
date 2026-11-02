@@ -256,7 +256,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
       allowance: Boolean(isAllowance), units: units,
       /* The included lead (if any) takes one socket, then each purchased lead
          takes one more. */
-      socketsNeeded: (coveredFeeds > 0 ? 1 : 0) + units
+      socketsNeeded: includedLeadsUsed + units
     });
   }
   if (remainingFeeds > 0) {
@@ -304,7 +304,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   } : null;
 
   var pool = [];
-  if (includedCandidate) pool.push(includedCandidate);
+  if (includedCandidate && remainingFeeds === 0) pool.push(includedCandidate);
   candidates.forEach(function (c) { pool.push(c); });
 
   var fits = pool.filter(function (c) { return isOutputAvailable(c.output, c.socketsNeeded); });
@@ -388,6 +388,7 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   plan.name = chosen.allowance ? endpointLabel(cable.a) + " to " + endpointLabel(cable.b) : chosen.item.model;
   plan.units = chosen.units;
   plan.alsoIncluded = coveredFeeds > 0;
+  plan.includedLabel = includedRoute ? (includedRoute.inc.label || "the supplied lead") : "";
 
   var feedSentence = shape.topology === "master_slave"
     ? "One lead feeds both cabinets: the powered cabinet carries every input and drives the passive one."
@@ -405,6 +406,10 @@ function connectionPlan(catalog, controller, speaker, qty, options) {
   var boxNote = (!plan.alsoIncluded && boxLabels.length)
     ? " The box's " + boxLabels.join(" and ") + " cannot connect this output, so it does not replace this lead."
     : "";
+  if (coveredFeeds > 0 && remainingFeeds > 0) {
+    feedSentence = remainingFeeds + " of " + shape.feeds + " feeds still need " + plan.units +
+      " additional cable " + (plan.units === 1 ? "pack" : "packs") + ".";
+  }
   plan.note = feedSentence +
     (plan.alsoIncluded ? " " + coveredFeeds + " of " + shape.feeds + " feeds already come with " + plan.includedLabel + "." : "") +
     boxNote +

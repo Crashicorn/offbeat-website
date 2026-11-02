@@ -1,0 +1,9 @@
+# Owner round: Chromium evidence
+
+Fresh browser contexts, local static server, Chromium 138 at 1440×900 and 390×844. `before-*` is the prior branch head, `after-*` the new first load. `open-sections-*` are full-page captures after independently opening both Connections and Shopping; the initial mobile state opens Shopping only. The first load uses the bedroom preset, without a crowd PA; saved rigs and explicit links are preserved. The phone/app/power verification remains visible because that hardware requirement is conditional.
+
+`sony-picker-*` and `sm58-picker-*` show the two photos and their visible attribution. FLX4 and HD 25 show their existing Commons photographs in the canvas/picker. The Sony image was obtained as the 960px Commons thumbnail of the requested file. Direct download of the requested Shure derivative was blocked; the Shure image is instead an independently cropped 240×695 thumbnail of Iain Fergusson's original SM58 & Beta58a Commons photo, the same underlying photograph. It is not claimed to be the Binksternet derivative; the catalog records the actual source and crop. Neither image was upscaled.
+
+The $597 prior catalog badge was stale: $329 FLX4 + $149 HD 25 + $149 DM-40D = $627 before tax or shipping. Both badge and cost now say $627. The KRK ROKIT G4 remains a $169 single and the Classic 5 remains a $299 pair; existing retailer and packaging records were retained.
+
+`tests/rig-owner-round.cjs` tests the rendered default, both views open after edits, and the product images; `tests/rig-builder-browser.cjs` checks additional budget and browser journeys. The old `tests/test_role_based_booth_journeys.js`, outside this task's authorized test paths, still assumes the shopping panel starts closed and requires updating by its owner before the complete CI job can pass.

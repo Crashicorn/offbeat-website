@@ -512,7 +512,10 @@
         action: { kind: "pick-cat", cat: "laptops", slotId: hostSlot.slotId, label: "Choose a compatible host" } });
     } else if (controller && host && host.host_type === "mobile") {
       if (supportsMobileSoftware(controller, "any")) {
-        checks.push({ key: "host", level: "ok", weight: 2, title: "Mobile host: " + host.model,
+        // A manufacturer-listed app is not proof that this particular phone,
+        // power supply, Bluetooth/USB mode and audio path are ready to play.
+        warnings++;
+        checks.push({ key: "host", level: "warn", weight: 2, title: "Mobile host: verify app, power and audio",
           note: controller.mobile_support + " This line only represents a compatible device you already own; app plans, adapters and power supplies are not included." });
       } else {
         blockers++;
@@ -709,8 +712,8 @@
     } else if (host.id === "standalone-usb-only") {
       wiring.push({ from: "host", to: "controller", status: "bad", label: "not standalone" });
     } else if (host.host_type === "mobile") {
-      wiring.push({ from: "host", to: "controller", status: controller.mobile_support ? "ok" : "bad",
-        label: controller.mobile_support ? "supported mobile app · verify setup" : "mobile support unverified" });
+      wiring.push({ from: "host", to: "controller", status: supportsMobileSoftware(controller, "any") ? "warn" : "bad",
+        label: supportsMobileSoftware(controller, "any") ? "listed mobile app · verify device/audio/power" : "mobile support unverified" });
     } else {
       wiring.push({ from: "host", to: "controller", status: "ok", label: "computer app host" });
     }
@@ -1907,7 +1910,7 @@
         return { tone: "ok", text: "Standalone: swap the " + host.model + " out and the rig gets " + money(host.price) + " cheaper." };
       }
       if (host && host.host_type === "mobile") {
-        if (item.mobile_support) return { tone: "ok", text: "Mobile app path listed: " + item.mobile_support + " This assumes you already own a compatible device; a new device, app plan, adapters and power are not included." };
+        if (supportsMobileSoftware(item, "any")) return { tone: "warn", text: "Conditional mobile app path: " + item.mobile_support + " This assumes you already own a compatible device; a new device, app plan, adapters and power are not included." };
         return { tone: "warn", text: "Mobile-host support is not verified for this controller here. Check its exact app and OS requirements before relying on a phone or tablet." };
       }
       if (!item.standalone && (!host || host.id === "standalone-usb-only")) {
@@ -1947,7 +1950,7 @@
       if (item.host_type === "mobile") {
         if (!ctrl) return { tone: "neutral", text: "Choose a controller to check mobile-app support." };
         if (ctrl.standalone) return { tone: "neutral", text: ctrl.model + " runs standalone; an external mobile app host is not required." };
-        if (ctrl.mobile_support) return { tone: "ok", text: "Listed mobile path: " + ctrl.mobile_support + " Select only if you already own the compatible device; new device, app, adapter and power costs are not included." };
+        if (supportsMobileSoftware(ctrl, "any")) return { tone: "warn", text: "Conditional mobile path: " + ctrl.mobile_support + " Select only if you already own the compatible device; new device, app, adapter and power costs are not included." };
         return { tone: "warn", text: "Mobile support is not verified for " + ctrl.model + " here. Confirm the exact app and OS before relying on it." };
       }
       if (item.host_type === "computer") {
@@ -1993,8 +1996,8 @@
       ["Channels", function (i) { return i.channels ? i.channels + " decks" : "—"; }],
       ["Outputs", function (i) { return (i.master_outputs || []).join(", ") || "—"; }],
       ["Inputs", function (i) { return (i.inputs || []).join(", ") || "—"; }],
-      ["Included software", function (i) { return (i.software_unlocks || []).join(", ") || "—"; }],
-      ["Other app support", function (i) { return (i.software_support || []).join(", ") || "—"; }],
+      ["Included / hardware-unlocked", function (i) { return (i.software_unlocks || []).join(", ") || "—"; }],
+      ["Other compatible apps (check license)", function (i) { return (i.software_support || []).join(", ") || "—"; }],
       ["Mobile modes", function (i) { return i.mobile_support || (i.host_type === "mobile" ? "Existing mobile device; app support varies" : "—"); }],
       ["Host requirement", function (i) { return hostRequirement(i); }],
       ["Price context", function (i) { return i.price_basis || "US retail estimate"; }],
@@ -2021,8 +2024,9 @@
       item.master_outputs ? ["Master outputs", item.master_outputs.join(" · ")] : null,
       item.inputs ? ["Inputs", item.inputs.join(" · ")] : null,
       item.headphone_jack ? ["Headphone jack", item.headphone_jack] : null,
-      item.software_unlocks ? ["Included software", item.software_unlocks.join(" · ")] : null,
-      item.software_support ? ["Other app support", item.software_support.join(" · ")] : null,
+      item.software_unlocks ? ["Included / hardware-unlocked", item.software_unlocks.join(" · ")] : null,
+      item.software_support ? ["Other compatible apps (check license)", item.software_support.join(" · ")] : null,
+      item.software_notes ? ["License / compatibility notes", item.software_notes] : null,
       item.mobile_support ? ["Mobile support", item.mobile_support] : null,
       item.host_type ? ["Host type", item.host_type === "mobile" ? "Existing phone / tablet; already owned" : "Existing compatible computer; already owned"] : item.standalone != null ? ["Host requirement", hostRequirement(item)] : null,
       item.price_basis ? ["Price context", item.price_basis] : null,

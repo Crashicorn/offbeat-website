@@ -19,6 +19,7 @@ E = "assets/img/editorial/"
 
 # Canonical alt text per photograph (must describe the pictured scene).
 ALT = {
+    "pexels-dj-mixer-7271792.jpg": "A hand adjusts controls on a DJ mixer at an event",
     "hero-breakdown.jpg": "A laptop showing an arrangement timeline beside a MIDI keyboard on a lamp-lit desk",
     "software-desk.jpg": "A laptop showing a DJ software waveform on a wooden desk in low light",
     "production-hero.jpg": "A production studio desk with a modular synth, keyboard and studio monitors",
@@ -57,7 +58,7 @@ ASSIGN = {
     "how-to-create-dj-mixes-for-youtube.html": "production-hero.jpg",
     # DAW-laptop desk for software reviews (off the waveform desk)
     "best-dj-software-beginners-2026.html": "hero-breakdown.jpg",
-    "best-free-dj-software-2026.html": "hero-breakdown.jpg",
+    "best-free-dj-software-2026.html": "pexels-dj-mixer-7271792.jpg",
     "rekordbox-pro-review.html": "hero-breakdown.jpg",
     "serato-dj-pro-review.html": "hero-breakdown.jpg",
     # booth atmosphere for play-out software picks
@@ -87,6 +88,7 @@ DIMS = {
     "gear-flatlay.jpg": (1408, 768),
     "headphones-hero.jpg": (1408, 768),
     "hero-breakdown.jpg": (1408, 768),
+    "pexels-dj-mixer-7271792.jpg": (1125, 750),
     "hero-gig-small.jpg": (1408, 768),
     "hero-wedding.jpg": (1408, 768),
     "mixer-hero.jpg": (1408, 768),

@@ -53,3 +53,182 @@ test("headphone comparison never equates sensitivity to max SPL", () => {
     assert.equal(cells.length, 5, "consistent five-column row " + index);
   });
 });
+
+test("Rig Spotlight deep links match catalog product identity, unit and planning price", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const index = JSON.parse(page("assets/search-index.json"));
+  const products = new Map(catalog.items.map(item => [item.id, item]));
+  const deepLinks = index.filter(item => typeof item.u === "string" &&
+    item.u.startsWith("build-your-dj-setup.html?add="));
+  assert.ok(deepLinks.length >= 30, "curated product links must remain searchable");
+  const seen = new Set();
+  const normalized = value => String(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const entry of deepLinks) {
+    const id = new URL(entry.u, "https://offbeatinc.com/").searchParams.get("add");
+    const product = products.get(id);
+    assert.ok(product, "search deep link targets missing catalog ID: " + id);
+    assert.ok(!seen.has(id), "duplicate curated search target: " + id);
+    seen.add(id);
+    assert.equal(entry.title, entry.t, id + " title fields diverge");
+    assert.equal(entry.url, entry.u, id + " URL fields diverge");
+    assert.equal(entry.desc, entry.d, id + " description fields diverge");
+    assert.ok(normalized(entry.t).includes(normalized(product.model.split("(")[0])),
+      id + " search label names a different product: " + entry.t + " vs " + product.model);
+    const price = entry.t.match(/\(\$([\d,]+(?:\.\d+)?)(?:\s+est\.)?\)/i);
+    if (price) {
+      assert.equal(Number(price[1].replace(/,/g, "")), product.price,
+        id + " search price differs from catalog planning price");
+    }
+  }
+  for (const [id, units] of [["krk-rokit-5-g4", 1], ["krk-classic-5-pair", 2]]) {
+    assert.equal(products.get(id).speaker_units, units, id + " sale unit count");
+    assert.ok(seen.has(id), id + " must have a separate search deep link");
+  }
+});
+
+
+test("MixTrack Go included stereo RCA lead covers two independent Classic 5 monitors", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const { OffbeatGear } = require("../assets/gear-connections.js");
+  const byId = id => catalog.items.find(item => item.id === id);
+  const controller = byId("numark-mixtrack-go");
+  const pair = byId("krk-classic-5-pair");
+  assert.equal(controller.included_cables[0].feeds_covered, 2,
+    "the supplied stereo 3.5mm-to-dual-RCA lead has two independent RCA speaker-end plugs");
+  const plan = OffbeatGear.connectionPlan(catalog, controller, pair, 1);
+  assert.equal(plan.feeds, 2, "the Classic 5 pair requires two mono feeds");
+  assert.equal(plan.kind, "included", "one supplied dual-RCA lead reaches both cabinets");
+  assert.equal(plan.units, 0, "do not charge a second lead for a complete included path");
+  assert.equal(plan.outputsNeeded, 1, "the stereo adapter uses one stereo master output");
+  assert.equal(plan.conflict, false, "a valid pair must not be marked impossible");
+
+  // Future partial-coverage regression: two feeds included, three required.
+  // An extra output and purchased cable must be charged, not labelled free.
+  const threeFeedPair = JSON.parse(JSON.stringify(pair));
+  threeFeedPair.connection.feeds_per_box = 3;
+  const twoOutputController = JSON.parse(JSON.stringify(controller));
+  twoOutputController.outputs.push({ ...twoOutputController.outputs[0], role: "booth", label: "Second stereo output" });
+  const partial = OffbeatGear.connectionPlan(catalog, twoOutputController, threeFeedPair, 1);
+  assert.equal(partial.feeds, 3);
+  assert.equal(partial.coveredFeeds, 2);
+  assert.equal(partial.kind, "allowance", "remaining feed needs a priced lead, not included status");
+  assert.equal(partial.units, 1, "one additional cable purchase required");
+  assert.equal(partial.outputsNeeded, 2, "included and purchased leads consume two sockets");
+  assert.match(partial.note, /2 of 3 feeds already come with/);
+});
+
+test("Inpulse 500 buyer facts match Hercules across the budget and main guides", () => {
+  const budget = page("best-dj-controllers-under-200.html");
+  const main = page("best-dj-controllers-2026.html");
+  assert.match(budget, /Hercules DJControl Inpulse 500[\s\S]*?<td>140 mm \(5\.5 in\)<\/td>/,
+    "the comparison table must state the manufacturer's 140 mm jog diameter");
+  assert.match(budget, /140 mm \(5\.5-inch\) jog wheels/);
+  assert.match(budget, /Beatmatch Guide lights assist manual tempo practice in both DJUCED and Serato DJ Lite/);
+  assert.match(budget, /https:\/\/www\.hercules\.com\/en\/product\/dj-control-inpulse-500\//);
+  assert.match(main, /Hercules DJControl Inpulse 500[\s\S]*?140mm jog wheels/);
+  assert.doesNotMatch(budget, /114\s*mm|DJUCED\/Rekordbox learning lights|Serato users get the hardware without those cues/);
+});
+
+test("FLX2 buyer guides distinguish limited djay hardware unlock from paid PRO", () => {
+  const budget = page("best-dj-controllers-under-300.html");
+  const review = page("ddj-flx2-review.html");
+  assert.match(budget, /unlocking pre-cueing and the Sampler/);
+  assert.match(budget, /does not unlock the full djay PRO subscription/);
+  assert.match(review, /unlocks djay pre-cueing and Sampler controls, not a full djay PRO subscription/);
+  for (const [name, html] of [["budget guide", budget], ["FLX2 review", review]]) {
+    assert.match(html, /https:\/\/help\.algoriddim\.com\/topic\/first-steps\/free-vs-pro/,
+      name + " must link to the official free-versus-PRO license explanation");
+    assert.doesNotMatch(html, /unlocks djay Pro|djay without a subscription/i,
+      name + " must not imply the full PRO subscription is included");
+  }
+});
+
+
+test("sitewide retailer links never direct buyers to catalogued unavailable exact SKUs", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const unavailable = new Map(catalog.items
+    .filter(item => item.retailer_destinations?.zzounds?.status === "verified_unavailable")
+    .map(item => [new URL(item.retailer_destinations.zzounds.url).pathname, item.id]));
+  assert.ok(unavailable.size >= 6, "check all explicitly unavailable exact catalog SKUs");
+
+  const root = path.join(__dirname, "..");
+  const htmlPages = fs.readdirSync(root).filter(name => name.endsWith(".html"));
+  assert.ok(htmlPages.length >= 100, "inspect the complete published HTML page set");
+  for (const filename of htmlPages) {
+    const html = page(filename);
+    for (const match of html.matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)) {
+      let url;
+      try { url = new URL(match[2].replace(/&amp;/g, "&"), "https://offbeatinc.com/"); }
+      catch { continue; }
+      if (url.hostname !== "www.zzounds.com") continue;
+      assert.ok(!unavailable.has(url.pathname),
+        filename + " links directly to unavailable " + unavailable.get(url.pathname) +
+        "; use a non-clickable availability notice and a separately identified replacement");
+    }
+  }
+});
+
+test("Rig Architect distinguishes included software from separately paid compatibility", () => {
+  const catalog = JSON.parse(page("assets/dj-gear-catalog.json"));
+  const byId = id => {
+    const item = catalog.items.find(item => item.id === id);
+    assert.ok(item, "missing controller " + id);
+    return item;
+  };
+  const paid = [
+    ["pioneer-ddj-flx2", /djay Pro/i],
+    ["denon-prime-4-plus", /VirtualDJ/i],
+    ["denon-prime-go", /VirtualDJ/i],
+    ["rane-system-one", /djay Pro/i],
+    ["alphatheta-djm-v5", /Serato DJ Pro/i]
+  ];
+  for (const [id, license] of paid) {
+    const item = byId(id);
+    assert.ok(item.software_support.some(name => license.test(name)), id + " paid path must be visible");
+    assert.ok(!item.software_unlocks.some(name => license.test(name)), id + " paid path must not be called unlocked");
+    assert.match(item.software_notes, /license|subscription|not included/i, id + " needs an explicit licensing caveat");
+  }
+  assert.ok(byId("pioneer-ddj-flx2").software_unlocks.includes("Serato DJ Lite"),
+    "free FLX2 Serato DJ Lite path must remain visible");
+  assert.ok(byId("denon-prime-4-plus").software_unlocks.includes("Serato DJ Pro"),
+    "PRIME 4+ really does hardware-unlock Serato DJ Pro");
+  assert.ok(!byId("denon-prime-go").software_unlocks.some(x => /Serato|djay Pro/i.test(x)),
+    "original PRIME GO must not claim a Pro unlock");
+  assert.match(byId("denon-prime-go").software_notes, /Serato DJ Pro is not supported/);
+});
+
+
+test("beginner mixer buying guide distinguishes Xone:23 analog, Pioneer licensing and actual mixer models", () => {
+  const html = page("best-dj-mixers-beginners.html");
+  faqPairs(html);
+  const first = html.match(/<table class="comparison-table">([\s\S]*?)<\/table>/);
+  assert.ok(first, "buyer table exists");
+  const rows = [...first[1].matchAll(/<tr>([\s\S]*?)<\/tr>/g)];
+  assert.equal(rows.length, 4, "header and three genuinely comparable two-channel mixers");
+  assert.match(html, /Xone:23C is the USB variant/);
+  assert.match(html, /No — analog only; the Xone:23C is the USB variant/);
+  assert.match(html, /three-band total-kill EQ/);
+  assert.match(html, /Serato DJ Pro and its DVS expansion are separately paid/);
+  assert.match(html, /does not have a Send\/Return loop or an onboard reverb\/delay bank/);
+  assert.match(html, /Innofader Pro2 as an M2-compatible option/);
+  assert.match(html, /four-channel premium rotary mixer, not a budget two-channel pick/);
+  assert.match(html, /https:\/\/serato\.com\/dj\/hardware\/pioneer-djm-250mk2/);
+  assert.match(html, /https:\/\/www\.allen-heath\.com\/content\/uploads\/2023\/06\/Xone_23_Flyer_Complete_sm\.pdf/);
+  assert.doesNotMatch(html, /Serato DJ Pro included in the box|Yes — 2-in\/2-out USB \(24-bit\)|High-quality magnetic crossfader|Rane Sixty-One or Innofader upgrade|~\$599 \(used \$350\)|Magma-style filter|click any EQ band fully off/);
+});
+
+
+test("original PRIME GO primary buy action searches the controller, not accessories or GO+", () => {
+  const html = page("denon-prime-go-review.html");
+  const hero = html.match(/<div class="product-hero">([\s\S]*?)<div class="pros-cons">/);
+  assert.ok(hero, "original PRIME GO product hero exists");
+  const action = hero[1].match(/<a class="btn-primary" href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+  assert.ok(action, "hero must have a primary shopping action");
+  const url = new URL(action[1].replace(/&amp;/g, "&"));
+  assert.equal(url.hostname, "www.amazon.com");
+  assert.match(url.searchParams.get("k") || "", /Denon DJ Prime GO/i);
+  assert.doesNotMatch(url.searchParams.get("k") || "", /accessories|GO\+/i);
+  assert.match(action[2], /original PRIME GO listings/);
+  assert.doesNotMatch(action[2], /accessories|GO\+/i);
+  assert.match(html, /Confirm whether a listing is for the original PRIME GO or the distinct PRIME GO\+/);
+});

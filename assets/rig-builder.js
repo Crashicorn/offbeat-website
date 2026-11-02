@@ -7,6 +7,9 @@
   "use strict";
 
   var CATALOG = null;
+  var sharedRigRejected = false;
+  var guideAddRejected = false;
+  var savedRigWriteFailed = false;
   var audioCtx = null;
   var soundEnabled = safeStorageGet("offbeat.rig.sfx") !== "muted";
 
@@ -104,6 +107,11 @@
       .then(function (res) { return res.json(); })
       .then(function (data) {
         CATALOG = data;
+        var starter = CATALOG.presets && CATALOG.presets.find(function (p) { return p.id === "bedroom-starter"; });
+        if (starter) {
+          currentRig.name = starter.name;
+          currentRig.items = convertPresetToItems(starter);
+        }
         parseUrlOrLocalState();
       });
   }
@@ -134,7 +142,14 @@
     if (addParam) {
       var targetItem = getItem(addParam);
       if (targetItem) {
-        if (!restoreSharedRigParam(params.get("rig"))) {
+        var hasSharedRig = params.has("rig");
+        if (hasSharedRig && !restoreSharedRigParam(params.get("rig"))) {
+          // Never substitute the browser's unrelated local setup for a broken
+          // shared shopping list, then silently add an item to the wrong build.
+          sharedRigRejected = true;
+          return;
+        }
+        if (!hasSharedRig) {
           var presetParam = params.get("preset");
           var pMatch = presetParam && CATALOG.presets ? CATALOG.presets.find(function (p) { return p.id === presetParam; }) : null;
           if (pMatch) {
@@ -178,7 +193,12 @@
             owned: false
           };
           if (targetRole) newSlot.role = targetRole;
-          currentRig.items.push(newSlot);
+          if (!appendRigSlot(newSlot)) {
+            // Never silently omit a guide-selected purchase from a full rig.
+            // Keep all 24 existing lines intact and warn the buyer in the UI.
+            guideAddRejected = true;
+            console.warn("Cannot add guide equipment: this rig already has 24 equipment lines.");
+          }
         }
         saveActiveState();
         return;
@@ -196,7 +216,11 @@
     }
 
     // 3. Base64 encoded rig state param (e.g. ?rig=...)
-    if (restoreSharedRigParam(params.get("rig"))) return;
+    if (params.has("rig")) {
+      if (restoreSharedRigParam(params.get("rig"))) return;
+      sharedRigRejected = true;
+      return; // The visible starter is NOT a partially restored shared rig.
+    }
 
     // 4. Local state is optional and untrusted, just like shared URLs.
     var local = safeStorageGet("offbeat.rig.active");
@@ -213,7 +237,18 @@
     if (Array.isArray(data.items)) {
       raw = data.items;
     } else if (Array.isArray(data.i)) {
-      raw = data.i;
+      // Compact share URLs use fixed six-field tuples to fit the same
+      // 24-line rigs that local storage can preserve. Legacy object arrays
+      // remain accepted, and every tuple still passes the usual catalog,
+      // quantity, role and slot-identifier validation below.
+      raw = data.i.map(function (entry) {
+        if (!Array.isArray(entry)) return entry;
+        if (entry.length !== 6) return null;
+        return {
+          slotId: entry[0], category: entry[1], itemId: entry[2],
+          qty: entry[3], owned: entry[4] === 1, role: entry[5]
+        };
+      });
     } else if (data.slots && typeof data.slots === "object" && !Array.isArray(data.slots)) {
       var cats = Object.keys(data.slots);
       if (cats.length > 24) return null;
@@ -224,12 +259,24 @@
     } else return null;
     if (!raw.length || raw.length > 24) return null;
 
-    var used = Object.create(null), items = [];
+    // A partially restored shopping list can understate the purchase total and
+    // falsely certify compatibility. Reject the whole saved/shared build when
+    // any equipment line is missing or no longer matches the catalog.
+    var used = Object.create(null), items = [], invalidLine = false;
     raw.forEach(function (slot, index) {
-      if (!slot || typeof slot !== "object" || Array.isArray(slot)) return;
-      if (typeof slot.itemId !== "string" || typeof slot.category !== "string") return;
+      if (!slot || typeof slot !== "object" || Array.isArray(slot)) {
+        invalidLine = true;
+        return;
+      }
+      if (typeof slot.itemId !== "string" || typeof slot.category !== "string") {
+        invalidLine = true;
+        return;
+      }
       var item = getItem(slot.itemId);
-      if (!item || item.category !== slot.category) return;
+      if (!item || item.category !== slot.category) {
+        invalidLine = true;
+        return;
+      }
       var id = typeof slot.slotId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(slot.slotId)
         ? slot.slotId : "imported-" + index;
       var suffix = 0;
@@ -237,23 +284,38 @@
       used[id] = true;
       var role = slot.role;
       if (item.category === "speakers") {
-        if (role === "crowd_pa" && isSpeakerEligibleForRole(item, "crowd_pa")) {
-          // valid crowd_pa
-        } else if (role === "dj_monitor" && isSpeakerEligibleForRole(item, "dj_monitor")) {
-          // valid dj_monitor
-        } else {
+        // A shared shopping list may explicitly assign a speaker to crowd PA
+        // or DJ monitoring. Reassigning an ineligible product silently changes
+        // the intended sound system and can make an unsafe PA look compatible.
+        // Reject the entire imported rig; only legacy records with no role
+        // may infer one from the catalog.
+        if (role !== undefined && role !== null && role !== "" &&
+            !isSpeakerEligibleForRole(item, role)) {
+          invalidLine = true;
+          return;
+        }
+        if (role === undefined || role === null || role === "") {
           role = isSpeakerEligibleForRole(item, "crowd_pa") ? "crowd_pa" : "dj_monitor";
         }
       }
+      // A corrupt explicit quantity must never silently become one unit:
+      // that would understate the cost of a shared shopping list. Preserve
+      // older object-format rigs that omitted qty (historically one unit).
+      // Non-purchasable placeholders always represent a single owned host.
+      if (item.no_purchase !== true && slot.qty !== undefined &&
+          (!Number.isInteger(slot.qty) || slot.qty < 1 || slot.qty > 8)) {
+        invalidLine = true;
+        return;
+      }
       var cleanSlot = {
         slotId: id, category: item.category, itemId: item.id,
-        qty: item.no_purchase === true ? 1 : (Number.isInteger(slot.qty) && slot.qty >= 1 && slot.qty <= 4 ? slot.qty : 1),
+        qty: item.no_purchase === true ? 1 : (slot.qty === undefined ? 1 : slot.qty),
         owned: item.no_purchase === true || slot.owned === true
       };
       if (role) cleanSlot.role = role;
       items.push(cleanSlot);
     });
-    if (!items.length) return null;
+    if (invalidLine || !items.length) return null;
     return {
       name: typeof data.name === "string" ? data.name.slice(0, 80) : (typeof data.n === "string" ? data.n.slice(0, 80) : "My Custom DJ Rig"),
       items: items
@@ -264,18 +326,41 @@
     var clean = sanitizeRigState(data);
     if (!clean) return false;
     currentRig = clean;
+    sharedRigRejected = false;
     return true;
   }
 
   function saveActiveState() {
+    sharedRigRejected = false;
     var serialized = JSON.stringify(currentRig);
     safeStorageSet("offbeat.rig.active", serialized);
     try {
       var encoded = btoa(encodeURIComponent(serialized));
-      if (encoded.length > 8192) return;
+      if (encoded.length > 8192) {
+        // Full JSON can exceed the share-link limit for a valid 24-line rig.
+        // Fall back to compact tuples without losing quantity, ownership,
+        // speaker role, or slot identity. Small/legacy links are unchanged.
+        var compact = {
+          n: currentRig.name,
+          i: currentRig.items.map(function (slot) {
+            return [slot.slotId, slot.category, slot.itemId, slot.qty || 1,
+              slot.owned === true ? 1 : 0, slot.role || ""];
+          })
+        };
+        encoded = btoa(encodeURIComponent(JSON.stringify(compact)));
+      }
+      if (encoded.length > 8192) {
+        // Never leave an old ?rig= in the address bar: exporting that stale
+        // link would silently share a different shopping list.
+        window.history.replaceState({ rig: currentRig }, "", window.location.pathname);
+        console.warn("This rig is too large for a share URL; saved local state remains available.");
+        return false;
+      }
       window.history.replaceState({ rig: currentRig }, "", window.location.pathname + "?rig=" + encodeURIComponent(encoded));
+      return true;
     } catch (e) {
       console.warn("Could not update rig share URL:", e);
+      return false;
     }
   }
 
@@ -301,6 +386,14 @@
     if (slot.itemId !== item.id) slot.owned = false;
     slot.itemId = item.id;
     slot.category = item.category;
+    return true;
+  }
+
+  // A shared/saved rig rejects more than 24 lines. Apply the same limit to
+  // live edits so the planner never creates a build that cannot be reopened.
+  function appendRigSlot(slot) {
+    if (currentRig.items.length >= 24) return false;
+    currentRig.items.push(slot);
     return true;
   }
 
@@ -485,14 +578,38 @@
           });
           warnings++;
         }
-      } else if (selected) {
+      } else if (areAllSpeakerRoutesConfirmed() &&
+                 computeAllRigConnections().every(function (route) { return route.kind === "included"; })) {
+        // A monitor pack can include its own XLR leads (e.g. KRK Classic 5),
+        // not just the special-case 3.5mm/RCA cable above. The authoritative
+        // routing planner has verified every speaker path with bundled leads:
+        // do not simultaneously tell buyers to purchase an extra cable.
         checks.push({
           type: "success", statusLevel: "workable",
-          title: "Listed Audio Connection Match",
-          desc: "Listed connectors support " + selected.name + " between " + controller.model +
-            " and " + speakers.model + ". Verify wiring, levels, and manufacturer requirements.",
+          title: "Included Speaker Leads Cover Planned Routes",
+          desc: "The selected speaker package includes the signal leads for the modeled controller output and speaker inputs. No extra speaker cable purchase is needed for these routes; verify package contents and cable length.",
           fixCableId: null
         });
+      } else if (selected) {
+        // A matching connector does not prove enough cable packs exist for
+        // every PA/monitor route. Keep this verdict aligned with the booth.
+        if (areAllSpeakerRoutesConfirmed()) {
+          checks.push({
+            type: "success", statusLevel: "workable",
+            title: "Listed Audio Connection Match",
+            desc: "Selected cable quantities cover the planned speaker routes. Verify wiring, levels, and manufacturer requirements.",
+            fixCableId: null
+          });
+        } else {
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Speaker Cable Quantity or Routing Needs Review",
+            desc: "A connector type matches, but the selected cable packs do not yet establish every speaker route. " +
+              "Check the booth's per-route cable requirements, quantities and hardware output limits before buying.",
+            fixCableId: null
+          });
+          warnings++;
+        }
       } else if (options.length) {
         var suggestion = options[0];
         checks.push({
@@ -538,10 +655,7 @@
       if (paItem && monItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan) {
         var usedOuts = {};
         var pPlan = OffbeatGear.connectionPlan(CATALOG, controller, paItem, spkGroup.paSlot.qty || 1, { usedOutputs: usedOuts });
-        if (pPlan && pPlan.output) {
-          usedOuts[pPlan.output.connector] = (usedOuts[pPlan.output.connector] || 0) + 1;
-          usedOuts.claimed = [pPlan.output];
-        }
+        reservePlannedOutputs(pPlan, usedOuts);
         var mPlan = OffbeatGear.connectionPlan(CATALOG, controller, monItem, spkGroup.monitorSlot.qty || 1, { usedOutputs: usedOuts });
         if (mPlan && mPlan.conflict) {
           fatalErrors++;
@@ -549,8 +663,9 @@
             type: "warning",
             statusLevel: "incompatible",
             title: "Hardware Limitation: Secondary Speaker Route Cannot Be Fed",
-            desc: controller.model + " only provides one stereo master output and lacks an independent booth output. " +
-              "It cannot simultaneously drive crowd PA and DJ monitors without an external DJ mixer or powered distribution box.",
+            desc: controller.model + " has no verified free output pair for both selected speaker routes at these quantities. " +
+              "Master, booth or zone outputs may already be allocated, or a different cable path may need verification. " +
+              "Reduce the speaker count or confirm a suitable mixer or powered distribution route before purchasing.",
             fixCableId: null
           });
         }
@@ -579,7 +694,7 @@
 
     // 2. Standalone vs Laptop Host Check
     if (controller && laptop) {
-      if (laptop.id === "existing-mobile-device" && !controller.standalone) {
+      if (laptop.host_type === "mobile" && !controller.standalone) {
         if (controller.id === "pioneer-ddj-flx4") {
           checks.push({
             type: "warning", statusLevel: "workable",
@@ -608,6 +723,25 @@
             fixCableId: null
           });
           warnings++;
+        } else if (controller.id === "numark-mixtrack-go" || controller.id === "numark-party-mix-3") {
+          // Numark explicitly supports djay on iOS/Android via USB-C or
+          // Bluetooth MIDI. The Bluetooth mode is CONTROL ONLY: both onboard
+          // master and headphone outputs are disabled. Never sell the selected
+          // controller-to-speaker/headphone cable route as Bluetooth-ready.
+          checks.push({
+            type: "warning", statusLevel: "workable",
+            title: "Numark Mobile: USB-C vs Bluetooth Audio Routing",
+            desc: controller.model + " supports Algoriddim djay on compatible iOS/Android " +
+              "devices via USB-C or Bluetooth MIDI. Bluetooth MIDI disables the controller's " +
+              "master AND headphone audio outputs: monitor and connect speakers at the " +
+              "phone/tablet instead (a separate adapter may be needed). For Bluetooth, " +
+              "power the controller from an external USB supply of at least 5V/500mA. " +
+              "USB-C controller audio requires a compatible device, app and cable. " +
+              "Confirm your exact phone, djay features/licensing, audio route and power " +
+              "before buying; external power and phone-audio adapters are not priced here.",
+            fixCableId: null
+          });
+          warnings++;
         } else if (controller.id === "alphatheta-ddj-grv6") {
           // AlphaTheta confirms mobile rekordbox support, but only decks 1
           // and 2 work on iOS/Android. No Bluetooth; USB-C and sufficient
@@ -630,7 +764,7 @@
           checks.push({
             type: "error", statusLevel: "incompatible",
             title: "Mobile Host Not Verified for This Controller",
-            desc: "This existing-phone option is qualified only for conditional DDJ-FLX4, DDJ-FLX2, or DDJ-GRV6 routes. " +
+            desc: "This existing-phone option is qualified only for listed DDJ-FLX4, DDJ-FLX2, DDJ-GRV6, MixTrack Go, or Party Mix III mobile routes. " +
               "Choose a compatible computer or verify this controller's mobile software, power and audio path.",
             fixSlotId: laptopSlot ? laptopSlot.slotId : null,
             fixItemId: "macbook-air-m2",
@@ -783,7 +917,7 @@
       }
     }
 
-    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).id !== "existing-mobile-device" && !controller.standalone) {
+    if (!standSlot && laptopSlot && getSlotItem(laptopSlot).host_type !== "mobile" && !controller.standalone) {
       var standUpgrade = offer("laptop-stand-pyle", "Optional Laptop Stand",
         "A laptop stand may improve visibility and desk space. Check your laptop size and booth clearance before purchasing.",
         "core-stand");
@@ -805,9 +939,18 @@
   /* ---------------------------------------------------------------- Render */
   function renderApp() {
     var stats = calculateRigStats();
-    var openView = builderRoot.querySelector('details[name="rig-views"][open]')?.id || '';
+    var viewIds = ["rig-connections", "rig-shopping", "rig-manage"];
+    var previousViews = {};
+    var hadViews = false;
+    viewIds.forEach(function (id) {
+      var view = builderRoot.querySelector("#" + id);
+      if (view) { hadViews = true; previousViews[id] = view.open; }
+    });
 
     var html = `
+      ${sharedRigRejected ? '<div class="highlight-box" role="alert"><strong>Shared DJ setup could not be restored.</strong> One or more equipment lines are invalid or unavailable. The starter rig shown below is NOT the shared shopping list; do not rely on its prices or compatibility for the original build.</div>' : ''}
+      ${guideAddRejected ? '<div class="highlight-box" role="alert"><strong>Equipment not added.</strong> This setup already contains 24 equipment lines. Remove an existing line before adding the item from the guide. Your existing shopping list was preserved unchanged.</div>' : ''}
+      ${savedRigWriteFailed ? '<div class="highlight-box" role="alert"><strong>Saved builds not updated.</strong> This browser blocked or exhausted local storage. Your equipment is still visible here, but the save or delete action did not persist. Copy the exact share link or export a checklist before leaving this page.</div>' : ''}
       <!-- Builder Top Dashboard -->
       <section class="rig-dashboard-shell">
         <div class="rig-dash-header">
@@ -831,7 +974,7 @@
           <!-- Immediate Above-The-Fold Spend & Readiness -->
           <div class="rig-quick-spend-strip">
             <div class="quick-spend-card">
-              <span class="qsc-label">Actual Spend Needed</span>
+              <span class="qsc-label">Estimated to buy</span>
               <strong class="qsc-val metric-val--spend">$${stats.purchaseCost.toLocaleString()}</strong>
               <span class="qsc-sub">${stats.ownedCount > 0 ? "Saved $" + stats.ownedValue.toLocaleString() + " owned" : stats.itemCount + " items in setup"}</span>
             </div>
@@ -844,7 +987,7 @@
       </section>
 
       <!-- Itemized shopping and saved builds share the same rig state. -->
-      <details name="rig-views" id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
+      <details id="rig-shopping" class="rig-secondary"><summary>Shopping list &amp; quantities</summary>
       <section class="rig-table-section" id="rs-shop" aria-labelledby="checklist-title">
         <div class="section-head-split">
           <div>
@@ -880,50 +1023,21 @@
               ${currentRig.items.map(function (slot) {
                 return renderModularTableRow(slot);
               }).join("")}
-              ${(function () {
-                var ctrl = findSlot("controllers"), spk = findSlot("speakers");
-                var cItem = ctrl ? getSlotItem(ctrl) : null;
-                var sItem = spk ? getSlotItem(spk) : null;
-                var hasCableSlot = currentRig.items.some(function (s) { return s.category === "cables"; });
-                if (!hasCableSlot && cItem && sItem && includedSpeakerCableMatches(cItem, sItem)) {
-                  var leadLabel = (sItem.included_cables && sItem.included_cables[0]) ? sItem.included_cables[0].model : "Included Analog Audio Lead";
-                  return `
-                    <tr class="rig-row rig-row--included-cable rs-shop-line">
-                      <td class="cell-cat"><span class="cat-pill">🔌 Cables</span></td>
-                      <td class="cell-item">
-                        <div class="item-summary-box">
-                          <div class="item-summary-copy">
-                            <div class="item-title-row rs-shop-line-name">
-                              <strong class="item-full-name">${escapeHtml(leadLabel)}</strong>
-                            </div>
-                            <p class="item-tagline">Supplied inside speaker box (${escapeHtml(sItem.brand)} ${escapeHtml(sItem.model)}). No separate cable purchase needed.</p>
-                            <span class="cable-provenance-tag prov--included">📦 Included in speaker box</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="cell-qty"><span class="qty-display">1 in-box</span></td>
-                      <td class="cell-status"><button type="button" class="status-btn status-btn--owned" disabled aria-disabled="true">✓ In the Box</button></td>
-                      <td class="cell-price rs-shop-line-price"><span class="price-figure price--owned">$0</span></td>
-                      <td class="cell-actions"><span class="owned-sub">Supplied with speakers</span></td>
-                    </tr>
-                  `;
-                }
-                return "";
-              })()}
+
             </tbody>
           </table>
         </div>
 
-        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Offbeat benchmark total: estimated equipment expenditure across verified vendors</div>
+        <div class="rs-shop-foot" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted, #94a3b8);">Planning estimates only; check current prices, quantities and availability at the retailer.</div>
 
         <!-- Commercial Disclosure Notice -->
         <p class="table-note rs-shop-note">
-          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links may generate affiliate referral commissions for Offbeat (via programs such as Amazon Associates) at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
+          All figures are planning estimates based on benchmark retail prices, not real-time merchant quotes. Retailer pricing, shipping fees, sales taxes, and inventory change dynamically. Retailer links are handoffs, not confirmations of stock or compatibility. Some links may earn Offbeat a commission at no extra cost to you. <a href="disclosure.html">Read our full affiliate disclosure</a>.
         </p>
       </section>
 
       </details>
-      <details name="rig-views" id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
+      <details id="rig-manage" class="rig-secondary"><summary>Save, share &amp; compare</summary>
       <section class="rig-manage-dock" id="rig-actions-dock">
         <div class="manage-dock-inner">
           <div class="manage-dock-info">
@@ -951,7 +1065,11 @@
     `;
 
     builderRoot.innerHTML = html;
-    if (openView) { var view = document.getElementById(openView); if (view) view.open = true; }
+    viewIds.forEach(function (id) {
+      var view = document.getElementById(id);
+      if (view) view.open = hadViews ? Boolean(previousViews[id]) :
+        (id === "rig-shopping" || (id === "rig-connections" && window.innerWidth > 700));
+    });
   }
 
   function renderCompatibility(stats) {
@@ -1058,7 +1176,7 @@
     return item.id === "pioneer-dm40d" || item.id === "pioneer-dm50d";
   }
 
-  function isRouteCableConfirmed(plan, routeIndex) {
+  function isRouteCableConfirmed(plan, alreadyAllocated) {
     if (!plan) return false;
     if (plan.conflict || plan.kind === "unresolved") return false;
     if (plan.kind === "included") return true;
@@ -1069,31 +1187,64 @@
       var totalUnits = matchingCables.reduce(function (sum, s) {
         return sum + (s.qty || 1);
       }, 0);
-      return totalUnits > routeIndex;
+      return totalUnits >= (Number(plan.units) || 1) + alreadyAllocated;
     }
     return false;
+  }
+
+  // All speaker routes must be independently feasible and supplied. A single
+  // cable pack cannot be counted twice when PA and monitors use the same SKU.
+  function areAllSpeakerRoutesConfirmed() {
+    var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+    if (!speakers.length) return false;
+    var routes = computeAllRigConnections();
+    if (routes.length !== speakers.length) return false;
+    var allocated = Object.create(null);
+    return routes.every(function (route) {
+      if (!route || route.conflict) return false;
+      var used = route.itemId ? (allocated[route.itemId] || 0) : 0;
+      if (!isRouteCableConfirmed(route, used)) return false;
+      if (route.kind === "product" && route.itemId) {
+        allocated[route.itemId] = used + (Number(route.units) || 1);
+      }
+      return true;
+    });
   }
 
   function findSlot(category) {
     return currentRig.items.find(function (s) { return s.category === category; }) || null;
   }
 
+  function usableProductPhoto(item) {
+    var photo = item && item.product_photo;
+    return photo && photo.src && photo.source && photo.license && photo.license_url && (photo.attribution || photo.credit) ? photo : null;
+  }
+
+  function productPhotoCredit(item) {
+    var photo = usableProductPhoto(item);
+    if (!photo) return "";
+    return `<span class="rig-photo-credit">Photo: <a href="${escapeHtml(photo.source)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.attribution || photo.credit)}</a> · <a href="${escapeHtml(photo.license_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(photo.license)}</a>${photo.modification ? ' · modified' : ''}</span>`;
+  }
+
   /* ------------------------------------------------- Interactive DJ Booth (Purpose-Based) */
   // The stage uses the same slots and actions as the detailed editor below.
-  function renderVisualEquipment(slot, category, role, label, defaultId, extraClass) {
+  function renderVisualEquipment(slot, category, role, label, defaultId, extraClass, routeLabel) {
     var item = slot && getSlotItem(slot);
     var id = slot ? slot.slotId : defaultId;
     var roleAttr = role ? ` data-speaker-role="${role}"` : '';
     var pick = item || !role
       ? `data-action="pick" data-slot-id="${id}" data-category="${category}"${roleAttr}`
       : `data-action="add-speaker-role" data-speaker-role="${role}"`;
+    var photo = usableProductPhoto(item);
     var owned = item && (slot.owned || item.no_purchase);
     var count = item && role ? (item.speaker_units || 1) * (slot.qty || 1) : 0;
     return `<div class="visual-equipment ${extraClass || ''}">
       <span class="visual-role">${label}</span>
+      ${routeLabel ? `<span class="visual-port-status">${escapeHtml(routeLabel)}</span>` : ''}
       <button type="button" class="visual-pick" ${pick} aria-label="${item ? 'Change ' : 'Add '}${label}">
-        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(item.image)}" alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
+        ${item ? `<span class="visual-images">${Array.from({length: role && (item.speaker_units || 1) === 1 ? Math.min(count, 8) : 1}, function() { return `<img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="">`; }).join('')}</span><strong>${escapeHtml(item.model)}</strong><span>${role ? count + (count === 1 ? ' cabinet' : ' cabinets') + ' · ' : ''}Change ↗</span>` : `<span class="visual-add-icon">+</span><strong>Add ${label}</strong><span>Choose equipment ↗</span>`}
       </button>
+      ${item && photo ? productPhotoCredit(item) : ''}
       ${item ? `<button type="button" class="visual-own ${owned ? 'is-owned' : ''}" data-action="toggle-slot-owned" data-slot-id="${id}" ${item.no_purchase ? 'disabled' : ''}>${owned ? '✓ Owned' : 'Mark owned'}</button>` : ''}
     </div>`;
   }
@@ -1123,21 +1274,13 @@
       // 1. Crowd PA takes priority for Master Output
       if (paSlot && paItem) {
         paPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, paItem, paQty, { usedOutputs: usedOutputs });
-        if (paPlan && paPlan.output) {
-          usedOutputs[paPlan.output.connector] = (usedOutputs[paPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(paPlan.output);
-        }
+        reservePlannedOutputs(paPlan, usedOutputs);
       }
 
       // 2. DJ Monitors take Booth output (or Master output if PA is absent)
       if (monitorSlot && monItem) {
         monitorPlan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, monItem, monQty, { usedOutputs: usedOutputs });
-        if (monitorPlan && monitorPlan.output) {
-          usedOutputs[monitorPlan.output.connector] = (usedOutputs[monitorPlan.output.connector] || 0) + 1;
-          if (!usedOutputs.claimed) usedOutputs.claimed = [];
-          usedOutputs.claimed.push(monitorPlan.output);
-        }
+        reservePlannedOutputs(monitorPlan, usedOutputs);
       }
     }
 
@@ -1145,8 +1288,16 @@
     var primaryCableSlot = cableSlots[0] || { slotId: "core-cable", category: "cables", itemId: null };
 
     var paCableConfirmed = isRouteCableConfirmed(paPlan, 0);
-    var monRouteIndex = (paPlan && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? 1 : 0;
+    var monRouteIndex = (paPlan && paPlan.kind === 'product' && paPlan.itemId && monitorPlan && paPlan.itemId === monitorPlan.itemId) ? (Number(paPlan.units) || 1) : 0;
     var monCableConfirmed = isRouteCableConfirmed(monitorPlan, monRouteIndex);
+
+    function routeLabel(slot, plan, confirmed) {
+      if (!slot) return 'Not added';
+      if (!plan || plan.conflict || plan.kind === 'unknown' || plan.kind === 'unresolved') return 'Route needs review';
+      if (plan.kind === 'allowance') return 'Cable type to confirm';
+      if (plan.kind === 'included') return 'Cable included';
+      return confirmed ? 'Cable in plan' : 'Cable needed';
+    }
 
     var hasConflict = (monitorPlan && monitorPlan.conflict) || (paPlan && paPlan.conflict);
     var anyCableMissing = (paSlot && paPlan && !paCableConfirmed) || (monitorSlot && monitorPlan && !monCableConfirmed && !monitorPlan.conflict);
@@ -1154,18 +1305,22 @@
     return `
       <section class="rig-booth-section" id="interactive-booth-stage">
         <div class="visual-heading"><div><span class="visual-eyebrow">YOUR SETUP</span><h3>Build your booth</h3></div><p>Choose any piece to change it.</p></div>
-        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Cable needed' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes ready' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route ready' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
+        <div class="visual-next"><span class="visual-route ${stats.compatibility.fatalErrors || hasConflict || anyCableMissing ? 'needs-review' : ''}">${hasConflict ? '⚠ Routing limitation' : stats.compatibility.fatalErrors ? '⚠ Incompatible setup — review connections' : anyCableMissing ? '◦ Connections need review' : (paCableConfirmed && monCableConfirmed ? '✓ Two audio routes planned' : (paCableConfirmed || monCableConfirmed ? '✓ One audio route planned' : '◦ Check audio connections'))}</span><button type="button" class="visual-route-link" data-action="inspect-routes">Inspect connections ↓</button></div>
         ${stats.compatibility.fatalErrors ? `<p class="visual-critical" role="alert">${stats.compatibility.checks.filter(function(c) { return c.type === 'error' || c.statusLevel === 'incompatible'; }).map(function(c) { return escapeHtml(c.title); }).join(' · ')}</p>` : ''}
         <div class="visual-stage">
-          ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor')}
+          <svg class="visual-wiring visual-wiring--desktop" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+            <path class="visual-wire ${monCableConfirmed ? 'is-planned' : ''}" d="M 430 165 C 350 220 270 220 190 165" />
+            <path class="visual-wire ${paCableConfirmed ? 'is-planned' : ''}" d="M 570 165 C 650 220 730 220 810 165" />
+          </svg>
+          ${renderVisualEquipment(monitorSlot, 'speakers', 'dj_monitor', 'DJ monitors', 'core-monitor', 'visual-monitor', routeLabel(monitorSlot, monitorPlan, monCableConfirmed))}
           ${renderVisualEquipment(controllerSlot, 'controllers', '', 'Controller / decks', 'core-ctrl', 'visual-controller')}
-          ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa')}
+          ${renderVisualEquipment(paSlot, 'speakers', 'crowd_pa', 'Crowd PA', 'core-pa', 'visual-pa', routeLabel(paSlot, paPlan, paCableConfirmed))}
           <div class="visual-secondary">
             ${renderVisualEquipment(headphonesSlot, 'headphones', '', 'Headphones', 'core-hp', 'visual-headphones')}
             ${renderVisualEquipment(hostSlot, 'laptops', '', 'Music source', 'core-host', 'visual-host')}
           </div>
         </div>
-        <details name="rig-views" id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
+        <details id="rig-connections" class="rig-secondary booth-details"><summary>Connection details &amp; compatibility</summary>
           ${renderSignalHighwaySection(ctrlItem, paSlot, paPlan, monitorSlot, monitorPlan, primaryCableSlot, paCableConfirmed, monCableConfirmed)}
           ${renderCompatibility(stats)}
         </details>
@@ -1185,7 +1340,7 @@
         <div class="cables-hub-header">
           <div class="hub-header-left">
             <span class="hub-tag">Audio Signal Highway</span>
-            <h4 class="hub-title">⚡ Live Audio Cable Routing</h4>
+            <h4 class="hub-title">Audio routing diagram</h4>
           </div>
           <div class="hub-header-right">
             <span class="cable-title">${escapeHtml(summaryText)}</span>
@@ -1208,10 +1363,10 @@
                   <div class="pipe-track">
                     ${paCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                   </div>
-                  <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
+                  <div class="pipe-cable-pill ${paCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!paCableConfirmed && paPlan && paPlan.kind === 'product' && paPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${paPlan.itemId}" title="Click to add required cable to your shopping list"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                     <span class="pill-icon">${paCableConfirmed ? '🔌' : '🛒'}</span>
                     <span class="pill-name">${escapeHtml(paPlan ? paPlan.name : 'Audio Cable')}</span>
-                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced Line' : 'Analog Line')) : '+ Add to Rig'}</span>
+                    <span class="pill-badge">${paCableConfirmed ? (paPlan && paPlan.kind === 'included' ? '📦 In-Box ($0)' : (paPlan && paPlan.balanced ? 'Balanced Line' : 'Analog Line')) : (paPlan && paPlan.kind === 'product' ? '+ Add cable' : 'Confirm route')}</span>
                   </div>
                 </div>
 
@@ -1228,17 +1383,17 @@
             <!-- DJ Monitors Route -->
             ${monitorPlan && monitorPlan.conflict ? `
               <div class="cable-route-card cable-route-card--conflict">
-                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware Routing Limitation: No Independent Booth Output</div>
+                <div class="route-role-badge route-role-badge--conflict">⚠️ Hardware routing limitation</div>
                 <div class="conflict-content">
                   <div class="conflict-head">
                     <span class="conflict-icon">⚠️</span>
-                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently</strong>
+                    <strong>${escapeHtml(ctrlItem ? ctrlItem.model : 'Controller')} cannot feed both Crowd PA and DJ Monitors independently in this plan</strong>
                   </div>
                   <p class="conflict-desc">
-                    ${escapeHtml(ctrlItem ? ctrlItem.model : 'This device')} only provides one stereo master output (${escapeHtml(ctrlItem && ctrlItem.master_outputs ? ctrlItem.master_outputs.join(', ') : 'Master')} which is currently feeding Crowd PA), and lacks a secondary booth monitor output.
+                    ${escapeHtml(monitorPlan.note || "This route needs a separate output. Confirm the hardware before buying cables.")}
                   </p>
                   <div class="conflict-solutions">
-                    <strong>Verified Solutions:</strong>
+                    <strong>Ways to explore (check connections first):</strong>
                     <ul>
                       <li>Practice using <strong>Cue Headphones</strong> only when crowd PA is active.</li>
                       <li>Upgrade to a 4-channel controller with dedicated <strong>Booth outputs</strong> (e.g. DDJ-FLX10 or XDJ-AZ).</li>
@@ -1261,10 +1416,10 @@
                     <div class="pipe-track">
                       ${monCableConfirmed ? `<span class="signal-dot signal-dot--forward"></span>` : ''}
                     </div>
-                    <div class="pipe-cable-pill ${monCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!monCableConfirmed && monitorPlan && monitorPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${monitorPlan.itemId}"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
+                    <div class="pipe-cable-pill ${monCableConfirmed ? 'pipe-cable-pill--verified' : 'pipe-cable-pill--needed'}" ${!monCableConfirmed && monitorPlan && monitorPlan.kind === 'product' && monitorPlan.itemId ? `data-action="auto-fix-cable" data-cable-id="${monitorPlan.itemId}"` : `data-action="pick" data-slot-id="core-cable" data-category="cables"`}>
                       <span class="pill-icon">🔌</span>
                       <span class="pill-name">${escapeHtml(monitorPlan ? monitorPlan.name : 'Audio Cable')}</span>
-                      <span class="pill-badge">${monCableConfirmed ? (monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')) : 'Cable needed'}</span>
+                      <span class="pill-badge">${monCableConfirmed ? (monitorPlan && monitorPlan.kind === 'included' ? '📦 In-Box ($0)' : (monitorPlan && monitorPlan.balanced ? 'Balanced Line' : 'Analog Line')) : (monitorPlan && monitorPlan.kind === 'product' ? 'Cable needed' : 'Confirm route')}</span>
                     </div>
                   </div>
 
@@ -1286,6 +1441,27 @@
         </div>
       </div>
     `;
+  }
+
+  // A planned pair may link to an exact retailer SKU sold one unit at a time.
+  // Preserve that checkout distinction when the shopping list is copied or
+  // exported, not just while its interactive table is visible.
+  function exactRetailUnitOrderNote(item, plannedQty) {
+    var zz = item && item.retailer_destinations && item.retailer_destinations.zzounds;
+    if (!zz || zz.type !== "exact" || zz.status === "verified_unavailable" ||
+        zz.sold_as !== "unit") return "";
+    var perPlan = 1;
+    if (item.cable && Number.isInteger(item.cable.pack_of) && item.cable.pack_of > 1) {
+      perPlan = item.cable.pack_of;
+    } else if (zz.requires_pair_qty === true &&
+               Number.isInteger(item.speaker_units) && item.speaker_units > 1) {
+      perPlan = item.speaker_units;
+    }
+    if (perPlan <= 1) return "";
+    var qty = Math.max(1, Number(plannedQty) || 1);
+    return item.brand + " " + item.model + ": zZounds exact link sells single units; order " +
+      (qty * perPlan) + " individual units for " + qty + " planned " +
+      (qty === 1 ? "pair" : "pairs") + ". Verify the per-unit checkout price.";
   }
 
   function renderModularTableRow(slot) {
@@ -1313,10 +1489,33 @@
       ? dests.zzounds.url
       : "https://www.zzounds.com/prodsearch?q=" + encodeURIComponent(item.brand + " " + item.model);
     var zzSku = (dests && dests.zzounds && dests.zzounds.sku) ? dests.zzounds.sku : "";
-    var zzStatus = (dests && dests.zzounds && dests.zzounds.status) ? dests.zzounds.status : (zzSku ? "verified_in_stock" : "search_fallback");
+    var zzStatus = (dests && dests.zzounds && dests.zzounds.status) || "unknown";
+    var zzUnavailable = zzStatus === "verified_unavailable";
+    var zzAlternativeUrl = zzUnavailable && dests.zzounds.alternative_url;
+    var zzAlternativeName = zzUnavailable && dests.zzounds.alternative_name;
     var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
+    // Exact retailer links may sell ONE cabinet or lead while the planner's
+    // price and quantity describe a PAIR. Disclose the checkout quantity.
+    var zzUnitsPerPlan = 1;
+    if (dests && dests.zzounds && dests.zzounds.sold_as === "unit" && zzType === "exact") {
+      if (item.cable && Number.isInteger(item.cable.pack_of) && item.cable.pack_of > 1) {
+        zzUnitsPerPlan = item.cable.pack_of;
+      } else if (dests.zzounds.requires_pair_qty === true && Number.isInteger(item.speaker_units) && item.speaker_units > 1) {
+        zzUnitsPerPlan = item.speaker_units;
+      }
+    }
+    var zzOrderUnits = zzUnitsPerPlan * qty;
+    var retailerQuantityHtml = zzUnitsPerPlan > 1 && !zzUnavailable
+      ? '<span class="unit-pack-note rs-shop-line-retail-quantity" role="note">zZounds sells these individually: ' +
+        qty + ' planned ' + (qty === 1 ? 'pair' : 'pairs') + ' require <strong>' +
+        zzOrderUnits + ' separate units</strong> from this retailer link. The planner price covers ' +
+        zzUnitsPerPlan + ' units per planned pair; verify the per-unit checkout price.</span>'
+      : "";
+    var zzLinkLabel = zzUnitsPerPlan > 1 && !zzUnavailable ? "zZounds (order " + zzOrderUnits + ")" : "zZounds";
 
-    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&tag=offbeatdj-20";
+    // Keep the configured Associates attribution on every planner shopping handoff.
+    // These are model searches, never claims of an exact Amazon product listing.
+    var amazonUrl = "https://www.amazon.com/s?k=" + encodeURIComponent(item.amazon_search || (item.brand + " " + item.model)) + "&amp;tag=offbeatdj-20";
     var sweetwaterUrl = "https://www.sweetwater.com/store/search?s=" + encodeURIComponent(item.brand + " " + item.model);
     var reverbUrl = "https://reverb.com/marketplace?query=" + encodeURIComponent(item.brand + " " + item.model);
 
@@ -1331,13 +1530,13 @@
         ? OffbeatGear.connectionPlan(CATALOG, cItem, sItem, (spk ? spk.qty : 1) || 1)
         : null;
 
-      var isBoxCovered = cItem && sItem && includedSpeakerCableMatches(cItem, sItem);
+      var isBoxCovered = pPlan && pPlan.kind === "included";
       var isExactRequired = pPlan && pPlan.kind === "product" && pPlan.itemId === slot.itemId;
       var isAllowance = pPlan && pPlan.kind === "allowance" && pPlan.itemId === slot.itemId;
 
       if (isExactRequired) {
         if (pPlan.balanced) {
-          cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Required Balanced Cable (' + (pPlan.units || 1) + ' Pair)</span>';
+          cableProvenanceTag = '<span class="cable-provenance-tag prov--matched">⚡ Required Balanced Cable (' + (pPlan.units || 1) + ' units)</span>';
         } else {
           cableProvenanceTag = '<span class="cable-provenance-tag prov--unbalanced">🔌 Required Analog Audio Lead</span>';
         }
@@ -1367,7 +1566,7 @@
 
     var stockAlertHtml = "";
     if (item.id === "denon-prime-4-plus" || (dests && dests.zzounds && dests.zzounds.status === "verified_unavailable")) {
-      stockAlertHtml = '<span class="stock-alert rs-shop-line-stock" style="display:block; color:#f87171; font-size:0.8rem; margin-top:0.25rem;">Discontinued / Out of stock at zZounds · In-stock alternative: Denon DJ PRIME 4 G2</span>';
+      stockAlertHtml = '<span class="stock-alert rs-shop-line-stock" style="display:block; color:#f87171; font-size:0.8rem; margin-top:0.25rem;">Availability may have changed. Check the retailer before ordering.</span>';
     }
 
     return `
@@ -1386,6 +1585,7 @@
               <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
               ${cableProvenanceTag}
               ${packagingHtml}
+              ${retailerQuantityHtml}
               ${stockAlertHtml}
               ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
             </div>
@@ -1395,12 +1595,12 @@
           <div class="qty-stepper-wrap">
             <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="-1" aria-label="Decrease quantity" ${qty <= 1 || isPlatformPlaceholder ? 'disabled' : ''}>-</button>
             <span class="qty-display">${qty}</span>
-            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 4 || isPlatformPlaceholder ? 'disabled' : ''}>+</button>
+            <button type="button" class="qty-step-btn" data-action="step-qty" data-slot-id="${slot.slotId}" data-step="1" aria-label="Increase quantity" ${qty >= 8 || isPlatformPlaceholder ? 'disabled' : ''}>+</button>
           </div>
         </td>
         <td class="cell-status">
           <button type="button" class="status-btn rs-own-toggle ${isOwned ? 'status-btn--owned' : 'status-btn--needed'}" data-action="toggle-slot-owned" data-slot-id="${slot.slotId}" ${isPlatformPlaceholder ? 'disabled aria-disabled="true"' : ''}>
-            ${item.id === "existing-mobile-device" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
+            ${item.host_type === "mobile" ? "Existing phone/tablet (verify)" : isPlatformPlaceholder ? "No laptop purchase" : (isOwned ? "✓ Already Owned" : "🛒 Need to Buy")}
           </button>
         </td>
         <td class="cell-price">
@@ -1412,11 +1612,11 @@
         <td class="cell-actions">
           <div class="retail-btn-stack">
             <button type="button" class="btn-swap-inline" data-action="pick" data-slot-id="${slot.slotId}" data-category="${slot.category}" ${slot.category === 'speakers' ? `data-speaker-role="${getSpeakerRole(slot)}"` : ''}>Swap</button>
-            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.id === "existing-mobile-device" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
-            <a href="${zzoundsUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${zzType}" data-status="${zzStatus}" data-sku="${zzSku}" title="Check on zZounds">zZounds</a>
-            ${item.id === "denon-prime-4-plus" ? `
-            <a href="https://www.zzounds.com/item--DENPRIME4G2" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="verified_in_stock" data-sku="DENPRIME4G2" title="In-stock alternative at zZounds">In-stock alternative: PRIME 4 G2</a>
-            ` : ''}
+            ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.host_type === "mobile" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
+            ${zzUnavailable
+              ? '<span class="btn-retail btn-retail--zz" aria-disabled="true" data-status="verified_unavailable" title="This exact product is listed as unavailable at zZounds">Unavailable at zZounds</span>'
+              : `<a href="${escapeHtml(zzoundsUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${escapeHtml(zzType)}" data-status="${escapeHtml(zzStatus)}" data-sku="${escapeHtml(zzSku)}" title="Check on zZounds">${zzLinkLabel}</a>`}
+            ${zzAlternativeUrl && zzAlternativeName ? `<a href="${escapeHtml(zzAlternativeUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" title="Check the suggested alternative at zZounds">Check alternative: ${escapeHtml(zzAlternativeName)}</a>` : ''}
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon</a>
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
             <a href="${reverbUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--rev" title="Find used offers on Reverb">Reverb</a>
@@ -1435,11 +1635,7 @@
         return "Speaker Package Includes Audio Cable";
       }
       var controllerSlot = findSlot("controllers"), speakerSlot = findSlot("speakers");
-      if (controllerSlot && speakerSlot &&
-          includedSpeakerCableMatches(getSlotItem(controllerSlot), getSlotItem(speakerSlot))) {
-        return "Speaker Package Includes Audio Cable";
-      }
-      return "No Audio Cables Selected";
+            return "No Audio Cables Selected";
     }
     return cables.map(function (c) {
       var item = getSlotItem(c);
@@ -1522,7 +1718,7 @@
           </div>
 
           <div class="picker-search-bar">
-            <input type="search" placeholder="Filter by brand, model, feature (e.g. FLX4, Prime 4, balanced XLR, Pioneer, Traktor)..." data-modal-search autocomplete="off">
+            <input type="search" aria-label="Search equipment" placeholder="Search by brand, model or feature" data-modal-search autocomplete="off">
           </div>
 
           <div class="picker-grid" id="modal-items-grid">
@@ -1545,7 +1741,7 @@
         var tokens = query ? query.split(/\s+/) : [];
         var filtered = items.filter(function (i) {
           if (tokens.length === 0) return true;
-          var text = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " + (i.software_unlocks ? i.software_unlocks.join(" ") : "")).toLowerCase();
+          var text = (i.brand + " " + i.model + " " + (i.tagline || "") + " " + (i.ideal_for || "") + " " + (i.software_unlocks ? i.software_unlocks.join(" ") : "") + " " + (i.software_support ? i.software_support.join(" ") : "")).toLowerCase();
           return tokens.every(function (t) { return text.indexOf(t) !== -1; });
         });
         document.getElementById("modal-items-grid").innerHTML = renderModalGridItems(filtered, currentItemId);
@@ -1560,22 +1756,25 @@
 
     return items.map(function (item) {
       var isCurrent = currentItemId === item.id;
+      var photo = usableProductPhoto(item);
       return `
         <article class="picker-card ${isCurrent ? 'is-selected' : ''}" data-action="select-item" data-item-id="${item.id}" data-drawer-use="${item.id}">
           <div class="picker-card-img-wrap">
-            <img src="${item.image}" alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
+            <img src="${escapeHtml(photo ? photo.src : item.image)}" ${photo ? `data-photo-fallback="${escapeHtml(item.image)}"` : ''} alt="${escapeHtml(item.model)}" class="picker-card-img" loading="lazy">
             <span class="picker-price-badge">$${item.price}</span>
-            <span class="picker-provenance-tag">Vector Schematic</span>
+            <span class="picker-provenance-tag">${photo ? 'Photo' : 'Vector Schematic'}</span>
           </div>
           <div class="picker-card-body">
             <span class="picker-card-brand">${escapeHtml(item.brand)}</span>
             <h4 class="picker-card-title">${escapeHtml(item.model)}</h4>
             <p class="picker-card-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
+            ${photo ? productPhotoCredit(item) : ''}
             <div class="picker-specs-list">
               ${item.channels ? `<span>${item.channels} Channels</span>` : ''}
               ${item.master_outputs ? `<span>Outputs: ${item.master_outputs.join(", ")}</span>` : ''}
               ${item.inputs ? `<span>Inputs: ${item.inputs.join(", ")}</span>` : ''}
-              ${item.software_unlocks ? `<span>Unlocks: ${item.software_unlocks.join(", ")}</span>` : ''}
+              ${item.software_unlocks ? `<span>Included / unlocked: ${escapeHtml(item.software_unlocks.join(", "))}</span>` : ''}
+              ${item.software_support ? `<span>Other compatible apps (check license): ${escapeHtml(item.software_support.join(", "))}</span>` : ''}
             </div>
           </div>
           <div class="picker-card-footer">
@@ -1621,7 +1820,9 @@
                 ${item.master_outputs ? `<div class="insp-row"><span>Master Outputs:</span><strong>${item.master_outputs.join(", ")}</strong></div>` : ''}
                 ${item.inputs ? `<div class="insp-row"><span>Audio Inputs:</span><strong>${item.inputs.join(", ")}</strong></div>` : ''}
                 ${item.headphone_jack ? `<div class="insp-row"><span>Headphone Jack:</span><strong>${item.headphone_jack}</strong></div>` : ''}
-                ${item.software_unlocks ? `<div class="insp-row"><span>Software Unlocks:</span><strong>${item.software_unlocks.join(", ")}</strong></div>` : ''}
+                ${item.software_unlocks ? `<div class="insp-row"><span>Included / hardware-unlocked:</span><strong>${escapeHtml(item.software_unlocks.join(", "))}</strong></div>` : ''}
+                ${item.software_support ? `<div class="insp-row"><span>Other compatible apps (check license):</span><strong>${escapeHtml(item.software_support.join(", "))}</strong></div>` : ''}
+                ${item.software_notes ? `<div class="insp-row"><span>License and compatibility notes:</span><strong>${escapeHtml(item.software_notes)}</strong></div>` : ''}
                 ${item.driver_mm ? `<div class="insp-row"><span>Driver Size:</span><strong>${item.driver_mm} mm</strong></div>` : ''}
                 ${item.impedance_ohm ? `<div class="insp-row"><span>Impedance:</span><strong>${item.impedance_ohm} Ω</strong></div>` : ''}
                 ${item.driver_size ? `<div class="insp-row"><span>Woofer / Driver:</span><strong>${item.driver_size}</strong></div>` : ''}
@@ -1643,21 +1844,38 @@
 
   function openExportModal() {
     var stats = calculateRigStats();
-    var shareUrl = window.location.href;
+    // First-load and local-storage rigs may never have been edited. Persist
+    // the CURRENT state before copying a link; do not export the bare page
+    // or an old rig URL as if it contained this shopping list.
+    var canShare = saveActiveState();
+    var shareUrl = canShare ? window.location.href : "";
 
-    var redditMarkdown = `**[${currentRig.name}](${shareUrl})**\n\n` +
-      `| Category | Equipment | Price |\n` +
-      `| :--- | :--- | :--- |\n` +
+    var retailerOrderNotes = currentRig.items.map(function (slot) {
+      var item = getSlotItem(slot);
+      return item && !slot.owned && item.no_purchase !== true
+        ? exactRetailUnitOrderNote(item, slot.qty || 1) : "";
+    }).filter(Boolean);
+
+    var redditMarkdown = (canShare ? `**[${currentRig.name}](${shareUrl})**\n\n` : `**${currentRig.name}**\n\n`) +
+      `| Category | Equipment | Qty | Status | Unit USD | Line USD | To buy USD |\n` +
+      `| :--- | :--- | ---: | :--- | ---: | ---: | ---: |\n` +
       currentRig.items.map(function (s) {
         var it = getSlotItem(s);
         if (!it) return "";
-        var status = s.owned ? "*(Already Owned)*" : "";
-        return `| **${s.category.toUpperCase()}** | ${it.brand} ${it.model} ${status} | $${it.price * (s.qty || 1)} |`;
+        var qty = s.qty || 1;
+        var owned = Boolean(s.owned || it.no_purchase === true);
+        var lineValue = it.price * qty;
+        var status = it.no_purchase === true ? "Existing device / mode (verify)" : (owned ? "Already owned" : "Need to buy");
+        return `| **${s.category.toUpperCase()}** | ${it.brand} ${it.model} | ${qty} | ${status} | ${it.price.toLocaleString("en-US")} | ${lineValue.toLocaleString("en-US")} | ${(owned ? 0 : lineValue).toLocaleString("en-US")} |`;
       }).filter(Boolean).join("\n") +
       `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
       `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
-      `* **Actual Out-of-Pocket Spend:** **$${stats.purchaseCost.toLocaleString()}**\n\n` +
-      `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`;
+      `* **Actual Out-of-Pocket Spend:** **` + "$" + stats.purchaseCost.toLocaleString() + `**\n\n` +
+      (retailerOrderNotes.length ? "**Exact-retailer checkout quantities**\n" +
+        retailerOrderNotes.map(function (note) { return "* " + note; }).join("\n") + "\n\n" : "") +
+      (canShare
+        ? `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`
+        : "*Generated with Offbeat DJ Rig Architect. This build exceeds the share-link limit; save it locally or reduce its size.*");
 
     var modalHtml = `
       <div class="picker-backdrop" data-action="close-modal">
@@ -1685,10 +1903,10 @@
           </div>
 
           <div class="export-tab-pane" id="pane-link" hidden>
-            <p class="export-help">Direct link to load your exact equipment and ownership selections:</p>
-            <input type="text" class="export-input-url" id="link-export-box" value="${escapeHtml(shareUrl)}" readonly>
+            <p class="export-help">${canShare ? "Direct link to load your exact equipment and ownership selections:" : "This build exceeds the share-link limit. Save it locally or reduce its size; no exact share link is available."}</p>
+            <input type="text" class="export-input-url" id="link-export-box" value="${escapeHtml(shareUrl)}" readonly ${canShare ? "" : "disabled"}>
             <div class="export-pane-footer">
-              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-share-url">🔗 Copy Link to Clipboard</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="copy-share-url" ${canShare ? "" : "disabled"}>🔗 Copy Link to Clipboard</button>
             </div>
           </div>
 
@@ -1727,42 +1945,50 @@
   function drawRigCanvas() {
     var canvas = document.getElementById("rig-export-canvas");
     if (!canvas) return;
-    var ctx = canvas.getContext("2d");
     var stats = calculateRigStats();
+    var lines = currentRig.items.map(function (slot) {
+      var item = getSlotItem(slot);
+      return item ? { slot: slot, item: item } : null;
+    }).filter(Boolean);
 
-    // Background Gradient
-    var bgGrad = ctx.createLinearGradient(0, 0, 800, 480);
+    // The PNG is a shopping-plan export, not a six-item teaser. The previous
+    // fixed 480px card silently omitted every item after line six while still
+    // displaying the FULL spend total. Expand to show all 24 permitted lines.
+    var rows = Math.max(3, Math.ceil(lines.length / 2));
+    var rowGap = 64;
+    var height = Math.max(480, 184 + rows * rowGap + 72);
+    canvas.width = 800;
+    canvas.height = height;
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    var bgGrad = ctx.createLinearGradient(0, 0, 800, height);
     bgGrad.addColorStop(0, "#0c0b14");
     bgGrad.addColorStop(0.6, "#141224");
     bgGrad.addColorStop(1, "#07070c");
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 800, 480);
+    ctx.fillRect(0, 0, 800, height);
 
-    // Accent Border
     ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
     ctx.lineWidth = 4;
-    ctx.strokeRect(12, 12, 776, 456);
+    ctx.strokeRect(12, 12, 776, height - 24);
 
-    // Header Glow
     ctx.fillStyle = "#a78bfa";
     ctx.font = "bold 14px 'Syne', system-ui, sans-serif";
-    ctx.fillText("OFFBEAT. MY DJ RIG ARCHITECT (2026)", 36, 50);
+    ctx.fillText("OFFBEAT. MY DJ RIG ARCHITECT (2026)", 36, 50, 728);
 
-    // Title
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 26px 'Syne', system-ui, sans-serif";
-    ctx.fillText(currentRig.name, 36, 88);
+    ctx.fillText(currentRig.name, 36, 88, 728);
 
-    // Price Badges
     ctx.fillStyle = "#38bdf8";
     ctx.font = "bold 18px system-ui, sans-serif";
-    ctx.fillText("Spend: $" + stats.purchaseCost.toLocaleString(), 36, 122);
+    ctx.fillText("Spend: $" + stats.purchaseCost.toLocaleString(), 36, 122, 165);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "14px system-ui, sans-serif";
-    ctx.fillText("(Valuation: $" + stats.totalValue.toLocaleString() + " · Saved: -$" + stats.ownedValue.toLocaleString() + ")", 210, 122);
+    ctx.fillText("(Valuation: $" + stats.totalValue.toLocaleString() + " · Saved: -$" + stats.ownedValue.toLocaleString() + ")", 210, 122, 555);
 
-    // Separator line
     ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -1770,35 +1996,34 @@
     ctx.lineTo(764, 142);
     ctx.stroke();
 
-    // Gear List Grid
-    var yPos = 176;
-    currentRig.items.forEach(function (slot, idx) {
-      var it = getSlotItem(slot);
-      if (!it || idx > 5) return;
+    lines.forEach(function (entry, idx) {
+      var slot = entry.slot;
+      var item = entry.item;
+      var qty = slot.qty || 1;
+      var lineTotal = item.price * qty;
+      var col = idx < rows ? 36 : 410;
+      var rowY = 176 + (idx % rows) * rowGap;
 
-      var col = idx < 3 ? 36 : 410;
-      var rowY = yPos + (idx % 3) * 80;
-
-      // Role tag
       ctx.fillStyle = "#a78bfa";
       ctx.font = "bold 11px system-ui, sans-serif";
-      ctx.fillText(slot.category.toUpperCase(), col, rowY);
+      ctx.fillText(slot.category.toUpperCase() + " · " + qty + (qty === 1 ? " UNIT" : " UNITS"), col, rowY, 325);
 
-      // Model name
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 16px system-ui, sans-serif";
-      ctx.fillText(it.brand + " " + it.model, col, rowY + 22);
+      ctx.fillText(item.brand + " " + item.model, col, rowY + 22, 325);
 
-      // Price & status
       ctx.fillStyle = slot.owned ? "#4ade80" : "#cbd5e1";
       ctx.font = "13px system-ui, sans-serif";
-      ctx.fillText((slot.owned ? "✓ Owned ($0 out of pocket)" : "$" + (it.price * (slot.qty || 1))), col, rowY + 42);
+      ctx.fillText(slot.owned
+        ? "Owned · $0 to buy (value $" + lineTotal.toLocaleString() + ")"
+        : "To buy: $" + lineTotal.toLocaleString(), col, rowY + 42, 325);
     });
 
-    // Watermark Footer
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = "#94a3b8";
     ctx.font = "12px system-ui, sans-serif";
-    ctx.fillText("offbeatinc.com/build-your-dj-setup.html", 36, 442);
+    ctx.fillText("All " + lines.length + " equipment lines shown · Prices are estimates", 36, height - 42, 728);
+    ctx.fillStyle = "#64748b";
+    ctx.fillText("offbeatinc.com/build-your-dj-setup.html", 36, height - 24, 728);
   }
 
   function downloadCanvasImage() {
@@ -1911,7 +2136,7 @@
         role: role,
         itemId: itId,
         qty: 1,
-        owned: itId === "existing-mobile-device"
+        owned: Boolean(it && it.no_purchase === true)
       });
     });
     return items;
@@ -1982,7 +2207,15 @@
 
   /* ------------------------------------------------------------- Actions */
   function setupGlobalListeners() {
+    document.addEventListener("error", function (e) {
+      var image = e.target;
+      if (image && image.dataset && image.dataset.photoFallback) {
+        image.src = image.dataset.photoFallback;
+        delete image.dataset.photoFallback;
+      }
+    }, true);
     document.addEventListener("click", function (e) {
+      if (e.target.closest(".rig-photo-credit a")) return;
       // 1. Modal backdrop close
       if (e.target.classList.contains("picker-backdrop")) {
         closeModal();
@@ -2018,14 +2251,17 @@
             if (!replaceSlotItem(targetSlot, itemId)) return;
             if (role) targetSlot.role = role;
           } else {
-            currentRig.items.push({
+            if (!appendRigSlot({
               slotId: activeModalSlotId,
               category: activeModalCategory,
               role: role,
               itemId: itemId,
-              qty: (pickedItem && pickedItem.id === "yamaha-hs5") ? 1 : 1,
+              qty: 1,
               owned: false
-            });
+            })) {
+              alert("This rig already has 24 equipment lines. Remove a line before adding another component.");
+              return;
+            }
           }
           activeModalSpeakerRole = null;
           playClickSfx("select");
@@ -2073,7 +2309,7 @@
         var sToStep = currentRig.items.find(function (s) { return s.slotId === stepSlotId; });
         if (sToStep) {
           var newQ = (sToStep.qty || 1) + stepVal;
-          if (newQ >= 1 && newQ <= 4) {
+          if (newQ >= 1 && newQ <= 8) {
             sToStep.qty = newQ;
             playClickSfx("toggle");
             saveActiveState();
@@ -2090,16 +2326,12 @@
       } else if (action === "copy-reddit-md") {
         var redBox = document.getElementById("reddit-export-box");
         if (redBox) {
-          navigator.clipboard.writeText(redBox.value).then(function () {
-            alert("✓ Reddit Markdown copied to clipboard!");
-          });
+          copyTextWithFallback(redBox.value, "Reddit Markdown copied to clipboard!", "Copy your Reddit Markdown below:");
         }
       } else if (action === "copy-share-url") {
         var linkBox = document.getElementById("link-export-box");
-        if (linkBox) {
-          navigator.clipboard.writeText(linkBox.value).then(function () {
-            alert("✓ Shareable link copied to clipboard!");
-          });
+        if (linkBox && !linkBox.disabled && linkBox.value) {
+          copyTextWithFallback(linkBox.value, "Shareable link copied to clipboard!", "Copy your exact rig share link below:");
         }
       } else if (action === "download-canvas-image") {
         downloadCanvasImage();
@@ -2124,29 +2356,12 @@
         }
       } else if (action === "auto-fix-cable") {
         var cableId = btn.getAttribute("data-cable-id");
-        var cableItem = getItem(cableId);
-        if (cableItem && cableItem.category === "cables") {
-          // If this cable is already in the rig, but a secondary line needs an additional lead, increment qty
-          var existingCableSlot = currentRig.items.find(function (s) { return s.itemId === cableId; });
-          if (existingCableSlot) {
-            existingCableSlot.qty = (existingCableSlot.qty || 1) + 1;
-          } else {
-            var newSlotId = "auto-cable-" + Date.now();
-            var suffix = 0;
-            while (currentRig.items.some(function (s) { return s.slotId === newSlotId; })) {
-              newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
-            }
-            currentRig.items.push({
-              slotId: newSlotId,
-              category: "cables",
-              itemId: cableId,
-              qty: 1,
-              owned: false
-            });
-          }
+        if (addRequiredCableToRig(cableId)) {
           playClickSfx("select");
           saveActiveState();
           renderApp();
+        } else {
+          alert("Cannot add another cable: check the catalog and the 24-item rig limit before purchasing.");
         }
       } else if (action === "auto-fix-slot") {
         var fixSlotId = btn.getAttribute("data-slot-id");
@@ -2157,13 +2372,16 @@
         } else {
           var fixItem = getItem(fixItemId);
           if (fixItem) {
-            currentRig.items.push({
+            if (!appendRigSlot({
               slotId: fixSlotId,
               category: fixItem.category,
               itemId: fixItemId,
               qty: 1,
               owned: false
-            });
+            })) {
+              alert("This rig already has 24 equipment lines. Remove a line before applying this fix.");
+              return;
+            }
           }
         }
         playClickSfx("select");
@@ -2257,7 +2475,37 @@
     loadPresetData(CATALOG.presets[randomIdx]);
   }
 
-  function copyChecklistToClipboard() {
+  // A purchased cable pack and an already-owned cable pack are different
+  // inventory. Never increase the owned quantity to satisfy a missing route:
+  // that would show a green connection while omitting the extra purchase.
+  function addRequiredCableToRig(cableId) {
+    var cableItem = getItem(cableId);
+    if (!cableItem || cableItem.category !== "cables") return false;
+    var toBuy = currentRig.items.find(function (slot) {
+      return slot.category === "cables" && slot.itemId === cableId &&
+        !slot.owned && (slot.qty || 1) < 8;
+    });
+    if (toBuy) {
+      toBuy.qty = (toBuy.qty || 1) + 1;
+      return true;
+    }
+    // An owned pack, or an unowned pack already at quantity eight, cannot
+    // absorb a new purchase. Keep the new units explicitly unowned.
+    if (currentRig.items.length >= 24) return false;
+    var newSlotId = "auto-cable-" + Date.now();
+    var suffix = 0;
+    while (currentRig.items.some(function (slot) { return slot.slotId === newSlotId; })) {
+      newSlotId = "auto-cable-" + Date.now() + "-" + (++suffix);
+    }
+    return appendRigSlot({
+      slotId: newSlotId, category: "cables", itemId: cableId, qty: 1, owned: false
+    });
+  }
+
+  // Build the text from the same exact current state used by Share/Export.
+  // The clipboard must never advertise a bare or stale ?rig= link.
+  function buildShoppingChecklistText() {
+    var canShare = saveActiveState();
     var stats = calculateRigStats();
     var lines = [
       "=========================================",
@@ -2273,6 +2521,10 @@
         var qty = slot.qty || 1;
         var statusStr = item.no_purchase === true ? "[EXISTING DEVICE / MODE — VERIFY]" : slot.owned ? "[ALREADY OWNED]" : "[NEED TO BUY]";
         lines.push(statusStr + " (" + qty + "x) " + item.brand + " " + item.model + " - $" + (item.price * qty));
+        if (!slot.owned && item.no_purchase !== true) {
+          var unitNote = exactRetailUnitOrderNote(item, qty);
+          if (unitNote) lines.push("    RETAILER UNIT WARNING: " + unitNote);
+        }
       }
     });
 
@@ -2281,14 +2533,39 @@
     lines.push("Owned Gear Savings: -$" + stats.ownedValue.toLocaleString());
     lines.push("Total Out-of-Pocket Spend: $" + stats.purchaseCost.toLocaleString());
     lines.push("");
-    lines.push("Plan and customize your DJ rig on Offbeat: " + window.location.href);
+    if (canShare) {
+      lines.push("Plan and customize your DJ rig on Offbeat: " + window.location.href);
+    } else {
+      lines.push("Exact share link unavailable for this build; save it locally or reduce its size before sharing.");
+    }
+    return lines.join("\n");
+  }
 
-    var text = lines.join("\n");
-    navigator.clipboard.writeText(text).then(function () {
-      alert("✓ Shopping checklist copied to clipboard!");
-    }).catch(function () {
-      prompt("Copy your shopping checklist below:", text);
-    });
+  // Clipboard writes are unavailable in some browser/privacy contexts and
+  // can reject even on HTTPS. Every export must still expose the EXACT
+  // current content for manual copying, never silently fail or substitute a
+  // stale share URL. Handle missing API, synchronous throws and rejections.
+  function copyTextWithFallback(text, successMessage, fallbackMessage) {
+    var manualCopy = function () { window.prompt(fallbackMessage, text); };
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        manualCopy();
+        return;
+      }
+      Promise.resolve(navigator.clipboard.writeText(text)).then(function () {
+        window.alert(successMessage);
+      }, manualCopy);
+    } catch (e) {
+      manualCopy();
+    }
+  }
+
+  function copyChecklistToClipboard() {
+    copyTextWithFallback(
+      buildShoppingChecklistText(),
+      "Shopping checklist copied to clipboard!",
+      "Copy your shopping checklist below:"
+    );
   }
 
   function getSavedRigs() {
@@ -2324,7 +2601,9 @@
     });
 
     if (saved.length > 15) saved = saved.slice(0, 15);
-    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
+    // A storage quota/privacy failure must never look like a successful save.
+    // Preserve the current editor and offer the independent share/export path.
+    savedRigWriteFailed = !safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     saveActiveState();
     renderApp();
   }
@@ -2342,7 +2621,7 @@
   function deleteSavedRig(index) {
     var saved = getSavedRigs();
     saved.splice(index, 1);
-    safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
+    savedRigWriteFailed = !safeStorageSet("offbeat.rigs.saved", JSON.stringify(saved));
     renderApp();
   }
 
@@ -2354,6 +2633,18 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  // One planned route can consume multiple stereo output pairs (for example,
+  // three or four independent PA cabinets). Reserve every pair, not just one,
+  // before considering the next speaker line. An unresolved route reserves none.
+  function reservePlannedOutputs(plan, usedOutputs) {
+    if (!plan || !plan.output || plan.conflict || plan.kind === "unresolved" || plan.kind === "unknown") return;
+    var connector = plan.output.connector;
+    var count = Math.max(1, Math.round(Number(plan.outputsNeeded) || 1));
+    usedOutputs[connector] = (usedOutputs[connector] || 0) + count;
+    if (!usedOutputs.claimed) usedOutputs.claimed = [];
+    usedOutputs.claimed.push(plan.output);
   }
 
   function computeAllRigConnections() {
@@ -2377,11 +2668,7 @@
       var item = getSlotItem(s);
       if (!item) return null;
       var plan = OffbeatGear.connectionPlan(CATALOG, ctrlItem, item, s.qty || 1, { usedOutputs: usedOutputs });
-      if (plan && plan.output) {
-        usedOutputs[plan.output.connector] = (usedOutputs[plan.output.connector] || 0) + 1;
-        if (!usedOutputs.claimed) usedOutputs.claimed = [];
-        usedOutputs.claimed.push(plan.output);
-      }
+      reservePlannedOutputs(plan, usedOutputs);
       return {
         speakerId: item.id,
         slotId: s.slotId,
@@ -2421,58 +2708,56 @@
       };
     },
     shareUrl: function () {
-      var serialized = JSON.stringify(currentRig);
-      var encoded = btoa(encodeURIComponent(serialized));
-      return window.location.origin + window.location.pathname + "?rig=" + encodeURIComponent(encoded);
+      // Use the same bounded, compact-capable exporter as the visible Share
+      // dialog. A full 24-line rig may exceed the 8192-character import guard;
+      // never hand other site integrations a link that cannot be restored.
+      // An unshareable rig has no exact URL, rather than a stale or partial one.
+      return saveActiveState() ? window.location.href : null;
     },
     checks: function () {
-      var stats = calculateRigStats();
       var checks = [];
       var ctrl = findSlot("controllers");
       var ctrlItem = ctrl ? getSlotItem(ctrl) : null;
-      if (ctrlItem && (/prime|sc6000|standalone|xdj/i.test(ctrlItem.id) || ctrlItem.is_standalone)) {
-        checks.push({ key: "host", level: "ok", title: "Standalone Playback", note: ctrlItem.brand + " " + ctrlItem.model + " runs its own playback without a computer." });
+      var host = findSlot("laptops");
+      var hostItem = host ? getSlotItem(host) : null;
+      if (!ctrlItem) {
+        checks.push({ key: "host", level: "warn", title: "Controller Required", note: "No DJ playback or mixing system is selected." });
+      } else if (ctrlItem.standalone) {
+        checks.push({ key: "host", level: "ok", title: "Standalone Capability Listed", note: "Confirm media, firmware and supported playback before performing." });
+      } else if (!hostItem || hostItem.id === "standalone-usb-only") {
+        checks.push({ key: "host", level: "warn", title: "Host Computer Required", note: "This controller cannot play tracks without a compatible host and DJ software." });
+      } else if (hostItem.host_type === "mobile") {
+        // The public read-only check must agree with the actual buying verdict,
+        // not label an unsupported phone route as merely "unverified".
+        var mobileVerdict = runDeepCompatibilityChecks();
+        var mobileCheck = mobileVerdict.checks.find(function (check) {
+          return /Mobile Host Not Verified|Mobile Host, USB|FLX2 Mobile Host|GRV6 Mobile|Numark Mobile/.test(check.title);
+        });
+        checks.push({
+          key: "host",
+          level: mobileCheck && mobileCheck.type === "error" ? "bad" : "warn",
+          title: mobileCheck ? mobileCheck.title : "Mobile host: verify app, power and audio",
+          note: mobileCheck ? mobileCheck.desc : "Confirm mobile app, device, power and audio before purchasing."
+        });
       } else {
-        checks.push({ key: "host", level: "ok", title: "Host Computer Connected", note: "Controller connected to host device." });
+        checks.push({ key: "host", level: "warn", title: "Host Compatibility Needs Verification", note: "A host is listed, not physically connected or software-verified. Confirm device, licensing, USB audio and power." });
       }
-      var spk = findSlot("speakers");
-      var sItem = spk ? getSlotItem(spk) : null;
-      var spkPlan = (ctrlItem && sItem && typeof OffbeatGear !== "undefined" && OffbeatGear.connectionPlan)
-        ? OffbeatGear.connectionPlan(CATALOG, ctrlItem, sItem, (spk ? spk.qty : 1) || 1)
-        : null;
-      var cablesOk = spkPlan && spkPlan.kind !== "unresolved";
-      if (cablesOk) {
-        checks.push({ key: "cables", level: "ok", title: "Cables Verified", note: "Audio routing cleanly matched for " + (sItem ? sItem.model : "speakers") + " and " + (ctrlItem ? ctrlItem.model : "controller") });
+      var speakers = currentRig.items.filter(function (s) { return s.category === "speakers"; });
+      if (!speakers.length) {
+        checks.push({ key: "cables", level: "warn", title: "No Speaker Route Selected", note: "Headphone-only practice is possible; no speaker cabling has been established." });
+      } else if (areAllSpeakerRoutesConfirmed()) {
+        checks.push({ key: "cables", level: "ok", title: "Speaker Cable Routes Planned", note: "Included or selected cable quantities cover the modeled routes; verify physical connections before use." });
       } else {
-        checks.push({ key: "cables", level: "warn", title: "Routing Review Needed", note: "Check connections" });
+        checks.push({ key: "cables", level: "warn", title: "Speaker Cable Routes Need Review", note: "At least one route has missing cable packs, unsupported connectors or conflicting hardware outputs." });
       }
       return checks;
     },
     shoppingList: function () {
-      var conns = computeAllRigConnections();
-      var cableMap = {};
-      conns.forEach(function (p) {
-        if (p.kind === "product" && p.itemId) {
-          var cItem = getItem(p.itemId);
-          var price = cItem ? cItem.price : 28;
-          var units = p.units || 1;
-          if (!cableMap[p.itemId]) {
-            cableMap[p.itemId] = { itemId: p.itemId, name: cItem ? cItem.model : p.itemId, price: price, qty: 0, lineTotal: 0 };
-          }
-          cableMap[p.itemId].qty += units;
-          cableMap[p.itemId].lineTotal += (units * price);
-        }
-      });
-      var out = currentRig.items.map(function (s) {
+      return currentRig.items.map(function (s) {
         var it = getSlotItem(s);
         if (!it || s.owned || it.no_purchase) return null;
-        if (s.category === "cables" && cableMap[s.itemId]) return null;
         return { itemId: it.id, name: it.brand + " " + it.model, price: it.price, qty: s.qty || 1, lineTotal: it.price * (s.qty || 1) };
       }).filter(Boolean);
-      Object.keys(cableMap).forEach(function (k) {
-        out.push(cableMap[k]);
-      });
-      return out;
     },
     connections: computeAllRigConnections,
     speakers: function () {

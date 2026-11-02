@@ -1456,3 +1456,68 @@
   .rig-secondary > section, .rig-secondary > .booth-cables-hub, .rig-secondary .rig-compat-section { margin:8px; }
 }
 .visual-critical { margin:0 4px 12px; color:#ffc4b9; font-weight:700; }
+
+/* The diagram is a plan, not a depiction of live audio. Lines animate only
+   when the catalogue has a confirmed route and all its leads are in the plan. */
+.visual-stage { position:relative; isolation:isolate; overflow:hidden; }
+.visual-stage::before { content:""; position:absolute; z-index:-1; left:14%; right:14%; top:48%; height:26%; background:linear-gradient(180deg,#27233a,#141421); border:1px solid #ffffff12; border-radius:50% 50% 12px 12px; transform:perspective(400px) rotateX(30deg); }
+.visual-wiring { position:absolute; z-index:-1; inset:40px 0 auto; width:100%; height:220px; overflow:visible; pointer-events:none; }
+.visual-wire { fill:none; stroke:#77738a; stroke-width:3; stroke-dasharray:7 8; opacity:.55; vector-effect:non-scaling-stroke; }
+.visual-wire.is-planned { stroke:#7cdec8; opacity:.8; animation:rig-signal 1.8s linear infinite; }
+@keyframes rig-signal { to { stroke-dashoffset:-30; } }
+.visual-equipment { position:relative; }
+.visual-port-status { font-size:.7rem; color:#c3bdd1; }
+.visual-pick { border-color:#ffffff1c; background:#161522a8; transition:border-color .18s, background .18s, transform .18s; }
+.visual-pick:hover, .visual-pick:focus-visible { transform:translateY(-3px); background:#2d2843e8; box-shadow:0 8px 22px #0005; }
+.visual-pick:focus-visible { outline:2px solid #b9a7ff; outline-offset:2px; }
+.visual-controller .visual-pick { background:#201b30d9; }
+.visual-controller .visual-pick img { filter:drop-shadow(0 12px 9px #0009); }
+.visual-monitor .visual-pick img, .visual-pa .visual-pick img { filter:drop-shadow(0 10px 7px #0009); }
+@media (max-width:700px) {
+  .visual-wiring { display:none; }
+  .visual-stage::before { left:5%; right:5%; top:22%; height:45%; }
+  .visual-pick:hover, .visual-pick:focus-visible { transform:none; }
+}
+@media (prefers-reduced-motion:reduce) { .visual-wire.is-planned { animation:none; } .visual-pick { transition:none; } }
+@media (max-width:700px) {
+  .visual-headphones, .visual-host { gap:5px; }
+  .visual-headphones .visual-pick, .visual-host .visual-pick { min-width:0; text-align:left; }
+  .visual-headphones .visual-pick strong, .visual-host .visual-pick strong { flex:1; min-width:0; font-size:.8rem; }
+  .visual-headphones .visual-pick > span:last-child, .visual-host .visual-pick > span:last-child { white-space:nowrap; font-size:.7rem; }
+  .visual-headphones .visual-own, .visual-host .visual-own { flex:none; font-size:.72rem; padding:6px 8px; }
+}
+/* Keep picker results at their natural height inside the scrollable dialog. */
+.page-rig .picker-grid { min-height:0; align-content:start; grid-auto-rows:max-content; }
+.page-rig .picker-card-img-wrap { flex:none; }
+.page-rig .picker-card-img { object-fit:contain; }
+@media (max-width:700px) {
+  .page-rig .picker-grid { padding:12px; gap:10px; grid-template-columns:minmax(0,1fr); }
+  .page-rig .picker-card { display:grid; grid-template-columns:90px minmax(0,1fr); }
+  .page-rig .picker-card-img-wrap { height:110px; }
+  .page-rig .picker-card-body { padding:10px; }
+  .page-rig .picker-card-tagline { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; margin-bottom:4px; }
+  .page-rig .picker-specs-list { display:none; }
+  .page-rig .picker-card-footer { grid-column:1 / -1; padding:8px; gap:8px; }
+  .page-rig .picker-price-badge { right:3px; bottom:3px; font-size:.7rem; }
+  .page-rig .picker-provenance-tag { display:none; }
+}
+/* Product photos remain credited beside each appearance, with room for the
+   compact selector layout. Source artwork is never stretched or upscaled. */
+.rig-photo-credit { display:block; color:#c2c6d3; font-size:.65rem; line-height:1.35; }
+.rig-photo-credit a { color:#b9dfff; text-decoration:underline; }
+.visual-equipment > .rig-photo-credit { max-width:95%; }
+.visual-pick img[data-photo-fallback] { border-radius:8px; }
+.picker-card-body .rig-photo-credit { margin:0 0 .5rem; }
+@media (max-width:700px) {
+  .visual-headphones, .visual-host { flex-wrap:wrap; }
+  .visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }
+  .page-rig .picker-card-body .rig-photo-credit { grid-column:1 / -1; }
+}
+
+/* Arena A round 7: keep the secondary picker and its separate ownership
+   control within the booth column; photo attribution remains below both. */
+.visual-headphones .visual-pick, .visual-host .visual-pick { flex-wrap:wrap; min-width:0; }
+.visual-headphones .visual-pick strong, .visual-host .visual-pick strong { flex:1 1 5rem; min-width:0; overflow-wrap:anywhere; }
+.visual-headphones .visual-pick > span:last-child, .visual-host .visual-pick > span:last-child { min-width:0; overflow-wrap:anywhere; }
+.visual-headphones, .visual-host { flex-wrap:wrap; }
+.visual-headphones > .rig-photo-credit, .visual-host > .rig-photo-credit { flex-basis:100%; order:3; }

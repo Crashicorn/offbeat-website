@@ -11,7 +11,7 @@ const source = fs.readFileSync(path.join(__dirname, "../assets/rig-builder.js"),
 const hook = "  /* ---------------------------------------------------------------- Start */";
 assert.equal(source.split(hook).length, 2, "test hook must match one startup point");
 
-function harness(storageDisabled) {
+function harness(storageDisabled, withGear = false) {
   const memory = Object.create(null);
   const localStorage = {
     getItem(key) {
@@ -26,8 +26,11 @@ function harness(storageDisabled) {
   let lastUrl = null;
   const window = {
     localStorage,
-    location: { pathname: "/build-your-dj-setup.html", search: "" },
-    history: { replaceState(_state, _title, url) { lastUrl = url; } }
+    location: { pathname: "/build-your-dj-setup.html", search: "", href: "https://offbeatinc.com/build-your-dj-setup.html" },
+    history: { replaceState(_state, _title, url) {
+      lastUrl = url;
+      window.location.href = new URL(url, "https://offbeatinc.com").href;
+    } }
   };
   const document = {
     getElementById() { return {}; },
@@ -38,21 +41,33 @@ function harness(storageDisabled) {
     setCatalog: function (x) { CATALOG = x; },
     sanitizeRigState: sanitizeRigState,
     normalizeRigState: normalizeRigState,
+    wasShareRejected: function () { return sharedRigRejected; },
     parseUrlOrLocalState: parseUrlOrLocalState,
     saveActiveState: saveActiveState,
+    buildShoppingChecklistText: buildShoppingChecklistText,
     getRig: function () { return currentRig; },
     getSavedRigs: getSavedRigs,
     renderSavedRigsList: renderSavedRigsList,
     replaceSlotItem: replaceSlotItem,
     runDeepCompatibilityChecks: runDeepCompatibilityChecks,
+    computeAllRigConnections: computeAllRigConnections,
+    areAllSpeakerRoutesConfirmed: areAllSpeakerRoutesConfirmed,
     calculateRigStats: calculateRigStats,
     presetPriceBadge: presetPriceBadge,
     recommendNextUpgrade: recommendNextUpgrade,
     renderModularTableRow: renderModularTableRow,
-    renderCompareGridContent: renderCompareGridContent
+    renderCompareGridContent: renderCompareGridContent,
+    addRequiredCableToRig: addRequiredCableToRig,
+    appendRigSlot: appendRigSlot
   };
 ` + hook);
-  vm.runInNewContext(injected, { window, document, URLSearchParams, console, atob, btoa });
+  const sandbox = { window, document, URLSearchParams, console, atob, btoa };
+  if (withGear) {
+    const gear = fs.readFileSync(path.join(__dirname, "../assets/gear-connections.js"), "utf8");
+    vm.runInNewContext(gear, sandbox);
+    sandbox.OffbeatGear = window.OffbeatGear;
+  }
+  vm.runInNewContext(injected, sandbox);
   window.__testRig.setCatalog({
     items: [
       { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
@@ -68,11 +83,158 @@ function slot(id = "core-ctrl") {
   return { slotId: id, category: "controllers", itemId: "pioneer-ddj-flx4", qty: 1, owned: false };
 }
 
+test("unavailable zZounds listings cannot masquerade as buy-now links", () => {
+  const { api } = harness(false, true);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const unavailable = catalog.items.filter(item =>
+    item.retailer_destinations && item.retailer_destinations.zzounds &&
+    item.retailer_destinations.zzounds.status === "verified_unavailable");
+  assert.ok(unavailable.length >= 6, "exercise the catalog's known unavailable SKUs");
+  for (const item of unavailable) {
+    const zz = item.retailer_destinations.zzounds;
+    const html = api.renderModularTableRow({
+      slotId: "test-" + item.id, category: item.category, itemId: item.id, qty: 1, owned: false
+    });
+    assert.match(html, /aria-disabled="true" data-status="verified_unavailable"/,
+      item.id + " must display an explicit unavailable state");
+    assert.ok(!html.includes('href="' + zz.url + '"'),
+      item.id + " must not advertise a discontinued SKU as a shopping destination");
+    assert.ok(html.includes('href="' + zz.alternative_url + '"'),
+      item.id + " must offer the catalogued replacement destination");
+    assert.ok(html.includes("Check alternative: " + zz.alternative_name),
+      item.id + " must identify the replacement as an alternative, not the selected model");
+  }
+  const current = catalog.items.find(item => item.id === "pioneer-ddj-flx4");
+  const availableHtml = api.renderModularTableRow({
+    slotId: "core-ctrl", category: current.category, itemId: current.id, qty: 1, owned: false
+  });
+  assert.match(availableHtml, /<a[^>]*class="btn-retail btn-retail--zz"[^>]*>zZounds<\/a>/,
+    "ordinary retailer destinations must remain usable");
+});
+
+test("shopping quantities preserve valid units and reject corrupt explicit counts", () => {
+  const { api } = harness(false);
+  for (const qty of [1, 4, 5, 8]) {
+    const clean = api.sanitizeRigState({ items: [{ ...slot(), qty }] });
+    assert.equal(clean.items[0].qty, qty, "valid quantity " + qty + " must persist");
+  }
+  // A corrupted 8-unit purchase must not become one unit and understate cost.
+  for (const qty of [0, 9, 1000, -1, 1.5, "8", null, NaN]) {
+    assert.equal(api.sanitizeRigState({ items: [{ ...slot(), qty }] }), null,
+      "invalid explicit quantity " + String(qty) + " must reject the entire rig");
+  }
+  const legacy = slot();
+  delete legacy.qty;
+  assert.equal(api.sanitizeRigState({ items: [legacy] }).items[0].qty, 1,
+    "older saved object rigs without a quantity still mean one unit");
+  assert.equal(api.sanitizeRigState({
+    i: [["ctrl", "controllers", "pioneer-ddj-flx4", 100, 0, ""]]
+  }), null, "corrupt compact-share quantities must also reject the entire rig");
+});
+
+test("corrupt quantity in an explicit shared rig cannot substitute unrelated saved gear", () => {
+  const { api, memory, window } = harness(false);
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Unrelated owned equipment",
+    items: [{ ...slot(), qty: 8, owned: true }]
+  });
+  const broken = {
+    name: "Two purchase lines",
+    items: [
+      slot(),
+      { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 100, owned: false }
+    ]
+  };
+  const before = JSON.stringify(api.getRig());
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.wasShareRejected(), true, "a partial shopping list must be visibly rejected");
+  assert.equal(JSON.stringify(api.getRig()), before,
+    "reject the full import without modifying the starter or loading unrelated browser equipment");
+  assert.notEqual(api.getRig().name, "Unrelated owned equipment",
+    "a damaged share must not load the visitor's unrelated saved shopping list");
+});
+
+test("auto-fix purchases extra cable without inventing owned inventory", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  assert.equal(api.normalizeRigState({
+    name: "Owned one XLR pack",
+    items: [
+      slot(),
+      { slotId: "owned-xlr", category: "cables", itemId: "cable-xlr-xlr", qty: 1, owned: true }
+    ]
+  }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  let cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.equal(cables.length, 2, "a new purchase must be a separate slot");
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [1, false]]);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), true);
+  cables = api.getRig().items.filter(s => s.itemId === "cable-xlr-xlr");
+  assert.deepEqual(Array.from(cables, s => [s.qty, s.owned]), [[1, true], [2, false]],
+    "further purchases increment only the unowned cable pack");
+  assert.equal(api.addRequiredCableToRig("pioneer-ddj-flx4"), false,
+    "only catalogued cables can be auto-purchased");
+});
+
+test("auto-fix fails closed at the 24-slot limit instead of faking a cable purchase", () => {
+  const { api } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "cable-xlr-xlr", category: "cables", price: 28 }
+    ],
+    categories: [], presets: []
+  });
+  const items = [slot()];
+  for (let i = 0; i < 23; i++) {
+    items.push({ slotId: "owned-xlr-" + i, category: "cables",
+      itemId: "cable-xlr-xlr", qty: 8, owned: true });
+  }
+  assert.equal(api.normalizeRigState({ items }), true);
+  assert.equal(api.addRequiredCableToRig("cable-xlr-xlr"), false);
+  assert.equal(api.getRig().items.length, 24);
+  assert.ok(api.getRig().items.every(s => s.owned || s.category !== "cables"));
+});
+
+test("live additions stop at 24 lines so saved and shared rigs remain restorable", () => {
+  const { api, window } = harness(false);
+  const items = Array.from({ length: 23 }, (_, i) => slot("deck-" + i));
+  assert.equal(api.normalizeRigState({ name: "Nearly full", items }), true);
+  assert.equal(api.appendRigSlot({
+    slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false
+  }), true, "the 24th line is permitted");
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.appendRigSlot({
+    slotId: "overflow", category: "headphones", itemId: "sennheiser-hd25", qty: 1, owned: false
+  }), false, "the 25th line must be rejected");
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.sanitizeRigState(api.getRig()).items.length, 24,
+    "the live build must remain serializable");
+  api.saveActiveState();
+
+  // A guide-to-planner add link must not silently create a 25th slot either.
+  const full = { name: "Full rig", items: Array.from({ length: 24 }, (_, i) => slot("deck-" + i)) };
+  const encoded = btoa(encodeURIComponent(JSON.stringify(full)));
+  window.location.search = "?add=sennheiser-hd25&rig=" + encodeURIComponent(encoded);
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 24);
+  assert.ok(api.getRig().items.every(s => s.category === "controllers"));
+  assert.equal(api.sanitizeRigState(api.getRig()).items.length, 24);
+});
+
 test("hostile shared identifiers cannot become HTML attributes", () => {
   const { api } = harness(false);
   const rig = api.sanitizeRigState({
     name: "<img src=x onerror=alert(1)>",
-    items: [{ ...slot('x" onmouseover="alert(1)'), qty: 999999, owned: "true" }]
+    items: [{ ...slot('x" onmouseover="alert(1)'), qty: 1, owned: "true" }]
   });
   assert.equal(rig.items[0].slotId, "imported-0");
   assert.equal(rig.items[0].qty, 1);
@@ -86,6 +248,91 @@ test("unknown catalog items, category mismatches and oversized payloads fail clo
   assert.equal(api.sanitizeRigState({ items: [{ ...slot(), category: "headphones" }] }), null);
   assert.equal(api.sanitizeRigState({ items: Array.from({ length: 25 }, () => slot()) }), null);
   assert.equal(api.sanitizeRigState({ items: [] }), null);
+});
+
+test("mixed valid and missing equipment lines reject the entire imported shopping list", () => {
+  const { api } = harness(false);
+  const valid = slot("valid-controller");
+  const missing = { ...slot("retired-controller"), itemId: "no-longer-in-catalog" };
+  assert.equal(api.sanitizeRigState({ name: "Underpriced", items: [valid, missing] }), null);
+  assert.equal(api.sanitizeRigState({ items: [valid, null] }), null);
+  assert.equal(api.sanitizeRigState({ i: [
+    ["valid-controller", "controllers", "pioneer-ddj-flx4", 1, 0, ""],
+    ["retired-controller", "controllers", "no-longer-in-catalog", 1, 0, ""]
+  ] }), null);
+  assert.equal(api.sanitizeRigState({
+    slots: { controllers: "pioneer-ddj-flx4", headphones: "no-longer-in-catalog" }
+  }), null);
+});
+
+test("shared speaker roles fail closed instead of silently changing PA to monitor", () => {
+  const { api, memory, window } = harness(false);
+  api.setCatalog({
+    items: [
+      { id: "pioneer-ddj-flx4", category: "controllers", price: 299 },
+      { id: "studio-monitor", category: "speakers", price: 350,
+        roles_supported: ["dj_monitor"] },
+      { id: "crowd-pa", category: "speakers", price: 650,
+        roles_supported: ["crowd_pa"] }
+    ], categories: [], presets: []
+  });
+  const monitor = { slotId: "speaker", category: "speakers",
+    itemId: "studio-monitor", qty: 2, owned: false };
+  const pa = { slotId: "speaker", category: "speakers",
+    itemId: "crowd-pa", qty: 2, owned: false };
+  assert.equal(api.sanitizeRigState({ items: [{ ...monitor, role: "crowd_pa" }] }), null,
+    "a studio monitor must not silently replace an explicitly requested crowd PA");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "dj_monitor" }] }), null,
+    "a crowd PA must not silently replace an explicitly requested booth monitor");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "unknown" }] }), null,
+    "unknown explicit speaker roles must not become a plausible shopping list");
+  assert.equal(api.sanitizeRigState({ i: [
+    ["speaker", "speakers", "studio-monitor", 2, 0, "crowd_pa"]
+  ] }), null, "compact shared links must enforce the same role contract");
+  assert.equal(api.sanitizeRigState({ items: [{ ...monitor, role: "dj_monitor" }] }).items[0].role,
+    "dj_monitor", "valid explicit monitor roles remain intact");
+  assert.equal(api.sanitizeRigState({ items: [{ ...pa, role: "crowd_pa" }] }).items[0].role,
+    "crowd_pa", "valid explicit PA roles remain intact");
+  assert.equal(api.sanitizeRigState({ items: [monitor] }).items[0].role,
+    "dj_monitor", "older role-free monitor links still restore");
+  assert.equal(api.sanitizeRigState({ items: [pa] }).items[0].role,
+    "crowd_pa", "older role-free PA links still restore");
+
+  memory["offbeat.rig.active"] = JSON.stringify({ items: [pa] });
+  const before = JSON.stringify(api.getRig());
+  const broken = { name: "Misrepresented PA", items: [slot(), { ...monitor, role: "crowd_pa" }] };
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.wasShareRejected(), true, "a mismatched shared PA must be rejected");
+  assert.equal(JSON.stringify(api.getRig()), before,
+    "invalid shared speaker role must not partially load or use unrelated saved gear");
+});
+
+test("invalid explicit share never falls back to unrelated browser equipment", () => {
+  const { api, memory, window } = harness(false);
+  assert.equal(api.normalizeRigState({ name: "Starter", items: [slot()] }), true);
+  memory["offbeat.rig.active"] = JSON.stringify({
+    name: "Unrelated local shopping list",
+    items: [{ slotId: "local-hp", category: "headphones", itemId: "sennheiser-hd25", qty: 2, owned: true }]
+  });
+  const broken = { name: "Incomplete shared build", items: [
+    slot(), { ...slot("missing"), itemId: "no-longer-in-catalog" }
+  ] };
+  const rigParam = encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(broken))));
+  window.location.search = "?rig=" + rigParam;
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Starter");
+  assert.equal(api.getRig().items.length, 1);
+  assert.equal(api.wasShareRejected(), true);
+  window.location.search = "?add=sennheiser-hd25&rig=" + rigParam;
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 1, "broken shared deep link must not add to an unrelated rig");
+  assert.equal(api.wasShareRejected(), true);
+  const valid = { name: "Valid shared build", items: [slot()] };
+  window.location.search = "?rig=" + encodeURIComponent(btoa(encodeURIComponent(JSON.stringify(valid))));
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().name, "Valid shared build");
+  assert.equal(api.wasShareRejected(), false);
 });
 
 test("duplicate IDs are unique and legacy preset links still work", () => {
@@ -139,6 +386,52 @@ test("share links encode base64 plus and restore correctly without local storage
   assert.equal(api.normalizeRigState({ name: "Other", items: [slot()] }), true);
   api.parseUrlOrLocalState();
   assert.equal(api.getRig().name, name);
+});
+
+test("24-line builds use a compact share URL when full JSON exceeds the URL limit", () => {
+  const { api, memory, window, lastUrl } = harness(false);
+  const longItemId = "gear-" + "x".repeat(80);
+  api.setCatalog({ items: [{ id: longItemId, category: "controllers", price: 100 }], categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: ("line-" + index + "-").padEnd(64, "x"),
+    category: "controllers", itemId: longItemId,
+    qty: index % 8 + 1, owned: index % 2 === 0
+  }));
+  assert.equal(api.normalizeRigState({ name: "L".repeat(80), items }), true);
+  api.saveActiveState();
+  const url = lastUrl();
+  assert.equal(window.__rigStudio.shareUrl(), new URL(url, "https://offbeatinc.com").href,
+    "public share API must use the same compact, restorable URL as the export dialog");
+  assert.match(url, /\\?rig=/, "valid 24-line build must remain shareable");
+  const encoded = new URL(url, "https://offbeatinc.com").searchParams.get("rig");
+  const payload = JSON.parse(decodeURIComponent(atob(encoded)));
+  assert.equal(payload.i.length, 24, "large build must use the compact tuple format");
+  assert.equal(payload.i[23][3], 8, "quantity must survive compact encoding");
+  memory["offbeat.rig.active"] = "";
+  window.location.search = new URL(url, "https://offbeatinc.com").search;
+  assert.equal(api.normalizeRigState({ name: "Other", items: [items[0]] }), true);
+  api.parseUrlOrLocalState();
+  assert.equal(api.getRig().items.length, 24);
+  assert.equal(api.getRig().items[23].qty, 8);
+  assert.equal(api.getRig().items[0].owned, true);
+  assert.equal(api.getRig().items[1].owned, false);
+  assert.equal(api.getRig().name, "L".repeat(80));
+});
+
+test("oversized unsendable rigs remove stale share URLs instead of exporting wrong gear", () => {
+  const { api, window, lastUrl } = harness(false);
+  const longItemId = "gear-" + "x".repeat(500);
+  api.setCatalog({ items: [{ id: longItemId, category: "controllers", price: 100 }], categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: ("line-" + index + "-").padEnd(64, "x"),
+    category: "controllers", itemId: longItemId, qty: 1, owned: false
+  }));
+  assert.equal(api.normalizeRigState({ name: "Oversized", items }), true);
+  window.location.search = "?rig=stale-build";
+  assert.equal(window.__rigStudio.shareUrl(), null,
+    "public share API must refuse oversized rigs instead of returning an unimportable URL");
+  assert.equal(lastUrl(), "/build-your-dj-setup.html", "stale rig URL must be cleared");
+  assert.equal(api.getRig().items.length, 24, "active gear must remain intact");
 });
 
 test("guide add of an existing secondary controller preserves the whole shared rig", () => {
@@ -465,6 +758,83 @@ test("FLX4 and FLX2 mobile routes are conditional; unsupported controllers fail 
   assert.ok(other.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
 });
 
+// Numark's published mobile support is real, but Bluetooth MIDI never carries
+// audio through these controllers. Both models must remain conditional rather
+// than being rejected or incorrectly marked as cable-ready.
+test("Numark mobile djay routes are conditional and disclose disabled Bluetooth audio", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = { name: "Numark phone route", items: [
+    { slotId: "ctrl", category: "controllers", itemId: "numark-mixtrack-go", qty: 1 },
+    { slotId: "hp", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+    { slotId: "host", category: "laptops", itemId: "existing-mobile-device", qty: 1, owned: true }
+  ] };
+  for (const controllerId of ["numark-mixtrack-go", "numark-party-mix-3"]) {
+    rig.items[0].itemId = controllerId;
+    assert.equal(api.normalizeRigState(rig), true);
+    const verdict = api.runDeepCompatibilityChecks();
+    assert.equal(verdict.fatalErrors, 0, controllerId + " is officially mobile-compatible");
+    assert.ok(verdict.warnings > 0, "conditional audio/power cannot be declared fully verified");
+    const note = verdict.checks.find(c => c.title === "Numark Mobile: USB-C vs Bluetooth Audio Routing");
+    assert.ok(note && note.type === "warning", "visible Numark mobile warning required");
+    assert.match(note.desc, /djay on compatible iOS\/Android/);
+    assert.match(note.desc, /Bluetooth MIDI disables.*master AND headphone audio outputs/);
+    assert.match(note.desc, /5V\/500mA/);
+    assert.match(note.desc, /phone\/tablet instead/);
+    assert.ok(!verdict.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+  }
+  rig.items[0].itemId = "pioneer-ddj-flx10";
+  assert.equal(api.normalizeRigState(rig), true);
+  const unsupported = api.runDeepCompatibilityChecks();
+  assert.ok(unsupported.fatalErrors > 0);
+  assert.ok(unsupported.checks.some(c => /Mobile Host Not Verified/.test(c.title)));
+});
+
+test("both existing-phone host IDs use conditional mobile checks, never a fake computer or phone purchase", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const supported = [
+    "pioneer-ddj-flx4", "pioneer-ddj-flx2", "alphatheta-ddj-grv6",
+    "numark-mixtrack-go", "numark-party-mix-3"
+  ];
+  for (const hostId of ["existing-mobile-device", "existing-mobile-app-device"]) {
+    const host = catalog.items.find(item => item.id === hostId);
+    assert.equal(host.host_type, "mobile", hostId + " must be a mobile host in both planners");
+    assert.equal(host.no_purchase, true, hostId + " must not create a phone purchase");
+    for (const controllerId of supported) {
+      const controller = catalog.items.find(item => item.id === controllerId);
+      assert.ok(controller.mobile_support && controller.mobile_app_support.length,
+        controllerId + " needs manufacturer-grounded mobile app metadata");
+      assert.equal(api.normalizeRigState({ items: [
+        { slotId: "c", category: "controllers", itemId: controllerId, qty: 1 },
+        { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+        { slotId: "m", category: "laptops", itemId: hostId, qty: 5, owned: false }
+      ] }), true);
+      const savedHost = api.getRig().items.find(item => item.category === "laptops");
+      assert.equal(savedHost.owned, true);
+      assert.equal(savedHost.qty, 1);
+      const verdict = api.runDeepCompatibilityChecks();
+      assert.equal(verdict.fatalErrors, 0, controllerId + " mobile route must not be falsely rejected");
+      assert.ok(verdict.warnings > 0, "mobile power, app and audio remain conditional");
+      assert.ok(!verdict.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+      assert.equal(api.recommendNextUpgrade(), null, "phone host must not trigger laptop-stand upsell");
+      const row = api.renderModularTableRow(savedHost);
+      assert.match(row, /Existing phone\/tablet \(verify\)/);
+      assert.doesNotMatch(row, /btn-retail/, "already-owned mobile host must have no purchase links");
+    }
+    assert.equal(api.normalizeRigState({ items: [
+      { slotId: "c", category: "controllers", itemId: "pioneer-ddj-flx10", qty: 1 },
+      { slotId: "h", category: "headphones", itemId: "sennheiser-hd25", qty: 1 },
+      { slotId: "m", category: "laptops", itemId: hostId, qty: 1, owned: true }
+    ] }), true);
+    const unsupported = api.runDeepCompatibilityChecks();
+    assert.ok(unsupported.fatalErrors > 0, "unverified mobile controller must fail closed");
+    assert.ok(unsupported.checks.some(check => /Mobile Host Not Verified/.test(check.title)));
+  }
+});
+
 test("all four preset badges equal full current catalog totals", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
@@ -579,6 +949,27 @@ test("mobile wedding preset requires independent microphone input and cable revi
   assert.ok(!withoutMic.checks.some(c => /Microphone Input/.test(c.title)));
 });
 
+test("zero-dollar host placeholders never become purchasable gear on imported rigs", () => {
+  const { api } = harness(false);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  for (const id of ["existing-computer-host", "standalone-usb-only"]) {
+    const item = catalog.items.find(x => x.id === id);
+    assert.equal(item.no_purchase, true, id + " must be a non-purchasable host");
+    assert.equal(api.normalizeRigState({ name: "Untrusted saved rig", items: [
+      { slotId: "host", category: "laptops", itemId: id, qty: 7, owned: false }
+    ] }), true);
+    const saved = api.getRig().items[0];
+    assert.equal(saved.itemId, id);
+    assert.equal(saved.qty, 1, "non-purchasable placeholders must not multiply");
+    assert.equal(saved.owned, true, "a zero-cost placeholder must never become a new purchase");
+    const row = api.renderModularTableRow(saved);
+    assert.match(row, /No laptop purchase/);
+    assert.doesNotMatch(row, /btn-retail|amazon|sweetwater|reverb/,
+      "a placeholder must not generate retailer links");
+  }
+});
+
 test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
   const { api } = harness(false);
   const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
@@ -594,6 +985,9 @@ test("zero-cost standalone mode is not sold as an unrelated USB drive", () => {
     qty: 1, owned: false
   });
   assert.match(realItem, /amazon\.com/);
+  assert.match(realItem, /amazon\.com\/s\?k=[^"]+&amp;tag=offbeatdj-20/,
+    "planner Amazon search handoffs must retain the configured Associates attribution");
+  assert.match(realItem, /rel="nofollow noopener sponsored"/);
   assert.match(realItem, /sweetwater\.com/);
 });
 
@@ -630,16 +1024,18 @@ test("guide add preserves explicit shared rig over unrelated local state", () =>
   assert.equal(rig.items[1].owned, false);
 });
 
-test("corrupt shared rig falls back to valid saved rig during guide add", () => {
+test("corrupt explicit share during guide add fails closed without substituting saved gear", () => {
   const { api, memory, window } = harness(false);
   memory["offbeat.rig.active"] = JSON.stringify({
-    name: "Saved fallback", items: [{ ...slot(), owned: true }]
+    name: "Unrelated saved rig", items: [{ ...slot(), owned: true }]
   });
+  assert.equal(api.normalizeRigState({ name: "Starter", items: [slot()] }), true);
   window.location.search = "?rig=not-base64!&add=sennheiser-hd25";
   api.parseUrlOrLocalState();
-  assert.equal(api.getRig().name, "Saved fallback");
-  assert.equal(api.getRig().items.length, 2);
-  assert.equal(api.getRig().items[0].owned, true);
+  assert.equal(api.getRig().name, "Starter");
+  assert.equal(api.getRig().items.length, 1);
+  assert.equal(api.getRig().items[0].owned, false);
+  assert.equal(api.wasShareRejected(), true);
 });
 
 test("adding an already-selected shared item does not reset owned quantity", () => {
@@ -760,4 +1156,73 @@ test("vendor-qualified GRV6 mobile routing and PRIME 4+ booth sockets", () => {
   const unsupported = api.runDeepCompatibilityChecks();
   assert.ok(unsupported.fatalErrors > 0, "unverified controller mobile route remains fail-closed");
   assert.ok(unsupported.checks.some(check => check.title === "Mobile Host Not Verified for This Controller"));
+});
+
+
+test("multi-cabinet PA consumes every stereo output pair before booth-monitor routing", () => {
+  const { api } = harness(false, true);
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "../assets/dj-gear-catalog.json"), "utf8"));
+  api.setCatalog(catalog);
+  const rig = {
+    name: "PRIME 4+ multiple output routes",
+    items: [
+      { slotId: "deck", category: "controllers", itemId: "denon-prime-4-plus", qty: 1, owned: true },
+      { slotId: "pa", category: "speakers", itemId: "jbl-eon-715", role: "crowd_pa", qty: 3, owned: false },
+      { slotId: "mon", category: "speakers", itemId: "krk-rokit-5-g4", role: "dj_monitor", qty: 4, owned: false },
+      { slotId: "leads", category: "cables", itemId: "cable-xlr-xlr", qty: 4, owned: false }
+    ]
+  };
+  assert.equal(api.normalizeRigState(rig), true);
+  const routes = api.computeAllRigConnections();
+  assert.equal(routes.length, 2);
+  assert.equal(routes[0].speakerId, "jbl-eon-715");
+  assert.equal(routes[0].outputsNeeded, 2, "three PA cabinets consume two stereo output pairs");
+  assert.equal(routes[1].speakerId, "krk-rokit-5-g4");
+  assert.equal(routes[1].outputsNeeded, 2, "four mono monitors also require two stereo pairs");
+  assert.equal(routes[1].conflict, true, "three XLR pairs cannot feed four required pairs");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), false, "four purchased cable packs cannot create a fourth physical output");
+  const checks = api.runDeepCompatibilityChecks().checks;
+  const warning = checks.find(c => /Secondary Speaker Route Cannot Be Fed/.test(c.title));
+  assert.ok(warning, "visible assistant must expose the same output-capacity conflict");
+  assert.doesNotMatch(warning.desc, /only provides one stereo master|lacks an independent booth/i,
+    "PRIME 4+ does have independent booth and zone outputs");
+
+  rig.items[1].qty = 2;
+  rig.items[2].qty = 2;
+  rig.items[3].qty = 2;
+  assert.equal(api.normalizeRigState(rig), true);
+  const smaller = api.computeAllRigConnections();
+  assert.equal(smaller[0].outputsNeeded, 1);
+  assert.equal(smaller[1].outputsNeeded, 1);
+  assert.ok(smaller.every(r => !r.conflict), "two stereo output pairs are routable on PRIME 4+");
+  assert.equal(api.areAllSpeakerRoutesConfirmed(), true, "two selected XLR packs cover the two feasible routes");
+});
+
+test("shopping checklist exports the current rig, never a stale or bare share link", () => {
+  const { api, window, lastUrl } = harness(false, true);
+  assert.equal(api.normalizeRigState({ name: "Owned comparison", items: [{ ...slot(), qty: 2, owned: true }] }), true);
+  // No prior edit or share event: the checklist itself must serialize the rig.
+  const text = api.buildShoppingChecklistText();
+  const link = new URL(lastUrl(), "https://offbeatinc.com");
+  const rigParam = link.searchParams.get("rig");
+  assert.ok(rigParam, "a valid rig gets a share link");
+  const payload = JSON.parse(decodeURIComponent(atob(rigParam)));
+  assert.equal(payload.items[0].qty, 2);
+  assert.equal(payload.items[0].owned, true);
+  assert.ok(text.includes("Plan and customize your DJ rig on Offbeat: " + link.href));
+  assert.equal(window.location.href, link.href);
+
+  // A formerly valid URL must not leak into an oversized subsequent build.
+  const longId = "oversized-" + "x".repeat(500);
+  api.setCatalog({ items: [{ id: longId, category: "controllers", price: 1, brand: "Test", model: "Long" }],
+    categories: [], presets: [] });
+  const items = Array.from({ length: 24 }, (_, index) => ({
+    slotId: "slot-" + index, category: "controllers", itemId: longId, qty: 1, owned: false
+  }));
+  assert.equal(api.normalizeRigState({ name: "Large build", items }), true);
+  const largeText = api.buildShoppingChecklistText();
+  assert.match(largeText, /Exact share link unavailable for this build/);
+  assert.doesNotMatch(largeText, /Plan and customize your DJ rig on Offbeat:/);
+  assert.equal(new URL(lastUrl(), "https://offbeatinc.com").searchParams.has("rig"), false);
+  assert.equal(api.getRig().items.length, 24, "local equipment must remain intact");
 });

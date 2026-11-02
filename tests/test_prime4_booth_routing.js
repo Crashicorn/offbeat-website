@@ -177,11 +177,10 @@ async function runTests() {
 
         const shopping = await page.evaluate(() => window.__rigStudio.shoppingList());
         const xlrCables = shopping.filter(item => item.itemId === "cable-xlr-xlr");
-        assert.strictEqual(xlrCables.length, 1, "Cables should be consolidated into one shopping line");
-        assert.strictEqual(xlrCables[0].qty, 3, "Must require 3 pairs of cable-xlr-xlr");
-        assert.strictEqual(xlrCables[0].lineTotal, 84, "3 pairs at $28 = $84");
+        assert.strictEqual(xlrCables.length, 0, "Unselected cables must not appear as purchases; routes remain recommendations");
+    assert.strictEqual(conns.reduce((sum, route) => sum + route.units, 0), 3, "The routes still identify three required cable packs");
 
-        console.log("✓ Rig Studio browser verification passed: 3 XLR lines planned (Master, Booth, Zone) totaling $84.");
+        console.log("✓ Rig Studio browser verification passed: 3 XLR lines planned (Master, Booth, Zone); no unselected purchases fabricated.");
       } finally {
         await browser.close();
       }
@@ -232,11 +231,10 @@ async function runDomHarnessTest() {
 
     const shopping = await page.shopping();
     const xlrCables = shopping.filter(item => item.itemId === "cable-xlr-xlr");
-    assert.strictEqual(xlrCables.length, 1, "Cables should be consolidated into one shopping line");
-    assert.strictEqual(xlrCables[0].qty, 3, "Must require 3 pairs of cable-xlr-xlr");
-    assert.strictEqual(xlrCables[0].lineTotal, 84, "3 pairs at $28 = $84");
+    assert.strictEqual(xlrCables.length, 0, "Unselected cables must not appear as purchases; routes remain recommendations");
+    assert.strictEqual(conns.reduce((sum, route) => sum + route.units, 0), 3, "The routes still identify three required cable packs");
 
-    console.log("✓ DOM harness Rig Studio verification passed: 3 XLR lines planned (Master, Booth, Zone) totaling $84.");
+    console.log("✓ DOM harness Rig Studio verification passed: 3 XLR lines planned (Master, Booth, Zone); no unselected purchases fabricated.");
   } finally {
     if (page) page.close();
     await server.close();
