@@ -926,6 +926,39 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
     }
     console.log("PASS: single-unit retailer links disclose pair-to-unit checkout quantities on desktop/mobile");
 
+    // The same exact-SKU quantity warning must survive BOTH buyer exports.
+    // Otherwise a buyer who copies a 2-pair rig may order only 2 singles.
+    for (const width of [1440, 390]) {
+      for (const id of ["yamaha-hs5", "cable-xlr-xlr"]) {
+        const exported = await visit(browser, width, "?add=" + id);
+        const slotId = await exported.page.evaluate((itemId) => {
+          const row = [...document.querySelectorAll(".rig-row.rs-item")].find(el =>
+            el.querySelector('[data-action="inspect-item"][data-item-id="' + itemId + '"]'));
+          return row?.querySelector('[data-action="step-qty"][data-step="1"]')?.dataset.slotId || "";
+        }, id);
+        assert.ok(slotId, "export quantity fixture must contain the selected pair");
+        await exported.page.click('[data-action="step-qty"][data-step="1"][data-slot-id="' + slotId + '"]');
+        await exported.page.click("#rig-manage > summary");
+        await exported.page.click('[data-action="open-export-modal"]');
+        const markdown = await exported.page.$eval("#reddit-export-box", el => el.value);
+        assert.match(markdown, /Exact-retailer checkout quantities/);
+        assert.match(markdown, /order 4 individual units for 2 planned pairs/);
+        await exported.page.click('[aria-label="Close dialog"]');
+        await exported.page.evaluate(() => {
+          window.__manualChecklist = "";
+          window.prompt = (_label, value) => { window.__manualChecklist = value; return null; };
+          Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+        });
+        await exported.page.click('[data-action="copy-checklist"]');
+        const checklist = await exported.page.evaluate(() => window.__manualChecklist);
+        assert.match(checklist, /RETAILER UNIT WARNING:/);
+        assert.match(checklist, /order 4 individual units for 2 planned pairs/);
+        assert.deepEqual(exported.errors, [], "retailer quantity exports must not throw");
+        await exported.context.close();
+      }
+    }
+    console.log("PASS: exact-retailer single-unit quantities survive Markdown and clipboard exports");
+
     // Catalogued unavailable SKUs must never look like live buy-now links.
     // The replacement is a separately labelled option, not the selected item.
     for (const width of [1440, 390]) {
