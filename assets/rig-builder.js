@@ -1473,6 +1473,24 @@
     var zzAlternativeUrl = zzUnavailable && dests.zzounds.alternative_url;
     var zzAlternativeName = zzUnavailable && dests.zzounds.alternative_name;
     var zzType = (dests && dests.zzounds && dests.zzounds.type) ? dests.zzounds.type : (zzSku ? "exact" : "search_fallback");
+    // Exact retailer links may sell ONE cabinet or lead while the planner's
+    // price and quantity describe a PAIR. Disclose the checkout quantity.
+    var zzUnitsPerPlan = 1;
+    if (dests && dests.zzounds && dests.zzounds.sold_as === "unit" && zzType === "exact") {
+      if (item.cable && Number.isInteger(item.cable.pack_of) && item.cable.pack_of > 1) {
+        zzUnitsPerPlan = item.cable.pack_of;
+      } else if (dests.zzounds.requires_pair_qty === true && Number.isInteger(item.speaker_units) && item.speaker_units > 1) {
+        zzUnitsPerPlan = item.speaker_units;
+      }
+    }
+    var zzOrderUnits = zzUnitsPerPlan * qty;
+    var retailerQuantityHtml = zzUnitsPerPlan > 1 && !zzUnavailable
+      ? '<span class="unit-pack-note rs-shop-line-retail-quantity" role="note">zZounds sells these individually: ' +
+        qty + ' planned ' + (qty === 1 ? 'pair' : 'pairs') + ' require <strong>' +
+        zzOrderUnits + ' separate units</strong> from this retailer link. The planner price covers ' +
+        zzUnitsPerPlan + ' units per planned pair; verify the per-unit checkout price.</span>'
+      : "";
+    var zzLinkLabel = zzUnitsPerPlan > 1 && !zzUnavailable ? "zZounds (order " + zzOrderUnits + ")" : "zZounds";
 
     // Keep the configured Associates attribution on every planner shopping handoff.
     // These are model searches, never claims of an exact Amazon product listing.
@@ -1546,6 +1564,7 @@
               <p class="item-tagline">${escapeHtml(item.tagline || item.ideal_for || '')}</p>
               ${cableProvenanceTag}
               ${packagingHtml}
+              ${retailerQuantityHtml}
               ${stockAlertHtml}
               ${item.slug ? `<a href="${item.slug}" class="item-guide-link">Read Offbeat Guide →</a>` : ''}
             </div>
@@ -1575,7 +1594,7 @@
             ${isPlatformPlaceholder ? '<span class="owned-sub">' + (item.host_type === "mobile" ? 'Existing phone/tablet — verify compatibility and power' : 'Setup mode — no hardware purchase') + '</span>' : `
             ${zzUnavailable
               ? '<span class="btn-retail btn-retail--zz" aria-disabled="true" data-status="verified_unavailable" title="This exact product is listed as unavailable at zZounds">Unavailable at zZounds</span>'
-              : `<a href="${escapeHtml(zzoundsUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${escapeHtml(zzType)}" data-status="${escapeHtml(zzStatus)}" data-sku="${escapeHtml(zzSku)}" title="Check on zZounds">zZounds</a>`}
+              : `<a href="${escapeHtml(zzoundsUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--zz" data-destination-type="${escapeHtml(zzType)}" data-status="${escapeHtml(zzStatus)}" data-sku="${escapeHtml(zzSku)}" title="Check on zZounds">${zzLinkLabel}</a>`}
             ${zzAlternativeUrl && zzAlternativeName ? `<a href="${escapeHtml(zzAlternativeUrl)}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--alt" data-destination-type="exact" data-status="unknown" title="Check the suggested alternative at zZounds">Check alternative: ${escapeHtml(zzAlternativeName)}</a>` : ''}
             <a href="${amazonUrl}" target="_blank" rel="nofollow noopener sponsored" class="btn-retail btn-retail--amz" title="Search model on Amazon">Amazon</a>
             <a href="${sweetwaterUrl}" target="_blank" rel="nofollow noopener" class="btn-retail btn-retail--sw" title="Search Sweetwater">Sweetwater</a>
