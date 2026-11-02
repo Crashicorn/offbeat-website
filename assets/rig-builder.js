@@ -1443,6 +1443,27 @@
     `;
   }
 
+  // A planned pair may link to an exact retailer SKU sold one unit at a time.
+  // Preserve that checkout distinction when the shopping list is copied or
+  // exported, not just while its interactive table is visible.
+  function exactRetailUnitOrderNote(item, plannedQty) {
+    var zz = item && item.retailer_destinations && item.retailer_destinations.zzounds;
+    if (!zz || zz.type !== "exact" || zz.status === "verified_unavailable" ||
+        zz.sold_as !== "unit") return "";
+    var perPlan = 1;
+    if (item.cable && Number.isInteger(item.cable.pack_of) && item.cable.pack_of > 1) {
+      perPlan = item.cable.pack_of;
+    } else if (zz.requires_pair_qty === true &&
+               Number.isInteger(item.speaker_units) && item.speaker_units > 1) {
+      perPlan = item.speaker_units;
+    }
+    if (perPlan <= 1) return "";
+    var qty = Math.max(1, Number(plannedQty) || 1);
+    return item.brand + " " + item.model + ": zZounds exact link sells single units; order " +
+      (qty * perPlan) + " individual units for " + qty + " planned " +
+      (qty === 1 ? "pair" : "pairs") + ". Verify the per-unit checkout price.";
+  }
+
   function renderModularTableRow(slot) {
     var item = getSlotItem(slot);
     var isOwned = Boolean(slot.owned) || Boolean(item && item.no_purchase === true);
@@ -1829,6 +1850,12 @@
     var canShare = saveActiveState();
     var shareUrl = canShare ? window.location.href : "";
 
+    var retailerOrderNotes = currentRig.items.map(function (slot) {
+      var item = getSlotItem(slot);
+      return item && !slot.owned && item.no_purchase !== true
+        ? exactRetailUnitOrderNote(item, slot.qty || 1) : "";
+    }).filter(Boolean);
+
     var redditMarkdown = (canShare ? `**[${currentRig.name}](${shareUrl})**\n\n` : `**${currentRig.name}**\n\n`) +
       `| Category | Equipment | Qty | Status | Unit USD | Line USD | To buy USD |\n` +
       `| :--- | :--- | ---: | :--- | ---: | ---: | ---: |\n` +
@@ -1843,7 +1870,9 @@
       }).filter(Boolean).join("\n") +
       `\n\n* **Total Rig Valuation:** $${stats.totalValue.toLocaleString()}\n` +
       `* **Owned Gear Savings:** -$${stats.ownedValue.toLocaleString()}\n` +
-      `* **Actual Out-of-Pocket Spend:** **$${stats.purchaseCost.toLocaleString()}**\n\n` +
+      `* **Actual Out-of-Pocket Spend:** **${stats.purchaseCost.toLocaleString()}**\n\n` +
+      (retailerOrderNotes.length ? "**Exact-retailer checkout quantities**\n" +
+        retailerOrderNotes.map(function (note) { return "* " + note; }).join("\n") + "\n\n" : "") +
       (canShare
         ? `*Generated with [Offbeat DJ Rig Architect](${shareUrl})*`
         : "*Generated with Offbeat DJ Rig Architect. This build exceeds the share-link limit; save it locally or reduce its size.*");
@@ -2492,6 +2521,10 @@
         var qty = slot.qty || 1;
         var statusStr = item.no_purchase === true ? "[EXISTING DEVICE / MODE — VERIFY]" : slot.owned ? "[ALREADY OWNED]" : "[NEED TO BUY]";
         lines.push(statusStr + " (" + qty + "x) " + item.brand + " " + item.model + " - $" + (item.price * qty));
+        if (!slot.owned && item.no_purchase !== true) {
+          var unitNote = exactRetailUnitOrderNote(item, qty);
+          if (unitNote) lines.push("    RETAILER UNIT WARNING: " + unitNote);
+        }
       }
     });
 
