@@ -578,6 +578,18 @@
           });
           warnings++;
         }
+      } else if (areAllSpeakerRoutesConfirmed() &&
+                 computeAllRigConnections().every(function (route) { return route.kind === "included"; })) {
+        // A monitor pack can include its own XLR leads (e.g. KRK Classic 5),
+        // not just the special-case 3.5mm/RCA cable above. The authoritative
+        // routing planner has verified every speaker path with bundled leads:
+        // do not simultaneously tell buyers to purchase an extra cable.
+        checks.push({
+          type: "success", statusLevel: "workable",
+          title: "Included Speaker Leads Cover Planned Routes",
+          desc: "The selected speaker package includes the signal leads for the modeled controller output and speaker inputs. No extra speaker cable purchase is needed for these routes; verify package contents and cable length.",
+          fixCableId: null
+        });
       } else if (selected) {
         // A matching connector does not prove enough cable packs exist for
         // every PA/monitor route. Keep this verdict aligned with the booth.
