@@ -150,7 +150,7 @@ async function visit(browser, width, suffix = "", denyStorage = false) {
       assert.doesNotMatch(unlock("alphatheta-djm-v5"), /Serato DJ Pro/);
       assert.match(extra("alphatheta-djm-v5"), /Serato DJ Pro.*paid license/);
       await license.page.type("[data-modal-search]", "VirtualDJ");
-      const found = await license.page.$eval(".picker-card", els => els.map(el => el.dataset.itemId));
+      const found = await license.page.$$eval(".picker-card", els => els.map(el => el.dataset.itemId));
       assert.ok(found.includes("denon-prime-go"), "paid-compatible PRIME GO must remain searchable");
       assert.ok(found.includes("denon-prime-4-plus"), "paid-compatible PRIME 4+ must remain searchable");
       await license.page.click('.picker-card[data-item-id="denon-prime-go"] .picker-inspect-btn');
